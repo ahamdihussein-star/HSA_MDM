@@ -1,0 +1,17 @@
+<div class="headerContainer">
+  <div class="headerLogo">
+    <img src="assets/img/logo.png" alt="Logo" />
+    <h2>{{"MasterDataManagementHub"|translate}}</h2>
+  </div>
+ 
+  <div class="headerNav">
+    <div class="switchLang">
+        <button class="" *ngIf="lang== 'ar'" (click)="switchLang('en')">En</button>
+        <button class="" *ngIf="lang== 'en'"  (click)="switchLang('ar')">Ar</button>
+    </div>
+    <img src="assets/img/search.png" alt="searchIicon" class="searchIicon">
+    <img src="assets/img/notification.png" alt="notificationIcon" class="notificationIcon">
+    <img src="assets/img/user.png" alt="userIcon" class="userIcon">
+  </div>
+
+</div>

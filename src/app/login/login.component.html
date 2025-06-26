@@ -29,6 +29,8 @@
               id="email"
               formControlName="email"
               placeholder="johndoe@email.com"
+              pattern='^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$'
+
             />
           </nz-form-control>
         </nz-form-item>
@@ -60,10 +62,9 @@
         </div>
       </form>
 
-      <a class="forgotPassword" href="#">Forgot Password?</a>
+      <a class="forgotPassword" href="#">{{"ForgotPassword"|translate}}</a>
     </div>
   </div>
 
-  <ng-template #userIcon><i nz-icon nzType="user"></i></ng-template>
-  <ng-template #lockIcon><i nz-icon nzType="lock"></i></ng-template>
+
 </div>

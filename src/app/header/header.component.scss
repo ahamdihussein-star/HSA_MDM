@@ -1,0 +1,43 @@
+.headerContainer{
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 0 30px;
+    height: 85px;
+    border-bottom: 1px solid #718EBF5C;
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    z-index: 2;
+    background-color: #Fff;
+}
+.headerLogo{
+    display: flex;
+    align-items: center;
+    gap: 50px;
+    h2{
+        font-size: 20px;
+    }
+}
+.headerNav{
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    img{
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+    }
+}
+.switchLang{
+    button{
+        background-color: #F5F7FA;
+        border: none;
+        width: 50px;
+        height: 50px;
+        border-radius: 50%;
+        cursor: pointer;
+        text-align: center;
+    }
+}

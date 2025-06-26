@@ -4,6 +4,10 @@ import { CommonModule } from '@angular/common';
 import { DashboardRoutingModule } from './dashboard-routing.module';
 import { DashboardComponent } from './dashboard.component';
 
+import {HeaderModule} from '../header/header.module';
+import { QuarantinedRequestsModule } from '../quarantined-requests/quarantined-requests.module';
+
+import { TranslateModule } from '@ngx-translate/core';
 
 @NgModule({
   declarations: [
@@ -11,7 +15,10 @@ import { DashboardComponent } from './dashboard.component';
   ],
   imports: [
     CommonModule,
-    DashboardRoutingModule
+    DashboardRoutingModule,
+    HeaderModule,
+    TranslateModule,
+    QuarantinedRequestsModule
   ]
 })
 export class DashboardModule { }
