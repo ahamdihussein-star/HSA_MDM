@@ -1,0 +1,111 @@
+/************LINKS ********************/
+@mixin link($color) {
+    color: $color;
+    display: inline-block;
+    transition: 0.3s;
+    font-size: 0.9375rem;
+    text-transform: capitalize;
+    &:hover {
+        text-decoration: underline;
+    }
+    &:active,
+    &:focus {
+        text-decoration: none;
+    }
+    &:disabled {
+        color: gray !important;
+    }
+}
+
+/************BTNS ********************/
+@mixin btn($background, $color, $border) {
+    background: $background;
+    border: 1px solid $border;
+    color: $color;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0 25px;
+    min-height: 45px !important;
+    font-size: 1rem;
+    font-weight: 400;
+    border-radius: 100px;
+    transition: 0.5s;
+    cursor: pointer;
+    text-transform: capitalize;
+    font-family: "Poppins-Medium" !important;
+    body.rtl &{
+        font-family: "Neo-Medium" !important;
+    }
+    span{
+        font-family: "Poppins-Medium" !important;
+        body.rtl &{
+            font-family: "Neo-Medium" !important;
+        }
+    }
+    // box-shadow: 0 3px 6px 0 rgba(0, 0, 0, 0.16);
+    min-width: 130px;
+
+    @include mq("tablet") {
+        padding: 0 12px;
+    }
+    @include mq("ipad") {
+
+    }
+    &.small-btn {
+        min-height: 30px !important;
+        padding: 0 15px;
+    }
+}
+
+/************MEDIA QUERY ********************/
+$breakpoints: (
+    "phone": 401px,
+    "phone-wide": 481px,
+    "tablet-small": 641px,
+    "tablet": 769px,
+    "ipad": 993px,
+    "tablet-wide": 1085px,
+    "desktop-small": 1120px,
+    "desktop": 1249px,
+    "desktop-wide": 1441px,
+);
+
+@mixin mq($width, $type: max) {
+    @if map_has_key($breakpoints, $width) {
+        $width: map_get($breakpoints, $width);
+
+        @if $type==max {
+            $width: $width - 1px;
+        }
+
+        @media only screen and (#{$type}-width: $width) {
+            @content;
+        }
+    }
+}
+
+// /*****************prfix*************/
+// @mixin prefixer($property, $val) {
+//     #{$property}: $val;
+//     -webkit-#{$property}: $val;
+//     -moz-#{$property}: $val;
+//     -ms-#{$property}: $val;
+//     -o-#{$property}: $val;
+// }
+
+// /*****************input placeholder*************/
+// @mixin input-placeholder {
+//     &:-moz-placeholder {
+//         @content;
+//     }
+//     &::-moz-placeholder {
+//         @content;
+//     }
+//     &:-ms-input-placeholder {
+//         @content;
+//     }
+//     &::-webkit-input-placeholder {
+//         @content;
+//     }
+// }

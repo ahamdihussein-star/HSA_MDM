@@ -1,0 +1,15 @@
+/* You can add global styles to this file, and also import other style files */
+body.rtl {
+  direction: rtl;
+  [nz-form] {
+    direction: rtl;
+  }
+}
+
+
+//import reset files
+@import "../src/assets/css/variables.scss";
+@import "../src/assets/css/mixins.scss";
+@import "../src/assets/css/reset.scss";
+@import "../src/assets/css/formComponent.scss";
+@import "../src/assets/css/buttons.scss";

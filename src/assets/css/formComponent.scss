@@ -1,0 +1,215 @@
+//start for genaric style
+.form_holder {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  input,
+  .ant-input-number,
+  .ant-select-selector,.ant-picker {
+    height: 44px !important;
+    border-radius: 10px;
+    background: #F5F7FA !important;
+    border: 1px solid #2323231A;
+    font-size: 12px;   
+    padding: 0 10px;
+  }
+  .ant-select:not(.ant-select-disabled):hover .ant-select-selector {
+    border-color: #2323231A;
+  }
+  .ant-select-focused:not(.ant-select-disabled).ant-select:not(.ant-select-customize-input) .ant-select-selector {
+    box-shadow: none;
+    border-color: #2323231A;
+  }
+
+  
+  .ant-select-single.ant-select-show-arrow .ant-select-selection-item,
+  .ant-select-single.ant-select-show-arrow .ant-select-selection-placeholder {
+    body.rtl &{
+      padding-right: 0px;
+      padding-left: 18px;
+    }
+  }
+  .ant-picker-input>input{
+    height: 38px !important;
+  }
+  .ant-picker-status-error.ant-picker, .ant-picker-status-error.ant-picker:not([disabled]):hover {
+    border-color: #ff4d4f;
+  }
+  .ant-picker {
+    width: 100%;
+  }
+  .ant-picker-focused {
+    box-shadow: none;
+  }
+  .ant-picker-suffix{
+    color: #000;
+  }
+  textarea.ant-input{
+    height: 130px;
+    resize: none;
+  }
+  // for full width
+  .input_holder_full-width {
+    width: 100%;
+  }
+  &::placeholder {
+    text-transform: capitalize;
+    color: #B1B1B1;
+    body.ltr & {
+      font-family: "Poppins-Regular";
+    }
+
+    body.rtl &{
+      font-family: "Neo-Regular";
+    }
+  }
+  .ant-picker.ant-picker-disabled {
+    background: #f5f5f5;
+    border-color: #d9d9d9;
+    cursor: not-allowed;
+}
+}
+.ant-input:hover,.ant-input-number:hover,.ant-select-selector:hover,.ant-picker:hover {
+  border-color: #2323231A;
+}
+.ant-input-focused,
+.ant-input:focus,
+.ant-input-number:focus,
+.ant-input-number-focused {
+  border-color: #2323231A;
+  box-shadow: none;
+}
+// because its take on ant right by defult
+.ant-form-item-label {
+  text-align: unset;
+}
+.ant-form-item-label > label::after {
+  display: none;
+}
+.ant-form-item-label > label {
+  font-size: 13px;
+  color: #000;
+  line-height: 29px;
+  margin-bottom: 3px;
+  font-family: "Poppins-Medium";
+  body.rtl &{
+    font-family: "Neo-Medium";
+  }
+}
+.ant-empty{
+  display: none;
+
+}
+.ant-input-number-focused .ant-input-number-handler-wrap, .ant-input-number:hover .ant-input-number-handler-wrap{
+  display: none;
+
+}
+
+.ant-slider-track{
+  background-color: #CBA51C;
+}
+.ant-slider-handle{
+  border: 2px solid #CBA51C;
+  background-color: #CBA51C;
+}
+.ant-select-item-option-disabled.ant-select-item-option-selected, .ant-slider-rail{
+  background-color: #fff;
+}
+.ant-slider:hover .ant-slider-handle:not(.ant-tooltip-open){
+  border-color: #CBA51C;
+}
+.ant-slider:hover .ant-slider-track{
+  background-color: #CBA51C;
+}
+.ant-slider-handle:focus {
+  border-color: #CBA51C;
+  outline: 0;
+  box-shadow: 0 0 0 5px rgb(240 84 35 / 13%);
+}
+// input style
+// if you need to be two inputs on same line
+.input_holder {
+  width: calc(50% - 14px);
+  //background-color: red;
+  @include mq("tablet") {
+    width: 100%;
+  }
+
+  body.rtl &{
+    // background-color: green;
+  }
+}
+
+body.rtl {
+  [nz-form] {
+    direction: rtl;
+  }
+}
+//select style
+.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  height: 40px !important;
+  border-radius: 10px;
+  background: #fff;
+  padding-top: 4px;
+}
+.ant-select-single:not(.ant-select-customize-input) .ant-select-selector .ant-select-selection-search-input {
+  height: 40px !important;
+}
+
+.ant-form-item-label > label.ant-form-item-required:not(.ant-form-item-required-mark-optional)::before {
+  display: none;
+}
+.show-hide-password-btn {
+  background: transparent;
+  position: absolute;
+  width: 33px;
+  height: 33px;
+  top: 4px;
+  border-radius: 10px;
+  border: none;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  transform: 0.3s;
+  filter: grayscale(1);
+  &:hover {
+    filter: grayscale(0);
+  }
+  body.ltr & {
+    right: 16px;
+  }
+
+  body.rtl &{
+    left: 16px;
+  }
+}
+.ant-form-item-explain-error {
+  font-size: 11px;
+  color: #ff4d4f;
+}
+.ant-select-focused:not(.ant-select-disabled).ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  box-shadow: none;
+  border-color: #2323231A;
+}
+.ant-select:not(.ant-select-disabled):hover .ant-select-selector {
+  border-color: #2323231A;
+}
+@media (max-width: 767px) {
+  .ant-col-sm-24.ant-form-item-label {
+    text-align: inherit;
+  }
+}
+*:focus-visible {
+  outline: none;
+}
+.ant-select-arrow,
+  .ant-select-clear {
+    body.rtl &{
+      left: 10px;
+      right: auto;
+    }
+  }
+
+  

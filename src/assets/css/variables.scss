@@ -1,0 +1,87 @@
+// Arabic fonts
+@font-face {
+    font-family: "Neo-Regular";
+    src: url("./../fonts/Neo_Sans_Regular.ttf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Neo-Medium";
+    src: url("./../fonts/NeoSansArabicMedium.ttf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Neo-Bold";
+    src: url("./../fonts/NeoSansArabicBold.ttf") format("opentype");
+    font-display: swap;
+  }
+
+// English fonts
+  @font-face {
+    font-family: "Poppins-Regular";
+    src: url("./../fonts/Poppins-Regular.ttf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Poppins-Bold";
+    src: url("./../fonts/Poppins-Bold.ttf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Poppins-ExtraBold";
+    src: url("./../fonts/Poppins-ExtraBold.woff") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Poppins-SemiBold";
+    src: url("./../fonts/Poppins-SemiBold.ttf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Poppins-BoldItalic";
+    src: url("./../fonts/Poppins-BoldItalic.ttf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Poppins-Italic";
+    src: url("./../fonts/Poppins-Italic.ttf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Poppins-MediumItalic";
+    src: url("./../fonts/Poppins-MediumItalic.ttf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Poppins-Medium";
+    src: url("./../fonts/Poppins-Medium.ttf") format("opentype");
+    font-display: swap;
+  }
+  
+  body {
+    height: unset;
+    height: 100%;
+    
+  }
+  body.ltr button,
+  body.ltr input,
+  body.ltr select,
+  body.ltr a,
+  body.ltr ul,
+  body.ltr li,
+  body.ltr p,
+  body.ltr span,
+  body.ltr {
+    font-family: "Poppins-Regular";
+  }
+  body.rtl button,
+  body.rtl input,
+  body.rtl select,
+  body.rtl a,
+  body.rtl ul,
+  body.rtl li,
+  body.rtl p,
+  body.rtl span,
+  body.rtl {
+    font-family: "Neo-Regular";
+    text-align: right;
+  }
