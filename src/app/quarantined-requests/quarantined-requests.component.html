@@ -1,3 +1,27 @@
 <h1 class="pageTitle">
     {{ "QuarantinedRequests" | translate }}
 </h1>
+<div>
+    <nz-table #basicTable [nzData]="quarantinedRequests">
+      <thead>
+        <tr>
+          <th>{{"RequestID"|translate}}</th>
+          <th>{{"CustomerName"|translate}}</th>
+          <th>{{"Date"|translate}}</th>
+          <th>{{"Action"|translate}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let data of basicTable.data">
+          <td>{{ data.requestId }}</td>
+          <td>{{ data.customerName }}</td>
+          <td>{{ data.date }}</td>
+          <td>
+            <a></a>
+           
+            <a>Delete</a>
+          </td>
+        </tr>
+      </tbody>
+    </nz-table>
+</div>

@@ -5,6 +5,8 @@ import { QuarantinedRequestsRoutingModule } from './quarantined-requests-routing
 import { QuarantinedRequestsComponent } from './quarantined-requests.component';
 
 import { TranslateModule } from '@ngx-translate/core';
+import { NzTableModule } from 'ng-zorro-antd/table';
+
 
 @NgModule({
   declarations: [
@@ -13,7 +15,8 @@ import { TranslateModule } from '@ngx-translate/core';
   imports: [
     CommonModule,
     QuarantinedRequestsRoutingModule,
-    TranslateModule
+    TranslateModule,
+    NzTableModule
   ],
   exports: [
     QuarantinedRequestsComponent
