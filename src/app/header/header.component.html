@@ -5,6 +5,11 @@
   </div>
  
   <div class="headerNav">
+    <button class="Primary_fill" *ngIf="user == '1'">
+      <img src="assets/img/add.svg" alt="addIcon" class="addIcon">
+      &nbsp;
+      <span class="menuText">{{"NewRequest"|translate}}</span>
+    </button>
     <div class="switchLang">
         <button class="" *ngIf="lang== 'ar'" (click)="switchLang('en')">En</button>
         <button class="" *ngIf="lang== 'en'"  (click)="switchLang('ar')">Ar</button>

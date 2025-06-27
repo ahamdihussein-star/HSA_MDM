@@ -8,6 +8,7 @@ import { isPlatformBrowser } from "@angular/common";
 })
 export class HeaderComponent {
   lang: string = "";
+  user:string = "";
 
   constructor(
     private translate: TranslateService,
@@ -31,8 +32,7 @@ export class HeaderComponent {
   }
 
   ngOnInit(): void {
-    if (isPlatformBrowser(this.platformId)) {
-      this.lang = localStorage.getItem("lang") || "en";
-    }
+    this.lang = localStorage.getItem("lang") || "en";
+    this.user = localStorage.getItem("user")  || "2"; 
   }
 }

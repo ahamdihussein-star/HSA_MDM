@@ -1,0 +1,63 @@
+.ant-table-footer, .ant-table-thead > tr > th{
+    background-color: #fff;
+}
+.ant-table-thead > tr > th:not(:last-child):not(.ant-table-selection-column):not(.ant-table-row-expand-icon-cell):not([colspan])::before{
+    width: 0px;
+}
+.ant-table{
+    border-radius: 10px !important;
+}
+.ant-table-container, .ant-table-container table > thead > tr:first-child th:last-child {
+    border-top-right-radius: 10px;
+}
+.ant-table-container, .ant-table-container table > thead > tr:first-child th:first-child {
+    border-top-left-radius: 10px;
+}
+.ant-pagination-next .ant-pagination-item-link, .ant-pagination-prev .ant-pagination-item-link{
+    border: none;
+    background-color: transparent;
+}
+.ant-pagination-item{
+    border: none;
+    background-color: transparent;
+}
+.ant-pagination-item-active {
+    background: transparent;
+    border: 1px solid #232323;
+    border-radius: 10px;
+}
+.ant-pagination-item-active a, .ant-pagination-item:focus-visible a, .ant-pagination-item:hover a{
+    color: #232323;
+}
+.ant-pagination-item{
+    min-width: 30px;
+    height: 30px;
+}
+.ant-pagination-next:focus-visible .ant-pagination-item-link, .ant-pagination-next:hover .ant-pagination-item-link, .ant-pagination-prev:focus-visible .ant-pagination-item-link, .ant-pagination-prev:hover .ant-pagination-item-link{
+    background-color: transparent;
+    border: none;
+    color: #232323;
+}
+.ant-pagination-item-active:hover, .ant-pagination-next:hover button, .ant-pagination-prev:hover button{
+    border: 1px solid #232323;
+}
+.ant-table-thead > tr > th{
+    font-weight: bold;
+    font-size: 16px;
+}
+
+// This is a custom style for the tabs
+
+.ant-tabs-tab-btn{
+    color: #b1b1b1;
+}
+.ant-tabs-tab.ant-tabs-tab-active .ant-tabs-tab-btn ,.ant-tabs-tab:hover{
+    color: #CBA51C;
+}
+.ant-tabs-ink-bar{
+    background-color: #CBA51C;
+}
+
+.ant-tabs-bottom > .ant-tabs-nav::before, .ant-tabs-bottom > div > .ant-tabs-nav::before, .ant-tabs-top > .ant-tabs-nav::before, .ant-tabs-top > div > .ant-tabs-nav::before{
+    border-bottom: 1px solid #EBEEF2;
+}

@@ -22,5 +22,9 @@
     "RequestID":"رقم الطلب",
     "CustomerName":"اسم العميل",
     "Action":"الإجراء",
+    "NewRequest":"طلب جديد",
+    "ProductRequests": "طلبات المنتج",
+    "CustomerRequests": "طلبات العميل",
+    "SupplierRequests": "طلبات الموردين",
     "":""
 }
