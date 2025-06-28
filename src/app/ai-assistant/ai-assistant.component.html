@@ -6,12 +6,12 @@
     <img *ngIf="message.from === 'bot'" src="assets/img/aiIcon.svg" alt="AI Assistant" class="bot-avatar" />
     <div [ngClass]="message.from === 'bot' ? 'bot-message' : 'user-message'">
         
-      {{ message.text }}
+      {{ message.text | translate }}
     </div>
   </div>
 
   <form (ngSubmit)="sendMessage()" class="submitHolder">
-    <input [(ngModel)]="currentInput" name="input" placeholder="Write Something" />
-    <button class="Primary_fill" type="submit">Submit</button>
+    <input [(ngModel)]="currentInput" name="input" placeholder="{{'WriteSomething'|translate}}" />
+    <button class="Primary_fill" type="submit">{{"Submit"|translate}}</button>
   </form>
 </div>
