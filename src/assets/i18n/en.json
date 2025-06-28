@@ -25,5 +25,20 @@
     "ProductRequests": "Product Requests",
     "CustomerRequests": "Customer Requests",
     "SupplierRequests": "Supplier Requests",
-    "":""
+    "FirstName":"First Name",
+    "SecondName": "Second Name",
+    "GeneralData": "General Data",
+    "Street": "Street",
+    "PostalCode": "Postal Code",
+    "Country": "Country",
+    "City": "City",
+    "Region": "Region",
+    "Identification": "Indetification",
+    "Tax": "TAX",
+    "Resbonsible": "Resbonsible",
+    "SalesArea": "Sales Area",
+    "SalesORG": "Sales ORG",
+    "DistributionChannel": "Distribution Channel",
+    "Division": "Division",
+    "SendRequest": "Send Request"
 }

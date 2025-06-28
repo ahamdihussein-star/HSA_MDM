@@ -26,5 +26,20 @@
     "ProductRequests": "طلبات المنتج",
     "CustomerRequests": "طلبات العميل",
     "SupplierRequests": "طلبات الموردين",
-    "":""
+    "FirstName":"الاسم الاول",
+    "SecondName": "الاسم الثاني",
+    "GeneralData": "البيانات العامة",
+    "Street": "الشارع",
+    "PostalCode": "الرمز البريدي",
+    "Country": "البلد",
+    "City": "المدينة",
+    "Region": "المنطقة",
+    "Identification": "التعريف",
+    "Tax": "الضريبة",
+    "Resbonsible": "المسؤول",
+    "SalesArea": "منطقة المبيعات",
+    "SalesORG": "منظمة المبيعات",
+    "DistributionChannel": "قناة التوزيع",
+    "Division": "القسم",
+    "SendRequest": "ارسال طلب"
 }
