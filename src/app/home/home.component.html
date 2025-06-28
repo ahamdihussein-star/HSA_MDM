@@ -1,0 +1,115 @@
+<div class="upperSection">
+    <div class="chartHolder">
+        <p class="pageTitle">
+
+            {{ "Request Status Overview" | translate }}
+
+        </p>
+        <div class="chartSection">
+            <apx-chart [series]="chartOptions.series" [chart]="chartOptions.chart"
+                [dataLabels]="chartOptions.dataLabels" [plotOptions]="chartOptions.plotOptions"
+                [yaxis]="chartOptions.yaxis" [xaxis]="chartOptions.xaxis" [legend]="chartOptions.legend"
+                [colors]="chartOptions.colors" [grid]="chartOptions.grid"></apx-chart>
+
+                
+        </div>
+
+    </div>
+    <div class="summaryHolder">
+        <p class="pageTitle">
+            {{ "Summary" | translate }}
+        </p>
+        <div class="summarySection">
+            <div class="summaryinfo">
+                <img src="./assets/img/QuarantinedRequestsIcon.svg" alt="">
+                <div class="summarydetails">
+                    <p class="detailName">{{ "Quarantined Requests" | translate }}</p>
+                    <p>4400</p>
+                </div>
+            </div>
+
+            <div class="summaryinfo">
+                <img src="./assets/img/GoldenRequestsIcon.svg" alt="">
+                <div class="summarydetails">
+                    <p class="detailName">{{ "Golden Requests" | translate }}</p>
+                    <p>6460</p>
+                </div>
+            </div>
+
+            <div class="summaryinfo">
+                <img src="./assets/img/RejectedRequestsIcon.svg" alt="">
+                <div class="summarydetails">
+                    <p class="detailName">{{ "Rejected Requests" | translate }}</p>
+                    <p>4460</p>
+                </div>
+            </div>
+
+            <div class="summaryinfo">
+                <img src="./assets/img/DuplicatesRequestsIcon.svg" alt="">
+                <div class="summarydetails">
+                    <p class="detailName">{{ "Duplicates Requests" | translate }}</p>
+                    <p>6400</p>
+                </div>
+            </div>
+
+            <div class="summaryinfo">
+                <img src="./assets/img/SyncedSAPHistoricalicon.svg" alt="">
+                <div class="summarydetails">
+                    <p class="detailName">{{ "Synced SAP Historical" | translate }}</p>
+                    <p>4500</p>
+                </div>
+            </div>
+
+            <div class="summaryinfo">
+                <img src="./assets/img/PendingRequestsIcon.svg" alt="">
+                <div class="summarydetails">
+                    <p class="detailName">{{ "Pending Requests" | translate }}</p>
+                    <p>5600</p>
+                </div>
+            </div>
+
+        </div>
+    </div>
+</div>
+<div class="tableSection">
+    <p class="pageTitle">
+        {{ "Recent Requests" | translate }}
+    </p>
+    <nz-table #basicTable [nzPageSize]="7" [nzData]="myRequests">
+        <thead>
+            <tr>
+                <th>{{ "RequestID" | translate }}</th>
+                <th>{{ "CustomerName" | translate }}</th>
+                <th>{{ "Date" | translate }}</th>
+                <th>{{ "Status" | translate }}</th>
+                <th>{{ "Action" | translate }}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let data of basicTable.data; let i = index">
+                <td>{{ data.requestId }}</td>
+                <td>{{ data.customerName }}</td>
+
+                <td>{{ data.date }}</td>
+                <td class="arabicCell">
+                    <p class="generalStatus" [ngClass]="{
+              'status-approved': data.status === 'Approved',
+              'status-pending': data.status === 'Pending',
+              'status-rejected': data.status === 'Rejected',
+              'status-quarantined': data.status === 'Quarantined'
+            }">
+                        {{ data.status | translate }}
+                    </p>
+                </td>
+                <td>
+                    <a class="primaryColor" *ngIf="data.status != 'Rejected'">
+                        {{ "ViewDetails" | translate }}
+                    </a>
+                    <a class="primaryColor" *ngIf="data.status === 'Rejected'">
+                        {{ "FixIssue" | translate }}
+                    </a>
+                </td>
+            </tr>
+        </tbody>
+    </nz-table>
+</div>
