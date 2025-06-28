@@ -77,7 +77,7 @@ export class QuarantinedRequestsComponent {
 deleteRecodr(index: number): void {
     // This method will delete a record from the quarantined requests
     this.quarantinedRequests.splice(index, 1);
-   
+    this.quarantinedRequests = [...this.quarantinedRequests]; 
 
 }
 

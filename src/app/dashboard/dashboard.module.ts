@@ -7,6 +7,7 @@ import { DashboardComponent } from './dashboard.component';
 import {HeaderModule} from '../header/header.module';
 import { QuarantinedRequestsModule } from '../quarantined-requests/quarantined-requests.module';
 import { GoldenRequestsModule } from '../golden-requests/golden-requests.module';
+import { MyRequestsModule } from '../my-requests/my-requests.module';
 
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -20,7 +21,8 @@ import { TranslateModule } from '@ngx-translate/core';
     HeaderModule,
     TranslateModule,
     QuarantinedRequestsModule,
-    GoldenRequestsModule
+    GoldenRequestsModule,
+    MyRequestsModule
   ]
 })
 export class DashboardModule { }
