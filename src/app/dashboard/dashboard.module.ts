@@ -8,6 +8,7 @@ import {HeaderModule} from '../header/header.module';
 import { QuarantinedRequestsModule } from '../quarantined-requests/quarantined-requests.module';
 import { GoldenRequestsModule } from '../golden-requests/golden-requests.module';
 import { MyRequestsModule } from '../my-requests/my-requests.module';
+import { AiAssistantModule } from '../ai-assistant/ai-assistant.module';
 
 import { TranslateModule } from '@ngx-translate/core';
 
@@ -22,7 +23,8 @@ import { TranslateModule } from '@ngx-translate/core';
     TranslateModule,
     QuarantinedRequestsModule,
     GoldenRequestsModule,
-    MyRequestsModule
+    MyRequestsModule, 
+    AiAssistantModule
   ]
 })
 export class DashboardModule { }
