@@ -9,6 +9,8 @@ import { QuarantinedRequestsModule } from '../quarantined-requests/quarantined-r
 import { GoldenRequestsModule } from '../golden-requests/golden-requests.module';
 
 import { TranslateModule } from '@ngx-translate/core';
+import { SidebarModule } from '../sidebar/sidebar.module';
+import { NewRequestModule } from '../new-request/new-request.module';
 
 @NgModule({
   declarations: [
@@ -20,7 +22,9 @@ import { TranslateModule } from '@ngx-translate/core';
     HeaderModule,
     TranslateModule,
     QuarantinedRequestsModule,
-    GoldenRequestsModule
+    GoldenRequestsModule,
+    SidebarModule,
+    NewRequestModule
   ]
 })
 export class DashboardModule { }

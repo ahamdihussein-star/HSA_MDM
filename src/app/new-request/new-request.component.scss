@@ -1,0 +1,60 @@
+.dashboardContainer {
+    display: flex;
+    height: calc(100vh - 85px);
+    overflow: hidden;
+    width: 100%;
+  }
+  .dashboardNavigation {
+    width: 26%;
+    padding-top: 30px;
+    overflow-y: scroll;
+  }
+  .dashboardContent {
+    width: 74%;
+     overflow-y: scroll;
+    padding: 30px;
+    background-color: #f5f7fa;
+  }
+
+  .requestForm {
+    padding: 20px 0;
+    display: flex;
+    flex-direction: column;
+    gap: 30px;
+    .w50 {
+      width: 50%;
+    }
+    .w70 {
+      width: 70%;
+    }
+    .w30 {
+      width: 30%;
+    }
+    .w33_33 {
+      width: 33.33%;
+    }
+    .generalData {
+      background-color: white;
+      padding: 30px;
+      border-radius: 20px;
+      width: 100%;
+
+      h3 {
+        font-size: 1.2rem;
+        font-weight: 600;
+        margin-bottom: 10px;
+      }
+      .row {
+        display: flex;
+        width: 100%;
+        gap: 30px;
+      }
+
+
+      .btnBox {
+        text-align: end;
+      }
+
+    }
+  }
+  

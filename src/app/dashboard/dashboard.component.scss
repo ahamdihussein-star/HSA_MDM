@@ -2,58 +2,12 @@
   display: flex;
   height: calc(100vh - 85px);
   overflow: hidden;
+  width: 100%;
 }
 .dashboardNavigation {
   width: 26%;
   padding-top: 30px;
   overflow-y: scroll;
-  body.ltr & {
-    border-right: 1px solid #718ebf5c;
-  }
-  body.rtl & {
-    border-left: 1px solid #718ebf5c;
-  }
-  .navTab {
-    font-size: 16px;
-    color: #b1b1b1;
-    padding: 20px 30px;
-    margin: 6px 0;
-    cursor: pointer;
-    display: flex;
-    align-items: center;
-    gap: 10px;
-  }
-  .activeTab {
-    color: #cba51c;
-    font-weight: 600;
-    position: relative;
-
-    &::after{
-        content: "";
-        position: absolute;
-        
-        top: 0px;
-        bottom: 0px;
-        width: 6px;
-        background-color: #cba51c;
-        
-    }
-    body.ltr & {
-      &::after{
-        left: 0;
-        border-top-right-radius: 15px;
-        border-bottom-right-radius: 15px;
-      }
-    }
-    body.rtl & {
-      &::after{
-        right: 0;
-        border-top-left-radius: 15px;
-        border-bottom-left-radius: 15px;
-      }
-    }
-
-  }
 }
 .dashboardContent {
   width: 74%;

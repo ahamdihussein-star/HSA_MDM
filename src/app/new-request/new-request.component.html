@@ -1,0 +1,219 @@
+<div class="main">
+  <img src="assets/img/leftArrow.svg" alt="left arrow" />
+
+  <form
+    nz-form
+    [formGroup]="requestForm"
+    (ngSubmit)="onSubmit()"
+    class="form_holder requestForm"
+  >
+    <div class="generalData">
+      <h3>{{ "GeneralData" | translate }}</h3>
+      <div class="row">
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "FirstName" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="firstName"
+              formControlName="firstName"
+              placeholder="John"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "SecondName" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="secondName"
+              formControlName="secondName"
+              placeholder="Doe"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="row">
+        <nz-form-item class="input_holder_full-width w70">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Street" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="street"
+              formControlName="street"
+              placeholder="Harm, Giza"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width w30">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "PostalCode" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="postalCode"
+              formControlName="postalCode"
+              placeholder="{{ 'PostalCode' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="row">
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "City" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="city"
+              formControlName="city"
+              placeholder="{{ 'City' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Region" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="region"
+              formControlName="region"
+              placeholder="{{ 'Region' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Country" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="country"
+              formControlName="country"
+              placeholder="{{ 'Country' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+
+    <div class="generalData">
+      <h3>{{ "Identification" | translate }}</h3>
+      <div class="row">
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Tax" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="tax"
+              formControlName="tax"
+              placeholder="{{ 'Tax' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Country" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="identityCountry"
+              formControlName="identityCountry"
+              placeholder="{{ 'Country' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Resbonsible" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="resbonsible"
+              formControlName="resbonsible"
+              placeholder="{{ 'Resbonsible' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+
+    <div class="generalData">
+      <h3>{{ "SalesArea" | translate }}</h3>
+      <div class="row">
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "SalesORG" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="salesOrg"
+              formControlName="salesOrg"
+              placeholder="{{ 'SalesORG' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="row">
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "DistributionChannel" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="distChannel"
+              formControlName="distChannel"
+              placeholder="{{ 'DistributionChannel' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Division" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="division"
+              formControlName="division"
+              placeholder="{{ 'Division' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="btnBox">
+        <button class="Primary_fill" nz-button>
+          {{ "SendRequest" | translate }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>
