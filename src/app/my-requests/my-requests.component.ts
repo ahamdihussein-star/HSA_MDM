@@ -89,9 +89,9 @@ export class MyRequestsComponent {
     this.myRequests = [...this.myRequests];
   }
 
-  viewOrEditRequest(id: number, canEdit: Boolean): void {
+  viewOrEditRequest(id: number, status: string, canEdit: Boolean): void {
     this.router.navigate(["/dashboard/new-request", id], {
-      queryParams: {edit: canEdit}
+      queryParams: {edit: canEdit, status}
     });
   }
 

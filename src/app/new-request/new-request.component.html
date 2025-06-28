@@ -3,7 +3,63 @@
     <button (click)="goBack()" class="back-button">
       <img src="assets/img/leftArrow.svg" alt="Back" />
     </button>
-    <h2>{{canEdit ? ("EditRequest" | translate) : canView ? ("ViewRequest" | translate) : ("NewRequest" | translate)}}</h2>
+    <h2>
+      {{
+        canEdit
+          ? ("EditRequest" | translate)
+          : canView
+          ? ("ViewRequest" | translate)
+          : ("NewRequest" | translate)
+      }}
+    </h2>
+  </div>
+
+  <div class="summary" *ngIf="canEdit || canView">
+    <div class="statusBox">
+      <h2>{{ "RequestStatus" | translate }}</h2>
+      <div
+        class="status"
+        [ngClass]="{
+          'status-approved': status === 'Approved',
+          'status-pending': status === 'Pending',
+          'status-rejected': status === 'Rejected',
+          'status-quarantined': status === 'Quarantined'
+        }"
+      >
+        {{status}}
+      </div>
+    </div>
+
+    <div class="data">
+      <div>
+        <label>Issue: </label>
+        <p>Missing TAX information</p>
+      </div>
+      <div>
+        <label>Description: </label>
+        <p>
+          The TAX ID entered is not valid. Please double-check with the finance
+          department.
+        </p>
+      </div>
+
+      <div class="edit">
+        <div class="info">
+          <div>
+            <label>Reviewed By: </label>
+            <p>Compliance Team</p>
+          </div>
+          <div>
+            <label>Date: </label>
+            <p>06/21/2025</p>
+          </div>
+        </div>
+
+        <button class="Primary_fill" nz-button *ngIf="canEdit && !editPressed" (click)="editRequest()">
+          {{ "EditRequest" | translate }}
+        </button>
+      </div>
+    </div>
   </div>
 
   <form
@@ -131,7 +187,7 @@
               id="tax"
               formControlName="tax"
               nzPlaceHolder="{{ 'Tax' | translate }}"
-              style="width: 100%;"
+              style="width: 100%"
             >
               <nz-option
                 *ngFor="let taxOption of taxOptions"
@@ -183,7 +239,7 @@
               formControlName="dateFrom"
               [nzFormat]="'yyyy-MM-dd'"
               nzPlaceHolder="{{ 'DateFrom' | translate }}"
-              style="width: 100%;"
+              style="width: 100%"
             ></nz-date-picker>
           </nz-form-control>
         </nz-form-item>
@@ -198,7 +254,7 @@
               formControlName="dateTo"
               [nzFormat]="'yyyy-MM-dd'"
               nzPlaceHolder="{{ 'DateTo' | translate }}"
-              style="width: 100%;"
+              style="width: 100%"
             ></nz-date-picker>
           </nz-form-control>
         </nz-form-item>
@@ -253,7 +309,7 @@
         </nz-form-item>
       </div>
 
-      <div class="btnBox" *ngIf="!canView">
+      <div class="btnBox" *ngIf="editPressed || (!canEdit && !canView)">
         <button class="Primary_fill" nz-button>
           {{ "SendRequest" | translate }}
         </button>

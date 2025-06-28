@@ -16,6 +16,8 @@ export class NewRequestComponent {
   requestForm!: FormGroup;
   canEdit: Boolean = false;
   canView: Boolean = false;
+  status = "Rejected";
+  editPressed = false;
 
   taxOptions = [
     { value: "1", label: "Tax" },
@@ -59,6 +61,13 @@ export class NewRequestComponent {
     this.location.back();
   }
 
+  editRequest(): void {
+    this.editPressed = true;
+    this.requestForm.get("tax")?.enable();
+    this.requestForm.get("identityCountry")?.enable();
+    this.requestForm.get("resbonsible")?.enable();
+  }
+
   ngOnInit(): void {
     this.i18n.setLocale(en_US);
 
@@ -85,18 +94,14 @@ export class NewRequestComponent {
     this.route.queryParams.subscribe((params) => {
       const canEdit = params["edit"] === "true";
       const canView = params["edit"] === "false";
+      const status = params["status"];
 
+      this.status = status;
       this.canEdit = canEdit;
       this.canView = canView;
 
       if (canEdit || canView) {
         this.requestForm.disable();
-
-        if (canEdit) {
-          this.requestForm.get("tax")?.enable();
-          this.requestForm.get("identityCountry")?.enable();
-          this.requestForm.get("resbonsible")?.enable();
-        }
       }
     });
   }
