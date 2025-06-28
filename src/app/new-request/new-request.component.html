@@ -1,5 +1,10 @@
 <div class="main">
-  <img src="assets/img/leftArrow.svg" alt="left arrow" />
+  <div class="titleBox">
+    <button (click)="goBack()" class="back-button">
+      <img src="assets/img/leftArrow.svg" alt="Back" />
+    </button>
+    <h2>{{canEdit ? ("EditRequest" | translate) : canView ? ("ViewRequest" | translate) : ("NewRequest" | translate)}}</h2>
+  </div>
 
   <form
     nz-form
@@ -118,16 +123,23 @@
       <h3>{{ "Identification" | translate }}</h3>
       <div class="row">
         <nz-form-item class="input_holder_full-width w33_33">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="tax" nzRequired>
             {{ "Tax" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24">
-            <input
-              nz-input
+            <nz-select
               id="tax"
               formControlName="tax"
-              placeholder="{{ 'Tax' | translate }}"
-            />
+              nzPlaceHolder="{{ 'Tax' | translate }}"
+              style="width: 100%;"
+            >
+              <nz-option
+                *ngFor="let taxOption of taxOptions"
+                [nzValue]="taxOption.value"
+                [nzLabel]="taxOption.label | translate"
+              >
+              </nz-option>
+            </nz-select>
           </nz-form-control>
         </nz-form-item>
 
@@ -156,6 +168,38 @@
               formControlName="resbonsible"
               placeholder="{{ 'Resbonsible' | translate }}"
             />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="row">
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="dateFrom" nzRequired>
+            {{ "DateFrom" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <nz-date-picker
+              id="dateFrom"
+              formControlName="dateFrom"
+              [nzFormat]="'yyyy-MM-dd'"
+              nzPlaceHolder="{{ 'DateFrom' | translate }}"
+              style="width: 100%;"
+            ></nz-date-picker>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="dateTo" nzRequired>
+            {{ "DateTo" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <nz-date-picker
+              id="dateTo"
+              formControlName="dateTo"
+              [nzFormat]="'yyyy-MM-dd'"
+              nzPlaceHolder="{{ 'DateTo' | translate }}"
+              style="width: 100%;"
+            ></nz-date-picker>
           </nz-form-control>
         </nz-form-item>
       </div>
@@ -209,7 +253,7 @@
         </nz-form-item>
       </div>
 
-      <div class="btnBox">
+      <div class="btnBox" *ngIf="!canView">
         <button class="Primary_fill" nz-button>
           {{ "SendRequest" | translate }}
         </button>

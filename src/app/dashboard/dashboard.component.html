@@ -70,9 +70,7 @@
   </div>
   <div class="dashboardContent">
     <!-- ==== user1 ==== -->
-    <div *ngIf="router.url == '/dashboard/my-requests'">
-      <app-my-requests></app-my-requests>
-    </div>
+
     <div *ngIf="router.url == '/dashboard/ai-assistant'">
       <app-ai-assistant></app-ai-assistant>
     </div>
@@ -84,7 +82,7 @@
     <div *ngIf="router.url == '/dashboard/golden-requests'">
       <app-golden-requests></app-golden-requests>
     </div>
-    <div *ngIf="router.url == '/dashboard/new-request'">
+    <div *ngIf="router.url.includes('/dashboard/new-request')">
       <app-new-request></app-new-request>
     </div>
     <div *ngIf="router.url == '/dashboard/my-requests'">

@@ -36,10 +36,10 @@
           </p>
         </td>
         <td>
-          <a  class="primaryColor" *ngIf="data.status != 'Rejected'">
+          <a  class="primaryColor" *ngIf="data.status != 'Rejected'" (click)="viewOrEditRequest(data.id, false)">
             {{ "ViewDetails" | translate }}
           </a>
-          <a  class="primaryColor" *ngIf="data.status === 'Rejected'">
+          <a  class="primaryColor" *ngIf="data.status === 'Rejected'" (click)="viewOrEditRequest(data.id, true)">
             {{ "FixIssue" | translate }}
           </a>
         </td>

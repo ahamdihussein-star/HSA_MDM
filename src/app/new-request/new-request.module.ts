@@ -9,8 +9,8 @@ import { SidebarModule } from '../sidebar/sidebar.module';
 import { FormsModule, ReactiveFormsModule } from '@angular/forms';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzFormModule } from 'ng-zorro-antd/form';
-
-
+import { NzDatePickerModule } from 'ng-zorro-antd/date-picker';
+import { NzSelectModule } from 'ng-zorro-antd/select';
 @NgModule({
   declarations: [
     NewRequestComponent
@@ -24,7 +24,9 @@ import { NzFormModule } from 'ng-zorro-antd/form';
     FormsModule,
     ReactiveFormsModule,
     NzInputModule,
-    NzFormModule
+    NzFormModule,
+    NzDatePickerModule,
+    NzSelectModule
   ],
   exports: [NewRequestComponent]
 })

@@ -1,19 +1,50 @@
-import { Component } from "@angular/core";
+import { Location } from "@angular/common";
+import { Component, ViewEncapsulation } from "@angular/core";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
+import { ActivatedRoute, Router } from "@angular/router";
+import { TranslateService } from "@ngx-translate/core";
+import { NzI18nService, en_US } from "ng-zorro-antd/i18n";
+import { NzNotificationService } from "ng-zorro-antd/notification";
 
 @Component({
   selector: "app-new-request",
   templateUrl: "./new-request.component.html",
   styleUrl: "./new-request.component.scss",
+  encapsulation: ViewEncapsulation.None,
 })
 export class NewRequestComponent {
   requestForm!: FormGroup;
+  canEdit: Boolean = false;
+  canView: Boolean = false;
 
-  constructor(private fb: FormBuilder) {}
+  taxOptions = [
+    { value: "1", label: "Tax" },
+    { value: "2", label: "Commercial" },
+  ];
+
+  constructor(
+    private fb: FormBuilder,
+    private i18n: NzI18nService,
+    private route: ActivatedRoute,
+    private notification: NzNotificationService,
+    private translate: TranslateService,
+    private router: Router,
+    private location: Location
+  ) {}
 
   onSubmit(): void {
     if (this.requestForm.valid) {
-
+      let toastMessage: string = "New Request is added successfully";
+      if (this.canEdit) {
+        toastMessage = "The Request is edited successfully";
+      }
+      this.translate.get(toastMessage).subscribe((message: string) => {
+        this.notification.create("success", message, "", {
+          nzClass: "success-notification",
+          nzDuration: 5000,
+        });
+        this.router.navigate(["/dashboard/my-requests"]);
+      });
     } else {
       Object.values(this.requestForm.controls).forEach((control) => {
         if (control.invalid) {
@@ -24,7 +55,13 @@ export class NewRequestComponent {
     }
   }
 
+  goBack(): void {
+    this.location.back();
+  }
+
   ngOnInit(): void {
+    this.i18n.setLocale(en_US);
+
     this.requestForm = this.fb.group({
       firstName: [null, Validators.required],
       secondName: [null, Validators.required],
@@ -37,10 +74,30 @@ export class NewRequestComponent {
       tax: [null, Validators.required],
       identityCountry: [null, Validators.required],
       resbonsible: [null, Validators.required],
+      dateFrom: [null, Validators.required],
+      dateTo: [null, Validators.required],
 
       salesOrg: [null, Validators.required],
       distChannel: [null, Validators.required],
-      division: [null, Validators.required]
+      division: [null, Validators.required],
+    });
+
+    this.route.queryParams.subscribe((params) => {
+      const canEdit = params["edit"] === "true";
+      const canView = params["edit"] === "false";
+
+      this.canEdit = canEdit;
+      this.canView = canView;
+
+      if (canEdit || canView) {
+        this.requestForm.disable();
+
+        if (canEdit) {
+          this.requestForm.get("tax")?.enable();
+          this.requestForm.get("identityCountry")?.enable();
+          this.requestForm.get("resbonsible")?.enable();
+        }
+      }
     });
   }
 }

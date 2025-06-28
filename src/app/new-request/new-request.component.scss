@@ -16,6 +16,25 @@
     background-color: #f5f7fa;
   }
 
+  .main {
+    .titleBox {
+      display: flex;
+      gap: 20px;
+      align-items: center;
+      h2 {
+        font-weight: 600;
+        font-size: 1.2rem;
+      }
+      }
+
+      .back-button {
+        background: none;
+        border: none;
+        cursor: pointer;
+        padding: 0;
+      }
+  }
+
   .requestForm {
     padding: 20px 0;
     display: flex;
@@ -57,4 +76,22 @@
 
     }
   }
-  
+
+  .ant-input[disabled] {
+    background-color: #ededed !important;
+  }
+
+  .ant-picker-input > input[disabled] {
+    background-color: #ededed !important;
+    background: #ededed !important;
+  }
+
+  .form_holder .ant-picker.ant-picker-disabled {
+    background-color: #ededed !important;
+    background: #ededed !important;
+  }
+
+  .ant-select-disabled.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+    background-color: #ededed !important;
+    background: #ededed !important;
+  }

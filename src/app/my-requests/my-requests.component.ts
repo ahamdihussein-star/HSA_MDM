@@ -1,13 +1,13 @@
-import { Component } from '@angular/core';
-import { stat } from 'fs';
+import { Component } from "@angular/core";
+import { Router } from "@angular/router";
 
 @Component({
-  selector: 'app-my-requests',
-  templateUrl: './my-requests.component.html',
-  styleUrl: './my-requests.component.scss'
+  selector: "app-my-requests",
+  templateUrl: "./my-requests.component.html",
+  styleUrl: "./my-requests.component.scss",
 })
 export class MyRequestsComponent {
- myRequests: any[] = [
+  myRequests: any[] = [
     {
       id: 1,
       requestId: "CR-2023-0456",
@@ -81,14 +81,19 @@ export class MyRequestsComponent {
       date: "14Dec, 2024",
     },
   ]; // This will hold the quarantined requests data
-  constructor() {}
+  constructor(private router: Router) {}
 
-
-deleteRecodr(index: number): void {
+  deleteRecodr(index: number): void {
     // This method will delete a record from the quarantined requests
     this.myRequests.splice(index, 1);
-     this.myRequests = [...this.myRequests];
-}
+    this.myRequests = [...this.myRequests];
+  }
+
+  viewOrEditRequest(id: number, canEdit: Boolean): void {
+    this.router.navigate(["/dashboard/new-request", id], {
+      queryParams: {edit: canEdit}
+    });
+  }
 
   ngOnInit(): void {
     // Initialization logic can go here
