@@ -1,0 +1,109 @@
+#chart {
+    max-width: 650px;
+    margin: 35px auto;
+    background-color: white;
+    min-height: 450px;
+}
+
+.upperSection {
+    width: 100%;
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+}
+
+.chartHolder {
+    width: 65%;
+}
+
+.summaryHolder {
+    width: 30%;
+}
+
+.sectionHeader {
+    color: Black;
+    font-size: 18px;
+    margin-bottom: 15px;
+}
+
+.chartSection {
+    width: 100%;
+    background-color: white;
+    border-radius: 16px;
+
+}
+
+.summarySection {
+    width: 100%;
+    background-color: white;
+    padding: 28px;
+    border-radius: 16px;
+}
+
+.summaryinfo {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    margin-bottom: 24px;
+}
+
+.summarydetails {
+    display: flex;
+    align-items: flex-start;
+    // justify-content: flex-start;
+    flex-direction: column;
+    margin-left: 20px;
+
+    body.rtl & {
+        margin-left: 0;
+        margin-right: 20px;
+    }
+}
+
+.detailName {
+    color: rgba(109, 104, 117, 0.7);
+    margin-bottom: 8px;
+}
+
+.status-approved {
+    color: #16DBCC;
+    background-color: #41D4A81A;
+}
+
+.status-rejected {
+    color: #EF4444;
+    background-color: #EF44441A;
+
+}
+
+.status-pending {
+    color: #6B5CA5;
+    background-color: #6B5CA51A;
+
+
+}
+
+.status-quarantined {
+    color: #FFBB38;
+    background-color: #FFBB381A;
+}
+
+.generalStatus {
+    width: 105px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+}
+
+.tableSection {
+    margin-top: 35px;
+}
+
+// .arabicCell {
+//     body.rtl & {
+//         display: flex;
+//         justify-content: flex-end;
+//     }
+
+// }

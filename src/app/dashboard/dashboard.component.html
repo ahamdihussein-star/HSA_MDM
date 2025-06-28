@@ -1,12 +1,85 @@
 <app-header></app-header>
 <div class="dashboardContainer mainPageMargin">
   <div class="dashboardNavigation">
-    <app-sidebar></app-sidebar>
+    <div *ngIf="user == '1'">
+      <p class="navTab" [routerLink]="['/dashboard', 'my-task']"
+        [ngClass]="[router.url == '/dashboard/my-task' ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/my-task'" src="assets/img/homeGrey.svg" alt="Home Icon" class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/my-task'" src="assets/img/homeYellow.svg" alt="Home Icon"
+          class="navIcon" />
+
+        {{ "MyTaskList" | translate }}
+      </p>
+      <p class="navTab" [routerLink]="['/dashboard', 'my-requests']"
+        [ngClass]="[router.url == '/dashboard/my-requests' ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/my-requests'" src="assets/img/goldenGrey.svg" alt="Home Icon"
+          class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/my-requests'" src="assets/img/goldenYellow.svg" alt="Home Icon"
+          class="navIcon" />
+        {{ "MyRequests" | translate }}
+      </p>
+    </div>
+    <div *ngIf="user == '2'">
+      <p class="navTab" [routerLink]="['/dashboard', 'home']"
+        [ngClass]="[router.url == '/dashboard/home' ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/home'" src="assets/img/homeGrey.svg" alt="Home Icon" class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/home'" src="assets/img/homeYellow.svg" alt="Home Icon" class="navIcon" />
+        {{ "Home" | translate }}
+      </p>
+      <p class="navTab" [routerLink]="['/dashboard', 'quarantined-requests']"
+        [ngClass]="[router.url == '/dashboard/quarantined-requests' ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/quarantined-requests'" src="assets/img/quarantinedGrey.svg"
+          alt="quarantined Icon" class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/quarantined-requests'" src="assets/img/quarantinedYellow.svg"
+          alt="quarantined Icon" class="navIcon" />
+        {{ "QuarantinedRequests" | translate }}
+      </p>
+      <p class="navTab" [routerLink]="['/dashboard', 'golden-requests']"
+        [ngClass]="[router.url == '/dashboard/golden-requests' ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/golden-requests'" src="assets/img/goldenGrey.svg" alt="Home Icon"
+          class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/golden-requests'" src="assets/img/goldenYellow.svg" alt="Home Icon"
+          class="navIcon" />
+        {{ "GoldenRequests" | translate }}
+      </p>
+      <p class="navTab" [routerLink]="['/dashboard', 'duplicate-requests']"
+        [ngClass]="[router.url == '/dashboard/duplicate-requests' ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/duplicate-requests'" src="assets/img/duplicateGrey.svg" alt="Home Icon"
+          class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/duplicate-requests'" src="assets/img/duplicateYellow.svg" alt="Home Icon"
+          class="navIcon" />
+        {{ "DuplicateRequests" | translate }}
+      </p>
+      <p class="navTab" [routerLink]="['/dashboard', 'rejected-requests']"
+        [ngClass]="[router.url == '/dashboard/rejected-requests' ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/rejected-requests'" src="assets/img/rejectedGrey.svg" alt="rejected Icon"
+          class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/rejected-requests'" src="assets/img/rejectedYellow.svg"
+          alt="rejected Icon" class="navIcon" />
+        {{ "RejectedRequests" | translate }}
+      </p>
+      <p class="navTab" [routerLink]="['/dashboard', 'pending-requests']"
+        [ngClass]="[router.url == '/dashboard/pending-requests' ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/pending-requests'" src="assets/img/pendingGrey.svg" alt="pending Icon"
+          class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/pending-requests'" src="assets/img/pendingYellow.svg" alt="pending Icon"
+          class="navIcon" />
+        {{ "PendingRequests" | translate }}
+      </p>
+    </div>
   </div>
   <div class="dashboardContent">
-    
+    <!-- ==== user1 ==== -->
+    <div *ngIf="router.url == '/dashboard/my-requests'">
+      <app-my-requests></app-my-requests>
+    </div>
+    <div *ngIf="router.url == '/dashboard/ai-assistant'">
+      <app-ai-assistant></app-ai-assistant>
+    </div>
+
+    <!-- ==== user2 ==== -->
     <div *ngIf="router.url == '/dashboard/quarantined-requests'">
-        <app-quarantined-requests></app-quarantined-requests>
+      <app-quarantined-requests></app-quarantined-requests>
     </div>
     <div *ngIf="router.url == '/dashboard/golden-requests'">
       <app-golden-requests></app-golden-requests>
@@ -16,6 +89,9 @@
     </div>
     <div *ngIf="router.url == '/dashboard/my-requests'">
       <app-my-requests></app-my-requests>
+      </div>
+    <div *ngIf="router.url == '/dashboard/home'">
+      <app-home></app-home>
     </div>
   </div>
 </div>

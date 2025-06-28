@@ -21,6 +21,8 @@
     "@ctrl/tinycolor": "^4.1.0",
     "@ngx-translate/core": "^16.0.4",
     "@ngx-translate/http-loader": "^16.0.1",
+    "apexcharts": "^3.54.1",
+    "ng-apexcharts": "^1.7.4",
     "ng-zorro-antd": "^17.4.1",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
@@ -40,5 +42,10 @@
     "karma-jasmine": "~5.1.0",
     "karma-jasmine-html-reporter": "~2.1.0",
     "typescript": "~5.4.2"
+  },
+  "overrides": {
+    "critters": {
+      "css-select": "5.1.0"
+    }
   }
 }

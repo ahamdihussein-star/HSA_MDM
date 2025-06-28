@@ -8,6 +8,8 @@ import {HeaderModule} from '../header/header.module';
 import { QuarantinedRequestsModule } from '../quarantined-requests/quarantined-requests.module';
 import { GoldenRequestsModule } from '../golden-requests/golden-requests.module';
 import { MyRequestsModule } from '../my-requests/my-requests.module';
+import { HomeModule } from '../home/home.module';
+import { AiAssistantModule } from '../ai-assistant/ai-assistant.module';
 
 import { TranslateModule } from '@ngx-translate/core';
 import { SidebarModule } from '../sidebar/sidebar.module';
@@ -26,7 +28,10 @@ import { NewRequestModule } from '../new-request/new-request.module';
     GoldenRequestsModule,
     SidebarModule,
     NewRequestModule,
-    MyRequestsModule
+    MyRequestsModule,
+    HomeModule,
+    MyRequestsModule, 
+    AiAssistantModule
   ]
 })
 export class DashboardModule { }

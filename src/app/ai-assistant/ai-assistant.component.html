@@ -1,0 +1,17 @@
+<h1 class="pageTitle">
+    {{ "AIAssistant" | translate }}
+</h1>
+<div #chatContainer class="chat-container">
+  <div class="chat-message" *ngFor="let message of messages" [ngClass]="message.from === 'bot' ? '' : 'user-reverse'">
+    <img *ngIf="message.from === 'bot'" src="assets/img/aiIcon.svg" alt="AI Assistant" class="bot-avatar" />
+    <div [ngClass]="message.from === 'bot' ? 'bot-message' : 'user-message'">
+        
+      {{ message.text | translate }}
+    </div>
+  </div>
+
+  <form (ngSubmit)="sendMessage()" class="submitHolder">
+    <input [(ngModel)]="currentInput" name="input" placeholder="{{'WriteSomething'|translate}}" />
+    <button class="Primary_fill" type="submit">{{"Submit"|translate}}</button>
+  </form>
+</div>
