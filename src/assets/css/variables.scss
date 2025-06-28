@@ -112,6 +112,10 @@
   border-radius: 10px;
   cursor: grab;
 }
-.deleteColor{
+.deleteColor, .deleteColor:hover{
   color: #EF4444;
+
+}
+.primaryColor, .primaryColor:hover{
+  color: #CBA51C;
 }

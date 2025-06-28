@@ -22,22 +22,22 @@
         {{ "MyTaskList" | translate }}
       </p>
       <p class="navTab" 
-        [routerLink]="['/dashboard', 'all-requests']"
-      [ngClass]="[router.url == '/dashboard/all-requests' ? 'activeTab' : '']"
+        [routerLink]="['/dashboard', 'my-requests']"
+      [ngClass]="[router.url == '/dashboard/my-requests' ? 'activeTab' : '']"
       >
         <img
-          *ngIf="router.url != '/dashboard/all-requests'"
+          *ngIf="router.url != '/dashboard/my-requests'"
           src="assets/img/goldenGrey.svg"
           alt="Home Icon"
           class="navIcon"
         />
         <img
-          *ngIf="router.url == '/dashboard/all-requests'"
+          *ngIf="router.url == '/dashboard/my-requests'"
           src="assets/img/goldenYellow.svg"
           alt="Home Icon"
           class="navIcon"
         />
-        {{ "AllRequests" | translate }}
+        {{ "MyRequests" | translate }}
       </p>
     </div>
     <div *ngIf="user == '2'">
@@ -152,6 +152,12 @@
     </div>
   </div>
   <div class="dashboardContent">
+    <!-- ==== user1 ==== -->
+    <div *ngIf="router.url == '/dashboard/my-requests'">
+      <app-my-requests></app-my-requests>
+    </div>
+
+    <!-- ==== user2 ==== -->
     <div *ngIf="router.url == '/dashboard/quarantined-requests'">
         <app-quarantined-requests></app-quarantined-requests>
     </div>
