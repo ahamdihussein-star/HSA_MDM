@@ -10,6 +10,7 @@
     "ForgotPassword": "Forgot Password?",
     "MasterDataManagementHub": "Master Data Management Hub",
     "AllRequests": "All Requests",
+    "MyRequests": "My Requests",
     "MyTaskList": "My Task List",
     "QuarantinedRequests": "Quarantined Requests",
     "GoldenRequests": "Golden Requests",
@@ -40,5 +41,15 @@
     "SalesORG": "Sales ORG",
     "DistributionChannel": "Distribution Channel",
     "Division": "Division",
-    "SendRequest": "Send Request"
+    "SendRequest": "Send Request",
+    "Delete":"Delete",
+    "Status":"Status",
+    "Approved":"Approved",
+    "Rejected":"Rejected",
+    "Pending":"Pending",
+    "Quarantined":"Quarantined",
+    "ViewDetails":"View Details",
+    "FixIssue":"Fix Issue",
+
+    "":""
 }

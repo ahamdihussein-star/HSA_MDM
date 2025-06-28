@@ -1,17 +1,19 @@
 import { Component } from '@angular/core';
+import { stat } from 'fs';
 
 @Component({
-  selector: 'app-golden-requests',
-  templateUrl: './golden-requests.component.html',
-  styleUrl: './golden-requests.component.scss'
+  selector: 'app-my-requests',
+  templateUrl: './my-requests.component.html',
+  styleUrl: './my-requests.component.scss'
 })
-export class GoldenRequestsComponent {
- goldenRequests: any[] = [
+export class MyRequestsComponent {
+ myRequests: any[] = [
     {
       id: 1,
       requestId: "CR-2023-0456",
       customerName: "Salma Mustafa",
       submittedBy: "User A",
+      status: "Pending",
       date: "14Dec, 2024",
     },
     {
@@ -19,6 +21,7 @@ export class GoldenRequestsComponent {
       requestId: "CR-2023-0456",
       customerName: "Salma Mustafa",
       submittedBy: "User A",
+      status: "Approved",
       date: "14Dec, 2024",
     },
     {
@@ -26,6 +29,7 @@ export class GoldenRequestsComponent {
       requestId: "CR-2023-0456",
       customerName: "Salma Mustafa",
       submittedBy: "User A",
+      status: "Rejected",
       date: "14Dec, 2024",
     },
     {
@@ -33,6 +37,7 @@ export class GoldenRequestsComponent {
       requestId: "CR-2023-0456",
       customerName: "Salma Mustafa",
       submittedBy: "User A",
+      status: "Pending",
       date: "14Dec, 2024",
     },
     {
@@ -40,6 +45,7 @@ export class GoldenRequestsComponent {
       requestId: "CR-2023-0456",
       customerName: "Salma Mustafa",
       submittedBy: "User A",
+      status: "Quarantined",
       date: "14Dec, 2024",
     },
     {
@@ -47,6 +53,7 @@ export class GoldenRequestsComponent {
       requestId: "CR-2023-0456",
       customerName: "Salma Mustafa",
       submittedBy: "User A",
+      status: "Pending",
       date: "14Dec, 2024",
     },
     {
@@ -54,6 +61,7 @@ export class GoldenRequestsComponent {
       requestId: "CR-2023-0456",
       customerName: "Salma Mustafa",
       submittedBy: "User A",
+      status: "Approved",
       date: "14Dec, 2024",
     },
     {
@@ -61,6 +69,7 @@ export class GoldenRequestsComponent {
       requestId: "CR-2023-0456",
       customerName: "Salma Mustafa",
       submittedBy: "User A",
+      status: "Rejected",
       date: "14Dec, 2024",
     },
     {
@@ -68,6 +77,7 @@ export class GoldenRequestsComponent {
       requestId: "CR-2023-0456",
       customerName: "Salma Mustafa",
       submittedBy: "User A",
+      status: "Approved",
       date: "14Dec, 2024",
     },
   ]; // This will hold the quarantined requests data
@@ -76,10 +86,8 @@ export class GoldenRequestsComponent {
 
 deleteRecodr(index: number): void {
     // This method will delete a record from the quarantined requests
-    this.goldenRequests.splice(index, 1);
-    this.goldenRequests = [...this.goldenRequests]; // Trigger change detection
-   
-
+    this.myRequests.splice(index, 1);
+     this.myRequests = [...this.myRequests];
 }
 
   ngOnInit(): void {

@@ -12,6 +12,7 @@
     "MasterDataManagementHub":"مركز إدارة البيانات الرئيسية",
     "MyTaskList":"قائمة مهامي",
     "AllRequests":"جميع الطلب",
+    "MyRequests":"طلباتي",
     "QuarantinedRequests":"الطلبات المعزولة",
     "GoldenRequests":"الطلبات الذهبية",
     "DuplicateRequests":"الطلبات المكررة",
@@ -41,5 +42,14 @@
     "SalesORG": "منظمة المبيعات",
     "DistributionChannel": "قناة التوزيع",
     "Division": "القسم",
-    "SendRequest": "ارسال طلب"
+    "SendRequest": "ارسال طلب",
+    "Delete":"حذف",
+    "Status":"الحالة",
+    "Approved":"موافق",
+    "Rejected":"مرفوض",
+    "Pending":"معلق",
+    "Quarantined":"معزول",
+    "ViewDetails":"عرض التفاصيل",
+    "FixIssue":"إصلاح المشكلة",
+    "":""
 }

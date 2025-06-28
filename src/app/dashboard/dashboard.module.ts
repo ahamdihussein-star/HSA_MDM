@@ -7,6 +7,7 @@ import { DashboardComponent } from './dashboard.component';
 import {HeaderModule} from '../header/header.module';
 import { QuarantinedRequestsModule } from '../quarantined-requests/quarantined-requests.module';
 import { GoldenRequestsModule } from '../golden-requests/golden-requests.module';
+import { MyRequestsModule } from '../my-requests/my-requests.module';
 
 import { TranslateModule } from '@ngx-translate/core';
 import { SidebarModule } from '../sidebar/sidebar.module';
@@ -24,7 +25,8 @@ import { NewRequestModule } from '../new-request/new-request.module';
     QuarantinedRequestsModule,
     GoldenRequestsModule,
     SidebarModule,
-    NewRequestModule
+    NewRequestModule,
+    MyRequestsModule
   ]
 })
 export class DashboardModule { }
