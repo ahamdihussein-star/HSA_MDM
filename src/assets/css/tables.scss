@@ -44,6 +44,22 @@
 .ant-table-thead > tr > th{
     font-weight: bold;
     font-size: 16px;
+    body.rtl &{
+        text-align: right;
+    }
+}
+.ant-table table{
+    body.rtl &{
+        text-align: right;
+    }
+}
+.ant-pagination-next .ant-pagination-item-link, .ant-pagination-prev .ant-pagination-item-link{
+    body.rtl &{
+       transform: scaleX(-1);
+    }
+}
+.ant-pagination-item a{
+    text-align: center !important;
 }
 
 // This is a custom style for the tabs
@@ -61,3 +77,4 @@
 .ant-tabs-bottom > .ant-tabs-nav::before, .ant-tabs-bottom > div > .ant-tabs-nav::before, .ant-tabs-top > .ant-tabs-nav::before, .ant-tabs-top > div > .ant-tabs-nav::before{
     border-bottom: 1px solid #EBEEF2;
 }
+
