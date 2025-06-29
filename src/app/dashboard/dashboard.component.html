@@ -70,10 +70,10 @@
   </div>
   <div class="dashboardContent">
     <!-- ==== user1 ==== -->
-
-    <div *ngIf="router.url == '/dashboard/ai-assistant'">
+    <div *ngIf="user == '1'">
       <app-ai-assistant></app-ai-assistant>
     </div>
+    
     <div *ngIf="router.url == '/dashboard/my-task'">
       <app-my-task-list></app-my-task-list>
     </div>
