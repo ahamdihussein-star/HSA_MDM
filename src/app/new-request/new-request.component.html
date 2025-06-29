@@ -1,0 +1,319 @@
+<div class="main">
+  <div class="titleBox">
+    <button (click)="goBack()" class="back-button">
+      <img src="assets/img/leftArrow.svg" alt="Back" />
+    </button>
+    <h2>
+      {{
+        canEdit
+          ? ("EditRequest" | translate)
+          : canView
+          ? ("ViewRequest" | translate)
+          : ("NewRequest" | translate)
+      }}
+    </h2>
+  </div>
+
+  <div class="summary" *ngIf="canEdit || canView">
+    <div class="statusBox">
+      <h2>{{ "RequestStatus" | translate }}</h2>
+      <div
+        class="status"
+        [ngClass]="{
+          'status-approved': status === 'Approved',
+          'status-pending': status === 'Pending',
+          'status-rejected': status === 'Rejected',
+          'status-quarantined': status === 'Quarantined'
+        }"
+      >
+        {{status}}
+      </div>
+    </div>
+
+    <div class="data">
+      <div>
+        <label>Issue: </label>
+        <p>Missing TAX information</p>
+      </div>
+      <div>
+        <label>Description: </label>
+        <p>
+          The TAX ID entered is not valid. Please double-check with the finance
+          department.
+        </p>
+      </div>
+
+      <div class="edit">
+        <div class="info">
+          <div>
+            <label>Reviewed By: </label>
+            <p>Compliance Team</p>
+          </div>
+          <div>
+            <label>Date: </label>
+            <p>06/21/2025</p>
+          </div>
+        </div>
+
+        <button class="Primary_fill" nz-button *ngIf="canEdit && !editPressed" (click)="editRequest()">
+          {{ "EditRequest" | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <form
+    nz-form
+    [formGroup]="requestForm"
+    (ngSubmit)="onSubmit()"
+    class="form_holder requestForm"
+  >
+    <div class="generalData">
+      <h3>{{ "GeneralData" | translate }}</h3>
+      <div class="row">
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "FirstName" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="firstName"
+              formControlName="firstName"
+              placeholder="John"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "SecondName" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="secondName"
+              formControlName="secondName"
+              placeholder="Doe"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="row">
+        <nz-form-item class="input_holder_full-width w70">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Street" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="street"
+              formControlName="street"
+              placeholder="Harm, Giza"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width w30">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "PostalCode" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="postalCode"
+              formControlName="postalCode"
+              placeholder="{{ 'PostalCode' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="row">
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "City" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="city"
+              formControlName="city"
+              placeholder="{{ 'City' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Region" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="region"
+              formControlName="region"
+              placeholder="{{ 'Region' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Country" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="country"
+              formControlName="country"
+              placeholder="{{ 'Country' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+
+    <div class="generalData">
+      <h3>{{ "Identification" | translate }}</h3>
+      <div class="row">
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="tax" nzRequired>
+            {{ "Tax" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <nz-select
+              id="tax"
+              formControlName="tax"
+              nzPlaceHolder="{{ 'Tax' | translate }}"
+              style="width: 100%"
+            >
+              <nz-option
+                *ngFor="let taxOption of taxOptions"
+                [nzValue]="taxOption.value"
+                [nzLabel]="taxOption.label | translate"
+              >
+              </nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Country" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="identityCountry"
+              formControlName="identityCountry"
+              placeholder="{{ 'Country' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Resbonsible" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="resbonsible"
+              formControlName="resbonsible"
+              placeholder="{{ 'Resbonsible' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="row">
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="dateFrom" nzRequired>
+            {{ "DateFrom" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <nz-date-picker
+              id="dateFrom"
+              formControlName="dateFrom"
+              [nzFormat]="'yyyy-MM-dd'"
+              nzPlaceHolder="{{ 'DateFrom' | translate }}"
+              style="width: 100%"
+            ></nz-date-picker>
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="dateTo" nzRequired>
+            {{ "DateTo" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <nz-date-picker
+              id="dateTo"
+              formControlName="dateTo"
+              [nzFormat]="'yyyy-MM-dd'"
+              nzPlaceHolder="{{ 'DateTo' | translate }}"
+              style="width: 100%"
+            ></nz-date-picker>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+
+    <div class="generalData">
+      <h3>{{ "SalesArea" | translate }}</h3>
+      <div class="row">
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "SalesORG" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="salesOrg"
+              formControlName="salesOrg"
+              placeholder="{{ 'SalesORG' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="row">
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "DistributionChannel" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="distChannel"
+              formControlName="distChannel"
+              placeholder="{{ 'DistributionChannel' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
+            {{ "Division" | translate }}
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input
+              nz-input
+              id="division"
+              formControlName="division"
+              placeholder="{{ 'Division' | translate }}"
+            />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+
+      <div class="btnBox" *ngIf="editPressed || (!canEdit && !canView)">
+        <button class="Primary_fill" nz-button>
+          {{ "SendRequest" | translate }}
+        </button>
+      </div>
+    </div>
+  </form>
+</div>

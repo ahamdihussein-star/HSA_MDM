@@ -1,0 +1,181 @@
+.dashboardContainer {
+  display: flex;
+  height: calc(100vh - 85px);
+  overflow: hidden;
+  width: 100%;
+}
+
+.dashboardNavigation {
+  width: 26%;
+  padding-top: 30px;
+  overflow-y: scroll;
+}
+
+.dashboardContent {
+  width: 74%;
+  overflow-y: scroll;
+  padding: 30px;
+  background-color: #f5f7fa;
+}
+
+.main {
+  .titleBox {
+    display: flex;
+    gap: 20px;
+    align-items: center;
+
+    h2 {
+      font-weight: 600;
+      font-size: 1.2rem;
+    }
+  }
+
+  .back-button {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 0;
+  }
+
+  .summary {
+    background-color: white;
+    padding: 30px;
+    border-radius: 25px;
+    margin-top: 18px;
+
+    .statusBox {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 20px;
+
+      h2 {
+        font-size: 1.2rem;
+        font-weight: 600;
+      }
+
+      .status {
+        width: 105px;
+        height: 30px;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        font-weight: 600;
+      }
+
+      
+      .status-approved {
+        color: #16DBCC;
+        background-color: #41D4A81A;
+      }
+
+      .status-rejected {
+        color: #EF4444;
+        background-color: #EF44441A;
+      }
+
+      .status-pending {
+        color: #6B5CA5;
+        background-color: #6B5CA51A;
+      }
+
+      .status-quarantined {
+        color: #FFBB38;
+        background-color: #FFBB381A;
+      }
+   
+    }
+    .data {
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+      div {
+        display: flex;
+        gap: 10px;
+
+        label {
+          font-weight: 600;
+        }
+      }
+
+      .edit {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        .info {
+          display: flex;
+          flex-direction: column;
+          gap: 20px;
+        }
+        button {
+          width: 15%;
+        }
+      }
+    }
+  }
+}
+
+.requestForm {
+  padding: 20px 0;
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+
+  .w50 {
+    width: 50%;
+  }
+
+  .w70 {
+    width: 70%;
+  }
+
+  .w30 {
+    width: 30%;
+  }
+
+  .w33_33 {
+    width: 33.33%;
+  }
+
+  .generalData {
+    background-color: white;
+    padding: 30px;
+    border-radius: 20px;
+    width: 100%;
+
+    h3 {
+      font-size: 1.2rem;
+      font-weight: 600;
+      margin-bottom: 10px;
+    }
+
+    .row {
+      display: flex;
+      width: 100%;
+      gap: 30px;
+    }
+
+    .btnBox {
+      text-align: end;
+    }
+  }
+}
+
+.ant-input[disabled] {
+  background-color: #ededed !important;
+}
+
+.ant-picker-input>input[disabled] {
+  background-color: #ededed !important;
+  background: #ededed !important;
+}
+
+.form_holder .ant-picker.ant-picker-disabled {
+  background-color: #ededed !important;
+  background: #ededed !important;
+}
+
+.ant-select-disabled.ant-select:not(.ant-select-customize-input) .ant-select-selector {
+  background-color: #ededed !important;
+  background: #ededed !important;
+}

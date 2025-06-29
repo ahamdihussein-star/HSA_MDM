@@ -16,7 +16,13 @@ const routes: Routes = [
   { path: 'golden-requests', loadChildren: () => import('./golden-requests/golden-requests.module').then(m => m.GoldenRequestsModule) },
   { path: 'my-requests', loadChildren: () => import('./my-requests/my-requests.module').then(m => m.MyRequestsModule) },
   { path: 'home', loadChildren: () => import('./home/home.module').then(m => m.HomeModule) },
-  
+  { path: 'ai-assistant', loadChildren: () => import('./ai-assistant/ai-assistant.module').then(m => m.AiAssistantModule) },
+  {
+    path: "dashboard/new-request/:id",
+    loadChildren: () =>
+      import("./dashboard/dashboard.module").then((m) => m.DashboardModule),
+  },
+  { path: 'my-task-list', loadChildren: () => import('./my-task-list/my-task-list.module').then(m => m.MyTaskListModule) },
 ];
 
 @NgModule({

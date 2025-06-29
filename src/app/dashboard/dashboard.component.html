@@ -12,9 +12,9 @@
       </p>
       <p class="navTab" [routerLink]="['/dashboard', 'my-requests']"
         [ngClass]="[router.url == '/dashboard/my-requests' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/my-requests'" src="assets/img/goldenGrey.svg" alt="Home Icon"
+        <img *ngIf="router.url != '/dashboard/my-requests'" src="assets/img/MyRequestsGrey.svg" alt="Home Icon"
           class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/my-requests'" src="assets/img/goldenYellow.svg" alt="Home Icon"
+        <img *ngIf="router.url == '/dashboard/my-requests'" src="assets/img/MyRequestsYellow.svg" alt="Home Icon"
           class="navIcon" />
         {{ "MyRequests" | translate }}
       </p>
@@ -70,8 +70,12 @@
   </div>
   <div class="dashboardContent">
     <!-- ==== user1 ==== -->
-    <div *ngIf="router.url == '/dashboard/my-requests'">
-      <app-my-requests></app-my-requests>
+
+    <div *ngIf="router.url == '/dashboard/ai-assistant'">
+      <app-ai-assistant></app-ai-assistant>
+    </div>
+    <div *ngIf="router.url == '/dashboard/my-task'">
+      <app-my-task-list></app-my-task-list>
     </div>
 
     <!-- ==== user2 ==== -->
@@ -81,6 +85,12 @@
     <div *ngIf="router.url == '/dashboard/golden-requests'">
       <app-golden-requests></app-golden-requests>
     </div>
+    <div *ngIf="router.url.includes('/dashboard/new-request')">
+      <app-new-request></app-new-request>
+    </div>
+    <div *ngIf="router.url == '/dashboard/my-requests'">
+      <app-my-requests></app-my-requests>
+      </div>
     <div *ngIf="router.url == '/dashboard/home'">
       <app-home></app-home>
     </div>

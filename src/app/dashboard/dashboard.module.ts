@@ -9,8 +9,12 @@ import { QuarantinedRequestsModule } from '../quarantined-requests/quarantined-r
 import { GoldenRequestsModule } from '../golden-requests/golden-requests.module';
 import { MyRequestsModule } from '../my-requests/my-requests.module';
 import { HomeModule } from '../home/home.module';
+import { AiAssistantModule } from '../ai-assistant/ai-assistant.module';
 
 import { TranslateModule } from '@ngx-translate/core';
+import { SidebarModule } from '../sidebar/sidebar.module';
+import { NewRequestModule } from '../new-request/new-request.module';
+import { MyTaskListModule } from '../my-task-list/my-task-list.module';
 
 @NgModule({
   declarations: [
@@ -23,9 +27,13 @@ import { TranslateModule } from '@ngx-translate/core';
     TranslateModule,
     QuarantinedRequestsModule,
     GoldenRequestsModule,
+    SidebarModule,
+    NewRequestModule,
     MyRequestsModule,
-    HomeModule
-
+    HomeModule,
+    MyRequestsModule, 
+    AiAssistantModule,
+    MyTaskListModule
   ]
 })
 export class DashboardModule { }
