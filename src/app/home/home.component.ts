@@ -124,6 +124,8 @@ export class HomeComponent {
   public chartOptions: ChartOptions;
   lang: any;
   constructor() {
+    this.lang = localStorage.getItem("lang")
+    console.log(this.lang,"LOLOLOLOLOLOLOLOL")
     this.chartOptions = {
       series: [
         {
