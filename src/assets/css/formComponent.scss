@@ -57,7 +57,7 @@
     text-transform: capitalize;
     color: #B1B1B1;
     body.ltr & {
-      font-family: "Poppins-Regular";
+      font-family: "Inter-Regular";
     }
 
     body.rtl &{
@@ -92,7 +92,7 @@
   color: #000;
   line-height: 29px;
   margin-bottom: 3px;
-  font-family: "Poppins-Medium";
+  font-family: "Inter-Medium";
   body.rtl &{
     font-family: "Neo-Medium";
   }

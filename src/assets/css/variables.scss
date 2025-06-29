@@ -56,6 +56,17 @@
     src: url("./../fonts/Poppins-Medium.ttf") format("opentype");
     font-display: swap;
   }
+
+   @font-face {
+    font-family: "Inter-Regular";
+    src: url("./../fonts/Inter-Regular.ttf") format("opentype");
+    font-display: swap;
+  }
+  @font-face {
+    font-family: "Inter-Medium";
+    src: url("./../fonts/Inter-Medium.ttf") format("opentype");
+    font-display: swap;
+  }
   
   body {
     height: unset;
@@ -71,7 +82,7 @@
   body.ltr p,
   body.ltr span,
   body.ltr {
-    font-family: "Poppins-Regular";
+    font-family: "Inter-Regular";
   }
   body.rtl button,
   body.rtl input,
