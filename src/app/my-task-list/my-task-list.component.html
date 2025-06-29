@@ -1,13 +1,15 @@
+
+<h3 class="welcomeMessage"> 
+    {{"WelcomeBack" | translate}}, Ahmed!
+    <img src="assets/img/waving.svg" alt="Welcome Icon" class="welcomeIcon" />
+</h3>
+<p class="subMessage">{{"HereIsYourTasksForToday"|translate}}</p>
 <h1 class="pageTitle">
-    {{ "GoldenRequests" | translate }}
+    {{ "MyTaskList" | translate }}
 </h1>
 <div>
-    <nz-tabset>
-      <nz-tab nzTitle="{{'CustomerRequests'|translate}}"></nz-tab>
-      <nz-tab nzTitle="{{'ProductRequests'|translate}}"></nz-tab>
-      <nz-tab nzTitle="{{'SupplierRequets'|translate}}"></nz-tab>
-    </nz-tabset>
-    <nz-table #basicTable [nzPageSize]="7" [nzData]="goldenRequests">
+ 
+    <nz-table #basicTable [nzPageSize]="7" [nzData]="taskList">
       <thead>
         <tr>
           <th>{{"RequestID"|translate}}</th>
@@ -24,8 +26,8 @@
           <td>
             <!-- <a>{{data.id}}</a> -->
            
-          <a  class="primaryColor"  >
-            {{ "DataLineage" | translate }}
+             <a  class="primaryColor"  >
+            {{ "FixIssue" | translate }}
           </a>
           </td>
         </tr>

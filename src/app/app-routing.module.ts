@@ -22,6 +22,7 @@ const routes: Routes = [
     loadChildren: () =>
       import("./dashboard/dashboard.module").then((m) => m.DashboardModule),
   },
+  { path: 'my-task-list', loadChildren: () => import('./my-task-list/my-task-list.module').then(m => m.MyTaskListModule) },
 ];
 
 @NgModule({

@@ -14,6 +14,7 @@ import { AiAssistantModule } from '../ai-assistant/ai-assistant.module';
 import { TranslateModule } from '@ngx-translate/core';
 import { SidebarModule } from '../sidebar/sidebar.module';
 import { NewRequestModule } from '../new-request/new-request.module';
+import { MyTaskListModule } from '../my-task-list/my-task-list.module';
 
 @NgModule({
   declarations: [
@@ -31,7 +32,8 @@ import { NewRequestModule } from '../new-request/new-request.module';
     MyRequestsModule,
     HomeModule,
     MyRequestsModule, 
-    AiAssistantModule
+    AiAssistantModule,
+    MyTaskListModule
   ]
 })
 export class DashboardModule { }
