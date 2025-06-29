@@ -15,6 +15,8 @@ import { TranslateModule } from '@ngx-translate/core';
 import { SidebarModule } from '../sidebar/sidebar.module';
 import { NewRequestModule } from '../new-request/new-request.module';
 import { MyTaskListModule } from '../my-task-list/my-task-list.module';
+import { DuplicateRecordsModule } from '../duplicate-records/duplicate-records.module';
+import { DuplicateCustomerModule } from '../duplicate-customer/duplicate-customer.module';
 
 @NgModule({
   declarations: [
@@ -33,7 +35,10 @@ import { MyTaskListModule } from '../my-task-list/my-task-list.module';
     HomeModule,
     MyRequestsModule, 
     AiAssistantModule,
-    MyTaskListModule
+    MyTaskListModule,
+    DuplicateRecordsModule ,
+    DuplicateCustomerModule
+
   ]
 })
 export class DashboardModule { }

@@ -1,0 +1,12 @@
+.btnContainer {
+        display: flex;
+        justify-content: flex-end;
+        margin-top: 20px;
+    
+        .Primary_fill:disabled {
+            background: #E7E4E8CC;
+            color: #99959E;
+            cursor: not-allowed;
+        
+        }
+    }

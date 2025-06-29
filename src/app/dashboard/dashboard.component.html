@@ -43,10 +43,13 @@
         {{ "GoldenRequests" | translate }}
       </p>
       <p class="navTab" [routerLink]="['/dashboard', 'duplicate-requests']"
-        [ngClass]="[router.url == '/dashboard/duplicate-requests' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/duplicate-requests'" src="assets/img/duplicateGrey.svg" alt="Home Icon"
+        [ngClass]="[router.url == '/dashboard/duplicate-requests' || 
+        router.url == '/dashboard/duplicate-customer'  ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/duplicate-requests' &&
+        router.url != '/dashboard/duplicate-customer'" src="assets/img/duplicateGrey.svg" alt="Home Icon"
           class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/duplicate-requests'" src="assets/img/duplicateYellow.svg" alt="Home Icon"
+        <img *ngIf="router.url == '/dashboard/duplicate-requests' || 
+        router.url == '/dashboard/duplicate-customer'" src="assets/img/duplicateYellow.svg" alt="Home Icon"
           class="navIcon" />
         {{ "DuplicateRequests" | translate }}
       </p>
@@ -93,6 +96,12 @@
       </div>
     <div *ngIf="router.url == '/dashboard/home'">
       <app-home></app-home>
+    </div>
+    <div *ngIf="router.url == '/dashboard/duplicate-requests'">
+      <app-duplicate-records></app-duplicate-records>
+    </div>
+    <div *ngIf="router.url == '/dashboard/duplicate-customer'">
+      <app-duplicate-customer></app-duplicate-customer>
     </div>
   </div>
 </div>
