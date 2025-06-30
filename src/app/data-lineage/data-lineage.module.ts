@@ -4,6 +4,8 @@ import { CommonModule } from '@angular/common';
 import { DataLineageRoutingModule } from './data-lineage-routing.module';
 import { DataLineageComponent } from './data-lineage.component';
 
+import { TranslateModule } from '@ngx-translate/core';
+import { NzTableModule } from 'ng-zorro-antd/table';
 
 @NgModule({
   declarations: [
@@ -11,7 +13,12 @@ import { DataLineageComponent } from './data-lineage.component';
   ],
   imports: [
     CommonModule,
-    DataLineageRoutingModule
-  ]
+    DataLineageRoutingModule,
+    TranslateModule,
+    NzTableModule
+  ],
+  exports: [
+    DataLineageComponent
+  ],
 })
 export class DataLineageModule { }

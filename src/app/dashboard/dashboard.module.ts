@@ -18,6 +18,7 @@ import { DuplicateRecordsModule } from '../duplicate-records/duplicate-records.m
 import { DuplicateCustomerModule } from '../duplicate-customer/duplicate-customer.module';
 
 import { AdminTaskListModule } from '../admin-task-list/admin-task-list.module';
+import{ DataLineageModule } from '../data-lineage/data-lineage.module';
 
 import { RejectedModule } from '../rejected/rejected.module';
 
@@ -41,7 +42,8 @@ import { RejectedModule } from '../rejected/rejected.module';
     AdminTaskListModule,
     DuplicateRecordsModule,
     DuplicateCustomerModule,
-    RejectedModule
+    RejectedModule,
+    DataLineageModule
 
   ]
 })

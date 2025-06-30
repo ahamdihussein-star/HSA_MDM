@@ -30,7 +30,7 @@ export class LoginComponent {
       } else if (emailValue && emailValue.includes('admin')) {
   
         localStorage.setItem('user', "2");
-        this.router.navigate(["/dashboard", "home"]);
+        this.router.navigate(["/dashboard", "admin-task-list"]);
       }
 
     } else {

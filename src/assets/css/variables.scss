@@ -134,4 +134,9 @@
   display: flex;
   align-items: center;
   gap: 10px;
+  .backImg{
+    body.rtl & {
+      transform: scaleX(-1);
+    }
+  }
 }

@@ -70,7 +70,7 @@ export class DuplicateRecordsComponent {
       submittedBy: "User A",
       date: "14Dec, 2024",
     },
-  ]; // This will hold the quarantined requests data
+  ]; 
   constructor() {}
 
 

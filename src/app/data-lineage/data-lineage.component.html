@@ -1,1 +1,33 @@
-<p>data-lineage works!</p>
+<h1 class="pageTitle backTitle">
+  <img (click)="goBack()" src="assets/img/leftArrow.svg" alt="Back" class="backImg" />
+  {{ "Record-Level Data Lineage for Customer" | translate }}: CUST-001234
+</h1>
+
+<div>
+  
+    <nz-table #basicTable [nzPageSize]="7"  [nzData]="dataLineage" [nzShowPagination]="false">
+      <thead>
+        <tr>
+          <th>{{"Field"|translate}}</th>
+          <th>{{"OldValue"|translate}}</th>
+          <th>{{"NewValue"|translate}}</th>
+            <th>{{"UpdatedBy"|translate}}</th>
+            <th>{{"UpdatedDate"|translate}}</th>
+          <th>{{"ApprovedBy"|translate}}</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr *ngFor="let data of basicTable.data; let i = index">
+            <td>
+                <b class="bolder">{{ data.Field|translate }}</b>
+            </td>
+            <td>{{ data.OldValue }}</td>
+            <td>{{ data.NewValue }}</td>
+            <td>{{ data.UpdatedBy }}</td>
+            <td>{{ data.UpdatedDate }}</td>
+            <td>{{ data.ApprovedBy }}</td>
+            
+        </tr>
+      </tbody>
+    </nz-table>
+</div>
