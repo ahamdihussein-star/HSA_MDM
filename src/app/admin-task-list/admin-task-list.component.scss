@@ -71,6 +71,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
+    margin-top: 15px;
 }
 
 .popupText {
@@ -146,16 +147,36 @@
     width: 100%;
     margin-bottom: 10px;
 }
-.ant-input{
+
+.ant-input {
     resize: none;
 }
-.ant-modal{
+
+.ant-modal {
     width: 445px;
 }
+
 .ant-modal-content {
-  border-radius: 20px !important; /* or whatever value you want */
+    border-radius: 20px !important;
+    /* or whatever value you want */
 }
+
 .ant-modal-header {
-  border-top-left-radius: 16px;
-  border-top-right-radius: 16px;
+    border-top-left-radius: 16px;
+    border-top-right-radius: 16px;
+}
+
+.ant-modal-close {
+    top: 15px;
+    right: 15px;
+
+    body.rtl & {
+        right: 0;
+        left: 15px;
+    }
+}
+
+.ant-modal-close-x {
+    background: #F5F7FA;
+    border-radius: 50%;
 }
