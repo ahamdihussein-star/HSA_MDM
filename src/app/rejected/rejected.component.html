@@ -1,0 +1,46 @@
+<div class="titleActionHolder">
+    <h1 class="pageTitle">
+        {{ "rejectedRecords" | translate }}
+    </h1>
+    <div class="actionHolderTitleTabs">
+        <div class="seachInputHolder">
+            <img src="./assets/img/search.svg" alt="">
+            <input type="text" [placeholder]="'Search' | translate">
+        </div>
+        <img src="./assets/img/filter.svg" alt="">
+    </div>
+</div>
+
+<div>
+    <nz-tabset>
+        <nz-tab nzTitle="{{'All'|translate}}"></nz-tab>
+        <nz-tab nzTitle="{{'CustomerRequests'|translate}}"></nz-tab>
+        <nz-tab nzTitle="{{'ProductRequests'|translate}}"></nz-tab>
+        <nz-tab nzTitle="{{'SupplierRequests'|translate}}"></nz-tab>
+    </nz-tabset>
+
+
+    <nz-table #basicTable [nzPageSize]="7" [nzData]="duplicateRecords">
+        <thead>
+            <tr>
+                <th>{{"RequestID"|translate}}</th>
+                <th>{{"CustomerName"|translate}}</th>
+                <th>{{"Date"|translate}}</th>
+                <th>{{"Action"|translate}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let data of basicTable.data; let i = index">
+                <td>{{ data.requestId }}</td>
+                <td>{{ data.name }}</td>
+                <td>{{ data.date }}</td>
+                <td>
+                    <!-- <a>{{data.id}}</a> -->
+                    <a class="primaryColor">
+                        {{ "ViewDetails" | translate }}
+                    </a>
+                </td>
+            </tr>
+        </tbody>
+    </nz-table>
+</div>

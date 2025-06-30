@@ -22,11 +22,11 @@
     <div *ngIf="user == '2'">
       <p class="navTab" [routerLink]="['/dashboard', 'admin-task-list']"
         [ngClass]="[router.url == '/dashboard/admin-task-list' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/admin-task-list'" src="assets/img/homeGrey.svg"
-          alt="quarantined Icon" class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/admin-task-list'" src="assets/img/homeYellow.svg"
-          alt="quarantined Icon" class="navIcon" />
-        {{ "My Task List" | translate }}
+        <img *ngIf="router.url != '/dashboard/admin-task-list'" src="assets/img/homeGrey.svg" alt="quarantined Icon"
+          class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/admin-task-list'" src="assets/img/homeYellow.svg" alt="quarantined Icon"
+          class="navIcon" />
+        {{ "MyTaskList" | translate }}
       </p>
       <!-- <p class="navTab" [routerLink]="['/dashboard', 'quarantined-requests']"
         [ngClass]="[router.url == '/dashboard/quarantined-requests' ? 'activeTab' : '']">
@@ -44,8 +44,7 @@
           class="navIcon" />
         {{ "GoldenRequests" | translate }}
       </p>
-      <p class="navTab" [routerLink]="['/dashboard', 'duplicate-requests']"
-        [ngClass]="[router.url == '/dashboard/duplicate-requests' || 
+      <p class="navTab" [routerLink]="['/dashboard', 'duplicate-requests']" [ngClass]="[router.url == '/dashboard/duplicate-requests' || 
         router.url == '/dashboard/duplicate-customer'  ? 'activeTab' : '']">
         <img *ngIf="router.url != '/dashboard/duplicate-requests' &&
         router.url != '/dashboard/duplicate-customer'" src="assets/img/duplicateGrey.svg" alt="Home Icon"
@@ -55,11 +54,11 @@
           class="navIcon" />
         {{ "DuplicateRequests" | translate }}
       </p>
-      <p class="navTab" [routerLink]="['/dashboard', 'rejected-requests']"
-        [ngClass]="[router.url == '/dashboard/rejected-requests' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/rejected-requests'" src="assets/img/rejectedGrey.svg" alt="rejected Icon"
+      <p class="navTab" [routerLink]="['/dashboard', 'rejected']"
+        [ngClass]="[router.url == '/dashboard/rejected' ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/rejected'" src="assets/img/rejectedGrey.svg" alt="rejected Icon"
           class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/rejected-requests'" src="assets/img/rejectedYellow.svg"
+        <img *ngIf="router.url == '/dashboard/rejected'" src="assets/img/rejectedYellow.svg"
           alt="rejected Icon" class="navIcon" />
         {{ "RejectedRequests" | translate }}
       </p>
@@ -73,8 +72,10 @@
       </p> -->
       <p class="navTab" [routerLink]="['/dashboard', 'home']"
         [ngClass]="[router.url == '/dashboard/home' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/home'" src="assets/img/dashboardGray.svg" alt="Home Icon" class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/home'" src="assets/img/dashboardYellow.svg" alt="Home Icon" class="navIcon" />
+        <img *ngIf="router.url != '/dashboard/home'" src="assets/img/dashboardGray.svg" alt="Home Icon"
+          class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/home'" src="assets/img/dashboardYellow.svg" alt="Home Icon"
+          class="navIcon" />
         {{ "Dashboard" | translate }}
       </p>
     </div>
@@ -84,7 +85,7 @@
     <div *ngIf="user == '1'">
       <app-ai-assistant></app-ai-assistant>
     </div>
-    
+
     <div *ngIf="router.url == '/dashboard/my-task'">
       <app-my-task-list></app-my-task-list>
     </div>
@@ -108,9 +109,11 @@
     <div *ngIf="router.url == '/dashboard/admin-task-list'">
       <app-admin-task-list></app-admin-task-list>
     </div>
-
     <div *ngIf="router.url == '/dashboard/duplicate-requests'">
       <app-duplicate-records></app-duplicate-records>
+    </div>
+    <div *ngIf="router.url == '/dashboard/rejected'">
+      <app-rejected></app-rejected>
     </div>
     <div *ngIf="router.url == '/dashboard/duplicate-customer'">
       <app-duplicate-customer></app-duplicate-customer>

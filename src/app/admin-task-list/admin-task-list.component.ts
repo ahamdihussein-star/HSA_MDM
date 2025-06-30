@@ -85,6 +85,8 @@ export class AdminTaskListComponent {
   approvedChecked = true;
   rejectedChecked = true;
   inputValue?: string;
+  selectedStatuses: string[] = [];
+  statusCount: Record<string, number> = {};
 
   constructor(
     private notification: NzNotificationService,
@@ -154,7 +156,7 @@ export class AdminTaskListComponent {
   }
 
   onAllChecked(value: boolean): void {
-    this.taskList.forEach(item => this.updateCheckedSet(item.id, value));
+    this.taskList.forEach(item => this.updateCheckedSet(item.id, item.status, value));
     this.refreshCheckedStatus();
   }
 
@@ -163,19 +165,47 @@ export class AdminTaskListComponent {
     this.indeterminate = this.taskList.some(item => this.setOfCheckedId.has(item.id)) && !this.checked;
   }
 
-  onItemChecked(id: number, checked: boolean): void {
-    this.updateCheckedSet(id, checked);
+  onItemChecked(id: number, status: any, checked: boolean): void {
+    this.updateCheckedSet(id, status, checked);
     this.refreshCheckedStatus();
   }
 
-  updateCheckedSet(id: number, checked: boolean): void {
+  updateCheckedSet(id: number, status: string, checked: boolean): void {
     if (checked) {
       this.setOfCheckedId.add(id);
     } else {
       this.setOfCheckedId.delete(id);
     }
-    console.log(this.setOfCheckedId.size);
+
+    // Filter selected items
+    const selectedItems = this.taskList.filter(item =>
+      this.setOfCheckedId.has(item.id)
+    );
+
+    // Build the count object
+    this.statusCount = selectedItems.reduce((acc, item) => {
+      acc[item.status] = (acc[item.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    console.log(this.statusCount);
+
   }
+
+  onlyPending() {
+    return this.statusCount['Pending'] && !this.statusCount['Quarantined'];
+  }
+
+  onlyQuarantined() {
+    return this.statusCount['Quarantined'] && !this.statusCount['Pending'];
+  }
+
+  mixedStatuses() {
+    return this.statusCount['Pending'] && this.statusCount['Quarantined'];
+  }
+
+
+
 
   deleteRecodr(index: number): void {
     // This method will delete a record from the quarantined requests

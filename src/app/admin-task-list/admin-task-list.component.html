@@ -3,10 +3,41 @@
     <img src="assets/img/waving.svg" alt="Welcome Icon" class="welcomeIcon" />
 </h3>
 <p class="subMessage">{{"HereIsYourTasksForToday"|translate}}</p>
-<h1 class="pageTitle">
-    {{ "MyTaskList" | translate }}
-</h1>
+<div class="titleActionHolder">
+    <h1 class="pageTitle">
+        {{ "MyTaskList" | translate }}
+    </h1>
+    <div class="actionHolderTitle">
+        <!-- Only Pending -->
+        <div class="dFelx" *ngIf="onlyPending()">
+            <button class="deleteBtn actionBtn"><img src="./assets/img/redTrash.svg" alt="">{{ "Delete" | translate
+                }}</button>
+            <button class="approveBtn actionBtn"><img src="./assets/img/verify.svg" alt="">{{ "Approve" | translate
+                }}</button>
+        </div>
+        <!-- Only Quarantined -->
+        <div class="dFelx" *ngIf="onlyQuarantined()">
+            <button class="deleteBtn actionBtn"><img src="./assets/img/redTrash.svg" alt="">{{ "Delete" | translate
+                }}</button>
+            <button class="approveBtn actionBtn"><img src="./assets/img/verify.svg" alt="">{{ "AssignTo" | translate
+                }}</button>
+        </div>
+        <!-- Mixed -->
+        <div *ngIf="mixedStatuses()">
+            <button class="deleteBtn actionBtn"><img src="./assets/img/redTrash.svg" alt="">{{ "Delete" | translate
+                }}</button>
+        </div>
+        <div class="seachInputHolder">
+            <img src="./assets/img/search.svg" alt="">
+            <input type="text" [placeholder]="'Search' | translate">
+        </div>
+        <img src="./assets/img/filter.svg" alt="">
+    </div>
+</div>
+
 <div>
+
+
 
     <nz-table #basicTable [nzPageSize]="7" [nzData]="taskList">
         <thead>
@@ -22,7 +53,8 @@
         </thead>
         <tbody>
             <tr *ngFor="let data of basicTable.data; let i = index">
-                <td [nzChecked]="setOfCheckedId.has(data.id)" (nzCheckedChange)="onItemChecked(data.id, $event)"></td>
+                <td [nzChecked]="setOfCheckedId.has(data.id)"
+                    (nzCheckedChange)="onItemChecked(data.id,data.status, $event)"></td>
                 <td>{{ data.requestId }}</td>
                 <td>{{ data.requestType }}</td>
                 <td>{{ data.date }}</td>
@@ -47,16 +79,14 @@
                         </a>
                         <nz-dropdown-menu #menu="nzDropdownMenu">
                             <ul nz-menu>
-                                <li nz-menu-item (click)="handleAction('view', data)">View Details</li>
+                                <li nz-menu-item (click)="handleAction('view', data)">{{ "ViewDetails" | translate }}
+                                </li>
                                 <li *ngIf="data.status == 'Pending'" nz-menu-item (click)="showApproveModal()">
-                                    Approve</li>
-
-
+                                    {{ "Approve" | translate }}</li>
                                 <li *ngIf="data.status == 'Quarantined'" nz-menu-item
-                                    (click)="handleAction('edit', data)">Assign To</li>
-
+                                    (click)="handleAction('edit', data)">{{ "AssignTo" | translate }}</li>
                                 <li class="redText" nz-menu-item (click)="handleAction('delete', data)"
-                                    (click)="showRejectedModal()">Reject</li>
+                                    (click)="showRejectedModal()">{{ "Reject" | translate }}</li>
                             </ul>
                         </nz-dropdown-menu>
 
@@ -65,51 +95,51 @@
             </tr>
         </tbody>
     </nz-table>
-    <nz-modal [(nzVisible)]="isApprovedVisible" nzTitle="Request Approved" (nzOnCancel)="handleCancel()"
+    <nz-modal [(nzVisible)]="isApprovedVisible" [nzTitle]="'Request Approved' | translate" (nzOnCancel)="handleCancel()"
         (nzOnOk)="handleOk()">
         <ng-container *nzModalContent>
             <img src="./assets/img/approvedIcon.svg" alt="">
-            <p class="popupText">You have successfully approved this request.It will now appear in the Golden Records.
+            <p class="popupText">{{ "You have successfully approved this request.It will now appear in the Golden Records." | translate }}
             </p>
             <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
             <label nz-checkbox class="checkboxHolder">
                 <input class="hiddenInput" type="checkbox" nz-checkbox [(ngModel)]="approvedChecked" />
-                <p class="checkboxText">Don’t Show again</p>
+                <p class="checkboxText">{{ "Don’t Show again" | translate }}</p>
             </label>
-            <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="submitApprove()">Submit </button>
+            <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="submitApprove()">{{ "Submit" | translate }} </button>
             </div>
 
         </ng-container>
     </nz-modal>
 
-    <nz-modal [(nzVisible)]="isRejectedConfirmVisible" nzTitle="Request Rejected" (nzOnCancel)="handleCancel()"
+    <nz-modal [(nzVisible)]="isRejectedConfirmVisible" [nzTitle]="'Request Rejected' | translate" (nzOnCancel)="handleCancel()"
         (nzOnOk)="handleOk()">
         <ng-container *nzModalContent>
             <img src="./assets/img/rejectIcon.svg" alt="">
-            <p class="popupText">You have successfully rejected this request. The requester will be notified with your
-                reason.
+            <p class="popupText">{{ "You have successfully rejected this request. The requester will be notified with your
+                reason." | translate }}
             </p>
             <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
             <label nz-checkbox class="checkboxHolder">
                 <input class="hiddenInput" type="checkbox" nz-checkbox [(ngModel)]="rejectedChecked" />
-                <p class="checkboxText">Don’t Show again</p>
+                <p class="checkboxText">{{ "Don’t Show again" | translate }}</p>
             </label>
-            <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="rejectApprove()">Submit </button>
+            <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="rejectApprove()">{{ "Submit" | translate }} </button>
             </div>
 
         </ng-container>
     </nz-modal>
 
-    <nz-modal [(nzVisible)]="isRejectedVisible" nzTitle="Add a Rejection Note" (nzOnCancel)="handleCancel()"
+    <nz-modal [(nzVisible)]="isRejectedVisible" [nzTitle]="'Add a Rejection Note' | translate" (nzOnCancel)="handleCancel()"
         (nzOnOk)="handleOk()">
         <ng-container *nzModalContent>
-            <p class="popupRejectText">Enter Rejection Comments</p>
+            <p class="popupRejectText">{{ "Enter Rejection Comments" | translate }}</p>
             <textarea rows="4" nz-input [(ngModel)]="inputValue"></textarea>
             <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
 
             <div class="fullWidth btnsHolder">
-                <button class=" cancelBtn" (click)="handleCancel()">Cancel</button>
-                <button class="Primary_fill submitBtn" [disabled]="!inputValue" (click)="confirmReject()">Submit
+                <button class=" cancelBtn" (click)="handleCancel()">{{ "Cancel" | translate }}</button>
+                <button class="Primary_fill submitBtn" [disabled]="!inputValue" (click)="confirmReject()">{{ "Submit" | translate }}
                 </button>
             </div>
 

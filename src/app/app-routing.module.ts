@@ -26,6 +26,7 @@ const routes: Routes = [
   { path: 'admin-task-list', loadChildren: () => import('./admin-task-list/admin-task-list.module').then(m => m.AdminTaskListModule) },
   { path: 'duplicate-records', loadChildren: () => import('./duplicate-records/duplicate-records.module').then(m => m.DuplicateRecordsModule) },
   { path: 'duplicate-customer', loadChildren: () => import('./duplicate-customer/duplicate-customer.module').then(m => m.DuplicateCustomerModule) },
+  { path: 'rejected', loadChildren: () => import('./rejected/rejected.module').then(m => m.RejectedModule) },
 ];
 
 @NgModule({

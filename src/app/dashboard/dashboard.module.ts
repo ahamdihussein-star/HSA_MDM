@@ -4,7 +4,7 @@ import { CommonModule } from '@angular/common';
 import { DashboardRoutingModule } from './dashboard-routing.module';
 import { DashboardComponent } from './dashboard.component';
 
-import {HeaderModule} from '../header/header.module';
+import { HeaderModule } from '../header/header.module';
 import { GoldenRequestsModule } from '../golden-requests/golden-requests.module';
 import { MyRequestsModule } from '../my-requests/my-requests.module';
 import { HomeModule } from '../home/home.module';
@@ -18,6 +18,8 @@ import { DuplicateRecordsModule } from '../duplicate-records/duplicate-records.m
 import { DuplicateCustomerModule } from '../duplicate-customer/duplicate-customer.module';
 
 import { AdminTaskListModule } from '../admin-task-list/admin-task-list.module';
+
+import { RejectedModule } from '../rejected/rejected.module';
 
 @NgModule({
   declarations: [
@@ -33,12 +35,13 @@ import { AdminTaskListModule } from '../admin-task-list/admin-task-list.module';
     NewRequestModule,
     MyRequestsModule,
     HomeModule,
-    MyRequestsModule, 
+    MyRequestsModule,
     AiAssistantModule,
     MyTaskListModule,
     AdminTaskListModule,
-    DuplicateRecordsModule ,
+    DuplicateRecordsModule,
     DuplicateCustomerModule,
+    RejectedModule
 
   ]
 })
