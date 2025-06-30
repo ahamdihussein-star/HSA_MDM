@@ -24,6 +24,7 @@ const routes: Routes = [
   },
   { path: 'my-task-list', loadChildren: () => import('./my-task-list/my-task-list.module').then(m => m.MyTaskListModule) },
   { path: 'data-lineage', loadChildren: () => import('./data-lineage/data-lineage.module').then(m => m.DataLineageModule) },
+  { path: 'admin-task-list', loadChildren: () => import('./admin-task-list/admin-task-list.module').then(m => m.AdminTaskListModule) },
 ];
 
 @NgModule({

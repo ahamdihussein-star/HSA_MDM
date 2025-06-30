@@ -20,11 +20,13 @@
       </p>
     </div>
     <div *ngIf="user == '2'">
-      <p class="navTab" [routerLink]="['/dashboard', 'home']"
-        [ngClass]="[router.url == '/dashboard/home' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/home'" src="assets/img/homeGrey.svg" alt="Home Icon" class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/home'" src="assets/img/homeYellow.svg" alt="Home Icon" class="navIcon" />
-        {{ "Home" | translate }}
+      <p class="navTab" [routerLink]="['/dashboard', 'admin-task-list']"
+        [ngClass]="[router.url == '/dashboard/admin-task-list' ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/admin-task-list'" src="assets/img/quarantinedGrey.svg"
+          alt="quarantined Icon" class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/admin-task-list'" src="assets/img/quarantinedYellow.svg"
+          alt="quarantined Icon" class="navIcon" />
+        {{ "My Task List" | translate }}
       </p>
       <p class="navTab" [routerLink]="['/dashboard', 'quarantined-requests']"
         [ngClass]="[router.url == '/dashboard/quarantined-requests' ? 'activeTab' : '']">
@@ -66,6 +68,12 @@
           class="navIcon" />
         {{ "PendingRequests" | translate }}
       </p>
+      <p class="navTab" [routerLink]="['/dashboard', 'home']"
+        [ngClass]="[router.url == '/dashboard/home' ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/home'" src="assets/img/homeGrey.svg" alt="Home Icon" class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/home'" src="assets/img/homeYellow.svg" alt="Home Icon" class="navIcon" />
+        {{ "Dashboard" | translate }}
+      </p>
     </div>
   </div>
   <div class="dashboardContent">
@@ -90,9 +98,13 @@
     </div>
     <div *ngIf="router.url == '/dashboard/my-requests'">
       <app-my-requests></app-my-requests>
-      </div>
+    </div>
     <div *ngIf="router.url == '/dashboard/home'">
       <app-home></app-home>
     </div>
+    <div *ngIf="router.url == '/dashboard/admin-task-list'">
+      <app-admin-task-list></app-admin-task-list>
+    </div>
+
   </div>
 </div>

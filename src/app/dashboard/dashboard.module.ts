@@ -16,6 +16,8 @@ import { SidebarModule } from '../sidebar/sidebar.module';
 import { NewRequestModule } from '../new-request/new-request.module';
 import { MyTaskListModule } from '../my-task-list/my-task-list.module';
 
+import { AdminTaskListModule } from '../admin-task-list/admin-task-list.module';
+
 @NgModule({
   declarations: [
     DashboardComponent
@@ -33,7 +35,8 @@ import { MyTaskListModule } from '../my-task-list/my-task-list.module';
     HomeModule,
     MyRequestsModule, 
     AiAssistantModule,
-    MyTaskListModule
+    MyTaskListModule,
+    AdminTaskListModule
   ]
 })
 export class DashboardModule { }
