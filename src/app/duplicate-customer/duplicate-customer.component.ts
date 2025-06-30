@@ -12,16 +12,7 @@ import { ActivatedRoute, Router } from "@angular/router";
 })
 export class DuplicateCustomerComponent {
 
-  constructor(private location: Location, 
-    private route: ActivatedRoute,
-    private notification: NzNotificationService,
-    private translate: TranslateService,
-    private router: Router,) {}
-   goBack(): void {
-    this.location.back();
-  }
-
-  listOfData=[
+    listOfData=[
     {
       id: 1,
       name: 'Ahmed Mohammed',
@@ -56,6 +47,18 @@ export class DuplicateCustomerComponent {
   indeterminate = false;
 
   setOfCheckedId = new Set<number>();
+  constructor(private location: Location, 
+    private route: ActivatedRoute,
+    private notification: NzNotificationService,
+    private translate: TranslateService,
+    private router: Router,) {}
+
+    
+   goBack(): void {
+    this.location.back();
+  }
+
+
 
   updateCheckedSet(id: number, checked: boolean): void {
     if (checked) {

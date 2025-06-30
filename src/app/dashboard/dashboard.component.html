@@ -10,6 +10,14 @@
 
         {{ "MyTaskList" | translate }}
       </p>
+       <p class="navTab" [routerLink]="['/dashboard', 'golden-requests']"
+        [ngClass]="[router.url == '/dashboard/golden-requests' || router.url == '/dashboard/data-lineage'  ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/golden-requests' && router.url != '/dashboard/data-lineage'" src="assets/img/goldenGrey.svg" alt="Home Icon"
+          class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/golden-requests' ||router.url == '/dashboard/data-lineage'" src="assets/img/goldenYellow.svg" alt="Home Icon"
+          class="navIcon" />
+        {{ "GoldenRequests" | translate }}
+      </p>
       <p class="navTab" [routerLink]="['/dashboard', 'my-requests']"
         [ngClass]="[router.url == '/dashboard/my-requests' ? 'activeTab' : '']">
         <img *ngIf="router.url != '/dashboard/my-requests'" src="assets/img/MyRequestsGrey.svg" alt="Home Icon"
@@ -37,10 +45,10 @@
         {{ "QuarantinedRequests" | translate }}
       </p> -->
       <p class="navTab" [routerLink]="['/dashboard', 'golden-requests']"
-        [ngClass]="[router.url == '/dashboard/golden-requests' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/golden-requests'" src="assets/img/goldenGrey.svg" alt="Home Icon"
+        [ngClass]="[router.url == '/dashboard/golden-requests' || router.url == '/dashboard/data-lineage'  ? 'activeTab' : '']">
+        <img *ngIf="router.url != '/dashboard/golden-requests' && router.url != '/dashboard/data-lineage'" src="assets/img/goldenGrey.svg" alt="Home Icon"
           class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/golden-requests'" src="assets/img/goldenYellow.svg" alt="Home Icon"
+        <img *ngIf="router.url == '/dashboard/golden-requests' ||router.url == '/dashboard/data-lineage'" src="assets/img/goldenYellow.svg" alt="Home Icon"
           class="navIcon" />
         {{ "GoldenRequests" | translate }}
       </p>
@@ -93,9 +101,7 @@
     <!-- <div *ngIf="router.url == '/dashboard/quarantined-requests'">
       <app-quarantined-requests></app-quarantined-requests>
     </div> -->
-    <div *ngIf="router.url == '/dashboard/golden-requests'">
-      <app-golden-requests></app-golden-requests>
-    </div>
+    
     <div *ngIf="router.url.includes('/dashboard/new-request')">
       <app-new-request></app-new-request>
     </div>
@@ -114,6 +120,14 @@
     </div>
     <div *ngIf="router.url == '/dashboard/duplicate-customer'">
       <app-duplicate-customer></app-duplicate-customer>
+    </div>
+
+    <!-- commen in the 2 users  -->
+     <div *ngIf="router.url == '/dashboard/golden-requests'">
+      <app-golden-requests></app-golden-requests>
+    </div>
+    <div *ngIf="router.url == '/dashboard/data-lineage'">
+      <app-data-lineage></app-data-lineage>
     </div>
   </div>
 </div>

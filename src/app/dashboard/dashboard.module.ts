@@ -18,6 +18,7 @@ import { DuplicateRecordsModule } from '../duplicate-records/duplicate-records.m
 import { DuplicateCustomerModule } from '../duplicate-customer/duplicate-customer.module';
 
 import { AdminTaskListModule } from '../admin-task-list/admin-task-list.module';
+import{ DataLineageModule } from '../data-lineage/data-lineage.module';
 
 @NgModule({
   declarations: [
@@ -39,6 +40,7 @@ import { AdminTaskListModule } from '../admin-task-list/admin-task-list.module';
     AdminTaskListModule,
     DuplicateRecordsModule ,
     DuplicateCustomerModule,
+    DataLineageModule
 
   ]
 })
