@@ -14,8 +14,9 @@
                 <th [(nzChecked)]="checked" [nzIndeterminate]="indeterminate" (nzCheckedChange)="onAllChecked($event)">
                 </th>
                 <th>{{"RequestID"|translate}}</th>
-                <th>{{"CustomerName"|translate}}</th>
+                <th>{{"RequestType"|translate}}</th>
                 <th>{{"Date"|translate}}</th>
+                <th>{{"status"|translate}}</th>
                 <th>{{"Action"|translate}}</th>
             </tr>
         </thead>
@@ -23,16 +24,95 @@
             <tr *ngFor="let data of basicTable.data; let i = index">
                 <td [nzChecked]="setOfCheckedId.has(data.id)" (nzCheckedChange)="onItemChecked(data.id, $event)"></td>
                 <td>{{ data.requestId }}</td>
-                <td>{{ data.customerName }}</td>
+                <td>{{ data.requestType }}</td>
                 <td>{{ data.date }}</td>
+                <td>
+                    <p class="generalStatus" [ngClass]="data.status === 'Pending' ? 'pendingText' : 'otherText'">
+                        {{ data.status }}
+                    </p>
+                </td>
+
                 <td>
                     <!-- <a>{{data.id}}</a> -->
 
-                    <a class="primaryColor">
+                    <!-- <a class="primaryColor">
                         {{ "FixIssue" | translate }}
-                    </a>
+                    </a> -->
+                    <div class="actionHolder">
+                        <img src="./assets/img/edit.svg" alt="">
+                        <img class="iconSpacing" src="./assets/img/trash.svg" alt="">
+                        <a nz-dropdown nzTrigger="click" [nzDropdownMenu]="menu" class="actionHolderBtn">
+                            <img src="./assets/img/moreAction.svg" alt="" />
+                            <span nz-icon nzType="down"></span>
+                        </a>
+                        <nz-dropdown-menu #menu="nzDropdownMenu">
+                            <ul nz-menu>
+                                <li nz-menu-item (click)="handleAction('view', data)">View Details</li>
+                                <li *ngIf="data.status == 'Pending'" nz-menu-item (click)="showApproveModal()">
+                                    Approve</li>
+
+
+                                <li *ngIf="data.status == 'Quarantined'" nz-menu-item
+                                    (click)="handleAction('edit', data)">Assign To</li>
+
+                                <li class="redText" nz-menu-item (click)="handleAction('delete', data)"
+                                    (click)="showRejectedModal()">Reject</li>
+                            </ul>
+                        </nz-dropdown-menu>
+
+                    </div>
                 </td>
             </tr>
         </tbody>
     </nz-table>
+    <nz-modal [(nzVisible)]="isApprovedVisible" nzTitle="Request Approved" (nzOnCancel)="handleCancel()"
+        (nzOnOk)="handleOk()">
+        <ng-container *nzModalContent>
+            <img src="./assets/img/approvedIcon.svg" alt="">
+            <p class="popupText">You have successfully approved this request.It will now appear in the Golden Records.
+            </p>
+            <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
+            <label nz-checkbox class="checkboxHolder">
+                <input class="hiddenInput" type="checkbox" nz-checkbox [(ngModel)]="approvedChecked" />
+                <p class="checkboxText">Don’t Show again</p>
+            </label>
+            <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="submitApprove()">Submit </button>
+            </div>
+
+        </ng-container>
+    </nz-modal>
+
+    <nz-modal [(nzVisible)]="isRejectedConfirmVisible" nzTitle="Request Rejected" (nzOnCancel)="handleCancel()"
+        (nzOnOk)="handleOk()">
+        <ng-container *nzModalContent>
+            <img src="./assets/img/rejectIcon.svg" alt="">
+            <p class="popupText">You have successfully rejected this request. The requester will be notified with your
+                reason.
+            </p>
+            <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
+            <label nz-checkbox class="checkboxHolder">
+                <input class="hiddenInput" type="checkbox" nz-checkbox [(ngModel)]="rejectedChecked" />
+                <p class="checkboxText">Don’t Show again</p>
+            </label>
+            <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="rejectApprove()">Submit </button>
+            </div>
+
+        </ng-container>
+    </nz-modal>
+
+    <nz-modal [(nzVisible)]="isRejectedVisible" nzTitle="Add a Rejection Note" (nzOnCancel)="handleCancel()"
+        (nzOnOk)="handleOk()">
+        <ng-container *nzModalContent>
+            <p class="popupRejectText">Enter Rejection Comments</p>
+            <textarea rows="4" nz-input [(ngModel)]="inputValue"></textarea>
+            <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
+
+            <div class="fullWidth btnsHolder">
+                <button class=" cancelBtn" (click)="handleCancel()">Cancel</button>
+                <button class="Primary_fill submitBtn" [disabled]="!inputValue" (click)="confirmReject()">Submit
+                </button>
+            </div>
+
+        </ng-container>
+    </nz-modal>
 </div>

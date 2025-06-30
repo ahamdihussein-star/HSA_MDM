@@ -28,14 +28,14 @@
           alt="quarantined Icon" class="navIcon" />
         {{ "My Task List" | translate }}
       </p>
-      <p class="navTab" [routerLink]="['/dashboard', 'quarantined-requests']"
+      <!-- <p class="navTab" [routerLink]="['/dashboard', 'quarantined-requests']"
         [ngClass]="[router.url == '/dashboard/quarantined-requests' ? 'activeTab' : '']">
         <img *ngIf="router.url != '/dashboard/quarantined-requests'" src="assets/img/quarantinedGrey.svg"
           alt="quarantined Icon" class="navIcon" />
         <img *ngIf="router.url == '/dashboard/quarantined-requests'" src="assets/img/quarantinedYellow.svg"
           alt="quarantined Icon" class="navIcon" />
         {{ "QuarantinedRequests" | translate }}
-      </p>
+      </p> -->
       <p class="navTab" [routerLink]="['/dashboard', 'golden-requests']"
         [ngClass]="[router.url == '/dashboard/golden-requests' ? 'activeTab' : '']">
         <img *ngIf="router.url != '/dashboard/golden-requests'" src="assets/img/goldenGrey.svg" alt="Home Icon"
@@ -63,14 +63,14 @@
           alt="rejected Icon" class="navIcon" />
         {{ "RejectedRequests" | translate }}
       </p>
-      <p class="navTab" [routerLink]="['/dashboard', 'pending-requests']"
+      <!-- <p class="navTab" [routerLink]="['/dashboard', 'pending-requests']"
         [ngClass]="[router.url == '/dashboard/pending-requests' ? 'activeTab' : '']">
         <img *ngIf="router.url != '/dashboard/pending-requests'" src="assets/img/pendingGrey.svg" alt="pending Icon"
           class="navIcon" />
         <img *ngIf="router.url == '/dashboard/pending-requests'" src="assets/img/pendingYellow.svg" alt="pending Icon"
           class="navIcon" />
         {{ "PendingRequests" | translate }}
-      </p>
+      </p> -->
       <p class="navTab" [routerLink]="['/dashboard', 'home']"
         [ngClass]="[router.url == '/dashboard/home' ? 'activeTab' : '']">
         <img *ngIf="router.url != '/dashboard/home'" src="assets/img/dashboardGray.svg" alt="Home Icon" class="navIcon" />
@@ -90,9 +90,9 @@
     </div>
 
     <!-- ==== user2 ==== -->
-    <div *ngIf="router.url == '/dashboard/quarantined-requests'">
+    <!-- <div *ngIf="router.url == '/dashboard/quarantined-requests'">
       <app-quarantined-requests></app-quarantined-requests>
-    </div>
+    </div> -->
     <div *ngIf="router.url == '/dashboard/golden-requests'">
       <app-golden-requests></app-golden-requests>
     </div>

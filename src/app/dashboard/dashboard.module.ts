@@ -5,7 +5,6 @@ import { DashboardRoutingModule } from './dashboard-routing.module';
 import { DashboardComponent } from './dashboard.component';
 
 import {HeaderModule} from '../header/header.module';
-import { QuarantinedRequestsModule } from '../quarantined-requests/quarantined-requests.module';
 import { GoldenRequestsModule } from '../golden-requests/golden-requests.module';
 import { MyRequestsModule } from '../my-requests/my-requests.module';
 import { HomeModule } from '../home/home.module';
@@ -29,7 +28,6 @@ import { AdminTaskListModule } from '../admin-task-list/admin-task-list.module';
     DashboardRoutingModule,
     HeaderModule,
     TranslateModule,
-    QuarantinedRequestsModule,
     GoldenRequestsModule,
     SidebarModule,
     NewRequestModule,

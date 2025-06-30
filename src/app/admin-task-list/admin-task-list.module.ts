@@ -7,6 +7,12 @@ import { AdminTaskListComponent } from './admin-task-list.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { NzTableModule } from 'ng-zorro-antd/table';
 
+import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
+import { NzModalModule } from 'ng-zorro-antd/modal';
+import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
+import { FormsModule } from '@angular/forms';
+import { NzInputModule } from 'ng-zorro-antd/input';
+
 @NgModule({
   declarations: [
     AdminTaskListComponent
@@ -15,10 +21,15 @@ import { NzTableModule } from 'ng-zorro-antd/table';
     CommonModule,
     AdminTaskListRoutingModule,
     TranslateModule,
-    NzTableModule
+    NzTableModule,
+    NzDropDownModule,
+    NzModalModule,
+    NzCheckboxModule,
+    FormsModule,
+    NzInputModule,
   ],
-    exports: [
-      AdminTaskListComponent
-    ]
+  exports: [
+    AdminTaskListComponent
+  ]
 })
 export class AdminTaskListModule { }
