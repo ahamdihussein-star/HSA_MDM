@@ -22,9 +22,9 @@
     <div *ngIf="user == '2'">
       <p class="navTab" [routerLink]="['/dashboard', 'admin-task-list']"
         [ngClass]="[router.url == '/dashboard/admin-task-list' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/admin-task-list'" src="assets/img/quarantinedGrey.svg"
+        <img *ngIf="router.url != '/dashboard/admin-task-list'" src="assets/img/homeGrey.svg"
           alt="quarantined Icon" class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/admin-task-list'" src="assets/img/quarantinedYellow.svg"
+        <img *ngIf="router.url == '/dashboard/admin-task-list'" src="assets/img/homeYellow.svg"
           alt="quarantined Icon" class="navIcon" />
         {{ "My Task List" | translate }}
       </p>
@@ -73,8 +73,8 @@
       </p>
       <p class="navTab" [routerLink]="['/dashboard', 'home']"
         [ngClass]="[router.url == '/dashboard/home' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/home'" src="assets/img/homeGrey.svg" alt="Home Icon" class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/home'" src="assets/img/homeYellow.svg" alt="Home Icon" class="navIcon" />
+        <img *ngIf="router.url != '/dashboard/home'" src="assets/img/dashboardGray.svg" alt="Home Icon" class="navIcon" />
+        <img *ngIf="router.url == '/dashboard/home'" src="assets/img/dashboardYellow.svg" alt="Home Icon" class="navIcon" />
         {{ "Dashboard" | translate }}
       </p>
     </div>

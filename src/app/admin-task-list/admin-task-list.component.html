@@ -1,5 +1,4 @@
-
-<h3 class="welcomeMessage"> 
+<h3 class="welcomeMessage">
     {{"WelcomeBack" | translate}}, Ahmed!
     <img src="assets/img/waving.svg" alt="Welcome Icon" class="welcomeIcon" />
 </h3>
@@ -8,29 +7,32 @@
     {{ "MyTaskList" | translate }}
 </h1>
 <div>
- 
+
     <nz-table #basicTable [nzPageSize]="7" [nzData]="taskList">
-      <thead>
-        <tr>
-          <th>{{"RequestID"|translate}}</th>
-          <th>{{"CustomerName"|translate}}</th>
-          <th>{{"Date"|translate}}</th>
-          <th>{{"Action"|translate}}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let data of basicTable.data; let i = index">
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.customerName }}</td>
-          <td>{{ data.date }}</td>
-          <td>
-            <!-- <a>{{data.id}}</a> -->
-           
-             <a  class="primaryColor"  >
-            {{ "FixIssue" | translate }}
-          </a>
-          </td>
-        </tr>
-      </tbody>
+        <thead>
+            <tr>
+                <th [(nzChecked)]="checked" [nzIndeterminate]="indeterminate" (nzCheckedChange)="onAllChecked($event)">
+                </th>
+                <th>{{"RequestID"|translate}}</th>
+                <th>{{"CustomerName"|translate}}</th>
+                <th>{{"Date"|translate}}</th>
+                <th>{{"Action"|translate}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let data of basicTable.data; let i = index">
+                <td [nzChecked]="setOfCheckedId.has(data.id)" (nzCheckedChange)="onItemChecked(data.id, $event)"></td>
+                <td>{{ data.requestId }}</td>
+                <td>{{ data.customerName }}</td>
+                <td>{{ data.date }}</td>
+                <td>
+                    <!-- <a>{{data.id}}</a> -->
+
+                    <a class="primaryColor">
+                        {{ "FixIssue" | translate }}
+                    </a>
+                </td>
+            </tr>
+        </tbody>
     </nz-table>
 </div>
