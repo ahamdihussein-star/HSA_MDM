@@ -1,5 +1,5 @@
 <h1 class="pageTitle">
-    {{ "QuarantinedRequests" | translate }}
+    {{ "DuplicateRequests" | translate }}
 </h1>
 <div>
     <nz-tabset>
@@ -7,24 +7,26 @@
       <nz-tab nzTitle="{{'ProductRequests'|translate}}"></nz-tab>
       <nz-tab nzTitle="{{'SupplierRequests'|translate}}"></nz-tab>
     </nz-tabset>
-    <nz-table #basicTable [nzPageSize]="7"  [nzData]="quarantinedRequests">
+    <nz-table #basicTable [nzPageSize]="7"  [nzData]="duplicateRecords">
       <thead>
         <tr>
           <th>{{"RequestID"|translate}}</th>
-          <th>{{"CustomerName"|translate}}</th>
+          <th>{{"NumOfDuplicates"|translate}}</th>
           <th>{{"Date"|translate}}</th>
           <th>{{"Action"|translate}}</th>
         </tr>
       </thead>
       <tbody>
         <tr *ngFor="let data of basicTable.data; let i = index">
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.customerName }}</td>
-          <td>{{ data.date }}</td>
-          <td>
+            <td>{{ data.requestId }}</td>
+            <td>{{ data.NumOfDuplicates }} {{"records"|translate}}</td>
+            <td>{{ data.date }}</td>
+            <td>
             <!-- <a>{{data.id}}</a> -->
-            <a (click)="deleteRecodr(i)" class="deleteColor">{{"Delete"|translate}}</a>
-          </td>
+                <a class="primaryColor" [routerLink]="['/dashboard', 'duplicate-customer']">
+                    {{ "ViewDetails" | translate }}
+                </a>
+            </td>
         </tr>
       </tbody>
     </nz-table>

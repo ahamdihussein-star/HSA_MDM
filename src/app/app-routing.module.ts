@@ -25,6 +25,8 @@ const routes: Routes = [
   { path: 'my-task-list', loadChildren: () => import('./my-task-list/my-task-list.module').then(m => m.MyTaskListModule) },
   { path: 'data-lineage', loadChildren: () => import('./data-lineage/data-lineage.module').then(m => m.DataLineageModule) },
   { path: 'admin-task-list', loadChildren: () => import('./admin-task-list/admin-task-list.module').then(m => m.AdminTaskListModule) },
+  { path: 'duplicate-records', loadChildren: () => import('./duplicate-records/duplicate-records.module').then(m => m.DuplicateRecordsModule) },
+  { path: 'duplicate-customer', loadChildren: () => import('./duplicate-customer/duplicate-customer.module').then(m => m.DuplicateCustomerModule) },
 ];
 
 @NgModule({

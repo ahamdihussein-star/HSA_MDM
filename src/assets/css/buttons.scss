@@ -1,15 +1,27 @@
 .Primary_fill {
-    @include btn(linear-gradient(94.74deg, #CBA51C 8.56%, #F7B834 94.64%), white, linear-gradient(94.74deg, #CBA51C 8.56%, #F7B834 94.64%));
-    border: none;
-    
-    &:hover , &:focus , &:active {
-        @include btn(linear-gradient(94.74deg, #CBA51C 8.56%, #F7B834 94.64%), white, linear-gradient(94.74deg, #CBA51C 8.56%, #F7B834 94.64%));
-    }
+  @include btn(
+    linear-gradient(94.74deg, #cba51c 8.56%, #f7b834 94.64%),
+    white,
+    linear-gradient(94.74deg, #cba51c 8.56%, #f7b834 94.64%)
+  );
+  border: none;
 
+  &:hover,
+  &:focus,
+  &:active {
+    @include btn(
+      linear-gradient(94.74deg, #cba51c 8.56%, #f7b834 94.64%),
+      white,
+      linear-gradient(94.74deg, #cba51c 8.56%, #f7b834 94.64%)
+    );
+  }
+}
+.Primary_fill:disabled {
+  background: #e7e4e8cc;
+  color: #99959e;
+  cursor: not-allowed;
 }
 
-
-
 button:focus {
-    outline: none;
+  outline: none;
 }

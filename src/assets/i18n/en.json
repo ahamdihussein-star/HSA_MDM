@@ -90,5 +90,16 @@
   "WelcomeBack": "Welcome Back",
   "HereIsYourTasksForToday": "Here are your tasks for today",
   "DataLineage": "Data Lineage",
+  "❌ Invalid date format. Please enter date as MM/DD/YYYY.": "❌ Invalid date format. Please enter date as MM/DD/YYYY.",
+  "NumOfDuplicates": "Num. of duplicates",
+  "records": "records",
+  "Customer": "Customer",
+  "Duplicate": "Duplicate",
+  "DefaultRecord":  "Default Record",
+  "The record is merged successfully": "The record is merged successfully",
+    "Merge": "Merge",
+    "Field": "Field",
+    "PhoneNumber": "Phone Number",
+    "Name": "Name",
   "":""
 }

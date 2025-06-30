@@ -1,0 +1,50 @@
+<h1 class="pageTitle backTitle">
+  <img (click)="goBack()" src="assets/img/leftArrow.svg" alt="Back" />
+  {{ "Customer" | translate }}: CUST-001234
+</h1>
+
+<nz-table
+  #rowSelectionTable
+  nzShowSizeChanger
+  [nzData]="listOfData"
+  [nzShowPagination]="false"
+>
+  <thead>
+    <tr>
+      <th
+        [(nzChecked)]="checked"
+        [nzIndeterminate]="indeterminate"
+        (nzCheckedChange)="onAllChecked($event)"
+      ></th>
+      <th>{{ "Field" | translate }}</th>
+      <th>{{ "Name" | translate }}</th>
+      <th>{{ "Email" | translate }}</th>
+      <th>{{ "PhoneNumber" | translate }}</th>
+      <th>{{ "Date" | translate }}</th>
+    </tr>
+  </thead>
+  <tbody>
+    <tr *ngFor="let data of rowSelectionTable.data; let i = index">
+      <td
+        [nzChecked]="setOfCheckedId.has(data.id)"
+        (nzCheckedChange)="onItemChecked(data.id, $event)"
+      ></td>
+      <td>
+        <span *ngIf="i == 0">
+          {{ "DefaultRecord" | translate }}
+        </span>
+        <span *ngIf="i > 0"> {{ "Duplicate" | translate }} {{ i }} </span>
+      </td>
+      <td>{{ data.name }}</td>
+      <td>{{ data.email }}</td>
+      <td>{{ data.phone }}</td>
+      <td>{{ data.date }}</td>
+    </tr>
+  </tbody>
+</nz-table>
+
+<div class="btnContainer">
+  <button class="Primary_fill" [disabled]="setOfCheckedId.size <= 1" (click)="merge()">
+    {{ "Merge" | translate }}
+  </button>
+</div>

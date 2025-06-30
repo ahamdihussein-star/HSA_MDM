@@ -1,17 +1,52 @@
-<h1 class="pageTitle">
-    {{ "AIAssistant" | translate }}
-</h1>
-<div #chatContainer class="chat-container">
-  <div class="chat-message" *ngFor="let message of messages" [ngClass]="message.from === 'bot' ? '' : 'user-reverse'">
-    <img *ngIf="message.from === 'bot'" src="assets/img/aiIcon.svg" alt="AI Assistant" class="bot-avatar" />
-    <div [ngClass]="message.from === 'bot' ? 'bot-message' : 'user-message'">
-        
-      {{ message.text | translate }}
+
+
+<img
+  src="assets/img/chat.svg"
+  alt="AI Assistant"
+  class="chat-float-button"
+  (click)="toggleChat()"
+/>
+
+<!-- Chat Box -->
+<div class="chat-box" *ngIf="isChatOpen">
+  <div class="chat-header">
+    <p>
+      <img src="assets/img/aiIcon.svg" alt="AI Assistant" class="bot-avatar" />
+      <span>{{"AIAssistant"|translate}}</span>
+    </p>
+    
+    <button class="close-btn" (click)="toggleChat()">×</button>
+  </div>
+  <div class="chat-body" #chatContainer>
+    <!-- <div *ngFor="let message of messages" [ngClass]="message.from === 'user' ? 'user-message' : 'bot-message'">
+          <img *ngIf="message.from === 'bot'" src="assets/img/aiIcon.svg" alt="AI Assistant" class="bot-avatar" />
+
+      {{ message.text }}
+    </div> -->
+    <div
+      class="chat-message"
+      *ngFor="let message of messages"
+      [ngClass]="message.from === 'bot' ? '' : 'user-reverse'"
+    >
+      <img
+        *ngIf="message.from === 'bot'"
+        src="assets/img/aiIcon.svg"
+        alt="AI Assistant"
+        class="bot-avatar"
+      />
+      <div [ngClass]="message.from === 'bot' ? 'bot-message' : 'user-message'">
+        {{ message.text | translate }}
+      </div>
     </div>
   </div>
-
-  <form (ngSubmit)="sendMessage()" class="submitHolder">
-    <input [(ngModel)]="currentInput" name="input" placeholder="{{'WriteSomething'|translate}}" />
-    <button class="Primary_fill" type="submit">{{"Submit"|translate}}</button>
-  </form>
+  <div class="chat-footer">
+    <input
+      [(ngModel)]="currentInput"
+      (keydown.enter)="sendMessage()"
+      placeholder="{{'WriteSomething'|translate}}"
+    />
+    <button (click)="sendMessage()">
+      <img src="assets/img/send.svg" alt="send">
+    </button>
+  </div>
 </div>

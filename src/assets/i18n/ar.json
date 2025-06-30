@@ -90,5 +90,16 @@
     "WelcomeBack": "مرحبًا بعودتك",  
     "HereIsYourTasksForToday": "إليك مهامك لليوم",
     "DataLineage": "سلسلة البيانات",
+    "❌ Invalid date format. Please enter date as MM/DD/YYYY.": "❌ تنسيق التاريخ غير صالح. يرجى إدخال التاريخ بتنسيق MM/DD/YYYY.",
+    "NumOfDuplicates": "عدد المكررات",
+    "records": "سجلات",
+    "Customer": "العميل",
+    "Duplicate": "مكرر",
+    "DefaultRecord": "سجل افتراضي",
+    "The record is merged successfully": "تم دمج السجل بنجاح",
+    "Merge": "دمج",
+    "Field": "حقل",
+    "PhoneNumber": "رقم الهاتف",
+    "Name": "الاسم",
     "":""
 }

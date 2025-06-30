@@ -15,6 +15,8 @@ import { TranslateModule } from '@ngx-translate/core';
 import { SidebarModule } from '../sidebar/sidebar.module';
 import { NewRequestModule } from '../new-request/new-request.module';
 import { MyTaskListModule } from '../my-task-list/my-task-list.module';
+import { DuplicateRecordsModule } from '../duplicate-records/duplicate-records.module';
+import { DuplicateCustomerModule } from '../duplicate-customer/duplicate-customer.module';
 
 import { AdminTaskListModule } from '../admin-task-list/admin-task-list.module';
 
@@ -37,6 +39,9 @@ import { AdminTaskListModule } from '../admin-task-list/admin-task-list.module';
     AiAssistantModule,
     MyTaskListModule,
     AdminTaskListModule
+    DuplicateRecordsModule ,
+    DuplicateCustomerModule
+
   ]
 })
 export class DashboardModule { }
