@@ -40,7 +40,7 @@ import { AdminTaskListModule } from '../admin-task-list/admin-task-list.module';
     MyTaskListModule,
     AdminTaskListModule,
     DuplicateRecordsModule ,
-    DuplicateCustomerModule
+    DuplicateCustomerModule,
 
   ]
 })

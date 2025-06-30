@@ -1,7 +1,8 @@
 <div class="main">
   <div class="titleBox">
     <button (click)="goBack()" class="back-button">
-      <img src="assets/img/leftArrow.svg" alt="Back" />
+      <img src="assets/img/leftArrow.svg" alt="Back" *ngIf="!isArabic"/>
+      <img src="assets/img/rightArrow.svg" alt="Back" *ngIf="isArabic"/>
     </button>
     <h2>
       {{
@@ -26,17 +27,17 @@
           'status-quarantined': status === 'Quarantined'
         }"
       >
-        {{status}}
+        {{status | translate}}
       </div>
     </div>
 
     <div class="data">
       <div>
-        <label>Issue: </label>
+        <label>{{"Issue" | translate}}: </label>
         <p>Missing TAX information</p>
       </div>
       <div>
-        <label>Description: </label>
+        <label>{{"Description" | translate}}: </label>
         <p>
           The TAX ID entered is not valid. Please double-check with the finance
           department.
@@ -46,11 +47,11 @@
       <div class="edit">
         <div class="info">
           <div>
-            <label>Reviewed By: </label>
+            <label>{{"ReviewedBy" | translate}}: </label>
             <p>Compliance Team</p>
           </div>
           <div>
-            <label>Date: </label>
+            <label>{{"Date" | translate}}: </label>
             <p>06/21/2025</p>
           </div>
         </div>
@@ -75,7 +76,9 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "FirstName" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24"
+          [nzErrorTip]="'EnterFirstName' | translate"
+          >
             <input
               nz-input
               id="firstName"
@@ -89,7 +92,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "SecondName" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24"  [nzErrorTip]="'EnterSecondName' | translate">
             <input
               nz-input
               id="secondName"
@@ -105,7 +108,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "Street" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterStreet' | translate">
             <input
               nz-input
               id="street"
@@ -119,7 +122,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "PostalCode" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterPostalCode' | translate">
             <input
               nz-input
               id="postalCode"
@@ -135,7 +138,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "City" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCity' | translate">
             <input
               nz-input
               id="city"
@@ -149,7 +152,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "Region" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterRegion' | translate">
             <input
               nz-input
               id="region"
@@ -163,7 +166,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "Country" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCountry' | translate">
             <input
               nz-input
               id="country"
@@ -182,7 +185,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="tax" nzRequired>
             {{ "Tax" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterTax' | translate">
             <nz-select
               id="tax"
               formControlName="tax"
@@ -203,7 +206,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "Country" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCountry' | translate">
             <input
               nz-input
               id="identityCountry"
@@ -217,7 +220,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "Resbonsible" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterResbonsible' | translate">
             <input
               nz-input
               id="resbonsible"
@@ -233,7 +236,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="dateFrom" nzRequired>
             {{ "DateFrom" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDate' | translate">
             <nz-date-picker
               id="dateFrom"
               formControlName="dateFrom"
@@ -248,7 +251,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="dateTo" nzRequired>
             {{ "DateTo" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDate' | translate">
             <nz-date-picker
               id="dateTo"
               formControlName="dateTo"
@@ -268,7 +271,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "SalesORG" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterSalesORG' | translate">
             <input
               nz-input
               id="salesOrg"
@@ -284,7 +287,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "DistributionChannel" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDistributionChannel' | translate">
             <input
               nz-input
               id="distChannel"
@@ -298,7 +301,7 @@
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
             {{ "Division" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24">
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDivision' | translate">
             <input
               nz-input
               id="division"

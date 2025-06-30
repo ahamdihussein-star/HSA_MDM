@@ -101,5 +101,22 @@
     "Field": "Field",
     "PhoneNumber": "Phone Number",
     "Name": "Name",
-  "":""
+
+  "Issue": "Issue",
+  "Description": "Description",
+  "ReviewedBy": "Reviewed By",
+  "EnterFirstName": "Enter First Name",
+  "EnterSecondName": "Enter Second Name",
+  "EnterStreet": "Enter Street",
+  "EnterPostalCode": "Enter Postal Code",
+  "EnterCity": "Enter City",
+  "EnterRegion": "Enter Region",
+  "EnterCountry": "Enter Country",
+  "EnterTax": "Enter Tax",
+  "EnterResbonsible": "Enter Resbonsible",
+  "EnterDate": "Enter Date",
+  "EnterSalesORG": "Enter Sales ORG",
+  "EnterDistributionChannel": "Enter Distribution Channel",
+  "EnterDivision": "Enter Division",
+    "":""
 }
