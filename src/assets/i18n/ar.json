@@ -101,5 +101,22 @@
     "Field": "حقل",
     "PhoneNumber": "رقم الهاتف",
     "Name": "الاسم",
-    "":""
+   
+  "Issue": "المشكلة",
+  "Description": "الوصف",
+  "ReviewedBy": "تمت المراجعة بواسطة",
+  "EnterFirstName": "أدخل الاسم الأول",
+  "EnterSecondName": "أدخل الاسم الثاني",
+  "EnterStreet": "أدخل اسم الشارع",
+  "EnterPostalCode": "أدخل الرمز البريدي",
+  "EnterCity": "أدخل المدينة",
+  "EnterRegion": "أدخل المنطقة",
+  "EnterCountry": "أدخل الدولة",
+  "EnterTax": "أدخل الضريبة",
+  "EnterResbonsible": "أدخل الشخص المسؤول",
+  "EnterDate": "أدخل التاريخ",
+  "EnterSalesORG": "أدخل مؤسسة المبيعات",
+  "EnterDistributionChannel": "أدخل قناة التوزيع",
+  "EnterDivision": "أدخل القسم",
+   "":""
 }

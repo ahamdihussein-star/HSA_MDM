@@ -38,9 +38,9 @@ import { AdminTaskListModule } from '../admin-task-list/admin-task-list.module';
     MyRequestsModule, 
     AiAssistantModule,
     MyTaskListModule,
-    AdminTaskListModule
+    AdminTaskListModule,
     DuplicateRecordsModule ,
-    DuplicateCustomerModule
+    DuplicateCustomerModule,
 
   ]
 })

@@ -1,5 +1,5 @@
-import { Location } from "@angular/common";
-import { Component, ViewEncapsulation } from "@angular/core";
+import { Location, isPlatformBrowser } from "@angular/common";
+import { Component, Inject, PLATFORM_ID, ViewEncapsulation } from "@angular/core";
 import { FormBuilder, FormGroup, Validators } from "@angular/forms";
 import { ActivatedRoute, Router } from "@angular/router";
 import { TranslateService } from "@ngx-translate/core";
@@ -18,6 +18,7 @@ export class NewRequestComponent {
   canView: Boolean = false;
   status = "Rejected";
   editPressed = false;
+  isArabic = false;
 
   taxOptions = [
     { value: "1", label: "Tax" },
@@ -31,7 +32,8 @@ export class NewRequestComponent {
     private notification: NzNotificationService,
     private translate: TranslateService,
     private router: Router,
-    private location: Location
+    private location: Location,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {}
 
   onSubmit(): void {
@@ -104,5 +106,9 @@ export class NewRequestComponent {
         this.requestForm.disable();
       }
     });
+
+    if (isPlatformBrowser(this.platformId)) {
+      this.isArabic = localStorage.getItem("lang") == "ar";
+    }
   }
 }
