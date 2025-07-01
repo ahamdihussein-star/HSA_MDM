@@ -63,6 +63,30 @@ export class NewRequestComponent {
     this.location.back();
   }
 
+  fillForm(): void {
+    this.requestForm.patchValue({
+      firstName: "John",
+      secondName: "Doe",
+      street: "123 Main St",
+      postalCode: "12345",
+      city: "Anytown",
+      region: "Anystate",
+      country: "USA",
+
+      tax: "2",
+      identityCountry: "USA",
+      resbonsible: "Jane Smith",
+      dateFrom: new Date(),
+      dateTo: new Date(new Date().setFullYear(new Date().getFullYear() + 1)),
+
+      salesOrg: "Sales Org 1",
+      distChannel: "Distribution Channel 1",
+      division: "Division 1",
+    });
+   
+    this.requestForm.disable();
+  }
+
   editRequest(): void {
     this.editPressed = true;
     this.requestForm.get("tax")?.enable();
@@ -104,8 +128,10 @@ export class NewRequestComponent {
 
       if (canEdit || canView) {
         this.requestForm.disable();
+        this.fillForm();
       }
     });
+
 
     if (isPlatformBrowser(this.platformId)) {
       this.isArabic = localStorage.getItem("lang") == "ar";

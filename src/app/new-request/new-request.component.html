@@ -32,11 +32,11 @@
     </div>
 
     <div class="data">
-      <div>
+      <div *ngIf="status == 'Rejected'">
         <label>{{"Issue" | translate}}: </label>
         <p>Missing TAX information</p>
       </div>
-      <div>
+      <div *ngIf="status == 'Rejected'">
         <label>{{"Description" | translate}}: </label>
         <p>
           The TAX ID entered is not valid. Please double-check with the finance
