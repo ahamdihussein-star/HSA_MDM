@@ -1,22 +1,21 @@
-image: node:16
+image: node:18
 
 pipelines:
   branches:
-   staging:
+   feature/layout:
     - step:
         name: Install Dependencies
         caches:
           - node
         script:
           - npm install --f 
-
     - step:
         name: Build and Test
         caches:
           - node
         script:
           - npm run build:prod
-          - cp staticwebapp.config.json ./dist/staticwebapp.config.json
+          - cp staticwebapp.config.json ./dist/browser/staticwebapp.config.json
         artifacts:
           - 'dist/**'
     - step: 
@@ -25,7 +24,8 @@ pipelines:
         script:
           - echo "$(ls -la)"
           - echo "$(ls -la ./dist)"
+          - echo "$(ls -la ./dist/browser)"
           - pipe: microsoft/azure-static-web-apps-deploy:main
             variables:
-                APP_LOCATION: "$BITBUCKET_CLONE_DIR/dist"
+                APP_LOCATION: "$BITBUCKET_CLONE_DIR/dist/browser"
                 API_TOKEN: $AZURE_DEPLOYMENT_TOKEN
