@@ -185,6 +185,14 @@
     text-align: center !important;
 }
 
+textarea.ant-input {
+    min-height: 141px;   
+    border: 1px solid #2323231A;
+    background: #F5F7FA;
+    border-radius: 10px;
+    margin-bottom: 8px;
+}
+
 .seachInputHolder {
     background-color: white;
     display: flex;
@@ -249,4 +257,8 @@
 
 .dFelx {
     display: flex;
+}
+.popupImg{
+    width: 98px;
+    margin-bottom: 25px;
 }

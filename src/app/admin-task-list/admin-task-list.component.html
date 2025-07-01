@@ -60,7 +60,7 @@
                 <td>{{ data.date }}</td>
                 <td>
                     <p class="generalStatus" [ngClass]="data.status === 'Pending' ? 'pendingText' : 'otherText'">
-                        {{ data.status }}
+                        {{ data.status | translate}}
                     </p>
                 </td>
 
@@ -98,7 +98,7 @@
     <nz-modal [(nzVisible)]="isApprovedVisible" [nzTitle]="'Request Approved' | translate" (nzOnCancel)="handleCancel()"
         (nzOnOk)="handleOk()">
         <ng-container *nzModalContent>
-            <img src="./assets/img/approvedIcon.svg" alt="">
+            <img src="./assets/img/approvedIcon.svg" class="popupImg" alt="">
             <p class="popupText">{{ "You have successfully approved this request.It will now appear in the Golden Records." | translate }}
             </p>
             <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
@@ -115,9 +115,8 @@
     <nz-modal [(nzVisible)]="isRejectedConfirmVisible" [nzTitle]="'Request Rejected' | translate" (nzOnCancel)="handleCancel()"
         (nzOnOk)="handleOk()">
         <ng-container *nzModalContent>
-            <img src="./assets/img/rejectIcon.svg" alt="">
-            <p class="popupText">{{ "You have successfully rejected this request. The requester will be notified with your
-                reason." | translate }}
+            <img src="./assets/img/rejectIcon.svg"  class="popupImg" alt="">
+            <p class="popupText">{{ "You have successfully rejected this request. The requester will be notified with your reason." | translate }}
             </p>
             <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
             <label nz-checkbox class="checkboxHolder">

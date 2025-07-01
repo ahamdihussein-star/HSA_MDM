@@ -1,36 +1,49 @@
-
-<h3 class="welcomeMessage"> 
-    {{"WelcomeBack" | translate}}, Ahmed!
-    <img src="assets/img/waving.svg" alt="Welcome Icon" class="welcomeIcon" />
+<h3 class="welcomeMessage">
+  {{"WelcomeBack" | translate}}, Ahmed!
+  <img src="assets/img/waving.svg" alt="Welcome Icon" class="welcomeIcon" />
 </h3>
 <p class="subMessage">{{"HereIsYourTasksForToday"|translate}}</p>
-<h1 class="pageTitle">
+
+
+<div class="titleActionHolder">
+  <h1 class="pageTitle">
     {{ "MyTaskList" | translate }}
-</h1>
+  </h1>
+  <div class="actionHolderTitle">
+    <div class="seachInputHolder">
+      <img src="./assets/img/search.svg" alt="">
+      <input type="text" [placeholder]="'Search' | translate">
+    </div>
+    <img src="./assets/img/filter.svg" alt="">
+  </div>
+</div>
 <div>
- 
-    <nz-table #basicTable [nzPageSize]="7" [nzData]="taskList">
-      <thead>
-        <tr>
-          <th>{{"RequestID"|translate}}</th>
-          <th>{{"CustomerName"|translate}}</th>
-          <th>{{"Date"|translate}}</th>
-          <th>{{"Action"|translate}}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let data of basicTable.data; let i = index">
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.customerName }}</td>
-          <td>{{ data.date }}</td>
-          <td>
-            <!-- <a>{{data.id}}</a> -->
-           
-             <a  class="primaryColor"  >
+
+  <nz-table #basicTable [nzPageSize]="7" [nzData]="taskList">
+    <thead>
+      <tr>
+        <th>{{"RequestID"|translate}}</th>
+        <th>{{"Request Type"|translate}}</th>
+        <th>{{"Record Identifier"|translate}}</th>
+        <th>{{"Issue Description"|translate}}</th>
+        <th>{{"Action"|translate}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let data of basicTable.data; let i = index">
+        <td>{{ data.requestId }}</td>
+        <td>{{ data.RequestType }}</td>
+        <td>{{ data.RecordIdentifier }}</td>
+        <td>{{ data.IssueDescription }}</td>
+
+        <td>
+          <!-- <a>{{data.id}}</a> -->
+
+          <a class="primaryColor"  (click)="viewOrEditRequest(data.id,'Rejected', true)">
             {{ "FixIssue" | translate }}
           </a>
-          </td>
-        </tr>
-      </tbody>
-    </nz-table>
+        </td>
+      </tr>
+    </tbody>
+  </nz-table>
 </div>

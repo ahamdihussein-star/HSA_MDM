@@ -14,7 +14,7 @@ export class MyRequestsComponent {
       customerName: "Salma Mustafa",
       submittedBy: "User A",
       status: "Pending",
-      date: "14Dec, 2024",
+      RecordIdentifier: "Pepsi",
     },
     {
       id: 2,
@@ -22,7 +22,7 @@ export class MyRequestsComponent {
       customerName: "Salma Mustafa",
       submittedBy: "User A",
       status: "Approved",
-      date: "14Dec, 2024",
+      RecordIdentifier: "Marzoq & his sons",
     },
     {
       id: 3,
@@ -30,7 +30,7 @@ export class MyRequestsComponent {
       customerName: "Salma Mustafa",
       submittedBy: "User A",
       status: "Rejected",
-      date: "14Dec, 2024",
+      RecordIdentifier: "Pepsi",
     },
     {
       id: 4,
@@ -38,7 +38,7 @@ export class MyRequestsComponent {
       customerName: "Salma Mustafa",
       submittedBy: "User A",
       status: "Pending",
-      date: "14Dec, 2024",
+      RecordIdentifier: "Marzoq & his sons",
     },
     {
       id: 5,
@@ -46,7 +46,7 @@ export class MyRequestsComponent {
       customerName: "Salma Mustafa",
       submittedBy: "User A",
       status: "Quarantined",
-      date: "14Dec, 2024",
+      RecordIdentifier: "Pepsi",
     },
     {
       id: 6,
@@ -54,7 +54,7 @@ export class MyRequestsComponent {
       customerName: "Salma Mustafa",
       submittedBy: "User A",
       status: "Pending",
-      date: "14Dec, 2024",
+      RecordIdentifier: "Marzoq & his sons",
     },
     {
       id: 7,
@@ -62,7 +62,7 @@ export class MyRequestsComponent {
       customerName: "Salma Mustafa",
       submittedBy: "User A",
       status: "Approved",
-      date: "14Dec, 2024",
+      RecordIdentifier: "Pepsi",
     },
     {
       id: 8,
@@ -70,7 +70,7 @@ export class MyRequestsComponent {
       customerName: "Salma Mustafa",
       submittedBy: "User A",
       status: "Rejected",
-      date: "14Dec, 2024",
+      RecordIdentifier: "Marzoq & his sons",
     },
     {
       id: 9,
@@ -78,10 +78,20 @@ export class MyRequestsComponent {
       customerName: "Salma Mustafa",
       submittedBy: "User A",
       status: "Approved",
-      date: "14Dec, 2024",
+      RecordIdentifier: "Pepsi",
     },
   ]; // This will hold the quarantined requests data
-  constructor(private router: Router) {}
+
+  checked = false;
+  indeterminate = false;
+  setOfCheckedId = new Set<number>();
+  statusCount: Record<string, number> = {};
+
+  constructor(private router: Router) { }
+
+  mixedStatuses() {
+    return this.statusCount['Pending'] || this.statusCount['Quarantined'] || this.statusCount['Rejected'] || this.statusCount['Approved'];
+  }
 
   deleteRecodr(index: number): void {
     // This method will delete a record from the quarantined requests
@@ -91,8 +101,45 @@ export class MyRequestsComponent {
 
   viewOrEditRequest(id: number, status: string, canEdit: Boolean): void {
     this.router.navigate(["/dashboard/new-request", id], {
-      queryParams: {edit: canEdit, status}
+      queryParams: { edit: canEdit, status }
     });
+  }
+
+  onAllChecked(value: boolean): void {
+    this.myRequests.forEach(item => this.updateCheckedSet(item.id, item.status, value));
+    this.refreshCheckedStatus();
+  }
+
+  refreshCheckedStatus(): void {
+    this.checked = this.myRequests.every(item => this.setOfCheckedId.has(item.id));
+    this.indeterminate = this.myRequests.some(item => this.setOfCheckedId.has(item.id)) && !this.checked;
+  }
+
+  onItemChecked(id: number, status: any, checked: boolean): void {
+    this.updateCheckedSet(id, status, checked);
+    this.refreshCheckedStatus();
+  }
+
+  updateCheckedSet(id: number, status: string, checked: boolean): void {
+    if (checked) {
+      this.setOfCheckedId.add(id);
+    } else {
+      this.setOfCheckedId.delete(id);
+    }
+
+    // Filter selected items
+    const selectedItems = this.myRequests.filter(item =>
+      this.setOfCheckedId.has(item.id)
+    );
+
+    // Build the count object
+    this.statusCount = selectedItems.reduce((acc, item) => {
+      acc[item.status] = (acc[item.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    console.log(this.statusCount);
+
   }
 
   ngOnInit(): void {

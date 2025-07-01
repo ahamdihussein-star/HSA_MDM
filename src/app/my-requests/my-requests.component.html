@@ -1,8 +1,23 @@
-<h1 class="pageTitle">
-  {{ "MyRequests" | translate }}
-</h1>
+<div class="titleActionHolder">
+
+  <h1 class="pageTitle">
+    {{ "MyRequests" | translate }}
+  </h1>
+  <div class="actionHolderTitleTabs">
+    <div *ngIf="mixedStatuses()">
+      <button class="deleteBtn actionBtn"><img src="./assets/img/redTrash.svg" alt="">{{ "Delete" | translate
+        }}</button>
+    </div>
+    <div class="seachInputHolder">
+      <img src="./assets/img/search.svg" alt="">
+      <input type="text" [placeholder]="'Search' | translate">
+    </div>
+    <img src="./assets/img/filter.svg" alt="">
+  </div>
+</div>
 <div>
-  <nz-tabset>
+  <nz-tabset [nzSelectedIndex]="1">
+    <nz-tab nzTitle="{{'All'|translate}}"></nz-tab>
     <nz-tab nzTitle="{{ 'CustomerRequests' | translate }}"></nz-tab>
     <nz-tab nzTitle="{{ 'ProductRequests' | translate }}"></nz-tab>
     <nz-tab nzTitle="{{ 'SupplierRequests' | translate }}"></nz-tab>
@@ -10,38 +25,63 @@
   <nz-table #basicTable [nzPageSize]="7" [nzData]="myRequests">
     <thead>
       <tr>
+        <th [(nzChecked)]="checked" [nzIndeterminate]="indeterminate" (nzCheckedChange)="onAllChecked($event)">
+
         <th>{{ "RequestID" | translate }}</th>
         <th>{{ "CustomerName" | translate }}</th>
-        <th>{{ "Date" | translate }}</th>
+        <th>{{ "Record Identifier" | translate }}</th>
         <th>{{ "Status" | translate }}</th>
         <th>{{ "Action" | translate }}</th>
       </tr>
     </thead>
     <tbody>
       <tr *ngFor="let data of basicTable.data; let i = index">
+        <td [nzChecked]="setOfCheckedId.has(data.id)" (nzCheckedChange)="onItemChecked(data.id,data.status, $event)">
+        </td>
         <td>{{ data.requestId }}</td>
         <td>{{ data.customerName }}</td>
-        
-        <td>{{ data.date }}</td>
+
+        <td>{{ data.RecordIdentifier }}</td>
         <td>
-          <p class="generalStatus"
-            [ngClass]="{
+          <p class="generalStatus" [ngClass]="{
               'status-approved': data.status === 'Approved',
               'status-pending': data.status === 'Pending',
               'status-rejected': data.status === 'Rejected',
               'status-quarantined': data.status === 'Quarantined'
-            }"
-          >
+            }">
             {{ data.status | translate }}
           </p>
         </td>
         <td>
-          <a  class="primaryColor" *ngIf="data.status != 'Rejected'" (click)="viewOrEditRequest(data.id, data.status, false)">
-            {{ "ViewDetails" | translate }}
-          </a>
-          <a  class="primaryColor" *ngIf="data.status === 'Rejected'" (click)="viewOrEditRequest(data.id,data.status, true)">
-            {{ "FixIssue" | translate }}
-          </a>
+
+          <div class="actionHolder">
+            <img src="./assets/img/edit.svg" alt="">
+            <img class="iconSpacing" src="./assets/img/trash.svg" alt="">
+            <a nz-dropdown nzTrigger="click" [nzDropdownMenu]="menu" class="actionHolderBtn">
+              <img src="./assets/img/moreAction.svg" alt="" />
+              <span nz-icon nzType="down"></span>
+            </a>
+            <nz-dropdown-menu #menu="nzDropdownMenu">
+              <ul nz-menu>
+
+
+                <li nz-menu-item *ngIf="data.status != 'Rejected'">
+                  <a class="menucolor" (click)="viewOrEditRequest(data.id, data.status, false)">
+                    {{ "ViewDetails" | translate }}
+                  </a>
+                </li>
+                <li nz-menu-item *ngIf="data.status === 'Rejected'">
+                  <a class="menucolor" (click)="viewOrEditRequest(data.id,data.status, true)">
+                    {{ "FixIssue" | translate }}
+                  </a>
+                </li>
+              </ul>
+            </nz-dropdown-menu>
+
+          </div>
+
+
+
         </td>
       </tr>
     </tbody>

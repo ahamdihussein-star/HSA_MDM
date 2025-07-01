@@ -1,34 +1,76 @@
-<h1 class="pageTitle">
+<div class="titleActionHolder">
+
+  <h1 class="pageTitle">
     {{ "GoldenRequests" | translate }}
-</h1>
+  </h1>
+  <div class="actionHolderTitleTabs">
+    <div *ngIf="mixedStatuses()">
+      <button class="deleteBtn actionBtn"><img src="./assets/img/redTrash.svg" alt="">{{ "Delete" | translate
+        }}</button>
+    </div>
+    <div class="seachInputHolder">
+      <img src="./assets/img/search.svg" alt="">
+      <input type="text" [placeholder]="'Search' | translate">
+    </div>
+    <img src="./assets/img/filter.svg" alt="">
+  </div>
+</div>
 <div>
-    <nz-tabset>
-      <nz-tab nzTitle="{{'CustomerRequests'|translate}}"></nz-tab>
-      <nz-tab nzTitle="{{'ProductRequests'|translate}}"></nz-tab>
-      <nz-tab nzTitle="{{'SupplierRequests'|translate}}"></nz-tab>
-    </nz-tabset>
-    <nz-table #basicTable [nzPageSize]="7" [nzData]="goldenRequests">
-      <thead>
-        <tr>
-          <th>{{"RequestID"|translate}}</th>
-          <th>{{"CustomerName"|translate}}</th>
-          <th>{{"Date"|translate}}</th>
-          <th>{{"Action"|translate}}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let data of basicTable.data; let i = index">
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.customerName }}</td>
-          <td>{{ data.date }}</td>
-          <td>
-            <!-- <a>{{data.id}}</a> -->
-           
-          <a  class="primaryColor" [routerLink]="['/dashboard/data-lineage']" >
-            {{ "DataLineage" | translate }}
+  <nz-tabset [nzSelectedIndex]="1">
+    <nz-tab nzTitle="{{'All'|translate}}"></nz-tab>
+    <nz-tab nzTitle="{{'CustomerRequests'|translate}}"></nz-tab>
+    <nz-tab nzTitle="{{'ProductRequests'|translate}}"></nz-tab>
+    <nz-tab nzTitle="{{'SupplierRequests'|translate}}"></nz-tab>
+  </nz-tabset>
+  <nz-table #basicTable [nzPageSize]="7" [nzData]="goldenRequests">
+    <thead>
+      <tr>
+        <th [(nzChecked)]="checked" [nzIndeterminate]="indeterminate" (nzCheckedChange)="onAllChecked($event)">
+
+        <th>{{"RequestID"|translate}}</th>
+        <th>{{"CustomerName"|translate}}</th>
+        <th>{{"Date"|translate}}</th>
+        <th>{{"Action"|translate}}</th>
+      </tr>
+    </thead>
+    <tbody>
+      <tr *ngFor="let data of basicTable.data; let i = index">
+        <td [nzChecked]="setOfCheckedId.has(data.id)" (nzCheckedChange)="onItemChecked(data.id,data.status, $event)">
+        </td>
+        <td>{{ data.requestId }}</td>
+        <td>{{ data.customerName }}</td>
+        <td>{{ data.date }}</td>
+        <td>
+          <!-- <a>{{data.id}}</a> -->
+          <a  [routerLink]="['/dashboard/data-lineage']" class="primaryColor" *ngIf="user === '2'">
+                    {{ "DataLineage" | translate }}
           </a>
-          </td>
-        </tr>
-      </tbody>
-    </nz-table>
+          <div class="actionHolder" *ngIf="user === '1'">
+            <img src="./assets/img/edit.svg" alt="">
+            <img class="iconSpacing" src="./assets/img/trash.svg" alt="">
+            <a nz-dropdown nzTrigger="click" [nzDropdownMenu]="menu" class="actionHolderBtn">
+              <img src="./assets/img/moreAction.svg" alt="" />
+              <span nz-icon nzType="down"></span>
+            </a>
+            <nz-dropdown-menu #menu="nzDropdownMenu">
+              <ul nz-menu>
+
+                <li nz-menu-item (click)="handleAction('view', data)">{{ "ViewDetails" | translate }}
+                <li nz-menu-item [routerLink]="['/dashboard/data-lineage']">
+                 
+                    {{ "DataLineage" | translate }}
+                 
+                </li>
+                <li nz-menu-item (click)="handleAction('Update', data)">{{ "Request Update"| translate }}</li>
+
+              </ul>
+            </nz-dropdown-menu>
+
+          </div>
+
+
+        </td>
+      </tr>
+    </tbody>
+  </nz-table>
 </div>

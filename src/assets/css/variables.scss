@@ -67,7 +67,10 @@
     src: url("./../fonts/Inter-Medium.ttf") format("opentype");
     font-display: swap;
   }
-  
+  a{
+    text-decoration: none;
+    color: #232323;
+  }
   body {
     height: unset;
     // height: 100%;
@@ -138,5 +141,11 @@
     body.rtl & {
       transform: scaleX(-1);
     }
+  }
+}
+.menucolor{
+  color: #232323;
+  &:hover{
+    color: #232323;
   }
 }

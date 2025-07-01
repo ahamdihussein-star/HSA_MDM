@@ -121,6 +121,7 @@ export class AdminTaskListComponent {
     this.isApprovedVisible = false;
     this.isRejectedVisible = false;
     this.isRejectedConfirmVisible = false
+    this.inputValue = '';
 
   }
   submitApprove() {
@@ -148,11 +149,13 @@ export class AdminTaskListComponent {
     this.isApprovedVisible = false;
     this.isRejectedVisible = false;
     this.isRejectedConfirmVisible = false
+    this.inputValue = '';
 
   }
   confirmReject(): void {
     this.isRejectedVisible = false
     this.isRejectedConfirmVisible = true;
+    this.inputValue = '';
   }
 
   onAllChecked(value: boolean): void {

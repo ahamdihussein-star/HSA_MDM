@@ -59,6 +59,9 @@
         <button class="Primary_fill" nz-button *ngIf="canEdit && !editPressed" (click)="editRequest()">
           {{ "EditRequest" | translate }}
         </button>
+        <button class="Primary_fill" nz-button *ngIf="!canEdit && status === 'Approved'" (click)="RequestChange()">
+          {{ "ModifyRequest" | translate }}
+        </button>
       </div>
     </div>
   </div>

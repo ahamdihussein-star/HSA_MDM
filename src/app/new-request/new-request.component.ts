@@ -93,6 +93,16 @@ export class NewRequestComponent {
     this.requestForm.get("identityCountry")?.enable();
     this.requestForm.get("resbonsible")?.enable();
   }
+  RequestChange(): void {
+    this.router.navigate(["/dashboard/my-requests"]);
+    let toastMessage: string = "Your request has been sent back for modification";
+    this.translate.get(toastMessage).subscribe((message: string) => {
+      this.notification.create("success", message, "", {
+        nzClass: "success-notification",
+        nzDuration: 5000,
+      });
+    });
+  }
 
   ngOnInit(): void {
     this.i18n.setLocale(en_US);

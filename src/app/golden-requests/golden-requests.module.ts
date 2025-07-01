@@ -7,6 +7,7 @@ import { GoldenRequestsComponent } from './golden-requests.component';
 import { TranslateModule } from '@ngx-translate/core';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
+import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
 
 @NgModule({
   declarations: [
@@ -17,7 +18,8 @@ import { NzTabsModule } from 'ng-zorro-antd/tabs';
     GoldenRequestsRoutingModule,
     TranslateModule,
     NzTableModule,
-    NzTabsModule
+    NzTabsModule,
+    NzDropDownModule
   ],
   exports: [
     GoldenRequestsComponent

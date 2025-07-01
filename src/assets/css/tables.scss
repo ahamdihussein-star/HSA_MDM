@@ -8,17 +8,17 @@
 }
 
 .ant-table {
-    border-radius: 10px !important;
+    border-radius: 20px !important;
 }
 
 .ant-table-container,
 .ant-table-container table>thead>tr:first-child th:last-child {
-    border-top-right-radius: 10px;
+    border-top-right-radius: 20px;
 }
 
 .ant-table-container,
 .ant-table-container table>thead>tr:first-child th:first-child {
-    border-top-left-radius: 10px;
+    border-top-left-radius: 20px;
 }
 
 .ant-pagination-next .ant-pagination-item-link,
@@ -79,6 +79,15 @@
     }
 }
 
+// table tr td:first-child, table tr th:first-child {
+//     body.ltr & {
+//         padding-left: 30px;
+//     }
+//     body.rtl & {
+//         padding-right: 30px;
+//     }
+// }
+
 .ant-pagination-next .ant-pagination-item-link,
 .ant-pagination-prev .ant-pagination-item-link {
     body.rtl & {
@@ -89,6 +98,7 @@
 .ant-pagination-item a {
     text-align: center !important;
 }
+
 
 // This is a custom style for the tabs
 
@@ -117,4 +127,10 @@
         margin: 0 32px 0 0;
 
     }
+}
+.ant-tabs > .ant-tabs-nav .ant-tabs-nav-more, .ant-tabs > div > .ant-tabs-nav .ant-tabs-nav-more{
+    display: none;
+}
+.ant-tabs > .ant-tabs-nav, .ant-tabs > div > .ant-tabs-nav{
+    width: fit-content;
 }
