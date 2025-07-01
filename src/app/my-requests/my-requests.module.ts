@@ -8,6 +8,8 @@ import { TranslateModule } from '@ngx-translate/core';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { NzTabsModule } from 'ng-zorro-antd/tabs';
 
+import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
+
 @NgModule({
   declarations: [
     MyRequestsComponent
@@ -17,7 +19,8 @@ import { NzTabsModule } from 'ng-zorro-antd/tabs';
     MyRequestsRoutingModule,
     TranslateModule,
     NzTableModule,
-    NzTabsModule
+    NzTabsModule,
+    NzDropDownModule
   ],
   exports: [
     MyRequestsComponent

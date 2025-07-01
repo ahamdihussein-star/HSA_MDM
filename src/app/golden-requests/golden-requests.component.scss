@@ -1,0 +1,80 @@
+.actionHolderTitleTabs {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: -70px;
+    z-index: 99;
+}
+
+.titleActionHolder {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.seachInputHolder {
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 215px;
+    height: 48px;
+    border-radius: 100px;
+    margin: 0 12px;
+    padding: 12px 18px;
+}
+
+.actionBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 130px;
+    height: 40px;
+    margin-left: 10px;
+    color: white;
+    border-radius: 90px;
+    border: none;
+    z-index: 99;
+    position: relative;
+
+    body.rtl & {
+        margin-left: 10px;
+        margin-right: 5px;
+    }
+
+    img {
+        margin-right: 5px;
+
+        body.rtl & {
+            margin-left: 5px;
+            margin-right: 0px;
+        }
+    }
+}
+
+.deleteBtn {
+    background-color: #EF4444;
+
+}
+
+.actionHolder {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+
+    img {
+        cursor: pointer;
+    }
+
+}
+
+.iconSpacing {
+    margin: 0 10px;
+}
+
+.actionHolderBtn {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}

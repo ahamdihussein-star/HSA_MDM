@@ -60,7 +60,7 @@
                 <td>{{ data.date }}</td>
                 <td>
                     <p class="generalStatus" [ngClass]="data.status === 'Pending' ? 'pendingText' : 'otherText'">
-                        {{ data.status }}
+                        {{ data.status | translate}}
                     </p>
                 </td>
 
