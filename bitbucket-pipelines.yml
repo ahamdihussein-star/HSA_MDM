@@ -16,7 +16,7 @@ pipelines:
           caches:
             - node
           script:
-            - npm run build -- --prod
+            - npm run build 
             - cp -r ./dist/your-app-name ./dist/standalone
             - cd dist/standalone
             - apt-get update
