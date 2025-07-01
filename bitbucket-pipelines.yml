@@ -1,39 +1,31 @@
-image: node:18
+image: node:16
 
 pipelines:
   branches:
-    feature/layout:
-      - step:
-          name: Install Dependencies
-          caches:
-            - node
-          script:
-            - npm install
-            - npm install -g @angular/cli@11.2.7
+   staging:
+    - step:
+        name: Install Dependencies
+        caches:
+          - node
+        script:
+          - npm install --f 
 
-      - step:
-          name: Build and Test
-          caches:
-            - node
-          script:
-            - npm run build 
-            - cp -r ./dist/master-data-mangment ./dist/standalone
-            - cd dist/standalone
-            - apt-get update
-            - apt-get install -y zip 
-            - zip -r ../../example-$BITBUCKET_BUILD_NUMBER.zip .
-          artifacts:
-            - example-*.zip
-
-      - step:
-          name: "Deploy to Azure"
-          deployment: production
-          script:
-            - pipe: microsoft/azure-web-apps-deploy:1.0.0
-              variables:
-                AZURE_APP_ID: $AZURE_APP_ID
-                AZURE_PASSWORD: $AZURE_PASSWORD
-                AZURE_TENANT_ID: $AZURE_TENANT_ID
-                AZURE_RESOURCE_GROUP: $AZURE_RESOURCE_GROUP
-                AZURE_APP_NAME: $AZURE_APP_NAME
-                ZIP_FILE: "example-$BITBUCKET_BUILD_NUMBER.zip"
+    - step:
+        name: Build and Test
+        caches:
+          - node
+        script:
+          - npm run build:prod
+          - cp staticwebapp.config.json ./dist/staticwebapp.config.json
+        artifacts:
+          - 'dist/**'
+    - step: 
+        name: "Deploy to Azure"
+        deployment: test
+        script:
+          - echo "$(ls -la)"
+          - echo "$(ls -la ./dist)"
+          - pipe: microsoft/azure-static-web-apps-deploy:main
+            variables:
+                APP_LOCATION: "$BITBUCKET_CLONE_DIR/dist"
+                API_TOKEN: $AZURE_DEPLOYMENT_TOKEN
