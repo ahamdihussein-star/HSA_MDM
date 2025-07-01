@@ -1,0 +1,39 @@
+image: node:18
+
+pipelines:
+  branches:
+    feature/layout:
+      - step:
+          name: Install Dependencies
+          caches:
+            - node
+          script:
+            - npm install
+            - npm install -g @angular/cli@11.2.7
+
+      - step:
+          name: Build and Test
+          caches:
+            - node
+          script:
+            - npm run build -- --prod
+            - cp -r ./dist/your-app-name ./dist/standalone
+            - cd dist/standalone
+            - apt-get update
+            - apt-get install -y zip 
+            - zip -r ../../example-$BITBUCKET_BUILD_NUMBER.zip .
+          artifacts:
+            - example-*.zip
+
+      - step:
+          name: "Deploy to Azure"
+          deployment: production
+          script:
+            - pipe: microsoft/azure-web-apps-deploy:1.0.0
+              variables:
+                AZURE_APP_ID: $AZURE_APP_ID
+                AZURE_PASSWORD: $AZURE_PASSWORD
+                AZURE_TENANT_ID: $AZURE_TENANT_ID
+                AZURE_RESOURCE_GROUP: $RESOURCE_GROUP
+                AZURE_APP_NAME: $AZURE_APP_NAME
+                ZIP_FILE: "example-$BITBUCKET_BUILD_NUMBER.zip"
