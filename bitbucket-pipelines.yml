@@ -15,7 +15,7 @@ pipelines:
           - node
         script:
           - npm run build:prod
-          - cp staticwebapp.config.json ./dist/browser/staticwebapp.config.json
+          - cp staticwebapp.config.json ./dist/master-data-mangment/staticwebapp.config.json
         artifacts:
           - 'dist/**'
     - step: 
@@ -27,5 +27,5 @@ pipelines:
           - echo "$(ls -la ./dist/browser)"
           - pipe: microsoft/azure-static-web-apps-deploy:main
             variables:
-                APP_LOCATION: "$BITBUCKET_CLONE_DIR/dist/browser"
+                APP_LOCATION: "$BITBUCKET_CLONE_DIR/dist/master-data-mangment"
                 API_TOKEN: $AZURE_DEPLOYMENT_TOKEN
