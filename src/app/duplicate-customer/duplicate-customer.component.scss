@@ -1,12 +1,25 @@
 .btnContainer {
         display: flex;
         justify-content: flex-end;
-        margin-top: 20px;
+        gap: 30px;
+        // margin-top: 20px;
     
         .Primary_fill:disabled {
             background: #E7E4E8CC;
             color: #99959E;
             cursor: not-allowed;
         
+        }
+    }
+
+
+    .optionsHolder{
+        margin-top: 20px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        flex-direction: row-reverse;
+        .ant-select{
+            width: 30%;
         }
     }

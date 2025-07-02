@@ -1,5 +1,10 @@
 <h1 class="pageTitle backTitle">
-  <img (click)="goBack()" src="assets/img/leftArrow.svg" alt="Back" class="backImg" />
+  <img
+    (click)="goBack()"
+    src="assets/img/leftArrow.svg"
+    alt="Back"
+    class="backImg"
+  />
   {{ "Customer" | translate }}: CUST-001234
 </h1>
 
@@ -30,10 +35,7 @@
         (nzCheckedChange)="onItemChecked(data.id, $event)"
       ></td>
       <td>
-        <span *ngIf="i == 0">
-          {{ "DefaultRecord" | translate }}
-        </span>
-        <span *ngIf="i > 0"> {{ "Duplicate" | translate }} {{ i }} </span>
+        {{data.field}}
       </td>
       <td>{{ data.name }}</td>
       <td>{{ data.email }}</td>
@@ -42,9 +44,36 @@
     </tr>
   </tbody>
 </nz-table>
+<div class="optionsHolder">
+  
 
-<div class="btnContainer">
-  <button class="Primary_fill" [disabled]="setOfCheckedId.size <= 1" (click)="merge()">
-    {{ "Merge" | translate }}
-  </button>
+  <div class="btnContainer">
+    <button
+      class="SecondryBtn"
+      [disabled]="setOfCheckedId.size < 1"
+      (click)="ignoreRows()"
+    >
+      {{ "Ignore" | translate }}
+    </button>
+    <button
+      class="Primary_fill"
+      [disabled]="setOfCheckedId.size <= 1"
+      (click)="merge()"
+    >
+      {{ "Merge" | translate }}
+    </button>
+  </div>
+  <nz-select *ngIf="showSelect"
+    [(ngModel)]="selectedValue"
+    (ngModelChange)="selecteChange($event)"
+    nzPlaceHolder="{{ 'Choose Record' | translate }}"
+
+  >
+    <nz-option
+      *ngFor="let option of selectedOptions; let i = index"
+      [nzValue]="option.id"
+      [nzLabel]="option.field"
+    >
+    </nz-option>
+  </nz-select>
 </div>

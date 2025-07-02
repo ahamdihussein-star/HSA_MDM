@@ -144,7 +144,14 @@
   "Billing Address": "عنوان الفواتير",
   "Phone Number": "رقم الهاتف",
   "Tax Number": "رقم الضريبة",
-    "ModifyRequest": "تعديل الطلب",
-    "Your request has been sent back for modification": "تم إرسال طلبك للتعديل",
+  "ModifyRequest": "تعديل الطلب",
+  "Your request has been sent back for modification": "تم إرسال طلبك للتعديل",
+  "ProductName": "اسم المنتج",
+  "SupplierName": "اسم المورد",
+  "Choose Record":"اختر السجل",
+  "RejectedRecords":"السجلات المرفوضة",
+  "DuplicateRecords":"السجلات المكررة",
+  "GoldenRecords":"السجلات الذهبيه",
+  "RecordID":"رقم السجل",
   "": ""
 }
