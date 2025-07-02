@@ -15,7 +15,7 @@ pipelines:
           - node
         script:
           - npm run build:prod
-          - cp staticwebapp.config.json ./dist/master-data-mangment/staticwebapp.config.json
+          - cp staticwebapp.config.json ./dist/master-data-mangment/browser/staticwebapp.config.json
         artifacts:
           - 'dist/**'
     - step: 
