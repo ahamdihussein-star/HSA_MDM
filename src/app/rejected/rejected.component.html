@@ -12,7 +12,7 @@
 </div>
 
 <div>
-    <nz-tabset [nzSelectedIndex]="1">
+    <nz-tabset [nzSelectedIndex]="selectedIndex" (nzSelectedIndexChange)="onTabChange($event)">
         <nz-tab nzTitle="{{'All'|translate}}"></nz-tab>
         <nz-tab nzTitle="{{'CustomerRequests'|translate}}"></nz-tab>
         <nz-tab nzTitle="{{'ProductRequests'|translate}}"></nz-tab>
@@ -20,7 +20,33 @@
     </nz-tabset>
 
 
-    <nz-table #basicTable [nzPageSize]="7" [nzData]="duplicateRecords">
+   <div *ngIf="selectedIndex == 0">
+     <nz-table #basicTable [nzPageSize]="7" [nzData]="AllRecords">
+        <thead>
+            <tr>
+                <th>{{"RequestID"|translate}}</th>
+                <th>{{"Name"|translate}}</th>
+                <th>{{"Date"|translate}}</th>
+                <th>{{"Action"|translate}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let data of basicTable.data; let i = index">
+                <td>{{ data.requestId }}</td>
+                <td>{{ data.name }}</td>
+                <td>{{ data.date }}</td>
+                <td>
+                    <!-- <a>{{data.id}}</a> -->
+                    <a class="primaryColor">
+                        {{ "ViewDetails" | translate }}
+                    </a>
+                </td>
+            </tr>
+        </tbody>
+    </nz-table>
+   </div>
+    <div *ngIf="selectedIndex == 1">
+     <nz-table #basicTable [nzPageSize]="7" [nzData]="CustomerRecords">
         <thead>
             <tr>
                 <th>{{"RequestID"|translate}}</th>
@@ -43,4 +69,55 @@
             </tr>
         </tbody>
     </nz-table>
+   </div>
+    <div *ngIf="selectedIndex == 2">
+     <nz-table #basicTable [nzPageSize]="7" [nzData]="ProductRecords">
+        <thead>
+            <tr>
+                <th>{{"RequestID"|translate}}</th>
+                <th>{{"ProductName"|translate}}</th>
+                <th>{{"Date"|translate}}</th>
+                <th>{{"Action"|translate}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let data of basicTable.data; let i = index">
+                <td>{{ data.requestId }}</td>
+                <td>{{ data.name }}</td>
+                <td>{{ data.date }}</td>
+                <td>
+                    <!-- <a>{{data.id}}</a> -->
+                    <a class="primaryColor">
+                        {{ "ViewDetails" | translate }}
+                    </a>
+                </td>
+            </tr>
+        </tbody>
+    </nz-table>
+   </div>
+    <div *ngIf="selectedIndex == 3">
+     <nz-table #basicTable [nzPageSize]="7" [nzData]="SupplierRecords">
+        <thead>
+            <tr>
+                <th>{{"RequestID"|translate}}</th>
+                <th>{{"SupplierName"|translate}}</th>
+                <th>{{"Date"|translate}}</th>
+                <th>{{"Action"|translate}}</th>
+            </tr>
+        </thead>
+        <tbody>
+            <tr *ngFor="let data of basicTable.data; let i = index">
+                <td>{{ data.requestId }}</td>
+                <td>{{ data.name }}</td>
+                <td>{{ data.date }}</td>
+                <td>
+                    <!-- <a>{{data.id}}</a> -->
+                    <a class="primaryColor">
+                        {{ "ViewDetails" | translate }}
+                    </a>
+                </td>
+            </tr>
+        </tbody>
+    </nz-table>
+   </div>
 </div>

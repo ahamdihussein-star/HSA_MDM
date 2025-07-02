@@ -146,8 +146,13 @@
   "Tax Number": "Tax Number",
   "ModifyRequest": "Modify Request",
   "Your request has been sent back for modification": "Your request has been sent back for modification",
-
-
+  "ProductName": "Product Name",
+  "SupplierName": "Supplier Name",
+  "Choose Record":"Choose Record",
+  "RejectedRecords":"Rejected Records",
+  "DuplicateRecords":"Duplicate Records",
+  "GoldenRecords":"Golden Records",
+  "RecordID":"Record ID",
   "Logout": "Logout",
   "New Customer Request": "New Customer Request",
   "New Product Request": "New Product Request",
@@ -159,6 +164,7 @@
   "assignTo": "assign To",
   "Manufacturing Department": "Manufacturing Department",
   "Sales Department": "Sales Department",
+
   "DeleteRequest": "Delete Request",
   "": "",
   "": "",

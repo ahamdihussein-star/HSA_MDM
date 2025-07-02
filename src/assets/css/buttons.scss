@@ -22,6 +22,34 @@
   cursor: not-allowed;
 }
 
+
+
+.SecondryBtn{
+  @include btn(
+   transparent,
+    #FF0000,
+    #FF0000
+  );
+  border: none;
+
+  &:hover,
+  &:focus,
+  &:active {
+    @include btn(
+      transparent,
+      #FF0000,
+      #FF0000
+    );
+  }
+      border: 1px solid #FF0000;
+}
+.SecondryBtn:disabled {
+  background: #e7e4e8cc;
+  color: #99959e;
+      border: 1px solid #e7e4e8cc;
+  cursor: not-allowed;
+}
+
 button:focus {
   outline: none;
 }
