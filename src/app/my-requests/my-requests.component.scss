@@ -27,6 +27,7 @@
     display: flex;
     justify-content: center;
     align-items: center;
+    border-radius: 4px;
 }
 
 .actionHolderTitleTabs {
@@ -101,9 +102,11 @@
     }
 
 }
+
 .iconSpacing {
     margin: 0 10px;
 }
+
 .actionHolderBtn {
     display: flex;
     align-items: center;
@@ -114,8 +117,8 @@
 
 
 .table-cell-flex {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  width: 100%;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
 }
