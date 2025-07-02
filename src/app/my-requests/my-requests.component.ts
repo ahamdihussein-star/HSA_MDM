@@ -37,7 +37,7 @@ export class MyRequestsComponent {
       requestId: "CR-2023-0456",
       customerName: "Salma Mustafa",
       submittedBy: "User A",
-      status: "Pending",
+      status: "Approved",
       RecordIdentifier: "Marzoq & his sons",
     },
     {
@@ -45,7 +45,7 @@ export class MyRequestsComponent {
       requestId: "CR-2023-0456",
       customerName: "Salma Mustafa",
       submittedBy: "User A",
-      status: "Quarantined",
+      status: "Rejected",
       RecordIdentifier: "Pepsi",
     },
     {

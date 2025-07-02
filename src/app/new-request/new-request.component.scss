@@ -63,7 +63,7 @@
         font-weight: 600;
       }
 
-      
+
       .status-approved {
         color: #16DBCC;
         background-color: #41D4A81A;
@@ -83,12 +83,14 @@
         color: #FFBB38;
         background-color: #FFBB381A;
       }
-   
+
     }
+
     .data {
       display: flex;
       flex-direction: column;
       gap: 20px;
+
       div {
         display: flex;
         gap: 10px;
@@ -102,11 +104,13 @@
         display: flex;
         justify-content: space-between;
         align-items: center;
+
         .info {
           display: flex;
           flex-direction: column;
           gap: 20px;
         }
+
         button {
           width: 15%;
           min-width: fit-content;
@@ -179,4 +183,200 @@
 .ant-select-disabled.ant-select:not(.ant-select-customize-input) .ant-select-selector {
   background-color: #ededed !important;
   background: #ededed !important;
+}
+
+.deleteBtn {
+  width: 180px !important;
+  height: 45px;
+  border-radius: 100px;
+  border: 1px solid #EF4444;
+  color: #EF4444;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 0 15px;
+
+  body.rtl & {
+    margin: 0 15px 0 0;
+  }
+
+  cursor: pointer;
+  background-color: white !important;
+
+}
+
+.editBtn {
+  width: 180px !important;
+  margin: 0 0 0 15px !important;
+
+  body.rtl & {
+    margin: 0 15px 0 0 !important;
+  }
+}
+
+.ant-modal {
+  width: 445px;
+}
+
+.ant-modal-content {
+  border-radius: 20px !important;
+  /* or whatever value you want */
+}
+
+.ant-modal-header {
+  border-top-left-radius: 16px;
+  border-top-right-radius: 16px;
+}
+
+.ant-modal-close {
+  top: 15px;
+  right: 15px;
+
+  body.rtl & {
+    right: 0;
+    left: 15px;
+  }
+}
+
+.ant-modal-close-x {
+  background: #F5F7FA;
+  border-radius: 50%;
+  text-align: center !important;
+}
+
+.ant-modal-footer {
+  display: none;
+}
+
+.ant-modal-body {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+}
+
+.ant-modal-title {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-top: 15px;
+}
+
+.ant-modal-header {
+  border: none !important;
+}
+
+.required-asterisk {
+  color: red;
+  margin: 0 4px;
+}
+
+.ApproveBtn {
+  width: 180px !important;
+  height: 45px;
+  border-radius: 100px;
+  border: 1px solid #00BA4D;
+  color: #00BA4D;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 0 0 15px;
+
+  body.rtl & {
+    margin: 0 15px 0 0;
+  }
+
+  cursor: pointer;
+  background-color: white !important;
+}
+
+.popupImg {
+  width: 98px;
+  margin-bottom: 25px;
+}
+
+.popupText {
+  max-width: 80%;
+  color: #99959E;
+  font-size: 14px;
+  margin: 0 auto 20px;
+  text-align: center;
+}
+
+.checkboxHolder {
+  display: flex;
+  align-items: center;
+  width: 100%;
+  margin-bottom: 20px;
+
+  body.rtl & {
+    direction: rtl;
+  }
+}
+
+.hiddenInput {
+  display: none;
+}
+
+.checkboxText {
+  color: #99959E;
+  font-size: 14px;
+}
+
+.fullWidth {
+  width: 100%;
+}
+
+.submitBtn {
+  width: 180px;
+  float: right;
+
+  body.rtl & {
+    float: left;
+  }
+}
+
+.cancelBtn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0 25px;
+  min-height: 45px !important;
+  font-size: 1rem;
+  font-weight: 400;
+  border-radius: 100px;
+  transition: 0.5s;
+  cursor: pointer;
+  text-transform: capitalize;
+  font-family: "Inter-Medium" !important;
+  min-width: 130px;
+  background-color: white !important;
+  border: 1px solid #CBA51C;
+  color: #CBA51C;
+  width: 180px;
+}
+
+.btnsHolder {
+  margin-top: 20px;
+}
+
+.popupRejectText {
+  width: 100%;
+  margin-bottom: 10px;
+}
+
+.ant-input {
+  resize: none;
+}
+
+textarea.ant-input {
+  min-height: 141px;
+  border: 1px solid #2323231A;
+  background: #F5F7FA;
+  border-radius: 10px;
+  margin-bottom: 8px;
+}
+
+.margintop {
+  margin-top: 15px;
 }

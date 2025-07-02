@@ -56,23 +56,7 @@
     border-radius: 10px;
 }
 
-.ant-modal-footer {
-    display: none;
-}
 
-.ant-modal-body {
-    display: flex;
-    flex-direction: column;
-    align-items: center;
-    justify-content: center;
-}
-
-.ant-modal-title {
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-top: 15px;
-}
 
 .popupText {
     max-width: 80%;
@@ -87,9 +71,7 @@
     font-size: 14px;
 }
 
-.ant-modal-header {
-    border: none !important;
-}
+
 
 .checkboxHolder {
     display: flex;
@@ -154,7 +136,7 @@
 .ant-input {
     resize: none;
 }
-
+ // modal style//
 .ant-modal {
     width: 445px;
 }
@@ -184,7 +166,27 @@
     border-radius: 50%;
     text-align: center !important;
 }
+.ant-modal-footer {
+    display: none;
+}
 
+.ant-modal-body {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+}
+
+.ant-modal-title {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-top: 15px;
+}
+.ant-modal-header {
+    border: none !important;
+}
+//modal stye//
 textarea.ant-input {
     min-height: 141px;   
     border: 1px solid #2323231A;
