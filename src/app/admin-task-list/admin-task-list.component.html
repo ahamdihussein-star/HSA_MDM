@@ -79,7 +79,7 @@
                         </a>
                         <nz-dropdown-menu #menu="nzDropdownMenu">
                             <ul nz-menu>
-                                <li nz-menu-item (click)="handleAction('view', data)">{{ "ViewDetails" | translate }}
+                                <li nz-menu-item (click)="viewOrEditRequest(data.id,data.status, true)">{{ "ViewDetails" | translate }}
                                 </li>
                                 <li *ngIf="data.status == 'Pending'" nz-menu-item (click)="showApproveModal()">
                                     {{ "Approve" | translate }}</li>

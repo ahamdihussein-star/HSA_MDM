@@ -1,16 +1,16 @@
 <div class="main">
   <div class="titleBox">
     <button (click)="goBack()" class="back-button">
-      <img src="assets/img/leftArrow.svg" alt="Back" *ngIf="!isArabic"/>
-      <img src="assets/img/rightArrow.svg" alt="Back" *ngIf="isArabic"/>
+      <img src="assets/img/leftArrow.svg" alt="Back" *ngIf="!isArabic" />
+      <img src="assets/img/rightArrow.svg" alt="Back" *ngIf="isArabic" />
     </button>
     <h2>
       {{
-        canEdit
-          ? ("EditRequest" | translate)
-          : canView
-          ? ("ViewRequest" | translate)
-          : ("NewRequest" | translate)
+      canEdit
+      ? ("EditRequest" | translate)
+      : canView
+      ? ("ViewRequest" | translate)
+      : ("NewRequest" | translate)
       }}
     </h2>
   </div>
@@ -18,15 +18,12 @@
   <div class="summary" *ngIf="canEdit || canView">
     <div class="statusBox">
       <h2>{{ "RequestStatus" | translate }}</h2>
-      <div
-        class="status"
-        [ngClass]="{
+      <div class="status" [ngClass]="{
           'status-approved': status === 'Approved',
           'status-pending': status === 'Pending',
           'status-rejected': status === 'Rejected',
           'status-quarantined': status === 'Quarantined'
-        }"
-      >
+        }">
         {{status | translate}}
       </div>
     </div>
@@ -55,53 +52,70 @@
             <p>06/21/2025</p>
           </div>
         </div>
+        <div *ngIf=" (status === 'Pending' || status === 'Approved') && userType == '1' ">
+          <button class="deleteBtn" nz-button (click)="RequestChange()">
+            {{ "DeleteRequest" | translate }}
+          </button>
+          <button class="Primary_fill" nz-button (click)="RequestChange()">
+            {{ "UpdateRequest" | translate }}
+          </button>
+        </div>
 
-        <button class="Primary_fill" nz-button *ngIf="canEdit && !editPressed" (click)="editRequest()">
-          {{ "EditRequest" | translate }}
+        <div *ngIf=" (status === 'Pending' || status === 'Approved') && userType == '2' ">
+          <button class="deleteBtn" nz-button (click)="showRejectedModal()">
+            {{ "Reject" | translate }}
+          </button>
+          <button class=" ApproveBtn" nz-button (click)="showApproveModal()">
+            {{ "Approve" | translate }}
+          </button>
+          <button class="Primary_fill editBtn" nz-button *ngIf="!editPressed" (click)="editRequest()">
+            {{ "Edit" | translate }}
+          </button>
+        </div>
+
+        <div *ngIf="status === 'Quarantined' && userType == '2' ">
+          <button class="deleteBtn" nz-button (click)="showRejectedModal()">
+            {{ "Reject" | translate }}
+          </button>
+          <button class=" ApproveBtn" nz-button (click)="showAssignModal()">
+            {{ "AssignTo" | translate }}
+          </button>
+          <button class="Primary_fill editBtn" nz-button *ngIf="!editPressed" (click)="editRequest()">
+            {{ "Edit" | translate }}
+          </button>
+        </div>
+
+        <button class="Primary_fill" nz-button *ngIf="(status === 'Rejected' || status === 'Updated') && !editPressed"
+          (click)="editRequest()">
+          {{ "Edit" | translate }}
         </button>
-        <button class="Primary_fill" nz-button *ngIf="!canEdit && status === 'Approved'" (click)="RequestChange()">
+
+        <!-- <button class="Primary_fill" nz-button *ngIf="!canEdit && status === 'Approved'" (click)="RequestChange()">
           {{ "ModifyRequest" | translate }}
-        </button>
+        </button> -->
       </div>
     </div>
   </div>
 
-  <form
-    nz-form
-    [formGroup]="requestForm"
-    (ngSubmit)="onSubmit()"
-    class="form_holder requestForm"
-  >
+  <form nz-form [formGroup]="requestForm" (ngSubmit)="onSubmit()" class="form_holder requestForm">
     <div class="generalData">
       <h3>{{ "GeneralData" | translate }}</h3>
       <div class="row">
         <nz-form-item class="input_holder_full-width">
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "FirstName" | translate }}
+            {{ "FirstName" | translate }}<span class="required-asterisk">*</span>
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24"
-          [nzErrorTip]="'EnterFirstName' | translate"
-          >
-            <input
-              nz-input
-              id="firstName"
-              formControlName="firstName"
-              placeholder="John"
-            />
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterFirstName' | translate">
+            <input nz-input id="firstName" formControlName="firstName" placeholder="John" />
           </nz-form-control>
         </nz-form-item>
 
         <nz-form-item class="input_holder_full-width">
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "SecondName" | translate }}
+            {{ "SecondName" | translate }}<span class="required-asterisk">*</span>
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24"  [nzErrorTip]="'EnterSecondName' | translate">
-            <input
-              nz-input
-              id="secondName"
-              formControlName="secondName"
-              placeholder="Doe"
-            />
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterSecondName' | translate">
+            <input nz-input id="secondName" formControlName="secondName" placeholder="Doe" />
           </nz-form-control>
         </nz-form-item>
       </div>
@@ -112,12 +126,7 @@
             {{ "Street" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterStreet' | translate">
-            <input
-              nz-input
-              id="street"
-              formControlName="street"
-              placeholder="Harm, Giza"
-            />
+            <input nz-input id="street" formControlName="street" placeholder="Harm, Giza" />
           </nz-form-control>
         </nz-form-item>
 
@@ -126,12 +135,7 @@
             {{ "PostalCode" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterPostalCode' | translate">
-            <input
-              nz-input
-              id="postalCode"
-              formControlName="postalCode"
-              placeholder="{{ 'PostalCode' | translate }}"
-            />
+            <input nz-input id="postalCode" formControlName="postalCode" placeholder="{{ 'PostalCode' | translate }}" />
           </nz-form-control>
         </nz-form-item>
       </div>
@@ -142,12 +146,7 @@
             {{ "City" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCity' | translate">
-            <input
-              nz-input
-              id="city"
-              formControlName="city"
-              placeholder="{{ 'City' | translate }}"
-            />
+            <input nz-input id="city" formControlName="city" placeholder="{{ 'City' | translate }}" />
           </nz-form-control>
         </nz-form-item>
 
@@ -156,12 +155,7 @@
             {{ "Region" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterRegion' | translate">
-            <input
-              nz-input
-              id="region"
-              formControlName="region"
-              placeholder="{{ 'Region' | translate }}"
-            />
+            <input nz-input id="region" formControlName="region" placeholder="{{ 'Region' | translate }}" />
           </nz-form-control>
         </nz-form-item>
 
@@ -170,12 +164,7 @@
             {{ "Country" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCountry' | translate">
-            <input
-              nz-input
-              id="country"
-              formControlName="country"
-              placeholder="{{ 'Country' | translate }}"
-            />
+            <input nz-input id="country" formControlName="country" placeholder="{{ 'Country' | translate }}" />
           </nz-form-control>
         </nz-form-item>
       </div>
@@ -186,22 +175,17 @@
       <div class="row">
         <nz-form-item class="input_holder_full-width w33_33">
           <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="tax" nzRequired>
-            {{ "Tax" | translate }}
+            {{ "Tax Number" | translate }}
           </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterTax' | translate">
-            <nz-select
-              id="tax"
-              formControlName="tax"
-              nzPlaceHolder="{{ 'Tax' | translate }}"
-              style="width: 100%"
-            >
-              <nz-option
-                *ngFor="let taxOption of taxOptions"
-                [nzValue]="taxOption.value"
-                [nzLabel]="taxOption.label | translate"
-              >
+          <!-- <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterTax' | translate">
+            <nz-select id="tax" formControlName="tax" nzPlaceHolder="{{ 'Tax' | translate }}" style="width: 100%">
+              <nz-option *ngFor="let taxOption of taxOptions" [nzValue]="taxOption.value"
+                [nzLabel]="taxOption.label | translate">
               </nz-option>
             </nz-select>
+          </nz-form-control> -->
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterTax' | translate">
+            <input nz-input id="tax" formControlName="tax" placeholder="{{ 'Tax Number' | translate }}" />
           </nz-form-control>
         </nz-form-item>
 
@@ -210,12 +194,8 @@
             {{ "Country" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCountry' | translate">
-            <input
-              nz-input
-              id="identityCountry"
-              formControlName="identityCountry"
-              placeholder="{{ 'Country' | translate }}"
-            />
+            <input nz-input id="identityCountry" formControlName="identityCountry"
+              placeholder="{{ 'Country' | translate }}" />
           </nz-form-control>
         </nz-form-item>
 
@@ -224,12 +204,8 @@
             {{ "Resbonsible" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterResbonsible' | translate">
-            <input
-              nz-input
-              id="resbonsible"
-              formControlName="resbonsible"
-              placeholder="{{ 'Resbonsible' | translate }}"
-            />
+            <input nz-input id="resbonsible" formControlName="resbonsible"
+              placeholder="{{ 'Resbonsible' | translate }}" />
           </nz-form-control>
         </nz-form-item>
       </div>
@@ -240,13 +216,8 @@
             {{ "DateFrom" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDate' | translate">
-            <nz-date-picker
-              id="dateFrom"
-              formControlName="dateFrom"
-              [nzFormat]="'yyyy-MM-dd'"
-              nzPlaceHolder="{{ 'DateFrom' | translate }}"
-              style="width: 100%"
-            ></nz-date-picker>
+            <nz-date-picker id="dateFrom" formControlName="dateFrom" [nzFormat]="'yyyy-MM-dd'"
+              nzPlaceHolder="{{ 'DateFrom' | translate }}" style="width: 100%"></nz-date-picker>
           </nz-form-control>
         </nz-form-item>
 
@@ -255,13 +226,8 @@
             {{ "DateTo" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDate' | translate">
-            <nz-date-picker
-              id="dateTo"
-              formControlName="dateTo"
-              [nzFormat]="'yyyy-MM-dd'"
-              nzPlaceHolder="{{ 'DateTo' | translate }}"
-              style="width: 100%"
-            ></nz-date-picker>
+            <nz-date-picker id="dateTo" formControlName="dateTo" [nzFormat]="'yyyy-MM-dd'"
+              nzPlaceHolder="{{ 'DateTo' | translate }}" style="width: 100%"></nz-date-picker>
           </nz-form-control>
         </nz-form-item>
       </div>
@@ -275,12 +241,7 @@
             {{ "SalesORG" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterSalesORG' | translate">
-            <input
-              nz-input
-              id="salesOrg"
-              formControlName="salesOrg"
-              placeholder="{{ 'SalesORG' | translate }}"
-            />
+            <input nz-input id="salesOrg" formControlName="salesOrg" placeholder="{{ 'SalesORG' | translate }}" />
           </nz-form-control>
         </nz-form-item>
       </div>
@@ -291,12 +252,8 @@
             {{ "DistributionChannel" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDistributionChannel' | translate">
-            <input
-              nz-input
-              id="distChannel"
-              formControlName="distChannel"
-              placeholder="{{ 'DistributionChannel' | translate }}"
-            />
+            <input nz-input id="distChannel" formControlName="distChannel"
+              placeholder="{{ 'DistributionChannel' | translate }}" />
           </nz-form-control>
         </nz-form-item>
 
@@ -305,12 +262,7 @@
             {{ "Division" | translate }}
           </nz-form-label>
           <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDivision' | translate">
-            <input
-              nz-input
-              id="division"
-              formControlName="division"
-              placeholder="{{ 'Division' | translate }}"
-            />
+            <input nz-input id="division" formControlName="division" placeholder="{{ 'Division' | translate }}" />
           </nz-form-control>
         </nz-form-item>
       </div>
@@ -322,4 +274,80 @@
       </div>
     </div>
   </form>
+
+  <nz-modal [(nzVisible)]="isApprovedVisible" [nzTitle]="'Request Approved' | translate" (nzOnCancel)="handleCancel()"
+    (nzOnOk)="handleOk()">
+    <ng-container *nzModalContent>
+      <img src="./assets/img/approvedIcon.svg" class="popupImg" alt="">
+      <p class="popupText">{{ "You have successfully approved this request.It will now appear in the Golden Records." |
+        translate }}
+      </p>
+      <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
+      <label nz-checkbox class="checkboxHolder">
+        <input class="hiddenInput" type="checkbox" nz-checkbox [(ngModel)]="approvedChecked" />
+        <p class="checkboxText">{{ "Don’t Show again" | translate }}</p>
+      </label>
+      <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="submitApprove()">{{ "Submit" | translate }}
+        </button>
+      </div>
+
+    </ng-container>
+  </nz-modal>
+
+  <nz-modal [(nzVisible)]="isRejectedConfirmVisible" [nzTitle]="'Request Rejected' | translate"
+    (nzOnCancel)="handleCancel()" (nzOnOk)="handleOk()">
+    <ng-container *nzModalContent>
+      <img src="./assets/img/rejectIcon.svg" class="popupImg" alt="">
+      <p class="popupText">{{ "You have successfully rejected this request. The requester will be notified with your
+        reason." | translate }}
+      </p>
+      <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
+      <label nz-checkbox class="checkboxHolder">
+        <input class="hiddenInput" type="checkbox" nz-checkbox [(ngModel)]="rejectedChecked" />
+        <p class="checkboxText">{{ "Don’t Show again" | translate }}</p>
+      </label>
+      <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="rejectApprove()">{{ "Submit" | translate }}
+        </button>
+      </div>
+
+    </ng-container>
+  </nz-modal>
+
+  <nz-modal [(nzVisible)]="isRejectedVisible" [nzTitle]="'Add a Rejection Note' | translate"
+    (nzOnCancel)="handleCancel()" (nzOnOk)="handleOk()">
+    <ng-container *nzModalContent>
+      <p class="popupRejectText">{{ "Enter Rejection Comments" | translate }}</p>
+      <textarea rows="4" nz-input [(ngModel)]="inputValue"></textarea>
+      <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
+
+      <div class="fullWidth btnsHolder">
+        <button class=" cancelBtn" (click)="handleCancel()">{{ "Cancel" | translate }}</button>
+        <button class="Primary_fill submitBtn" [disabled]="!inputValue" (click)="confirmReject()">{{ "Submit" |
+          translate }}
+        </button>
+      </div>
+
+    </ng-container>
+  </nz-modal>
+  <nz-modal [(nzVisible)]="isAssignVisible" [nzTitle]="'Add a Rejection Note' | translate" (nzOnCancel)="handleCancel()"
+    (nzOnOk)="handleOk()">
+    <ng-container *nzModalContent>
+      <img src="./assets/img/assignIcon.svg" class="popupImg" alt="">
+      <p class="popupText">{{ "Select the department you want to assign this request to" | translate }}
+      </p>
+
+      <nz-select [(ngModel)]="selectedDepartment" name="department" nzPlaceHolder="Select Department"
+        style="width: 100%">
+        <nz-option nzValue="sales" nzLabel="Sales"></nz-option>
+        <nz-option nzValue="manufacturing" nzLabel="Manufacturing"></nz-option>
+        <nz-option nzValue="supply" nzLabel="Supply Chain"></nz-option>
+      </nz-select>
+
+      <div class="fullWidth margintop"><button class="Primary_fill submitBtn" [disabled]="!selectedDepartment"
+          (click)="assignToBtn()">{{ "Submit" | translate }}
+        </button>
+      </div>
+
+    </ng-container>
+  </nz-modal>
 </div>

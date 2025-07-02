@@ -1,6 +1,7 @@
 import { Component, ViewEncapsulation, } from '@angular/core';
 import { NzNotificationService } from "ng-zorro-antd/notification";
 import { TranslateService } from "@ngx-translate/core";
+import { Router } from "@angular/router";
 
 @Component({
   selector: 'app-admin-task-list',
@@ -91,9 +92,14 @@ export class AdminTaskListComponent {
   constructor(
     private notification: NzNotificationService,
     private translate: TranslateService,
-
+private router: Router
   ) { }
 
+  viewOrEditRequest(id: number, status: string, canEdit: Boolean): void {
+    this.router.navigate(["/dashboard/new-request", id], {
+      queryParams: { edit: canEdit, status }
+    });
+  }
 
   handleAction(action: string, item: any): void {
     switch (action) {

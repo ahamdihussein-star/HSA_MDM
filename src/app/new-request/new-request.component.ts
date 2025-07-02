@@ -24,8 +24,16 @@ export class NewRequestComponent {
     { value: "1", label: "Tax" },
     { value: "2", label: "Commercial" },
   ];
-
-  constructor(
+  userType: any;
+  isApprovedVisible: any = false;
+  approvedChecked = true;
+  isRejectedVisible = false;
+  rejectedChecked = true;
+  inputValue?: string;
+  isRejectedConfirmVisible: any;
+  isAssignVisible: any = false
+  selectedDepartment: any;
+   constructor(
     private fb: FormBuilder,
     private i18n: NzI18nService,
     private route: ActivatedRoute,
@@ -34,7 +42,7 @@ export class NewRequestComponent {
     private router: Router,
     private location: Location,
     @Inject(PLATFORM_ID) private platformId: Object
-  ) {}
+  ) { }
 
   onSubmit(): void {
     if (this.requestForm.valid) {
@@ -47,7 +55,7 @@ export class NewRequestComponent {
           nzClass: "success-notification",
           nzDuration: 5000,
         });
-        this.router.navigate(["/dashboard/my-requests"]);
+        this.location.back();
       });
     } else {
       Object.values(this.requestForm.controls).forEach((control) => {
@@ -57,6 +65,75 @@ export class NewRequestComponent {
         }
       });
     }
+  }
+
+  rejectApprove() {
+    this.isRejectedConfirmVisible = false;
+    let toastMessage: string = "New Request is rejected successfully";
+    this.translate.get(toastMessage).subscribe((message: string) => {
+      this.notification.create("success", message, "", {
+        nzClass: "success-notification",
+        nzDuration: 5000,
+      });
+    });
+    this.location.back();
+
+  }
+  confirmReject(): void {
+
+    this.isRejectedVisible = false
+    this.isRejectedConfirmVisible = true;
+    this.inputValue = '';
+  }
+  handleCancel(): void {
+    console.log('Button cancel clicked!');
+    this.isApprovedVisible = false;
+    this.isRejectedVisible = false;
+    this.isRejectedConfirmVisible = false
+    this.isAssignVisible = false
+    this.inputValue = '';
+
+  }
+  showRejectedModal(): void {
+    this.isRejectedVisible = true;
+  }
+  showAssignModal(): void {
+    this.isAssignVisible = true;
+  }
+  handleOk(): void {
+    console.log('Button ok clicked!');
+    this.isApprovedVisible = false;
+    this.isRejectedVisible = false;
+    this.isRejectedConfirmVisible = false
+    this.isAssignVisible = false
+    this.inputValue = '';
+
+  }
+  assignToBtn() {
+    this.location.back();
+    let toastMessage: string = "New Request is Assigned successfully";
+    this.translate.get(toastMessage).subscribe((message: string) => {
+      this.notification.create("success", message, "", {
+        nzClass: "success-notification",
+        nzDuration: 5000,
+      });
+    });
+  }
+  submitApprove() {
+    this.isApprovedVisible = false;
+    this.location.back();
+    let toastMessage: string = "New Request is added successfully";
+    this.translate.get(toastMessage).subscribe((message: string) => {
+      this.notification.create("success", message, "", {
+        nzClass: "success-notification",
+        nzDuration: 5000,
+      });
+    });
+
+  }
+
+  showApproveModal(): void {
+    this.isApprovedVisible = true;
   }
 
   goBack(): void {
@@ -83,18 +160,16 @@ export class NewRequestComponent {
       distChannel: "Distribution Channel 1",
       division: "Division 1",
     });
-   
+
     this.requestForm.disable();
   }
 
   editRequest(): void {
     this.editPressed = true;
-    this.requestForm.get("tax")?.enable();
-    this.requestForm.get("identityCountry")?.enable();
-    this.requestForm.get("resbonsible")?.enable();
+    this.requestForm.enable();
   }
   RequestChange(): void {
-    this.router.navigate(["/dashboard/my-requests"]);
+    this.location.back();
     let toastMessage: string = "Your request has been sent back for modification";
     this.translate.get(toastMessage).subscribe((message: string) => {
       this.notification.create("success", message, "", {
@@ -105,26 +180,27 @@ export class NewRequestComponent {
   }
 
   ngOnInit(): void {
+    this.userType = localStorage.getItem("user")
     this.i18n.setLocale(en_US);
 
     this.requestForm = this.fb.group({
       firstName: [null, Validators.required],
       secondName: [null, Validators.required],
-      street: [null, Validators.required],
-      postalCode: [null, Validators.required],
-      city: [null, Validators.required],
-      region: [null, Validators.required],
-      country: [null, Validators.required],
+      street: [null],
+      postalCode: [null],
+      city: [null],
+      region: [null],
+      country: [null],
 
-      tax: [null, Validators.required],
-      identityCountry: [null, Validators.required],
-      resbonsible: [null, Validators.required],
-      dateFrom: [null, Validators.required],
-      dateTo: [null, Validators.required],
+      tax: [null],
+      identityCountry: [null],
+      resbonsible: [null],
+      dateFrom: [null],
+      dateTo: [null],
 
-      salesOrg: [null, Validators.required],
-      distChannel: [null, Validators.required],
-      division: [null, Validators.required],
+      salesOrg: [null],
+      distChannel: [null],
+      division: [null],
     });
 
     this.route.queryParams.subscribe((params) => {

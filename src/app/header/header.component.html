@@ -20,17 +20,17 @@
       <ul nz-menu>
         <li nz-menu-item>
           <a class="iconTextHolder" [routerLink]="'/dashboard/new-request'">
-            <img src="./assets/img/profile-add.svg" alt=""> New Customer Request
+            <img src="./assets/img/profile-add.svg" alt=""> {{ "New Customer Request" | translate }}
           </a>
         </li>
         <li nz-menu-item>
           <a class="iconTextHolder" [routerLink]="'/dashboard/new-request'">
-            <img src="./assets/img/box-add.svg" alt=""> New Product Request
+            <img src="./assets/img/box-add.svg" alt=""> {{ "New Product Request" | translate }}
           </a>
         </li>
         <li nz-menu-item>
           <a class="iconTextHolder" [routerLink]="'/dashboard/new-request'">
-            <img src="./assets/img/truck-remove.svg" alt=""> New Supplier Request
+            <img src="./assets/img/truck-remove.svg" alt="">{{ "New Supplier Request" | translate }}
           </a>
         </li>
 
@@ -43,7 +43,17 @@
     </div>
     <img src="assets/img/search.png" alt="searchIicon" class="searchIicon">
     <img src="assets/img/notification.png" alt="notificationIcon" class="notificationIcon">
-    <img src="assets/img/user.png" alt="userIcon" class="userIcon">
+    <img src="assets/img/user.png" alt="userIcon" class="userIcon" nz-dropdown nzTrigger="click"
+      [nzDropdownMenu]="menu1">
+    <nz-dropdown-menu #menu1="nzDropdownMenu">
+      <ul nz-menu>
+        <li nz-menu-item>
+          <a class="signoutText" [routerLink]="'/'">
+            <img src="./assets/img/logout.svg" alt="">{{ "Logout" | translate }}
+          </a>
+        </li>
+      </ul>
+    </nz-dropdown-menu>
   </div>
 
 </div>

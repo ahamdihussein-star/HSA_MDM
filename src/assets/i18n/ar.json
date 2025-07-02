@@ -153,5 +153,16 @@
   "DuplicateRecords":"السجلات المكررة",
   "GoldenRecords":"السجلات الذهبيه",
   "RecordID":"رقم السجل",
+  "Logout": "تسجيل الخروج",
+  "New Customer Request": "طلب عميل جديد",
+  "New Product Request": "طلب منتج جديد",
+  "New Supplier Request": "طلب مورد جديد",
+  "UpdateRequest": "تحديث الطلب",
+  "Delete Request": "حذف الطلب",
+  "Edit": "تعديل",
+  "Select the department you want to assign this request to": "اختر القسم الذي تريد تعيين هذا الطلب له",
+  "assignTo": "تعيين إلى",
+  "Manufacturing Department": "قسم التصنيع",
+  "Sales Department": "قسم المبيعات",
   "": ""
 }
