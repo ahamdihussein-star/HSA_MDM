@@ -83,6 +83,12 @@
         color: #FFBB38;
         background-color: #FFBB381A;
       }
+      .status-updated{
+    color: #007BFF;
+
+    background-color: #007BFF1A;
+
+}
 
     }
 
@@ -186,7 +192,7 @@
 }
 
 .deleteBtn {
-  width: 180px !important;
+  width: 130px !important;
   height: 45px;
   border-radius: 100px;
   border: 1px solid #EF4444;
@@ -206,7 +212,7 @@
 }
 
 .editBtn {
-  width: 180px !important;
+  width: 130px !important;
   margin: 0 0 0 15px !important;
 
   body.rtl & {
@@ -272,7 +278,7 @@
 }
 
 .ApproveBtn {
-  width: 180px !important;
+  width: 130px !important;
   height: 45px;
   border-radius: 100px;
   border: 1px solid #00BA4D;
@@ -328,7 +334,7 @@
 }
 
 .submitBtn {
-  width: 180px;
+  width: 130px;
   float: right;
 
   body.rtl & {

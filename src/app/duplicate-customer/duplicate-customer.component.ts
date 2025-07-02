@@ -129,7 +129,8 @@ this.listOfData = this.listOfData.filter(item => !idsToRemove.has(item.id));
   ignoreRows(){
     this.listOfData = this.listOfData.filter(item => !this.setOfCheckedId.has(item.id));
     this.listOfData = [...this.listOfData]
-
+     this.setOfCheckedId.clear();
+    this.refreshCheckedStatus()
   }
   merge(): void {
     this.showSelect = true

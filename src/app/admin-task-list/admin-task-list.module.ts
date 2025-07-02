@@ -12,7 +12,7 @@ import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzCheckboxModule } from 'ng-zorro-antd/checkbox';
 import { FormsModule } from '@angular/forms';
 import { NzInputModule } from 'ng-zorro-antd/input';
-
+import { NzSelectModule } from 'ng-zorro-antd/select';
 @NgModule({
   declarations: [
     AdminTaskListComponent
@@ -27,6 +27,7 @@ import { NzInputModule } from 'ng-zorro-antd/input';
     NzCheckboxModule,
     FormsModule,
     NzInputModule,
+    NzSelectModule,
   ],
   exports: [
     AdminTaskListComponent

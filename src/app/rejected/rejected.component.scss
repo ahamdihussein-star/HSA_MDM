@@ -24,3 +24,38 @@
     align-items: center;
     justify-content: space-between;
 }
+.status-pending {
+    color: #6B5CA5;
+    background-color: #6B5CA51A;
+}
+.status-updated{
+    color: #007BFF;
+
+    background-color: #007BFF1A;
+
+}
+.status-approved {
+    color: #16DBCC;
+    background-color: #41D4A81A;
+}
+
+.status-rejected {
+    color: #EF4444;
+    background-color: #EF44441A;
+
+}
+
+
+.status-quarantined {
+    color: #FFBB38;
+    background-color: #FFBB381A;
+}
+
+.generalStatus {
+    width: 105px;
+    height: 30px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 4px;
+}

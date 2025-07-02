@@ -83,6 +83,8 @@ export class AdminTaskListComponent {
   indeterminate = false;
   isApprovedVisible = false;
   isRejectedVisible = false;
+   isAssignVisible: any = false
+  selectedDepartment: any;
   approvedChecked = true;
   rejectedChecked = true;
   inputValue?: string;
@@ -127,8 +129,12 @@ private router: Router
     this.isApprovedVisible = false;
     this.isRejectedVisible = false;
     this.isRejectedConfirmVisible = false
+    this.isAssignVisible = false
     this.inputValue = '';
 
+  }
+   showAssignModal(): void {
+    this.isAssignVisible = true;
   }
   submitApprove() {
     this.isApprovedVisible = false;
@@ -155,6 +161,7 @@ private router: Router
     this.isApprovedVisible = false;
     this.isRejectedVisible = false;
     this.isRejectedConfirmVisible = false
+    this.isAssignVisible = false
     this.inputValue = '';
 
   }
@@ -213,7 +220,16 @@ private router: Router
     return this.statusCount['Pending'] && this.statusCount['Quarantined'];
   }
 
-
+ assignToBtn() {
+    this.isAssignVisible =false
+    let toastMessage: string = "New Request is Assigned successfully";
+    this.translate.get(toastMessage).subscribe((message: string) => {
+      this.notification.create("success", message, "", {
+        nzClass: "success-notification",
+        nzDuration: 5000,
+      });
+    });
+  }
 
 
   deleteRecodr(index: number): void {
@@ -222,6 +238,13 @@ private router: Router
     this.taskList = [...this.taskList]; // Trigger change detection
   }
 
+    deleteRows(){
+    this.taskList = this.taskList.filter(item => !this.setOfCheckedId.has(item.id));
+    this.taskList = [...this.taskList]
+     this.setOfCheckedId.clear();
+     this.refreshCheckedStatus()
+
+  }
   ngOnInit(): void {
     // Initialization logic can go here
   }

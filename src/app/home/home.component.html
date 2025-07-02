@@ -23,7 +23,7 @@
             <div class="summaryinfo">
                 <img src="./assets/img/QuarantinedRequestsIcon.svg" alt="">
                 <div class="summarydetails">
-                    <p class="detailName">{{ "Quarantined Requests" | translate }}</p>
+                    <p  [routerLink]="['/dashboard', 'admin-task-list']" class="detailName">{{ "Quarantined Requests" | translate }}</p>
                     <p>4400</p>
                 </div>
             </div>
@@ -31,7 +31,7 @@
             <div class="summaryinfo">
                 <img src="./assets/img/GoldenRequestsIcon.svg" alt="">
                 <div class="summarydetails">
-                    <p class="detailName">{{ "Golden Requests" | translate }}</p>
+                    <p [routerLink]="['/dashboard', 'golden-requests']" class="detailName">{{ "Golden Requests" | translate }}</p>
                     <p>6460</p>
                 </div>
             </div>
@@ -39,7 +39,7 @@
             <div class="summaryinfo">
                 <img src="./assets/img/RejectedRequestsIcon.svg" alt="">
                 <div class="summarydetails">
-                    <p class="detailName">{{ "Rejected Requests" | translate }}</p>
+                    <p [routerLink]="['/dashboard', 'rejected']" class="detailName">{{ "Rejected Requests" | translate }}</p>
                     <p>4460</p>
                 </div>
             </div>
@@ -47,7 +47,7 @@
             <div class="summaryinfo">
                 <img src="./assets/img/DuplicatesRequestsIcon.svg" alt="">
                 <div class="summarydetails">
-                    <p class="detailName">{{ "Duplicates Requests" | translate }}</p>
+                    <p [routerLink]="['/dashboard', 'duplicate-requests']"  class="detailName">{{ "Duplicates Requests" | translate }}</p>
                     <p>6400</p>
                 </div>
             </div>
@@ -63,7 +63,7 @@
             <div class="summaryinfo">
                 <img src="./assets/img/PendingRequestsIcon.svg" alt="">
                 <div class="summarydetails">
-                    <p class="detailName">{{ "Pending Requests" | translate }}</p>
+                    <p  [routerLink]="['/dashboard', 'admin-task-list']" class="detailName">{{ "Pending Requests" | translate }}</p>
                     <p>5600</p>
                 </div>
             </div>

@@ -126,7 +126,7 @@ export class GoldenRequestsComponent {
       date: "14Dec, 2024",
     },
     {
-      id:18,
+      id: 18,
       requestId: "CR-2023-0456",
       name: "STU Product",
       submittedBy: "User A",
@@ -211,30 +211,29 @@ export class GoldenRequestsComponent {
     ...this.ProductRequests,
     ...this.SupplierRequests,
   ];
- setOfCheckedIds: Record<string, Set<number>> = {
-  all: new Set<number>(),
-  customer: new Set<number>(),
-  product: new Set<number>(),
-  supplier: new Set<number>()
-};
+  setOfCheckedIds: Record<string, Set<number>> = {
+    all: new Set<number>(),
+    customer: new Set<number>(),
+    product: new Set<number>(),
+    supplier: new Set<number>(),
+  };
 
-checkedStates: Record<string, boolean> = {
-  all: false,
-  customer: false,
-  product: false,
-  supplier: false
-};
+  checkedStates: Record<string, boolean> = {
+    all: false,
+    customer: false,
+    product: false,
+    supplier: false,
+  };
 
-indeterminateStates: Record<string, boolean> = {
-  all: false,
-  customer: false,
-  product: false,
-  supplier: false
-};
-setOfCheckedId = new Set<number>();
+  indeterminateStates: Record<string, boolean> = {
+    all: false,
+    customer: false,
+    product: false,
+    supplier: false,
+  };
+  setOfCheckedId = new Set<number>();
 
-statusCount: Record<string, number> = {};
-
+  statusCount: Record<string, number> = {};
 
   user = "";
   constructor() {}
@@ -255,7 +254,7 @@ statusCount: Record<string, number> = {};
     return Object.values(this.statusCount).some((value) => value);
   }
 
-  deleteRecodr(index: number): void {
+  deleteRecod(index: number): void {
     // This method will delete a record from the quarantined requests
     if (this.selectedIndex === 0) {
       this.AllRequests.splice(index, 1);
@@ -272,98 +271,130 @@ statusCount: Record<string, number> = {};
     }
   }
 
-  getCurrentTabKey(): string {
-  return ['all', 'customer', 'product', 'supplier'][this.selectedIndex];
-}
+  deleteRows() {
+    if (this.selectedIndex === 0) {
+      this.AllRequests = this.AllRequests.filter(
+        (item) => !this.setOfCheckedIds["all"].has(item.id)
+      );
 
-getCurrentTableData(): any[] {
-  switch (this.selectedIndex) {
-    case 0: return this.AllRequests;
-    case 1: return this.CustomerRequests;
-    case 2: return this.ProductRequests;
-    case 3: return this.SupplierRequests;
-    default: return [];
-  }
-}
-  onAllChecked(value: boolean): void {
-  const tabKey = this.getCurrentTabKey();
-  const data = this.getCurrentTableData();
-  const set = this.setOfCheckedIds[tabKey];
+      this.AllRequests = [...this.AllRequests]; // Trigger change detection
+    } else if (this.selectedIndex === 1) {
+      this.CustomerRequests = this.CustomerRequests.filter(
+        (item) => !this.setOfCheckedIds["customer"].has(item.id)
+      );
 
-  data.forEach(item => {
-    if (value) {
-      set.add(item.id);
-    } else {
-      set.delete(item.id);
+      this.CustomerRequests = [...this.CustomerRequests]; // Trigger change detection
+    } else if (this.selectedIndex === 2) {
+      this.ProductRequests = this.ProductRequests.filter(
+        (item) => !this.setOfCheckedIds["product"].has(item.id)
+      );
+
+      this.ProductRequests = [...this.ProductRequests]; // Trigger change detection
+    } else if (this.selectedIndex === 3) {
+      this.SupplierRequests = this.SupplierRequests.filter(
+        (item) => !this.setOfCheckedIds["supplier"].has(item.id)
+      );
+
+      this.SupplierRequests = [...this.SupplierRequests]; // Trigger change detection
     }
-  });
 
-  this.refreshCheckedStatus();
-}
-
-
-refreshCheckedStatus(): void {
-  const tabKey = this.getCurrentTabKey();
-  const data = this.getCurrentTableData();
-  const set = this.setOfCheckedIds[tabKey];
-
-  const allChecked = data.every(item => set.has(item.id));
-  const someChecked = data.some(item => set.has(item.id));
-
-  this.checkedStates[tabKey] = allChecked;
-  this.indeterminateStates[tabKey] = someChecked && !allChecked;
-
-  // Update status count
-  const selectedItems = data.filter(item => set.has(item.id));
-  this.statusCount = selectedItems.reduce((acc, item) => {
-    acc[item.status] = (acc[item.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-}
-
-
- onItemChecked(id: number, status: string, checked: boolean): void {
-  const tabKey = this.getCurrentTabKey();
-  const set = this.setOfCheckedIds[tabKey];
-
-  if (checked) {
-    set.add(id);
-  } else {
-    set.delete(id);
+    this.setOfCheckedId.clear();
+    this.refreshCheckedStatus();
   }
 
-  this.refreshCheckedStatus();
-}
-
-
- updateCheckedSet(id: number, status: string, checked: boolean): void {
-  // Add or remove the ID from the selected set
-  if (checked) {
-    this.setOfCheckedId.add(id);
-  } else {
-    this.setOfCheckedId.delete(id);
+  getCurrentTabKey(): string {
+    return ["all", "customer", "product", "supplier"][this.selectedIndex];
   }
 
-  // Get current list of requests based on selected tab
-  const selectedRequests = this.getCurrentTableData();
+  getCurrentTableData(): any[] {
+    switch (this.selectedIndex) {
+      case 0:
+        return this.AllRequests;
+      case 1:
+        return this.CustomerRequests;
+      case 2:
+        return this.ProductRequests;
+      case 3:
+        return this.SupplierRequests;
+      default:
+        return [];
+    }
+  }
+  onAllChecked(value: boolean): void {
+    const tabKey = this.getCurrentTabKey();
+    const data = this.getCurrentTableData();
+    const set = this.setOfCheckedIds[tabKey];
 
-  // Filter the selected items for the current tab
-  const selectedItems = selectedRequests.filter(item =>
-    this.setOfCheckedId.has(item.id)
-  );
+    data.forEach((item) => {
+      if (value) {
+        set.add(item.id);
+      } else {
+        set.delete(item.id);
+      }
+    });
 
-  // Rebuild the status count object
-  this.statusCount = selectedItems.reduce((acc, item) => {
-    acc[item.status] = (acc[item.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+    this.refreshCheckedStatus();
+  }
 
-  console.log(this.statusCount);
-}
+  refreshCheckedStatus(): void {
+    const tabKey = this.getCurrentTabKey();
+    const data = this.getCurrentTableData();
+    const set = this.setOfCheckedIds[tabKey];
+
+    const allChecked = data.every((item) => set.has(item.id));
+    const someChecked = data.some((item) => set.has(item.id));
+
+    this.checkedStates[tabKey] = allChecked;
+    this.indeterminateStates[tabKey] = someChecked && !allChecked;
+
+    // Update status count
+    const selectedItems = data.filter((item) => set.has(item.id));
+    this.statusCount = selectedItems.reduce((acc, item) => {
+      acc[item.status] = (acc[item.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }
+
+  onItemChecked(id: number, status: string, checked: boolean): void {
+    const tabKey = this.getCurrentTabKey();
+    const set = this.setOfCheckedIds[tabKey];
+
+    if (checked) {
+      set.add(id);
+    } else {
+      set.delete(id);
+    }
+
+    this.refreshCheckedStatus();
+  }
+
+  updateCheckedSet(id: number, status: string, checked: boolean): void {
+    // Add or remove the ID from the selected set
+    if (checked) {
+      this.setOfCheckedId.add(id);
+    } else {
+      this.setOfCheckedId.delete(id);
+    }
+
+    // Get current list of requests based on selected tab
+    const selectedRequests = this.getCurrentTableData();
+
+    // Filter the selected items for the current tab
+    const selectedItems = selectedRequests.filter((item) =>
+      this.setOfCheckedId.has(item.id)
+    );
+
+    // Rebuild the status count object
+    this.statusCount = selectedItems.reduce((acc, item) => {
+      acc[item.status] = (acc[item.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    console.log(this.statusCount);
+  }
   onTabChange(index: number): void {
     this.selectedIndex = index;
-      this.refreshCheckedStatus();
-
+    this.refreshCheckedStatus();
   }
 
   ngOnInit(): void {

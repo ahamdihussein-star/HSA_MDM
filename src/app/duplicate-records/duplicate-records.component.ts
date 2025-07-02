@@ -71,12 +71,13 @@ export class DuplicateRecordsComponent {
       date: "14Dec, 2024",
     },
   ]; 
+  user:any=''
   constructor() {}
 
 
 
 
   ngOnInit(): void {
-    // Initialization logic can go here
+    this.user = localStorage.getItem("user") || "2";
   }
 }

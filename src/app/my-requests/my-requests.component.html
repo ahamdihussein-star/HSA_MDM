@@ -4,7 +4,7 @@
     {{ "MyRequests" | translate }}
   </h1>
   <div class="actionHolderTitleTabs">
-    <div *ngIf="mixedStatuses()">
+    <div *ngIf="mixedStatuses()" (click)=" deleteRows() ">
       <button class="deleteBtn actionBtn"><img src="./assets/img/redTrash.svg" alt="">{{ "Delete" | translate
         }}</button>
     </div>
@@ -60,7 +60,7 @@
 
           <div class="actionHolder">
             <img src="./assets/img/edit.svg" alt="">
-            <img class="iconSpacing" src="./assets/img/trash.svg" alt="">
+            <img class="iconSpacing" src="./assets/img/trash.svg" (click)="deleteRecod(i)" alt="">
             <a nz-dropdown nzTrigger="click" [nzDropdownMenu]="menu" class="actionHolderBtn">
               <img src="./assets/img/moreAction.svg" alt="" />
               <span nz-icon nzType="down"></span>
@@ -129,7 +129,7 @@
 
           <div class="actionHolder">
             <img src="./assets/img/edit.svg" alt="">
-            <img class="iconSpacing" src="./assets/img/trash.svg" alt="">
+            <img class="iconSpacing" src="./assets/img/trash.svg" (click)="deleteRecod(i)" alt="">
             <a nz-dropdown nzTrigger="click" [nzDropdownMenu]="menu" class="actionHolderBtn">
               <img src="./assets/img/moreAction.svg" alt="" />
               <span nz-icon nzType="down"></span>
@@ -198,7 +198,7 @@
 
           <div class="actionHolder">
             <img src="./assets/img/edit.svg" alt="">
-            <img class="iconSpacing" src="./assets/img/trash.svg" alt="">
+            <img class="iconSpacing" src="./assets/img/trash.svg" (click)="deleteRecod(i)" alt="">
             <a nz-dropdown nzTrigger="click" [nzDropdownMenu]="menu" class="actionHolderBtn">
               <img src="./assets/img/moreAction.svg" alt="" />
               <span nz-icon nzType="down"></span>
@@ -267,7 +267,7 @@
 
           <div class="actionHolder">
             <img src="./assets/img/edit.svg" alt="">
-            <img class="iconSpacing" src="./assets/img/trash.svg" alt="">
+            <img class="iconSpacing" src="./assets/img/trash.svg" (click)="deleteRecod(i)" alt="">
             <a nz-dropdown nzTrigger="click" [nzDropdownMenu]="menu" class="actionHolderBtn">
               <img src="./assets/img/moreAction.svg" alt="" />
               <span nz-icon nzType="down"></span>
