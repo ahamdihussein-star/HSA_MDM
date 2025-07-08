@@ -14,11 +14,13 @@
 .ant-table-container,
 .ant-table-container table>thead>tr:first-child th:last-child {
     border-top-right-radius: 20px;
+     border-top-left-radius: 20px;
 }
 
 .ant-table-container,
 .ant-table-container table>thead>tr:first-child th:first-child {
     border-top-left-radius: 20px;
+    border-top-right-radius: 20px;
 }
 
 .ant-pagination-next .ant-pagination-item-link,
@@ -78,7 +80,9 @@
         text-align: right;
     }
 }
-
+table tr td.ant-table-selection-column, table tr th.ant-table-selection-column{
+    text-align: center !important;
+}
 // table tr td:first-child, table tr th:first-child {
 //     body.ltr & {
 //         padding-left: 30px;
@@ -133,4 +137,8 @@
 }
 .ant-tabs > .ant-tabs-nav, .ant-tabs > div > .ant-tabs-nav{
     width: fit-content;
+}
+
+.ant-tabs-tab-btn:active, .ant-tabs-tab-btn:focus, .ant-tabs-tab-remove:active, .ant-tabs-tab-remove:focus, .ant-tabs > .ant-tabs-nav .ant-tabs-nav-add:active, .ant-tabs > .ant-tabs-nav .ant-tabs-nav-add:focus, .ant-tabs > div > .ant-tabs-nav .ant-tabs-nav-add:active, .ant-tabs > div > .ant-tabs-nav .ant-tabs-nav-add:focus{
+    color: #CBA51C;
 }

@@ -7,9 +7,9 @@ import { Router } from "@angular/router";
   styleUrl: "./my-requests.component.scss",
 })
 export class MyRequestsComponent {
- // This will hold the quarantined requests data
+  // This will hold the quarantined requests data
 
-   CustomerRequests: any[] = [
+  CustomerRequests: any[] = [
     {
       id: 1,
       requestId: "CR-2023-0456",
@@ -83,7 +83,7 @@ export class MyRequestsComponent {
       RecordIdentifier: "Pepsi",
     },
   ]; //
-   ProductRequests: any[] = [
+  ProductRequests: any[] = [
     {
       id: 1,
       requestId: "CR-2023-0456",
@@ -157,7 +157,7 @@ export class MyRequestsComponent {
       RecordIdentifier: "Pepsi",
     },
   ]; //
-   SupplierRequests: any[] = [
+  SupplierRequests: any[] = [
     {
       id: 1,
       requestId: "CR-2023-0456",
@@ -232,45 +232,49 @@ export class MyRequestsComponent {
     },
   ]; //
 
-  AllRequests: any[]= [
-     ...this.CustomerRequests,
+  AllRequests: any[] = [
+    ...this.CustomerRequests,
     ...this.ProductRequests,
     ...this.SupplierRequests,
-  ]
+  ];
 
+  setOfCheckedIds: Record<string, Set<number>> = {
+    all: new Set<number>(),
+    customer: new Set<number>(),
+    product: new Set<number>(),
+    supplier: new Set<number>(),
+  };
 
- setOfCheckedIds: Record<string, Set<number>> = {
-  all: new Set<number>(),
-  customer: new Set<number>(),
-  product: new Set<number>(),
-  supplier: new Set<number>()
-};
+  checkedStates: Record<string, boolean> = {
+    all: false,
+    customer: false,
+    product: false,
+    supplier: false,
+  };
 
-checkedStates: Record<string, boolean> = {
-  all: false,
-  customer: false,
-  product: false,
-  supplier: false
-};
+  indeterminateStates: Record<string, boolean> = {
+    all: false,
+    customer: false,
+    product: false,
+    supplier: false,
+  };
+  setOfCheckedId = new Set<number>();
 
-indeterminateStates: Record<string, boolean> = {
-  all: false,
-  customer: false,
-  product: false,
-  supplier: false
-};
-setOfCheckedId = new Set<number>();
+  statusCount: Record<string, number> = {};
+  selectedIndex = 1;
 
-statusCount: Record<string, number> = {};
- selectedIndex = 1;
-
-  constructor(private router: Router) { }
+  constructor(private router: Router) {}
 
   mixedStatuses() {
-    return this.statusCount['Pending'] || this.statusCount['Quarantined'] || this.statusCount['Rejected'] || this.statusCount['Approved'];
+    return (
+      this.statusCount["Pending"] ||
+      this.statusCount["Quarantined"] ||
+      this.statusCount["Rejected"] ||
+      this.statusCount["Approved"]
+    );
   }
 
- deleteRecodr(index: number): void {
+  deleteRecod(index: number): void {
     // This method will delete a record from the quarantined requests
     if (this.selectedIndex === 0) {
       this.AllRequests.splice(index, 1);
@@ -287,104 +291,135 @@ statusCount: Record<string, number> = {};
     }
   }
 
-  getCurrentTabKey(): string {
-  return ['all', 'customer', 'product', 'supplier'][this.selectedIndex];
-}
+  deleteRows() {
+    if (this.selectedIndex === 0) {
+      this.AllRequests = this.AllRequests.filter(
+        (item) => !this.setOfCheckedIds["all"].has(item.id)
+      );
 
-getCurrentTableData(): any[] {
-  switch (this.selectedIndex) {
-    case 0: return this.AllRequests;
-    case 1: return this.CustomerRequests;
-    case 2: return this.ProductRequests;
-    case 3: return this.SupplierRequests;
-    default: return [];
-  }
-}
-  onAllChecked(value: boolean): void {
-  const tabKey = this.getCurrentTabKey();
-  const data = this.getCurrentTableData();
-  const set = this.setOfCheckedIds[tabKey];
+      this.AllRequests = [...this.AllRequests]; // Trigger change detection
+    } else if (this.selectedIndex === 1) {
+      this.CustomerRequests = this.CustomerRequests.filter(
+        (item) => !this.setOfCheckedIds["customer"].has(item.id)
+      );
 
-  data.forEach(item => {
-    if (value) {
-      set.add(item.id);
-    } else {
-      set.delete(item.id);
+      this.CustomerRequests = [...this.CustomerRequests]; // Trigger change detection
+    } else if (this.selectedIndex === 2) {
+      this.ProductRequests = this.ProductRequests.filter(
+        (item) => !this.setOfCheckedIds["product"].has(item.id)
+      );
+
+      this.ProductRequests = [...this.ProductRequests]; // Trigger change detection
+    } else if (this.selectedIndex === 3) {
+      this.SupplierRequests = this.SupplierRequests.filter(
+        (item) => !this.setOfCheckedIds["supplier"].has(item.id)
+      );
+
+      this.SupplierRequests = [...this.SupplierRequests]; // Trigger change detection
     }
-  });
 
-  this.refreshCheckedStatus();
-}
-
-
-refreshCheckedStatus(): void {
-  const tabKey = this.getCurrentTabKey();
-  const data = this.getCurrentTableData();
-  const set = this.setOfCheckedIds[tabKey];
-
-  const allChecked = data.every(item => set.has(item.id));
-  const someChecked = data.some(item => set.has(item.id));
-
-  this.checkedStates[tabKey] = allChecked;
-  this.indeterminateStates[tabKey] = someChecked && !allChecked;
-
-  // Update status count
-  const selectedItems = data.filter(item => set.has(item.id));
-  this.statusCount = selectedItems.reduce((acc, item) => {
-    acc[item.status] = (acc[item.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
-}
-
-
- onItemChecked(id: number, status: string, checked: boolean): void {
-  const tabKey = this.getCurrentTabKey();
-  const set = this.setOfCheckedIds[tabKey];
-
-  if (checked) {
-    set.add(id);
-  } else {
-    set.delete(id);
+    this.setOfCheckedId.clear();
+    this.refreshCheckedStatus();
   }
 
-  this.refreshCheckedStatus();
-}
-
-
- updateCheckedSet(id: number, status: string, checked: boolean): void {
-  // Add or remove the ID from the selected set
-  if (checked) {
-    this.setOfCheckedId.add(id);
-  } else {
-    this.setOfCheckedId.delete(id);
+  getCurrentTabKey(): string {
+    return ["all", "customer", "product", "supplier"][this.selectedIndex];
   }
 
-  // Get current list of requests based on selected tab
-  const selectedRequests = this.getCurrentTableData();
+  getCurrentTableData(): any[] {
+    switch (this.selectedIndex) {
+      case 0:
+        return this.AllRequests;
+      case 1:
+        return this.CustomerRequests;
+      case 2:
+        return this.ProductRequests;
+      case 3:
+        return this.SupplierRequests;
+      default:
+        return [];
+    }
+  }
+  onAllChecked(value: boolean): void {
+    const tabKey = this.getCurrentTabKey();
+    const data = this.getCurrentTableData();
+    const set = this.setOfCheckedIds[tabKey];
 
-  // Filter the selected items for the current tab
-  const selectedItems = selectedRequests.filter(item =>
-    this.setOfCheckedId.has(item.id)
-  );
+    data.forEach((item) => {
+      if (value) {
+        set.add(item.id);
+      } else {
+        set.delete(item.id);
+      }
+    });
 
-  // Rebuild the status count object
-  this.statusCount = selectedItems.reduce((acc, item) => {
-    acc[item.status] = (acc[item.status] || 0) + 1;
-    return acc;
-  }, {} as Record<string, number>);
+    this.refreshCheckedStatus();
+  }
 
-  console.log(this.statusCount);
-}
+  refreshCheckedStatus(): void {
+    const tabKey = this.getCurrentTabKey();
+    const data = this.getCurrentTableData();
+    const set = this.setOfCheckedIds[tabKey];
+
+    const allChecked = data.every((item) => set.has(item.id));
+    const someChecked = data.some((item) => set.has(item.id));
+
+    this.checkedStates[tabKey] = allChecked;
+    this.indeterminateStates[tabKey] = someChecked && !allChecked;
+
+    // Update status count
+    const selectedItems = data.filter((item) => set.has(item.id));
+    this.statusCount = selectedItems.reduce((acc, item) => {
+      acc[item.status] = (acc[item.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+  }
+
+  onItemChecked(id: number, status: string, checked: boolean): void {
+    const tabKey = this.getCurrentTabKey();
+    const set = this.setOfCheckedIds[tabKey];
+
+    if (checked) {
+      set.add(id);
+    } else {
+      set.delete(id);
+    }
+
+    this.refreshCheckedStatus();
+  }
+
+  updateCheckedSet(id: number, status: string, checked: boolean): void {
+    // Add or remove the ID from the selected set
+    if (checked) {
+      this.setOfCheckedId.add(id);
+    } else {
+      this.setOfCheckedId.delete(id);
+    }
+
+    // Get current list of requests based on selected tab
+    const selectedRequests = this.getCurrentTableData();
+
+    // Filter the selected items for the current tab
+    const selectedItems = selectedRequests.filter((item) =>
+      this.setOfCheckedId.has(item.id)
+    );
+
+    // Rebuild the status count object
+    this.statusCount = selectedItems.reduce((acc, item) => {
+      acc[item.status] = (acc[item.status] || 0) + 1;
+      return acc;
+    }, {} as Record<string, number>);
+
+    console.log(this.statusCount);
+  }
   onTabChange(index: number): void {
     this.selectedIndex = index;
-      this.refreshCheckedStatus();
-
+    this.refreshCheckedStatus();
   }
 
-
-    viewOrEditRequest(id: number, status: string, canEdit: Boolean): void {
+  viewOrEditRequest(id: number, status: string, canEdit: Boolean): void {
     this.router.navigate(["/dashboard/new-request", id], {
-      queryParams: { edit: canEdit, status }
+      queryParams: { edit: canEdit, status },
     });
   }
   ngOnInit(): void {

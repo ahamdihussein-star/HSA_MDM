@@ -22,6 +22,7 @@
           'status-approved': status === 'Approved',
           'status-pending': status === 'Pending',
           'status-rejected': status === 'Rejected',
+          'status-updated': status === 'Updated',
           'status-quarantined': status === 'Quarantined'
         }">
         {{status | translate}}
@@ -298,8 +299,7 @@
     (nzOnCancel)="handleCancel()" (nzOnOk)="handleOk()">
     <ng-container *nzModalContent>
       <img src="./assets/img/rejectIcon.svg" class="popupImg" alt="">
-      <p class="popupText">{{ "You have successfully rejected this request. The requester will be notified with your
-        reason." | translate }}
+      <p class="popupText">{{ "You have successfully rejected this request. The requester will be notified with yourreason." | translate }}
       </p>
       <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
       <label nz-checkbox class="checkboxHolder">
@@ -329,18 +329,18 @@
 
     </ng-container>
   </nz-modal>
-  <nz-modal [(nzVisible)]="isAssignVisible" [nzTitle]="'Add a Rejection Note' | translate" (nzOnCancel)="handleCancel()"
+  <nz-modal [(nzVisible)]="isAssignVisible" [nzTitle]="'Assign to' | translate" (nzOnCancel)="handleCancel()"
     (nzOnOk)="handleOk()">
     <ng-container *nzModalContent>
       <img src="./assets/img/assignIcon.svg" class="popupImg" alt="">
       <p class="popupText">{{ "Select the department you want to assign this request to" | translate }}
       </p>
 
-      <nz-select [(ngModel)]="selectedDepartment" name="department" nzPlaceHolder="Select Department"
+      <nz-select [(ngModel)]="selectedDepartment" name="department" nzPlaceHolder="{{'Select Department'|translate}}"
         style="width: 100%">
-        <nz-option nzValue="sales" nzLabel="Sales"></nz-option>
-        <nz-option nzValue="manufacturing" nzLabel="Manufacturing"></nz-option>
-        <nz-option nzValue="supply" nzLabel="Supply Chain"></nz-option>
+       <nz-option nzValue="sales" nzLabel="{{'Sales'|translate}}"></nz-option>
+        <nz-option nzValue="manufacturing" nzLabel="{{'Manufacturing'|translate}}"></nz-option>
+        <nz-option nzValue="supply" nzLabel="{{'Supply Chain'|translate}}"></nz-option>
       </nz-select>
 
       <div class="fullWidth margintop"><button class="Primary_fill submitBtn" [disabled]="!selectedDepartment"
