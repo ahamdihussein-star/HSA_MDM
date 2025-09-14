@@ -1,0 +1,67 @@
+/* مقتطفات من ستايل My Task List لضمان التطابق */
+.welcomeMessage { font-size: 20px; }
+.subMessage     { margin: 10px 0 30px; color: #6c757d; }
+
+.titleActionHolder {
+  width: 100%;
+  display: flex; align-items: center; justify-content: space-between;
+}
+.actionHolderTitle {
+  display: flex; align-items: center; justify-content: center;
+  margin-bottom: 20px;
+}
+.seachInputHolder {
+  background-color: #fff;
+  display: flex; align-items: center; justify-content: space-between;
+  width: 215px; height: 48px; border-radius: 100px;
+  margin: 0 12px; padding: 12px 18px;
+  border: 1px solid #ececec;
+}
+.seachInputHolder img { width: 18px; height: 18px; margin-right: 8px; }
+.seachInputHolder input {
+  border: 0; outline: none; width: 100%; font-size: 14px;
+}
+
+/* جدول موحّد نفس روح My Task List */
+.table-wrap { overflow-x: auto; border-radius: 12px; }
+.goldTable {
+  width: 100%; border-collapse: collapse; background: #fff; min-width: 950px;
+}
+.goldTable th, .goldTable td {
+  padding: 10px 12px; border: 1px solid #eee; font-size: 13px; text-align: left;
+}
+.goldTable thead th {
+  background: #faf7eb; font-weight: 700; color: #333;
+}
+.empty { text-align: center; color: #777; padding: 18px 0; }
+
+/* خانات الاسم */
+.name { font-weight: 700; color: #222; }
+.sub  { color: #6c757d; font-size: 12px; margin-top: 2px; }
+
+/* أزرار موحّدة */
+.btn {
+  display: inline-flex; align-items: center; justify-content: center;
+  height: 32px; padding: 0 14px; border-radius: 8px; border: 1px solid transparent;
+  font-size: 12.5px; cursor: pointer; user-select: none;
+}
+.btn.primary { background: #f2c44d; border-color: #efbe3b; font-weight: 700; }
+.btn.primary:hover { filter: brightness(0.98); }
+.btn.ghost { background: #fff; border-color: #ddd; }
+.btn.danger { background: #ffe2e2; border-color: #ffcccc; color: #9c1a1a; }
+
+/* بادچ للمصدر */
+.b { display: inline-block; padding: 3px 10px; border-radius: 999px; font-size: 12px; border: 1px solid #eee; background: #fafafa; }
+.b.sap     { background: #e8f3ff; border-color: #cfe6ff; color: #185ea8; }
+.b.byd     { background: #e8fff3; border-color: #cbf3dd; color: #127a4a; }
+.b.oracle  { background: #fff0f0; border-color: #ffd9d9; color: #9c1a1a; }
+
+/* Pills للأرقام */
+.pill {
+  display: inline-block; min-width: 34px; text-align: center;
+  padding: 4px 8px; border-radius: 999px; background: #f7f7f7; border: 1px solid #eee;
+}
+
+/* Utilities */
+.mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: #555; }
+.loading { padding: 16px 0; color: #666; }

@@ -1,0 +1,18 @@
+{
+  "tsChanged": 63,
+  "htmlChanged": 3,
+  "notes": [
+    {
+      "file": "/Users/ahmedhussein/Projects/master-data-mangment-local/src/app/dashboard/dashboard.component.ts",
+      "error": "Attempted to get information from a node that was removed or forgotten.\n\nNode text: public router: Router"
+    },
+    {
+      "file": "/Users/ahmedhussein/Projects/master-data-mangment-local/src/app/sidebar/sidebar.component.ts",
+      "error": "Attempted to get information from a node that was removed or forgotten.\n\nNode text: public router: Router"
+    },
+    {
+      "file": "/Users/ahmedhussein/Projects/master-data-mangment-local/src/app/dashboard/golden-summary/golden-summary.component.ts",
+      "error": "Attempted to get information from a node that was removed or forgotten.\n\nNode text: private router: Router"
+    }
+  ]
+}

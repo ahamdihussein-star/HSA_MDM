@@ -1,12 +1,13 @@
-import { NgModule } from '@angular/core';
+
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 
 import { HomeRoutingModule } from './home-routing.module';
 import { HomeComponent } from './home.component';
 import { NgApexchartsModule } from 'ng-apexcharts';
 import { NzTableModule } from 'ng-zorro-antd/table';
 import { TranslateModule } from '@ngx-translate/core';
-
+import { Router } from "@angular/router";
 
 @NgModule({
   declarations: [
@@ -23,4 +24,7 @@ import { TranslateModule } from '@ngx-translate/core';
     HomeComponent
   ]
 })
-export class HomeModule { }
+export class HomeModule {
+    constructor() {
+    }
+ }

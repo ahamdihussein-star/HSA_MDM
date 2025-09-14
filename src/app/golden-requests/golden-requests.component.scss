@@ -1,30 +1,42 @@
 .actionHolderTitleTabs {
     display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-bottom: -70px;
-    z-index: 99;
+  align-items: center;
+  justify-content: flex-end; // بدل center
+  margin-bottom: 16px; // شيل -70px وخليه spacing طبيعي
+  gap: 12px; // علشان يبقى في مسافة بين العناصر
 }
 
 .titleActionHolder {
     width: 100%;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  margin-bottom: 24px; // إضافة spacing تحت العنوان
 }
 
 .seachInputHolder {
-    background-color: white;
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    width: 215px;
-    height: 48px;
-    border-radius: 100px;
-    margin: 0 12px;
-    padding: 12px 18px;
+  background-color: white;
+  display: flex;
+  align-items: center;
+  width: 215px;
+  height: 48px;
+  border-radius: 100px;
+  padding: 0 16px;
+  box-shadow: 0 0 4px rgba(0,0,0,0.05);
+  gap: 8px;
+
+  input {
+    border: none;
+    outline: none;
+    width: 100%;
+    background: transparent;
+  }
 }
 
+.filterIcon {
+  cursor: pointer;
+  height: 24px;
+}
 .actionBtn {
     display: flex;
     align-items: center;

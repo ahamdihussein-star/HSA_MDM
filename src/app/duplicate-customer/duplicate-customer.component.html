@@ -1,79 +1,964 @@
-<h1 class="pageTitle backTitle">
-  <img
-    (click)="goBack()"
-    src="assets/img/leftArrow.svg"
-    alt="Back"
-    class="backImg"
-  />
-  {{ "Customer" | translate }}: CUST-001234
-</h1>
+<!-- Innovative Duplicate Records Management Interface -->
+<div class="duplicate-management-container">
 
-<nz-table
-  #rowSelectionTable
-  nzShowSizeChanger
-  [nzData]="listOfData"
-  [nzShowPagination]="false"
->
-  <thead>
-    <tr>
-      <th
-        [(nzChecked)]="checked"
-        [nzIndeterminate]="indeterminate"
-        (nzCheckedChange)="onAllChecked($event)"
-      ></th>
-      <th>{{ "Field" | translate }}</th>
-      <th>{{ "Name" | translate }}</th>
-      <th>{{ "Email" | translate }}</th>
-      <th>{{ "PhoneNumber" | translate }}</th>
-      <th>{{ "Date" | translate }}</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngFor="let data of rowSelectionTable.data; let i = index">
-      <td
-        [nzChecked]="setOfCheckedId.has(data.id)"
-        (nzCheckedChange)="onItemChecked(data.id, $event)"
-      ></td>
-      <td>
-        {{data.field}}
-      </td>
-      <td>{{ data.name }}</td>
-      <td>{{ data.email }}</td>
-      <td>{{ data.phone }}</td>
-      <td>{{ data.date }}</td>
-    </tr>
-  </tbody>
-</nz-table>
-<div class="optionsHolder">
-  
-
-  <div class="btnContainer">
-    <button
-      class="SecondryBtn"
-      [disabled]="setOfCheckedId.size < 1"
-      (click)="ignoreRows()"
-    >
-      {{ "Ignore" | translate }}
-    </button>
-    <button
-      class="Primary_fill"
-      [disabled]="setOfCheckedId.size <= 1"
-      (click)="merge()"
-    >
-      {{ "Merge" | translate }}
-    </button>
+  <!-- Review Mode Banner (Shows only in review mode) -->
+  <div class="review-banner" *ngIf="isReviewMode && isReviewer">
+    <div class="banner-content">
+      <span class="banner-icon">👁️</span>
+      <span class="banner-text">Review Mode - Master Record Analysis</span>
+      <span class="banner-badge">Pending Review</span>
+    </div>
   </div>
-  <nz-select *ngIf="showSelect"
-    [(ngModel)]="selectedValue"
-    (ngModelChange)="selecteChange($event)"
-    nzPlaceHolder="{{ 'Choose Record' | translate }}"
 
-  >
-    <nz-option
-      *ngFor="let option of selectedOptions; let i = index"
-      [nzValue]="option.id"
-      [nzLabel]="option.field"
-    >
-    </nz-option>
-  </nz-select>
+  <!-- Compliance Mode Banner (Shows only in compliance mode) -->
+  <div class="compliance-banner" *ngIf="isComplianceMode && isCompliance">
+    <div class="banner-content">
+      <span class="banner-icon">⚖️</span>
+      <span class="banner-text">Compliance Review - Golden Record Decision</span>
+      <span class="banner-badge">Pending Compliance</span>
+    </div>
+  </div>
+
+  <!-- Floating Header with Navigation (Shows for Data Entry mode) -->
+  <header class="floating-header" *ngIf="!isReviewMode && !isComplianceMode">
+    <div class="header-wrapper">
+      
+      <!-- Navigation -->
+      <div class="nav-section">
+        <button class="nav-btn" (click)="goBack()">
+          <span>←</span> Back to Records
+        </button>
+      </div>
+
+      <!-- Context Info -->
+      <div class="context-section">
+        <div class="context-badge">
+          <span class="badge-icon">🏢</span>
+          <span>{{ currentGroupName || 'Unknown Company' }}</span>
+        </div>
+        <div class="tax-badge">
+          <span class="badge-icon">📋</span>
+          <span>Tax: {{ currentTaxNumber || 'N/A' }}</span>
+        </div>
+        <div class="status-badge" [class.active]="currentStep === 2">
+          <span class="badge-icon">✨</span>
+          <span>Golden Record</span>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="actions-section">
+        <button class="action-icon" (click)="saveDraft()" title="Save Draft">
+          💾
+        </button>
+        <button class="action-icon" (click)="showHelp = !showHelp" [class.active]="showHelp" title="Help">
+          ❓
+        </button>
+      </div>
+    </div>
+
+    <!-- Progress Timeline - SIMPLIFIED -->
+    <div class="progress-timeline">
+      <div class="timeline-step" 
+           *ngFor="let step of progressSteps; let i = index"
+           [class.active]="currentStep === i + 1"
+           [class.completed]="currentStep > i + 1"
+           (click)="navigateToStep(i + 1)">
+        <div class="step-number">{{ currentStep > i + 1 ? '✓' : i + 1 }}</div>
+        <div class="step-label">{{ step.label }}</div>
+      </div>
+      <div class="timeline-connector" 
+           *ngFor="let step of progressSteps.slice(0, -1); let i = index"
+           [class.active]="currentStep > i + 1"></div>
+    </div>
+  </header>
+
+  <!-- Review Mode Content (Shows for Reviewers) -->
+  <div class="review-mode-content" *ngIf="isReviewMode && isReviewer">
+    
+    <!-- Master Record Summary -->
+    <div class="review-section">
+      <h3 class="section-title">📋 Master Record Details</h3>
+      <div class="master-record-grid">
+        <div class="field-item" *ngFor="let field of fieldDefinitions">
+          <div class="field-label">
+            <span class="field-icon">{{ field.icon }}</span>
+            {{ field.label }}
+          </div>
+          <div class="field-value">
+            {{ getMasterFieldValue(field.key) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Linked Records Section -->
+    <div class="review-section">
+      <h3 class="section-title">🔗 Linked Records ({{ linkedRecords.length }})</h3>
+      <div class="records-grid" *ngIf="linkedRecords.length > 0">
+        <div class="record-card linked-card" *ngFor="let record of linkedRecords">
+          <div class="record-header">
+            <span class="record-name">{{ record.firstName || record.firstNameAr || record.id }}</span>
+            <span class="record-badge linked">Linked</span>
+          </div>
+          <div class="record-details">
+            <div class="detail-row">
+              <span class="detail-label">ID:</span>
+              <span class="detail-value">{{ record.id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Source:</span>
+              <span class="detail-value">{{ record.sourceSystem || 'Unknown' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Tax:</span>
+              <span class="detail-value">{{ record.tax }}</span>
+            </div>
+            <div class="detail-row" *ngIf="record.country">
+              <span class="detail-label">Country:</span>
+              <span class="detail-value">{{ record.country }}</span>
+            </div>
+            <div class="detail-row" *ngIf="record.city">
+              <span class="detail-label">City:</span>
+              <span class="detail-value">{{ record.city }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="no-records" *ngIf="linkedRecords.length === 0">
+        <p>No linked records found.</p>
+      </div>
+    </div>
+
+    <!-- Quarantine Records Section -->
+    <div class="review-section" *ngIf="quarantineRecords.length > 0">
+      <h3 class="section-title">⚠️ Quarantine Records ({{ quarantineRecords.length }})</h3>
+      <div class="records-grid">
+        <div class="record-card quarantine-card" *ngFor="let record of quarantineRecords">
+          <div class="record-header">
+            <span class="record-name">{{ record.firstName || record.firstNameAr || record.id }}</span>
+            <span class="record-badge quarantine">Quarantine</span>
+          </div>
+          <div class="record-details">
+            <div class="detail-row">
+              <span class="detail-label">ID:</span>
+              <span class="detail-value">{{ record.id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Source:</span>
+              <span class="detail-value">{{ record.sourceSystem || 'Unknown' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Reason:</span>
+              <span class="detail-value">Not a true duplicate</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contacts Section -->
+    <div class="review-section" *ngIf="masterContacts.length > 0">
+      <h3 class="section-title">👥 Contacts ({{ masterContacts.length }})</h3>
+      <div class="contacts-grid">
+        <div class="contact-card" *ngFor="let contact of masterContacts">
+          <div class="contact-name">{{ contact.name || 'No Name' }}</div>
+          <div class="contact-details">
+            <div *ngIf="contact.email">📧 {{ contact.email }}</div>
+            <div *ngIf="contact.mobile">📱 {{ contact.mobile }}</div>
+            <div *ngIf="contact.jobTitle">💼 {{ contact.jobTitle }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents Section -->
+    <div class="review-section" *ngIf="masterDocuments.length > 0">
+      <h3 class="section-title">📄 Documents ({{ masterDocuments.length }})</h3>
+      <div class="documents-grid">
+        <div class="document-card" *ngFor="let doc of masterDocuments">
+          <div class="doc-icon">📎</div>
+          <div class="doc-info">
+            <div class="doc-name">{{ doc.name }}</div>
+            <div class="doc-type">{{ doc.type }}</div>
+          </div>
+          <button class="view-btn" (click)="viewDocument(doc)">
+            Download
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Review Actions Panel -->
+    <div class="review-actions-panel">
+      <div class="action-info">
+        <p>Please review the master record and all linked/quarantine records carefully before making a decision.</p>
+      </div>
+      <div class="action-buttons">
+        <button class="reject-btn" (click)="openRejectModal()" [disabled]="processing">
+          <span>❌</span> 
+          <div>
+            <div class="btn-title">Reject</div>
+            <div class="btn-subtitle">Return to Data Entry</div>
+          </div>
+        </button>
+        <button class="approve-btn" (click)="approveAndSendToCompliance()" [disabled]="processing">
+          <span>✅</span>
+          <div>
+            <div class="btn-title">Approve</div>
+            <div class="btn-subtitle">Send to Compliance</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compliance Mode Content (Shows for Compliance) -->
+  <div class="compliance-mode-content" *ngIf="isComplianceMode && isCompliance">
+    
+    <!-- Master Record Summary -->
+    <div class="review-section">
+      <h3 class="section-title">📋 Master Record Details</h3>
+      <div class="master-record-grid">
+        <div class="field-item" *ngFor="let field of fieldDefinitions">
+          <div class="field-label">
+            <span class="field-icon">{{ field.icon }}</span>
+            {{ field.label }}
+          </div>
+          <div class="field-value">
+            {{ getMasterFieldValue(field.key) }}
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Linked Records Section -->
+    <div class="review-section">
+      <h3 class="section-title">🔗 Linked Records ({{ linkedRecords.length }})</h3>
+      <div class="records-grid" *ngIf="linkedRecords.length > 0">
+        <div class="record-card linked-card" *ngFor="let record of linkedRecords">
+          <div class="record-header">
+            <span class="record-name">{{ record.firstName || record.firstNameAr || record.id }}</span>
+            <span class="record-badge linked">Linked</span>
+          </div>
+          <div class="record-details">
+            <div class="detail-row">
+              <span class="detail-label">ID:</span>
+              <span class="detail-value">{{ record.id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Source:</span>
+              <span class="detail-value">{{ record.sourceSystem || 'Unknown' }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Tax:</span>
+              <span class="detail-value">{{ record.tax }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="no-records" *ngIf="linkedRecords.length === 0">
+        <p>No linked records found.</p>
+      </div>
+    </div>
+
+    <!-- Quarantine Records Section -->
+    <div class="review-section" *ngIf="quarantineRecords.length > 0">
+      <h3 class="section-title">⚠️ Quarantine Records ({{ quarantineRecords.length }})</h3>
+      <div class="records-grid">
+        <div class="record-card quarantine-card" *ngFor="let record of quarantineRecords">
+          <div class="record-header">
+            <span class="record-name">{{ record.firstName || record.firstNameAr || record.id }}</span>
+            <span class="record-badge quarantine">Quarantine</span>
+          </div>
+          <div class="record-details">
+            <div class="detail-row">
+              <span class="detail-label">ID:</span>
+              <span class="detail-value">{{ record.id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Source:</span>
+              <span class="detail-value">{{ record.sourceSystem || 'Unknown' }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contacts Section -->
+    <div class="review-section" *ngIf="masterContacts.length > 0">
+      <h3 class="section-title">👥 Contacts ({{ masterContacts.length }})</h3>
+      <div class="contacts-grid">
+        <div class="contact-card" *ngFor="let contact of masterContacts">
+          <div class="contact-name">{{ contact.name || 'No Name' }}</div>
+          <div class="contact-details">
+            <div *ngIf="contact.email">📧 {{ contact.email }}</div>
+            <div *ngIf="contact.mobile">📱 {{ contact.mobile }}</div>
+            <div *ngIf="contact.jobTitle">💼 {{ contact.jobTitle }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents Section -->
+    <div class="review-section" *ngIf="masterDocuments.length > 0">
+      <h3 class="section-title">📄 Documents ({{ masterDocuments.length }})</h3>
+      <div class="documents-grid">
+        <div class="document-card" *ngFor="let doc of masterDocuments">
+          <div class="doc-icon">📎</div>
+          <div class="doc-info">
+            <div class="doc-name">{{ doc.name }}</div>
+            <div class="doc-type">{{ doc.type }}</div>
+          </div>
+          <button class="view-btn" (click)="viewDocument(doc)">
+            Download
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Compliance Actions Panel -->
+    <div class="compliance-actions-panel">
+      <div class="action-info">
+        <h3>⚖️ Compliance Decision Required</h3>
+        <p>Review the master record carefully and decide on the company's Golden Record status.</p>
+        <div class="compliance-warning">
+          <span>⚠️</span>
+          <p><strong>Important:</strong> Your decision will create a Golden Record that affects the company's ability to transact.</p>
+        </div>
+      </div>
+      
+      <div class="action-buttons">
+        <button class="back-btn" (click)="goBack()">
+          <span>←</span>
+          <div>
+            <div class="btn-title">Back</div>
+            <div class="btn-subtitle">Return to List</div>
+          </div>
+        </button>
+        
+        <button class="approve-active-btn" (click)="openActiveModal()" [disabled]="processing">
+          <span>✅</span>
+          <div>
+            <div class="btn-title">Approve as Active</div>
+            <div class="btn-subtitle">Company can transact</div>
+          </div>
+        </button>
+        
+        <button class="block-btn" (click)="openBlockModal()" [disabled]="processing">
+          <span>🚫</span>
+          <div>
+            <div class="btn-title">Block Company</div>
+            <div class="btn-subtitle">Prevent transactions</div>
+          </div>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Working Area (Data Entry Mode) - SIMPLIFIED -->
+  <div class="working-area" *ngIf="!isReviewMode && !isComplianceMode">
+    
+    <!-- Step 1: Builder View (Previously Step 2) -->
+    <div class="step-content builder-view" *ngIf="currentStep === 1">
+      
+      <div class="builder-container">
+        <div class="builder-header">
+          <h2>🏗️ Build Your Golden Record</h2>
+          <div class="builder-tools">
+            <button class="tool-btn" (click)="autoFillBest()">
+              <span>✨</span> Smart Fill
+            </button>
+            <button class="tool-btn" (click)="clearAllFields()">
+              <span>🔄</span> Reset
+            </button>
+          </div>
+        </div>
+
+        <!-- Field Builder Grid -->
+        <div class="field-builder-grid">
+          <div class="field-builder-card"
+               *ngFor="let field of fieldDefinitions"
+               [class.completed]="getFieldStatus(field.key) === 'completed'"
+               [class.required]="getFieldStatus(field.key) === 'required'"
+               [class.focused]="focusedField === field.key">
+            
+            <div class="field-card-header" (click)="toggleFieldExpansion(field)">
+              <div class="field-info">
+                <h4>{{ field.label }}</h4>
+                <span class="field-type">{{ field.type || 'text' }}</span>
+              </div>
+              <span class="status-icon">
+                {{ getFieldStatus(field.key) === 'completed' ? '✅' : 
+                   getFieldStatus(field.key) === 'required' ? '⚠️' : '○' }}
+              </span>
+            </div>
+
+            <div class="field-card-body">
+              <!-- Always show current selection if exists -->
+              <div class="current-selection" *ngIf="selectedFields[field.key] || manualFields[field.key]">
+                <span class="selection-label">Selected:</span>
+                <span class="selection-value" [title]="getFieldSource(field.key)">
+                  {{ getFieldSource(field.key) }}
+                </span>
+                 <!-- Source System Badge -->
+              <span class="source-system-badge" 
+                    *ngIf="getFieldSourceSystem(field.key)"
+                    [style.background-color]="getSourceSystemColor(getFieldSourceSystem(field.key))"
+                    style="padding: 2px 8px; border-radius: 12px; color: white; font-size: 11px; font-weight: 600; white-space: nowrap;">
+                {{ getFieldSourceSystem(field.key) }}
+              </span>
+                <button class="change-btn" (click)="expandField(field.key); $event.stopPropagation()">
+                  Change
+                </button>
+              </div>
+
+              <!-- Show expand prompt if no selection -->
+              <div class="no-selection-prompt" *ngIf="!selectedFields[field.key] && !manualFields[field.key] && !expandedFields.includes(field.key)">
+                <span>Click to select value</span>
+              </div>
+
+              <!-- Field Options -->
+              <div class="field-options" *ngIf="expandedFields.includes(field.key)">
+                
+                <!-- Available Values from Records -->
+                <div class="options-section" *ngIf="getAvailableValues(field.key).length > 0">
+                  <h5>📁 Available from Records:</h5>
+                  <div class="value-options">
+                    <div class="value-option-card"
+                        *ngFor="let option of getAvailableValues(field.key)"
+                        [class.selected]="isFieldSelected(field.key, option.recordId)"
+                        (click)="selectFieldValue(field.key, option.value)">
+                      <div>
+                        <div class="option-value">{{ option.value }}</div>
+
+                         <div class="option-source" style="display: flex; align-items: center; gap: 8px; margin-top: 4px;">
+                          <span class="source-record-name" style="font-size: 12px; color: #666;">
+                          {{ option.recordName }}
+                          </span>
+                          <!-- Source System for this option -->
+      <span *ngIf="getRecordSourceSystem(option.recordId)"
+            style="padding: 2px 6px; border-radius: 8px; color: white; font-size: 10px; font-weight: 600;"
+            [style.background-color]="getSourceSystemColor(getRecordSourceSystem(option.recordId))">
+        {{ getRecordSourceSystem(option.recordId) }}
+      </span>
+                        </div>
+                      </div>
+                    </div>
+
+
+                  </div>
+                </div>
+
+                <!-- Manual Input -->
+                <div class="manual-input-section">
+                  <h5>✏️ Or Enter Manually:</h5>
+                  <div class="input-wrapper">
+                    <input *ngIf="field.type !== 'dropdown'"
+                           type="text"
+                           class="manual-field-input"
+                           [(ngModel)]="manualFieldValues[field.key]"
+                           [placeholder]="'Enter ' + field.label"
+                           (keyup.enter)="applyManualValue(field.key)">
+                    <select *ngIf="field.type === 'dropdown'"
+                            class="manual-field-select"
+                            [(ngModel)]="manualFieldValues[field.key]"
+                            (change)="field.key === 'country' ? updateCityOptions(manualFieldValues[field.key]) : null">
+                      <option value="">Select {{ field.label }}</option>
+                      <option *ngFor="let opt of getDropdownOptions(field.key)" [value]="opt.value">
+                        {{ opt.label }}
+                      </option>
+                    </select>
+                    <button class="apply-btn" 
+                            (click)="applyManualValue(field.key)"
+                            [disabled]="!manualFieldValues[field.key]">
+                      Apply
+                    </button>
+                  </div>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Additional Data: Contacts & Documents -->
+        <div class="additional-data-section">
+          <div class="data-tabs">
+            <button class="tab-btn" 
+                    [class.active]="activeTab === 'contacts'"
+                    (click)="activeTab = 'contacts'">
+              <span>👥</span> Contacts ({{ getSelectedContactsCount() }})
+            </button>
+            <button class="tab-btn"
+                    [class.active]="activeTab === 'documents'" 
+                    (click)="activeTab = 'documents'">
+              <span>📄</span> Documents ({{ getSelectedDocumentsCount() }})
+            </button>
+          </div>
+
+          <!-- Contacts Tab -->
+          <div class="tab-content" *ngIf="activeTab === 'contacts'">
+            <div class="items-grid">
+              <!-- Contact Cards -->
+              <div class="contact-card" 
+                   *ngFor="let contact of masterContacts; let i = index"
+                   style="padding: 15px; border: 1px solid #e0e0e0; border-radius: 8px;">
+                
+                <div style="margin-bottom: 10px;">
+                  <div style="font-size: 16px; font-weight: 600; margin-bottom: 8px;">
+                    {{ contact.name || contact.ContactName || 'Contact ' + (i + 1) }}
+                  </div>
+                  
+                  <div style="color: #666; font-size: 14px; line-height: 1.6;">
+                    <div *ngIf="contact.email" style="margin-bottom: 4px;">
+                      <span style="color: #1890ff;">📧</span> {{ contact.email }}
+                    </div>
+                    <div *ngIf="contact.mobile" style="margin-bottom: 4px;">
+                      <span style="color: #1890ff;">📱</span> {{ contact.mobile }}
+                    </div>
+                    <div *ngIf="contact.jobTitle" style="margin-bottom: 4px;">
+                      <span style="color: #1890ff;">💼</span> {{ contact.jobTitle }}
+                    </div>
+                  </div>
+                </div>
+                
+                <div style="display: flex; justify-content: space-between; align-items: center; margin-top: 10px; padding-top: 10px; border-top: 1px solid #f0f0f0;">
+                  <label style="display: flex; align-items: center; cursor: pointer;">
+                    <input type="checkbox" 
+                           [(ngModel)]="contact.selected"
+                           (change)="updateContactSelection(contact)"
+                           style="margin-right: 8px;">
+                    <span style="font-size: 13px; color: #666;">Include</span>
+                  </label>
+                  
+                  <div style="display: flex; gap: 10px;">
+                    <button (click)="editContact(contact, i)" 
+                            style="background: none; border: none; color: #1890ff; cursor: pointer; font-size: 18px;"
+                            title="Edit">
+                      ✏️
+                    </button>
+                    <button (click)="removeContact(i)"
+                            style="background: none; border: none; color: #ff4d4f; cursor: pointer; font-size: 18px;"
+                            title="Delete">
+                      ×
+                    </button>
+                  </div>
+                </div>
+              </div>
+
+              <!-- Add Contact Card -->
+              <div class="add-card" (click)="addNewContact()" 
+                   style="border: 2px dashed #d9d9d9; border-radius: 8px; padding: 30px; text-align: center; cursor: pointer; transition: all 0.3s;">
+                <span class="add-icon" style="font-size: 24px;">➕</span>
+                <div style="margin-top: 8px; color: #666;">Add Contact</div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Documents Tab -->
+          <div class="tab-content" *ngIf="activeTab === 'documents'">
+            <div class="items-grid">
+              <!-- Document Cards -->
+              <div class="document-card" *ngFor="let doc of masterDocuments; let i = index">
+                <div class="card-header">
+                  <input type="checkbox" 
+                         [(ngModel)]="doc.selected"
+                         (change)="updateDocumentSelection(doc)">
+                  <span class="doc-name">{{ doc.name }}</span>
+                  <button class="remove-btn" (click)="removeDocument(i)">×</button>
+                </div>
+                <div class="card-body">
+                  <div class="doc-type">{{ doc.type }}</div>
+                  <div class="doc-size">{{ formatFileSize(doc.size) }}</div>
+                </div>
+                <div class="card-footer">
+                  <span class="source-tag">{{ doc.sourceRecord || doc.sourceRecordName || 'Manual' }}</span>
+                  <button class="view-btn" (click)="viewDocument(doc)">View</button>
+                </div>
+              </div>
+
+              <!-- Add Document Card -->
+              <div class="add-card" (click)="uploadDocument()">
+                <span class="add-icon">📤</span>
+                <span>Upload Document</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step Actions -->
+      <div class="step-actions">
+        <button class="primary-btn" (click)="proceedToLinking()" [disabled]="!isGoldenRecordComplete()">
+          Continue to Linking <span>→</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Step 2: Linking View (Previously Step 3) -->
+    <div class="step-content linking-view" *ngIf="currentStep === 2">
+      
+      <h2 class="section-title">🔗 Link Records to Golden Record</h2>
+      <p class="section-subtitle">Choose which records to link with your golden record and submit for review</p>
+
+      <div class="linking-container">
+        
+        <!-- Records for Linking -->
+        <div class="records-linking">
+          <div class="linking-actions">
+            <button class="bulk-btn" (click)="linkAll()">
+              ✅ Link All
+            </button>
+            <button class="bulk-btn" (click)="quarantineAll()">
+              🚫 Quarantine All
+            </button>
+          </div>
+
+          <!-- Linkable Records -->
+          <div class="linkable-record" 
+               *ngFor="let record of records"
+               [class.linked]="record.linkStatus === 'linked'"
+               [class.quarantined]="record.linkStatus === 'quarantine'">
+            
+            <div class="record-info">
+              <span class="system-tag">{{ record.sourceSystem }}</span>
+              <h4>{{ record.recordName }}</h4>
+              <div class="record-preview">
+                Tax: {{ record.tax }} | City: {{ record.city }}
+              </div>
+              <div class="match-score">
+                <span>Match Score:</span>
+                <div class="score-bar">
+                  <div class="score-fill" [style.width.%]="record.matchScore"></div>
+                </div>
+                <span class="score-text">{{ record.matchScore }}%</span>
+              </div>
+            </div>
+
+            <div class="record-actions">
+              <button class="link-btn"
+                      [class.active]="record.linkStatus === 'linked'"
+                      (click)="toggleLink(record)">
+                <span>{{ record.linkStatus === 'linked' ? '✓ Linked' : 'Link' }}</span>
+              </button>
+              <button class="quarantine-btn"
+                      [class.active]="record.linkStatus === 'quarantine'"
+                      (click)="toggleQuarantine(record)">
+                <span>{{ record.linkStatus === 'quarantine' ? '⚠️ Quarantined' : 'Quarantine' }}</span>
+              </button>
+            </div>
+          </div>
+
+          <!-- Quarantine Reason -->
+          <div class="quarantine-reason" *ngIf="getQuarantineCount() > 0">
+            <h4>📝 Quarantine Reason (Optional)</h4>
+            <textarea class="reason-input"
+                      [(ngModel)]="quarantineReason"
+                      placeholder="Explain why these records are being quarantined..."></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- Step Actions -->
+      <div class="step-actions final">
+        <button class="secondary-btn" (click)="previousStep()">
+          <span>←</span> Back
+        </button>
+        <button class="primary-btn submit" 
+                (click)="submitToReviewer()"
+                [disabled]="building || !canProceedToSubmit()">
+          Send for Master Data Review
+          <span>🚀</span>
+        </button>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Modals -->
+
+  <!-- Contact Modal -->
+  <div class="modal-overlay" *ngIf="showContactModal" (click)="closeContactModal()">
+    <div class="modal-content" (click)="stopPropagation($event)">
+      <h2>{{ editingContact ? '✏️ Edit Contact' : '➕ Add New Contact' }}</h2>
+      
+      <div class="form-group">
+        <label>Contact Name *</label>
+        <input type="text" [(ngModel)]="newContact.name" placeholder="Enter contact name">
+      </div>
+      
+      <div class="form-group">
+        <label>Job Title</label>
+        <input type="text" [(ngModel)]="newContact.jobTitle" placeholder="e.g. Sales Manager">
+      </div>
+      
+      <div class="form-group">
+        <label>Email Address</label>
+        <input type="email" [(ngModel)]="newContact.email" placeholder="example@company.com">
+      </div>
+      
+      <div class="form-group">
+        <label>Mobile Number</label>
+        <input type="tel" [(ngModel)]="newContact.mobile" placeholder="+1234567890">
+      </div>
+      
+      <div class="form-group">
+        <label>Landline</label>
+        <input type="tel" [(ngModel)]="newContact.landline" placeholder="+1234567890">
+      </div>
+      
+      <div class="form-group">
+        <label>Preferred Language</label>
+        <select [(ngModel)]="newContact.preferredLanguage">
+          <option *ngFor="let lang of preferredLanguageOptions" [value]="lang.value">
+            {{ lang.label }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-actions">
+        <button class="secondary-btn" (click)="closeContactModal()">Cancel</button>
+        <button class="primary-btn" (click)="saveContact()" 
+                [disabled]="!newContact.name || !newContact.name.trim()">
+          {{ editingContact ? 'Update Contact' : 'Save Contact' }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Upload Document Modal -->
+  <div class="modal-overlay" *ngIf="showUploadDocumentModal" (click)="cancelUploadDocument()">
+    <div class="modal-content" (click)="stopPropagation($event)">
+      <h2>📤 Upload Document</h2>
+      
+      <div class="form-group">
+        <label>Select File *</label>
+        <input type="file" (change)="onFileSelected($event)" 
+               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png">
+        <small>Supported: PDF, Word, JPG, PNG (Max 10MB)</small>
+      </div>
+      
+      <div class="form-group" *ngIf="newDocument.name">
+        <label>File Name</label>
+        <input type="text" [(ngModel)]="newDocument.name" placeholder="Enter file name">
+      </div>
+      
+      <div class="form-group">
+        <label>Document Type</label>
+        <select [(ngModel)]="newDocument.type">
+          <option *ngFor="let type of documentTypes" [value]="type.value">
+            {{ type.label }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>Description</label>
+        <textarea [(ngModel)]="newDocument.description" 
+                  placeholder="Add description (optional)"></textarea>
+      </div>
+      
+      <div class="form-actions">
+        <button class="secondary-btn" (click)="cancelUploadDocument()">Cancel</button>
+        <button class="primary-btn" (click)="saveNewDocument()" 
+                [disabled]="!newDocument.file">
+          Upload Document
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Modal -->
+  <div class="modal-overlay" *ngIf="showRejectModal" (click)="closeRejectModal()">
+    <div class="modal-content reject-modal" (click)="stopPropagation($event)">
+      <div class="modal-header">
+        <h2>❌ Reject Master Record</h2>
+        <button class="close-btn" (click)="closeRejectModal()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="warning-message">
+          <span>⚠️</span>
+          <p>This action will return the record to Data Entry for corrections.</p>
+        </div>
+        
+        <div class="form-group">
+          <label>Rejection Reason <span class="required">*</span></label>
+          <textarea 
+            [(ngModel)]="rejectionReason"
+            placeholder="Please provide detailed reason for rejection and specific corrections needed..."
+            rows="6"
+            class="rejection-textarea">
+          </textarea>
+          <span class="char-count">{{ rejectionReason.length }}/500</span>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="secondary-btn" (click)="closeRejectModal()">
+          Cancel
+        </button>
+        <button class="primary-btn danger-btn" 
+                (click)="confirmReject()"
+                [disabled]="!rejectionReason || rejectionReason.length < 10 || processing">
+          <span *ngIf="!processing">Confirm Rejection</span>
+          <span *ngIf="processing">Processing...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compliance Active Modal -->
+  <div class="modal-overlay" *ngIf="showActiveModal" (click)="closeActiveModal()">
+    <div class="modal-content active-modal" (click)="stopPropagation($event)">
+      <div class="modal-header success">
+        <h2>✅ Approve as Active Golden Record</h2>
+        <button class="close-btn" (click)="closeActiveModal()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="info-message success">
+          <span>ℹ️</span>
+          <p>This will create an <strong>Active Golden Record</strong>. The company will be able to transact normally.</p>
+        </div>
+        
+        <div class="company-info">
+          <h4>Company Details:</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Company Name:</span>
+              <span class="value">{{ currentGroupName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Tax Number:</span>
+              <span class="value">{{ currentTaxNumber }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Linked Records:</span>
+              <span class="value">{{ getLinkedCount() }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Quarantine Records:</span>
+              <span class="value">{{ getQuarantineCount() }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Approval Note (Optional)</label>
+          <textarea 
+            [(ngModel)]="approvalNote"
+            placeholder="Enter any notes about this approval..."
+            rows="3">
+          </textarea>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="secondary-btn" (click)="closeActiveModal()">
+          Cancel
+        </button>
+        <button class="primary-btn success-btn" 
+                (click)="confirmActive()"
+                [disabled]="processing">
+          <span *ngIf="!processing">Confirm Active Status</span>
+          <span *ngIf="processing">Processing...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Compliance Block Modal -->
+  <div class="modal-overlay" *ngIf="showBlockModal" (click)="closeBlockModal()">
+    <div class="modal-content block-modal" (click)="stopPropagation($event)">
+      <div class="modal-header danger">
+        <h2>🚫 Block Golden Record</h2>
+        <button class="close-btn" (click)="closeBlockModal()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <div class="warning-message danger">
+          <span>⚠️</span>
+          <p><strong>Warning:</strong> This will create a <strong>Blocked Golden Record</strong>. The company will NOT be able to transact.</p>
+        </div>
+        
+        <div class="company-info">
+          <h4>Company Details:</h4>
+          <div class="info-grid">
+            <div class="info-item">
+              <span class="label">Company Name:</span>
+              <span class="value">{{ currentGroupName }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Tax Number:</span>
+              <span class="value">{{ currentTaxNumber }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Linked Records:</span>
+              <span class="value">{{ getLinkedCount() }}</span>
+            </div>
+            <div class="info-item">
+              <span class="label">Quarantine Records:</span>
+              <span class="value">{{ getQuarantineCount() }}</span>
+            </div>
+          </div>
+        </div>
+        
+        <div class="form-group">
+          <label>Block Reason <span class="required">*</span></label>
+          <textarea 
+            [(ngModel)]="blockReason"
+            placeholder="Enter detailed reason for blocking this company..."
+            rows="4"
+            class="block-textarea">
+          </textarea>
+          <span class="char-count">{{ blockReason.length }}/500</span>
+          <small class="help-text">This reason will be recorded in the audit trail and visible in reports.</small>
+        </div>
+      </div>
+      
+      <div class="modal-footer">
+        <button class="secondary-btn" (click)="closeBlockModal()">
+          Cancel
+        </button>
+        <button class="primary-btn danger-btn" 
+                (click)="confirmBlock()"
+                [disabled]="!blockReason || blockReason.trim().length < 10 || processing">
+          <span *ngIf="!processing">Confirm Block</span>
+          <span *ngIf="processing">Processing...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Help Panel -->
+  <div class="help-panel" *ngIf="showHelp" (click)="closeHelp()">
+    <div class="help-content" (click)="stopPropagation($event)">
+      <button class="close-btn" (click)="closeHelp()">×</button>
+      <h3>📚 How to Use This Tool</h3>
+      <div class="help-steps">
+        <div class="help-step">
+          <span class="step-icon">1️⃣</span>
+          <p><strong>Build:</strong> Select best values or enter manually to create golden record</p>
+        </div>
+        <div class="help-step">
+          <span class="step-icon">2️⃣</span>
+          <p><strong>Link:</strong> Choose which records to link or quarantine, then submit for review</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Success Modal -->
+  <div class="modal-overlay" *ngIf="showSuccessModal" (click)="closeSuccessModal()">
+    <div class="modal-content success-modal" (click)="stopPropagation($event)">
+      <span class="modal-icon">🎉</span>
+      <h2>Success!</h2>
+      <p>{{ successMessage }}</p>
+      <button class="primary-btn" (click)="navigateToList()">
+        View Task List
+      </button>
+    </div>
+  </div>
+
 </div>

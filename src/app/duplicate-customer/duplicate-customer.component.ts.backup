@@ -1,0 +1,647 @@
+import { Component, OnInit } from '@angular/core';
+import { ActivatedRoute, Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
+import { firstValueFrom } from 'rxjs';
+
+interface FieldDefinition {
+  key: string;
+  label: string;
+  required: boolean;
+  icon: string;
+  type?: 'text' | 'dropdown' | 'email' | 'tel';
+}
+
+interface DropdownOption {
+  value: string;
+  label: string;
+}
+
+@Component({
+  selector: 'app-duplicate-customer',
+  templateUrl: './duplicate-customer.component.html',
+  styleUrl: './duplicate-customer.component.scss'
+})
+export class DuplicateCustomerComponent implements OnInit {
+
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
+
+  // Core Data
+  records: any[] = [];
+  currentTaxNumber: string = '';
+  currentGroupName: string = '';
+  
+  // User & Role Management
+  userRole: string = 'data_entry';
+  isDataEntry: boolean = true;
+  isReviewer: boolean = false;
+  isCompliance: boolean = false;
+
+  // Step Management
+  currentStep: number = 1;
+  progressSteps: string[] = ['Analysis', 'Build', 'Link', 'Review'];
+  
+  // Field Selection System
+  selectedFields: { [fieldKey: string]: string } = {};
+  manualFieldValues: { [fieldKey: string]: string } = {};
+  expandedFields: string[] = [];
+  focusedField: string | null = null;
+  
+  // UI State
+  loading: boolean = false;
+  building: boolean = false;
+  showHelp: boolean = false;
+  showSuccessModal: boolean = false;
+  successMessage: string = '';
+  activeTab: string = 'contacts';
+  
+  // Source Systems
+  sourceSystems: any[] = [];
+  selectedSources: string[] = [];
+  canProceed: boolean = true;
+  
+  // Contacts & Documents
+  contacts: any[] = [];
+  documents: any[] = [];
+  
+  // Linking
+  quarantineReason: string = '';
+  
+  // Review
+  reviewNotes: string = '';
+
+  // Field Definitions
+  fieldDefinitions: FieldDefinition[] = [
+    { key: 'firstName', label: 'Company Name', required: true, icon: 'check', type: 'text' },
+    { key: 'firstNameAr', label: 'Company Name (Arabic)', required: false, icon: 'check', type: 'text' },
+    { key: 'tax', label: 'Tax Number', required: true, icon: 'check', type: 'text' },
+    { key: 'CustomerType', label: 'Customer Type', required: true, icon: 'check', type: 'dropdown' },
+    { key: 'CompanyOwner', label: 'Company Owner', required: false, icon: 'check', type: 'text' },
+    { key: 'country', label: 'Country', required: true, icon: 'check', type: 'dropdown' },
+    { key: 'city', label: 'City', required: true, icon: 'check', type: 'dropdown' },
+    { key: 'street', label: 'Street', required: false, icon: 'check', type: 'text' },
+    { key: 'buildingNumber', label: 'Building Number', required: false, icon: 'check', type: 'text' },
+    { key: 'ContactName', label: 'Primary Contact Name', required: false, icon: 'check', type: 'text' },
+    { key: 'EmailAddress', label: 'Email Address', required: false, icon: 'check', type: 'email' },
+    { key: 'MobileNumber', label: 'Mobile Number', required: false, icon: 'check', type: 'tel' },
+    { key: 'JobTitle', label: 'Job Title', required: false, icon: 'check', type: 'text' },
+    { key: 'Landline', label: 'Landline', required: false, icon: 'check', type: 'tel' },
+    { key: 'PrefferedLanguage', label: 'Preferred Language', required: false, icon: 'check', type: 'dropdown' },
+    { key: 'SalesOrgOption', label: 'Sales Organization', required: false, icon: 'check', type: 'dropdown' },
+    { key: 'DistributionChannelOption', label: 'Distribution Channel', required: false, icon: 'check', type: 'dropdown' },
+    { key: 'DivisionOption', label: 'Division', required: false, icon: 'check', type: 'dropdown' }
+  ];
+
+  // Dropdown Options
+  readonly customerTypeOptions = [
+    { value: 'sole_proprietorship', label: 'Sole Proprietorship' },
+    { value: 'limited_liability', label: 'Limited Liability Company' },
+    { value: 'joint_stock', label: 'Joint Stock Company' },
+    { value: 'partnership', label: 'Partnership' },
+    { value: 'Corporate', label: 'Corporate' },
+    { value: 'SME', label: 'SME' }
+  ];
+
+  readonly salesOrgOptions = [
+    { value: 'HSA Egypt – Local', label: 'HSA Egypt – Local' },
+    { value: 'HSA Yemen – Export', label: 'HSA Yemen – Export' },
+    { value: 'HSA KSA – Distribution', label: 'HSA KSA – Distribution' }
+  ];
+
+  readonly distributionChannelOptions = [
+    { value: 'Retail – بيع تجزئة', label: 'Retail – بيع تجزئة' },
+    { value: 'Wholesale – بيع جملة', label: 'Wholesale – بيع جملة' },
+    { value: 'Online – متجر إلكتروني', label: 'Online – متجر إلكتروني' }
+  ];
+
+  readonly divisionOptions = [
+    { value: 'FMCG – سلع استهلاكية', label: 'FMCG – سلع استهلاكية' },
+    { value: 'Pharma – أدوية', label: 'Pharma – أدوية' },
+    { value: 'Agriculture – زراعة', label: 'Agriculture – زراعة' }
+  ];
+
+  readonly countryOptions = [
+    { value: 'Egypt', label: 'Egypt' },
+    { value: 'Saudi Arabia', label: 'Saudi Arabia' },
+    { value: 'United Arab Emirates', label: 'United Arab Emirates' }
+  ];
+
+  readonly cityOptions: Record<string, { value: string; label: string }[]> = {
+    'Egypt': [
+      { value: 'Cairo', label: 'Cairo' },
+      { value: 'Alexandria', label: 'Alexandria' },
+      { value: 'Giza', label: 'Giza' }
+    ],
+    'Saudi Arabia': [
+      { value: 'Riyadh', label: 'Riyadh' },
+      { value: 'Jeddah', label: 'Jeddah' }
+    ],
+    'United Arab Emirates': [
+      { value: 'Dubai', label: 'Dubai' },
+      { value: 'Abu Dhabi', label: 'Abu Dhabi' }
+    ]
+  };
+
+  readonly preferredLanguageOptions = [
+    { value: 'Arabic', label: 'Arabic' },
+    { value: 'English', label: 'English' }
+  ];
+
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private http: HttpClient
+  ) {}
+
+  async ngOnInit(): Promise<void> {
+    const state = history.state;
+    
+    if (state && state.group && state.records) {
+      this.records = state.records || [];
+      this.currentTaxNumber = state.group.taxNumber || '';
+      this.currentGroupName = state.group.groupName || '';
+      this.userRole = state.userRole || 'data_entry';
+      
+      // Initialize records with additional properties
+      this.records = this.records.map(record => ({
+        ...record,
+        recordName: record.firstName || record.firstNameAr || `Record ${record.id}`,
+        matchScore: Math.round((record.confidence || 0.9) * 100),
+        linkStatus: 'linked' // Default all to linked
+      }));
+    } else {
+      this.route.queryParams.subscribe(params => {
+        if (params['taxNumber']) {
+          this.currentTaxNumber = params['taxNumber'];
+          this.loadRecordsByTax();
+        }
+      });
+    }
+
+    this.isDataEntry = this.userRole === 'data_entry';
+    this.isReviewer = this.userRole === 'reviewer';
+    this.isCompliance = this.userRole === 'compliance';
+
+    // Initialize source systems
+    this.initializeSourceSystems();
+    
+    // Initialize contacts and documents
+    this.initializeContactsAndDocuments();
+  }
+
+  private initializeSourceSystems(): void {
+    const systemMap = new Map<string, any>();
+    
+    this.records.forEach(record => {
+      const system = record.sourceSystem || 'Data Steward';
+      if (!systemMap.has(system)) {
+        systemMap.set(system, {
+          name: system,
+          icon: this.getSystemIcon(system),
+          recordCount: 0,
+          quality: 0,
+          companyName: '',
+          taxNumber: ''
+        });
+      }
+      
+      const sysData = systemMap.get(system);
+      sysData.recordCount++;
+      sysData.quality = Math.max(sysData.quality, Math.round((record.confidence || 0.9) * 100));
+      sysData.companyName = sysData.companyName || record.firstName;
+      sysData.taxNumber = sysData.taxNumber || record.tax;
+    });
+    
+    this.sourceSystems = Array.from(systemMap.values());
+    this.selectedSources = this.sourceSystems.map(s => s.name);
+  }
+
+  private getSystemIcon(system: string): string {
+    const icons: Record<string, string> = {
+      'Oracle Forms': '🗄️',
+      'SAP 4/Hana': '🔷',
+      'SAP by Design': '💎',
+      'Data Steward': '👤'
+    };
+    return icons[system] || '📊';
+  }
+
+  private initializeContactsAndDocuments(): void {
+    // Collect all unique contacts
+    const contactMap = new Map<string, any>();
+    
+    this.records.forEach(record => {
+      if (record.ContactName && record.ContactName.trim()) {
+        const key = `${record.ContactName}-${record.EmailAddress || ''}`;
+        if (!contactMap.has(key)) {
+          contactMap.set(key, {
+            name: record.ContactName,
+            email: record.EmailAddress,
+            mobile: record.MobileNumber,
+            jobTitle: record.JobTitle,
+            landline: record.Landline,
+            preferredLanguage: record.PrefferedLanguage,
+            source: record.sourceSystem || 'Data Steward',
+            selected: true,
+            isPrimary: contactMap.size === 0
+          });
+        }
+      }
+    });
+    
+    this.contacts = Array.from(contactMap.values());
+    
+    // Initialize sample documents
+    this.documents = [
+      {
+        name: 'Commercial Registration.pdf',
+        type: 'Registration',
+        size: 2048576,
+        source: 'Oracle Forms',
+        selected: true
+      },
+      {
+        name: 'Tax Certificate.pdf',
+        type: 'Tax',
+        size: 1524288,
+        source: 'SAP',
+        selected: true
+      }
+    ];
+  }
+
+  private async loadRecordsByTax(): Promise<void> {
+    try {
+      this.loading = true;
+      
+      const response = await firstValueFrom(
+        this.http.get<any>(`${this.apiBase}/duplicates/by-tax/${this.currentTaxNumber}`)
+      );
+
+      if (response && response.success) {
+        this.records = response.records || [];
+        this.currentGroupName = response.groupName || `Tax ${this.currentTaxNumber} Group`;
+        
+        // Initialize records
+        this.records = this.records.map(record => ({
+          ...record,
+          recordName: record.firstName || record.firstNameAr || `Record ${record.id}`,
+          matchScore: Math.round((record.confidence || 0.9) * 100),
+          linkStatus: 'linked'
+        }));
+        
+        this.initializeSourceSystems();
+        this.initializeContactsAndDocuments();
+      }
+    } catch (error) {
+      console.error('Error loading records:', error);
+    } finally {
+      this.loading = false;
+    }
+  }
+
+  // Navigation Methods
+  navigateToStep(step: number): void {
+    if (step >= 1 && step <= 4) {
+      this.currentStep = step;
+    }
+  }
+
+  previousStep(): void {
+    if (this.currentStep > 1) {
+      this.currentStep--;
+    }
+  }
+
+  // Step 1: Analysis Methods
+  toggleSourceSelection(source: any): void {
+    const index = this.selectedSources.indexOf(source.name);
+    if (index > -1) {
+      this.selectedSources.splice(index, 1);
+    } else {
+      this.selectedSources.push(source.name);
+    }
+  }
+
+  isDifferentFromMaster(fieldKey: string, record: any): boolean {
+    const masterRecord = this.records.find(r => r.isMaster);
+    if (!masterRecord) return false;
+    return masterRecord[fieldKey] !== record[fieldKey];
+  }
+
+  getFieldQuality(record: any, fieldKey: string): number {
+    if (!record[fieldKey]) return 0;
+    // Simple quality calculation based on field existence and length
+    const value = record[fieldKey].toString();
+    let quality = 50;
+    if (value.length > 3) quality += 25;
+    if (value.length > 10) quality += 25;
+    return Math.min(quality, 100);
+  }
+
+  analyzeAndProceed(): void {
+    this.currentStep = 2;
+  }
+
+  // Step 2: Builder Methods
+  autoFillBest(): void {
+    this.fieldDefinitions.forEach(field => {
+      const values = this.getAvailableValues(field.key);
+      if (values.length > 0) {
+        this.selectedFields[field.key] = values[0].value;
+      }
+    });
+  }
+
+  clearAllFields(): void {
+    this.selectedFields = {};
+    this.manualFieldValues = {};
+    this.expandedFields = [];
+  }
+
+  toggleFieldExpansion(field: FieldDefinition): void {
+    const index = this.expandedFields.indexOf(field.key);
+    if (index > -1) {
+      this.expandedFields.splice(index, 1);
+    } else {
+      this.expandedFields.push(field.key);
+    }
+    this.focusedField = field.key;
+  }
+
+  expandField(fieldKey: string): void {
+    if (!this.expandedFields.includes(fieldKey)) {
+      this.expandedFields.push(fieldKey);
+    }
+  }
+
+  getAvailableValues(fieldKey: string): any[] {
+    const values: any[] = [];
+    const seenValues = new Set<string>();
+    
+    this.records.forEach(record => {
+      const value = record[fieldKey];
+      if (value && !seenValues.has(value)) {
+        seenValues.add(value);
+        values.push({
+          value: value,
+          source: record.sourceSystem || 'Data Steward',
+          quality: Math.round((record.confidence || 0.9) * 100),
+          recommended: values.length === 0
+        });
+      }
+    });
+    
+    return values;
+  }
+
+  selectFieldValue(fieldKey: string, value: string): void {
+    this.selectedFields[fieldKey] = value;
+    delete this.manualFieldValues[fieldKey];
+  }
+
+  applyManualValue(fieldKey: string): void {
+    const value = this.manualFieldValues[fieldKey];
+    if (value && value.trim()) {
+      this.selectedFields[fieldKey] = value.trim();
+    }
+  }
+
+  getDropdownOptions(fieldKey: string): DropdownOption[] {
+    switch (fieldKey) {
+      case 'CustomerType':
+        return this.customerTypeOptions;
+      case 'SalesOrgOption':
+        return this.salesOrgOptions;
+      case 'DistributionChannelOption':
+        return this.distributionChannelOptions;
+      case 'DivisionOption':
+        return this.divisionOptions;
+      case 'country':
+        return this.countryOptions;
+      case 'city':
+        const country = this.selectedFields['country'] || this.manualFieldValues['country'];
+        return country && this.cityOptions[country] ? this.cityOptions[country] : [];
+      case 'PrefferedLanguage':
+        return this.preferredLanguageOptions;
+      default:
+        return [];
+    }
+  }
+
+  // Contact Management
+  updateContactSelection(contact: any): void {
+    // Contact selection updated via ngModel
+  }
+
+  removeContact(contact: any): void {
+    const index = this.contacts.indexOf(contact);
+    if (index > -1) {
+      this.contacts.splice(index, 1);
+    }
+  }
+
+  setPrimaryContact(contact: any): void {
+    this.contacts.forEach(c => c.isPrimary = false);
+    contact.isPrimary = true;
+  }
+
+  addNewContact(): void {
+    this.contacts.push({
+      name: '',
+      email: '',
+      mobile: '',
+      jobTitle: '',
+      landline: '',
+      preferredLanguage: 'English',
+      source: 'Manual Entry',
+      selected: true,
+      isPrimary: this.contacts.length === 0
+    });
+  }
+
+  // Document Management
+  updateDocumentSelection(doc: any): void {
+    // Document selection updated via ngModel
+  }
+
+  removeDocument(doc: any): void {
+    const index = this.documents.indexOf(doc);
+    if (index > -1) {
+      this.documents.splice(index, 1);
+    }
+  }
+
+  viewDocument(doc: any): void {
+    console.log('Viewing document:', doc);
+  }
+
+  uploadDocument(): void {
+    console.log('Upload document clicked');
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  isGoldenRecordComplete(): boolean {
+    const requiredFields = this.fieldDefinitions.filter(f => f.required);
+    return requiredFields.every(field => {
+      const value = this.selectedFields[field.key] || this.manualFieldValues[field.key];
+      return value && value.toString().trim() !== '';
+    });
+  }
+
+  proceedToLinking(): void {
+    if (this.isGoldenRecordComplete()) {
+      this.currentStep = 3;
+    }
+  }
+
+  // Step 3: Linking Methods
+  getPreviewFields(): FieldDefinition[] {
+    return this.fieldDefinitions.slice(0, 5);
+  }
+
+  getLinkedCount(): number {
+    return this.records.filter(r => r.linkStatus === 'linked').length;
+  }
+
+  getQuarantineCount(): number {
+    return this.records.filter(r => r.linkStatus === 'quarantine').length;
+  }
+
+  linkAll(): void {
+    this.records.forEach(record => {
+      record.linkStatus = 'linked';
+    });
+  }
+
+  quarantineAll(): void {
+    this.records.forEach(record => {
+      record.linkStatus = 'quarantine';
+    });
+  }
+
+  toggleLink(record: any): void {
+    record.linkStatus = record.linkStatus === 'linked' ? '' : 'linked';
+  }
+
+  toggleQuarantine(record: any): void {
+    record.linkStatus = record.linkStatus === 'quarantine' ? '' : 'quarantine';
+  }
+
+  canProceedToReview(): boolean {
+    return this.getLinkedCount() > 0 || this.getQuarantineCount() > 0;
+  }
+
+  proceedToReview(): void {
+    if (this.canProceedToReview()) {
+      this.currentStep = 4;
+    }
+  }
+
+  // Step 4: Review Methods
+  getCompletedFieldsCount(): number {
+    return Object.keys(this.selectedFields).length;
+  }
+
+  getSelectedContactsCount(): number {
+    return this.contacts.filter(c => c.selected).length;
+  }
+
+  getSelectedDocumentsCount(): number {
+    return this.documents.filter(d => d.selected).length;
+  }
+
+  // Modal & Help Management
+  closeHelp(): void {
+    this.showHelp = false;
+  }
+
+  closeSuccessModal(): void {
+    this.showSuccessModal = false;
+  }
+
+  stopPropagation(event: Event): void {
+    event.stopPropagation();
+  }
+
+  getFieldSource(fieldKey: string): string {
+    // Find which record provided this field value
+    const value = this.selectedFields[fieldKey];
+    if (!value) return 'Manual Entry';
+    
+    const record = this.records.find(r => r[fieldKey] === value);
+    return record ? record.sourceSystem || 'Data Steward' : 'Manual Entry';
+  }
+
+  saveDraft(): void {
+    console.log('Saving draft...');
+    this.successMessage = 'Draft saved successfully!';
+    this.showSuccessModal = true;
+    setTimeout(() => {
+      this.showSuccessModal = false;
+    }, 2000);
+  }
+
+  async submitToReviewer(): Promise<void> {
+    if (this.building) return;
+    
+    this.building = true;
+    
+    try {
+      const linkedRecordIds = this.records
+        .filter(r => r.linkStatus === 'linked')
+        .map(r => r.id);
+        
+      const quarantinedRecordIds = this.records
+        .filter(r => r.linkStatus === 'quarantine')
+        .map(r => r.id);
+
+      const payload = {
+        taxNumber: this.currentTaxNumber,
+        selectedFields: this.selectedFields,
+        linkedRecordIds: linkedRecordIds,
+        quarantinedRecordIds: quarantinedRecordIds,
+        quarantineReason: this.quarantineReason,
+        contacts: this.contacts.filter(c => c.selected),
+        documents: this.documents.filter(d => d.selected),
+        reviewNotes: this.reviewNotes
+      };
+
+      const response = await firstValueFrom(
+        this.http.post<any>(`${this.apiBase}/duplicates/build-master`, payload)
+      );
+
+      if (response && response.success) {
+        this.successMessage = this.userRole === 'data_entry' 
+          ? 'Successfully submitted to reviewer!' 
+          : this.userRole === 'reviewer'
+          ? 'Successfully approved and sent to compliance!'
+          : 'Golden record created successfully!';
+        
+        this.showSuccessModal = true;
+      }
+    } catch (error) {
+      console.error('Error submitting:', error);
+    } finally {
+      this.building = false;
+    }
+  }
+
+  navigateToList(): void {
+    this.router.navigate(['/dashboard/duplicate-records']);
+  }
+
+  // Modal & Help Management
+  }
+
+  goBack(): void {
+    this.router.navigate(['/dashboard/duplicate-records']);
+  }
+}

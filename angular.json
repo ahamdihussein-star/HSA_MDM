@@ -39,11 +39,8 @@
             "styles": [
               "node_modules/ng-zorro-antd/ng-zorro-antd.min.css",
               "src/styles.scss"
-              
-
             ],
             "scripts": []
-            
           },
           "configurations": {
             "production": {
@@ -59,10 +56,23 @@
                   "maximumError": "5mb"
                 }
               ],
-              "outputHashing": "all"
+              "outputHashing": "all",
+              "optimization": {
+                "scripts": true,
+                "styles": {
+                  "minify": true,
+                  "inlineCritical": false
+                }
+              }
             },
             "development": {
-              "optimization": false,
+              "optimization": {
+                "scripts": false,
+                "styles": {
+                  "minify": false,
+                  "inlineCritical": false
+                }
+              },
               "extractLicenses": false,
               "sourceMap": true
             }

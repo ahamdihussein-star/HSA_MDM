@@ -1,33 +1,392 @@
-<h1 class="pageTitle backTitle">
-  <img (click)="goBack()" src="assets/img/leftArrow.svg" alt="Back" class="backImg" />
-  {{ "Record-Level Data Lineage for Customer" | translate }}: CUST-001234
-</h1>
+<div class="dl-container">
+  <!-- Enhanced Header with Animation -->
+  <div class="dl-header">
+    <button class="btn-back" (click)="goBack()">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
+        <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span>Back</span>
+    </button>
 
-<div>
-  
-    <nz-table #basicTable [nzPageSize]="7"  [nzData]="dataLineage" [nzShowPagination]="false">
-      <thead>
-        <tr>
-          <th>{{"Field"|translate}}</th>
-          <th>{{"OldValue"|translate}}</th>
-          <th>{{"NewValue"|translate}}</th>
-            <th>{{"UpdatedBy"|translate}}</th>
-            <th>{{"UpdatedDate"|translate}}</th>
-          <th>{{"ApprovedBy"|translate}}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let data of basicTable.data; let i = index">
-            <td>
-                <b class="bolder">{{ data.Field|translate }}</b>
-            </td>
-            <td>{{ data.OldValue }}</td>
-            <td>{{ data.NewValue }}</td>
-            <td>{{ data.UpdatedBy }}</td>
-            <td>{{ data.UpdatedDate }}</td>
-            <td>{{ data.ApprovedBy }}</td>
+    <div class="customer-info">
+      <h1 class="customer-name">{{ customerName }}</h1>
+      <div class="metadata">
+        <span class="golden-code" *ngIf="goldenCode">
+          <span class="icon">🏆</span>
+          {{ goldenCode }}
+        </span>
+        <span class="badge badge--type">{{ recordType }}</span>
+        <span class="badge badge--country" *ngIf="country">{{ country }}</span>
+        <span class="badge" [ngClass]="statusChipClass()">
+          <span class="status-dot" [class.active]="status === 'Active'"></span>
+          {{ status }}
+        </span>
+      </div>
+    </div>
+
+    <button class="toggle-filter"
+            (click)="onlyChanges = !onlyChanges"
+            [class.active]="onlyChanges">
+      <span class="toggle-icon">
+        <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
+        </svg>
+      </span>
+      <span class="toggle-label">{{ onlyChanges ? 'All Fields' : 'Changes Only' }}</span>
+    </button>
+  </div>
+
+  <!-- Main Content with Enhanced Cards -->
+  <div class="content-grid">
+    <!-- Field Changes Section -->
+    <div class="section-card" *ngFor="let g of grouped; trackBy: trackBySection">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="section-icon">{{ getSectionIcon(g.section) }}</span>
+          <h2>{{ g.section }}</h2>
+        </div>
+        <span class="change-count" *ngIf="countChanged(g.rows) > 0">
+          {{ countChanged(g.rows) }} change{{ countChanged(g.rows) > 1 ? 's' : '' }}
+        </span>
+      </div>
+
+      <div class="data-table">
+        <div class="table-header">
+          <div class="th-field">Field</div>
+          <div class="th-old">Previous Value</div>
+          <div class="th-new">Current Value</div>
+          <div class="th-change">Status</div>
+          <div class="th-source">Source</div>
+          <div class="th-user">Modified By</div>
+          <div class="th-date">Date</div>
+          <div class="th-action"></div>
+        </div>
+
+        <div class="table-body">
+          <div class="table-row" *ngFor="let row of g.rows; trackBy: trackByField"
+               [class.changed]="isChanged(row)">
+            <div class="td-field">
+              <span class="field-name">{{ row.field }}</span>
+            </div>
+            <div class="td-old">
+              <span class="value-text" [class.empty]="!row.oldValue">
+                {{ row.oldValue || '—' }}
+              </span>
+            </div>
+            <div class="td-new">
+              <span class="value-text" [class.highlight]="isChanged(row)">
+                {{ row.newValue || '—' }}
+              </span>
+            </div>
+            <div class="td-change">
+              <span class="change-badge" [ngClass]="changeBadgeClass(row)">
+                {{ changeTypeLabel(row) }}
+              </span>
+            </div>
+            <div class="td-source">
+              <span class="source-tag">{{ row.source }}</span>
+            </div>
+            <div class="td-user">{{ row.updatedBy }}</div>
+            <div class="td-date">{{ row.updatedDate }}</div>
+            <div class="td-action">
+              <button class="btn-history" (click)="openHistory(row.field)" title="View History">
+                <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
+                  <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                </svg>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Contacts Section -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="section-icon">👥</span>
+          <h2>Contacts</h2>
+        </div>
+        <div class="stats-pills">
+          <span class="stat-pill added" *ngIf="contactsView.stats.added > 0">
+            +{{ contactsView.stats.added }} added
+          </span>
+          <span class="stat-pill changed" *ngIf="contactsView.stats.changed > 0">
+            {{ contactsView.stats.changed }} changed
+          </span>
+          <span class="stat-pill removed" *ngIf="contactsView.stats.removed > 0">
+            -{{ contactsView.stats.removed }} removed
+          </span>
+        </div>
+      </div>
+
+      <div class="contacts-grid">
+        <div class="contact-card" *ngFor="let contact of contactsView.items"
+             [class.added]="contact.delta === 'added'"
+             [class.changed]="contact.delta === 'changed'"
+             [class.removed]="contact.delta === 'removed'">
+          
+          <div class="contact-header">
+           <span class="contact-status" [ngClass]="pillClass(contact.delta)">
+              <ng-container [ngSwitch]="contact.delta">
+                <span *ngSwitchCase="'added'">
+                  {{ contactsView.items.indexOf(contact) === 0 ? 'Original' : 'New' }}
+                </span>
+                <span *ngSwitchCase="'changed'">Modified</span>
+                <span *ngSwitchCase="'removed'">Deleted</span>
+              </ng-container>
+            </span>
+            <span class="contact-time">{{ contact.when }}</span>
+          </div>
+
+          <div class="contact-body">
+            <div class="contact-field" *ngIf="contact.name">
+              <span class="field-label">Name:</span>
+              <span class="field-value" [class.changed]="contact.delta === 'changed'">
+                {{ contact.name }}
+              </span>
+            </div>
             
-        </tr>
-      </tbody>
-    </nz-table>
+            <div class="contact-field" *ngIf="contact.jobTitle">
+              <span class="field-label">Title:</span>
+              <span class="field-value">{{ contact.jobTitle }}</span>
+            </div>
+            
+            <div class="contact-field" *ngIf="contact.email">
+              <span class="field-label">Email:</span>
+              <span class="field-value">{{ contact.email }}</span>
+            </div>
+            
+            <div class="contact-field" *ngIf="contact.mobile">
+              <span class="field-label">Mobile:</span>
+              <span class="field-value">{{ contact.mobile }}</span>
+            </div>
+            
+            <div class="contact-field" *ngIf="contact.landline">
+              <span class="field-label">Landline:</span>
+              <span class="field-value">{{ contact.landline }}</span>
+            </div>
+            
+            <div class="contact-field" *ngIf="contact.preferredLanguage">
+              <span class="field-label">Language:</span>
+              <span class="field-value">{{ contact.preferredLanguage }}</span>
+            </div>
+            
+            <!-- Show changes if exist -->
+            <div class="contact-changes" *ngIf="contact.changes && contact.changes.length > 0">
+              <div class="change-item" *ngFor="let change of contact.changes">
+                <span class="change-field">{{ change.field }}:</span>
+                <span class="change-old">{{ change.oldValue }}</span>
+                <span class="change-arrow">→</span>
+                <span class="change-new">{{ change.newValue }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="contact-footer">
+            <span class="by-user">{{ contact.by }}</span>
+            <span class="source">{{ contact.source }}</span>
+            <button class="btn-history-sm" (click)="openHistory('Contact: ' + contact.name, 'contact')">
+              History
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Enhanced Documents Section -->
+    <div class="section-card">
+      <div class="section-header">
+        <div class="section-title">
+          <span class="section-icon">📄</span>
+          <h2>Documents</h2>
+        </div>
+        <div class="stats-pills">
+          <span class="stat-pill added" *ngIf="documentsView.stats.added > 0">
+            +{{ documentsView.stats.added }} added
+          </span>
+          <span class="stat-pill removed" *ngIf="documentsView.stats.removed > 0">
+            -{{ documentsView.stats.removed }} removed
+          </span>
+        </div>
+      </div>
+
+      <div class="documents-list">
+        <div class="document-item" *ngFor="let doc of documentsView.items"
+             [class.added]="doc.delta === 'added'"
+             [class.removed]="doc.delta === 'removed'">
+          
+          <div class="doc-icon">
+            {{ getDocIcon(doc.type) }}
+          </div>
+          
+          <div class="doc-info">
+            <div class="doc-name">
+              <a *ngIf="doc.url" [href]="doc.url" target="_blank" rel="noopener">
+                {{ doc.name || 'Untitled Document' }}
+              </a>
+              <span *ngIf="!doc.url">{{ doc.name || 'Untitled Document' }}</span>
+            </div>
+            <div class="doc-meta">
+              <span class="doc-type">{{ doc.type }}</span>
+              <span class="doc-desc" *ngIf="doc.description">{{ doc.description }}</span>
+            </div>
+          </div>
+          
+          <div class="doc-status">
+            <span class="status-badge" [ngClass]="pillClass(doc.delta)">
+              {{ doc.delta }}
+            </span>
+          </div>
+          
+          <div class="doc-details">
+            <span class="detail-item">{{ doc.by }}</span>
+            <span class="detail-item">{{ doc.when }}</span>
+            <span class="detail-item">{{ doc.source }}</span>
+          </div>
+          
+          <button class="btn-history-sm" (click)="openHistory('Document: ' + doc.name, 'document')">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Enhanced History Modal -->
+  <div class="modal-overlay" *ngIf="showHistory" (click)="closeHistory()"></div>
+  <div class="modal" *ngIf="showHistory">
+    <div class="modal-header">
+      <h3>Change History: {{ historyField }}</h3>
+      <button class="modal-close" (click)="closeHistory()">
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+        </svg>
+      </button>
+    </div>
+    
+    <div class="modal-body">
+      <div class="history-timeline">
+        <div class="timeline-item" *ngFor="let item of historyItems; let i = index"
+             [class.changed]="isItemChanged(item)">
+          
+          <div class="timeline-marker">
+            <span class="marker-dot" [class.active]="isItemChanged(item)"></span>
+            <span class="marker-line" *ngIf="i < historyItems.length - 1"></span>
+          </div>
+          
+          <div class="timeline-content">
+            <div class="timeline-header">
+              <span class="timeline-date">{{ item.when }}</span>
+              <span class="timeline-badge" [ngClass]="{
+                'badge--update': item.action === 'Update',
+                'badge--create': item.action === 'Create',
+                'badge--delete': item.action === 'Delete',
+                'badge--same': !isItemChanged(item)
+              }">
+                {{ miniLabel(item) }}
+              </span>
+            </div>
+            
+            <div class="timeline-values" *ngIf="historyKind === 'scalar'">
+              <div class="value-row" *ngIf="item.from">
+                <span class="value-label">From:</span>
+                <span class="value-text old">{{ item.from }}</span>
+              </div>
+              <div class="value-row" *ngIf="item.to">
+                <span class="value-label">To:</span>
+                <span class="value-text new">{{ item.to }}</span>
+              </div>
+            </div>
+            
+            <!-- Contact History with Changes -->
+            <div class="timeline-values" *ngIf="historyKind === 'contact'">
+              <div class="contact-history-details">
+                <div class="contact-comparison" *ngIf="item.changes">
+                  <div class="comparison-row" *ngFor="let field of getObjectKeys(item.changes)"
+                       [class.changed]="isFieldChanged(item.changes, field)">
+                    <span class="field-name">{{ field }}:</span>
+                    <div class="field-values">
+                      <span class="old-value" *ngIf="getChangeFieldOldValue(item.changes, field) && isFieldChanged(item.changes, field)">
+                        {{ getChangeFieldOldValue(item.changes, field) }}
+                      </span>
+                      <span class="arrow" *ngIf="getChangeFieldOldValue(item.changes, field) && isFieldChanged(item.changes, field)">
+                        →
+                      </span>
+                      <span class="new-value">
+                        {{ getChangeFieldNewValue(item.changes, field) || '—' }}
+                      </span>
+                    </div>
+                  </div>
+                </div>
+                
+                <!-- Fallback for old format -->
+                <div class="contact-comparison" *ngIf="!item.changes && item.to">
+                  <div class="comparison-row">
+                    <span class="field-name">Name:</span>
+                    <div class="field-values">
+                      <span class="value">{{ parseContactString(item.to)[0] || '—' }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="comparison-row">
+                    <span class="field-name">Job Title:</span>
+                    <div class="field-values">
+                      <span class="value">{{ parseContactString(item.to)[1] || '—' }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="comparison-row">
+                    <span class="field-name">Email:</span>
+                    <div class="field-values">
+                      <span class="value">{{ parseContactString(item.to)[2] || '—' }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="comparison-row">
+                    <span class="field-name">Mobile:</span>
+                    <div class="field-values">
+                      <span class="value">{{ parseContactString(item.to)[3] || '—' }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="comparison-row">
+                    <span class="field-name">Landline:</span>
+                    <div class="field-values">
+                      <span class="value">{{ parseContactString(item.to)[4] || '—' }}</span>
+                    </div>
+                  </div>
+                  
+                  <div class="comparison-row">
+                    <span class="field-name">Language:</span>
+                    <div class="field-values">
+                      <span class="value">{{ parseContactString(item.to)[5] || 'Both' }}</span>
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+            
+            <div class="timeline-values" *ngIf="historyKind === 'document'">
+              <div class="value-row">
+                <span class="value-label">Document:</span>
+                <span class="value-text">{{ item.to || item.from || '—' }}</span>
+              </div>
+            </div>
+            
+            <div class="timeline-footer">
+              <span class="footer-item">
+                <span class="icon">👤</span> {{ item.by }}
+              </span>
+              <span class="footer-item">
+                <span class="icon">📡</span> {{ item.source }}
+              </span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
 </div>

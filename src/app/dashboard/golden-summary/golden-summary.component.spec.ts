@@ -1,18 +1,18 @@
 import { ComponentFixture, TestBed } from '@angular/core/testing';
 
-import { MyRequestsComponent } from './my-requests.component';
+import { GoldenSummaryComponent } from './golden-summary.component';
 
-describe('MyRequestsComponent', () => {
-  let component: MyRequestsComponent;
-  let fixture: ComponentFixture<MyRequestsComponent>;
+describe('GoldenSummaryComponent', () => {
+  let component: GoldenSummaryComponent;
+  let fixture: ComponentFixture<GoldenSummaryComponent>;
 
   beforeEach(async () => {
     await TestBed.configureTestingModule({
-      declarations: [MyRequestsComponent]
+      declarations: [GoldenSummaryComponent]
     })
     .compileComponents();
     
-    fixture = TestBed.createComponent(MyRequestsComponent);
+    fixture = TestBed.createComponent(GoldenSummaryComponent);
     component = fixture.componentInstance;
     fixture.detectChanges();
   });

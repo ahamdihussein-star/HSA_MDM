@@ -1,0 +1,159 @@
+.data-management-page {
+  padding: 20px;
+  background: #f0f2f5;
+  min-height: calc(100vh - 64px);
+
+  .page-header {
+    background: white;
+    padding: 20px;
+    margin: -20px -20px 20px;
+    border-bottom: 1px solid #e8e8e8;
+
+    .header-content {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 20px;
+
+      h1 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 500;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        flex: 1;
+      }
+
+      .back-btn {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+    }
+  }
+
+  .stats-section {
+    margin-bottom: 30px;
+
+    nz-card {
+      transition: all 0.3s;
+
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      }
+
+      .card-actions {
+        margin-top: 15px;
+        padding-top: 15px;
+        border-top: 1px solid #f0f0f0;
+        text-align: center;
+      }
+    }
+  }
+
+  // أضف هذا القسم الجديد
+  .generate-data-section {
+    margin-bottom: 30px;
+
+    nz-card {
+      background: white;
+      border: 1px solid #d9d9d9;
+
+      h2 {
+        color: #1890ff;
+        margin: 0 0 20px;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      button {
+        min-width: 180px;
+        
+        &:hover {
+          transform: translateY(-1px);
+          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+        }
+      }
+
+      p {
+        margin-top: 15px;
+        color: #8c8c8c;
+        font-size: 13px;
+        
+        span[nz-icon] {
+          margin-right: 5px;
+        }
+      }
+    }
+  }
+
+  .danger-zone {
+    nz-card {
+      border: 2px solid #ffccc7;
+      background: #fff2f0;
+
+      h2 {
+        color: #ff4d4f;
+        margin: 0 0 20px;
+        font-size: 20px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      .danger-actions {
+        text-align: center;
+        padding: 20px 0;
+
+        button {
+          min-width: 200px;
+        }
+
+        .danger-note {
+          margin-top: 15px;
+          color: #8c8c8c;
+          font-size: 13px;
+          line-height: 1.6;
+        }
+      }
+    }
+  }
+}
+
+// Responsive
+@media (max-width: 768px) {
+  .data-management-page {
+    .page-header {
+      .header-content {
+        flex-direction: column;
+        align-items: stretch;
+
+        h1 {
+          margin: 10px 0;
+        }
+
+        button {
+          width: 100%;
+        }
+      }
+    }
+
+    // أضف responsive للقسم الجديد
+    .generate-data-section {
+      nz-card {
+        div {
+          flex-direction: column;
+          
+          button {
+            width: 100%;
+            margin-bottom: 10px;
+          }
+        }
+      }
+    }
+  }
+}

@@ -1,353 +1,523 @@
-<div class="main">
-  <div class="titleBox">
-    <button (click)="goBack()" class="back-button">
-      <img src="assets/img/leftArrow.svg" alt="Back" *ngIf="!isArabic" />
-      <img src="assets/img/rightArrow.svg" alt="Back" *ngIf="isArabic" />
-    </button>
-    <h2>
-      {{
-      canEdit
-      ? ("EditRequest" | translate)
-      : canView
-      ? ("ViewRequest" | translate)
-      : ("NewRequest" | translate)
-      }}
-    </h2>
-  </div>
+<div class="main reflow-fix">
+ <!-- Loading Spinner -->
+ <nz-spin *ngIf="isLoading" nzTip="Loading..." [nzSpinning]="true" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;">
+ </nz-spin>
 
-  <div class="summary" *ngIf="canEdit || canView">
-    <div class="statusBox">
-      <h2>{{ "RequestStatus" | translate }}</h2>
-      <div class="status" [ngClass]="{
-          'status-approved': status === 'Approved',
-          'status-pending': status === 'Pending',
-          'status-rejected': status === 'Rejected',
-          'status-updated': status === 'Updated',
-          'status-quarantined': status === 'Quarantined'
-        }">
-        {{status | translate}}
-      </div>
-    </div>
+ <div class="titleBox">
+   <button (click)="goBack()" class="back-button">
+     <img src="assets/img/leftArrow.svg" alt="Back" *ngIf="!isArabic" />
+     <img src="assets/img/rightArrow.svg" alt="Back" *ngIf="isArabic" />
+   </button>
+   <h2>
+     {{ canEdit ? ("EditRequest" | translate) : canView ? ("ViewRequest" | translate) : ("NewRequest" | translate) }}
+   </h2>
+ </div>
 
-    <div class="data">
-      <div *ngIf="status == 'Rejected'">
-        <label>{{"Issue" | translate}}: </label>
-        <p>Missing TAX information</p>
-      </div>
-      <div *ngIf="status == 'Rejected'">
-        <label>{{"Description" | translate}}: </label>
-        <p>
-          The TAX ID entered is not valid. Please double-check with the finance
-          department.
-        </p>
-      </div>
+ <!-- Compliance actions - Updated condition to use both userType and canComplianceAction -->
+ <div *ngIf="(hasRecord && userType==='3') || canComplianceAction" class="comp-actions-card">
+   <div class="comp-actions-header">
+     <h3 class="comp-h3">{{ 'Compliance Review' | translate }}</h3>
+     <div class="comp-cta">
+       <button
+         id="comp-approve-golden-btn"
+         class="pill pill-success"
+         nz-button
+         type="button"
+         (click)="onComplianceApprove()"
+         [nzLoading]="isLoading"
+       >
+         <span nz-icon nzType="check-circle"></span>
+         {{ 'Approve as Active' | translate }}
+       </button>
+       <button
+         id="comp-block-submit-btn"
+         class="pill pill-danger"
+         nz-button
+         type="button"
+         (click)="isBlockModalVisible = true"
+         [nzLoading]="isLoading"
+       >
+         <span nz-icon nzType="stop"></span>
+         {{ 'Approve as Blocked' | translate }}
+       </button>
+     </div>
+   </div>
+ </div>
 
-      <div class="edit">
-        <div class="info">
-          <div>
-            <label>{{"ReviewedBy" | translate}}: </label>
-            <p>Compliance Team</p>
-          </div>
-          <div>
-            <label>{{"Date" | translate}}: </label>
-            <p>06/21/2025</p>
-          </div>
-        </div>
-        <div *ngIf=" (status === 'Pending' || status === 'Approved') && userType == '1' ">
-          <button class="deleteBtn" nz-button (click)="RequestChange()">
-            {{ "DeleteRequest" | translate }}
-          </button>
-          <button class="Primary_fill" nz-button (click)="RequestChange()">
-            {{ "UpdateRequest" | translate }}
-          </button>
-        </div>
+ <!-- Block Reason Modal -->
+ <nz-modal [(nzVisible)]="isBlockModalVisible"
+           [nzTitle]="'Block Company' | translate"
+           [nzFooter]="null"
+           (nzOnCancel)="isBlockModalVisible=false"
+           nzClassName="block-modal">
+   <ng-container *nzModalContent>
+     <div class="block-card">
+       <div class="block-title">
+         <span nz-icon nzType="stop"></span>
+         {{ 'Block Company' | translate }}
+       </div>
+       <p>{{ 'Please provide a reason for blocking this company' | translate }}</p>
+       <textarea id="comp-block-reason"
+                 [(ngModel)]="blockReason"
+                 placeholder="{{ 'Write the block reason...' | translate }}">
+       </textarea>
+     </div>
 
-        <div *ngIf=" (status === 'Pending' || status === 'Approved') && userType == '2' ">
-          <button class="deleteBtn" nz-button (click)="showRejectedModal()">
-            {{ "Reject" | translate }}
-          </button>
-          <button class=" ApproveBtn" nz-button (click)="showApproveModal()">
-            {{ "Approve" | translate }}
-          </button>
-          <button class="Primary_fill editBtn" nz-button *ngIf="!editPressed" (click)="editRequest()">
-            {{ "Edit" | translate }}
-          </button>
-        </div>
+     <div class="fullWidth btnsHolder" style="margin-top:12px">
+       <button class="cancelBtn" (click)="isBlockModalVisible=false">
+         {{ 'Cancel' | translate }}
+       </button>
+       <button id="comp-block-submit-btn"
+               [disabled]="!(blockReason || '').trim().length || isLoading"
+               [nzLoading]="isLoading"
+               nz-button
+               (click)="submitBlock()">
+         {{ 'Submit' | translate }}
+       </button>
+     </div>
+   </ng-container>
+ </nz-modal>
 
-        <div *ngIf="status === 'Quarantined' && userType == '2' ">
-          <button class="deleteBtn" nz-button (click)="showRejectedModal()">
-            {{ "Reject" | translate }}
-          </button>
-          <button class=" ApproveBtn" nz-button (click)="showAssignModal()">
-            {{ "AssignTo" | translate }}
-          </button>
-          <button class="Primary_fill editBtn" nz-button *ngIf="!editPressed" (click)="editRequest()">
-            {{ "Edit" | translate }}
-          </button>
-        </div>
+ <!-- Action bar للـ MASTER/Reviewer - Updated condition to use both userType and canApproveReject -->
+ <div class="summary-actions"
+      *ngIf="(hasRecord && userType === '2' && (status==='Pending' || status==='Updated' || status==='Quarantined')) || canApproveReject">
+   <button class="pill pill-danger" nz-button (click)="showRejectedModal()" [nzLoading]="isLoading">
+     <span nz-icon nzType="close-circle"></span>{{ 'Reject' | translate }}
+   </button>
+   <button class="pill pill-success" nz-button (click)="showApproveModal()" [nzLoading]="isLoading">
+     <span nz-icon nzType="check-circle"></span>{{ 'Approve' | translate }}
+   </button>
+ </div>
 
-        <button class="Primary_fill" nz-button *ngIf="(status === 'Rejected' || status === 'Updated') && !editPressed"
-          (click)="editRequest()">
-          {{ "Edit" | translate }}
-        </button>
+ <!-- Action bar للـ Data Entry -->
+ <div class="de-action-bar"
+      *ngIf="hasRecord && userType==='1' && (status==='Rejected' || status==='Updated' || status==='Quarantined') && !editPressed">
+   <button class="pill pill-primary" nz-button (click)="editRequest()">
+     <span nz-icon nzType="edit"></span>{{ 'Edit' | translate }}
+   </button>
+ </div>
 
-        <!-- <button class="Primary_fill" nz-button *ngIf="!canEdit && status === 'Approved'" (click)="RequestChange()">
-          {{ "ModifyRequest" | translate }}
-        </button> -->
-      </div>
-    </div>
-  </div>
+ <!-- Duplicate Warning -->
+ <nz-alert *ngIf="showDuplicateWarning" nzType="warning"
+           [nzMessage]="'⚠️ A customer with name ' + duplicateName + ' and tax number ' + duplicateTax + ' already exists!'"
+           nzShowIcon class="mb-3"></nz-alert>
 
-  <form nz-form [formGroup]="requestForm" (ngSubmit)="onSubmit()" class="form_holder requestForm">
-    <div class="generalData">
-      <h3>{{ "GeneralData" | translate }}</h3>
-      <div class="row">
-        <nz-form-item class="input_holder_full-width">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "FirstName" | translate }}<span class="required-asterisk">*</span>
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterFirstName' | translate">
-            <input nz-input id="firstName" formControlName="firstName" placeholder="John" />
-          </nz-form-control>
-        </nz-form-item>
+ <!-- Summary Card للـ Data Entry في حالات المراجعة -->
+ <div class="summary-card"
+      *ngIf="hasRecord && userType === '1' && (status==='Rejected' || status==='Updated' || status==='Quarantined')">
+   <div class="summary-card__header">
+     <div class="summary-card__title">
+       <span class="dot"></span>
+       <h2>{{ 'RequestStatus' | translate }}</h2>
+     </div>
 
-        <nz-form-item class="input_holder_full-width">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "SecondName" | translate }}<span class="required-asterisk">*</span>
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterSecondName' | translate">
-            <input nz-input id="secondName" formControlName="secondName" placeholder="Doe" />
-          </nz-form-control>
-        </nz-form-item>
-      </div>
+     <div class="summary-card__meta">
+       <span class="status-chip" [ngClass]="statusClassMap">
+         {{ status | translate }}
+       </span>
 
-      <div class="row">
-        <nz-form-item class="input_holder_full-width w70">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "Street" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterStreet' | translate">
-            <input nz-input id="street" formControlName="street" placeholder="Harm, Giza" />
-          </nz-form-control>
-        </nz-form-item>
+       <ng-container *ngIf="(stateIssues?.length || 0) > 0">
+         <span class="divider"></span>
+         <span class="meta">
+           {{ stateIssues.length }} {{ stateIssues.length === 1 ? ('Issue'|translate) : ('Issues'|translate) }}
+         </span>
+       </ng-container>
+     </div>
+   </div>
 
-        <nz-form-item class="input_holder_full-width w30">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "PostalCode" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterPostalCode' | translate">
-            <input nz-input id="postalCode" formControlName="postalCode" placeholder="{{ 'PostalCode' | translate }}" />
-          </nz-form-control>
-        </nz-form-item>
-      </div>
+   <div class="summary-card__body" *ngIf="showSummary">
+     <div class="summary-block">
+       <div class="block-title">
+         <span nz-icon nzType="alert"></span>
+         <strong>{{ 'IssueSummary' | translate }}</strong>
+       </div>
 
-      <div class="row">
-        <nz-form-item class="input_holder_full-width w33_33">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "City" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCity' | translate">
-            <input nz-input id="city" formControlName="city" placeholder="{{ 'City' | translate }}" />
-          </nz-form-control>
-        </nz-form-item>
+       <ul class="issue-list">
+         <li *ngFor="let issue of stateIssues">
+           <div class="issue-row">
+             <div class="issue-label">{{ 'Issue' | translate }}:</div>
+             <div class="issue-value">{{ issue.description || '—' }}</div>
+           </div>
+           <div class="issue-row">
+             <div class="issue-label">{{ 'ReviewedBy' | translate }}:</div>
+             <div class="issue-value">{{ issue.reviewedBy || 'Reviewer' }}</div>
+           </div>
+           <div class="issue-row">
+             <div class="issue-label">{{ 'Date' | translate }}:</div>
+             <div class="issue-value">{{ (issue.issueDate || issue.date) | date:'MMM d, y' }}</div>
+           </div>
+         </li>
+       </ul>
+     </div>
+   </div>
+ </div>
 
-        <nz-form-item class="input_holder_full-width w33_33">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "Region" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterRegion' | translate">
-            <input nz-input id="region" formControlName="region" placeholder="{{ 'Region' | translate }}" />
-          </nz-form-control>
-        </nz-form-item>
+ <!-- FORM -->
+ <form
+   nz-form
+   [formGroup]="requestForm"
+   (ngSubmit)="onSubmit()"
+   class="form_holder requestForm"
+   [class.is-readonly]="hasRecord && !editPressed">
 
-        <nz-form-item class="input_holder_full-width w33_33">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "Country" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCountry' | translate">
-            <input nz-input id="country" formControlName="country" placeholder="{{ 'Country' | translate }}" />
-          </nz-form-control>
-        </nz-form-item>
-      </div>
-    </div>
+   <!-- General Data -->
+   <div class="generalData">
+     <h3>{{ "GeneralData" | translate }}</h3>
+     <div class="row">
+       <nz-form-item class="input_holder_full-width">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="firstName" nzRequired>
+           {{ "FirstName" | translate }}<span class="required-asterisk">*</span>
+         </nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterFirstName' | translate">
+           <input nz-input id="firstName" formControlName="firstName" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Company Name' | translate }}"/>
+         </nz-form-control>
+       </nz-form-item>
 
-    <div class="generalData">
-      <h3>{{ "Identification" | translate }}</h3>
-      <div class="row">
-        <nz-form-item class="input_holder_full-width w33_33">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="tax" nzRequired>
-            {{ "Tax Number" | translate }}
-          </nz-form-label>
-          <!-- <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterTax' | translate">
-            <nz-select id="tax" formControlName="tax" nzPlaceHolder="{{ 'Tax' | translate }}" style="width: 100%">
-              <nz-option *ngFor="let taxOption of taxOptions" [nzValue]="taxOption.value"
-                [nzLabel]="taxOption.label | translate">
-              </nz-option>
-            </nz-select>
-          </nz-form-control> -->
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterTax' | translate">
-            <input nz-input id="tax" formControlName="tax" placeholder="{{ 'Tax Number' | translate }}" />
-          </nz-form-control>
-        </nz-form-item>
+       <nz-form-item class="input_holder_full-width">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="firstNameAR" nzRequired>
+           {{ "FirstNameAR" | translate }}<span class="required-asterisk">*</span>
+         </nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'Enter Company Name AR' | translate">
+           <input nz-input id="firstNameAR" formControlName="firstNameAR" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Company Name AR' | translate }}"/>
+         </nz-form-control>
+       </nz-form-item>
+     </div>
 
-        <nz-form-item class="input_holder_full-width w33_33">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "Country" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCountry' | translate">
-            <input nz-input id="identityCountry" formControlName="identityCountry"
-              placeholder="{{ 'Country' | translate }}" />
-          </nz-form-control>
-        </nz-form-item>
+     <div class="row">
+       <nz-form-item class="input_holder_full-width w33_33">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="CustomerType" nzRequired>{{ "CustomerType" | translate }}<span class="required-asterisk">*</span></nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'SelectCustomerType' | translate">
+           <nz-select id="CustomerType" formControlName="CustomerType" nzPlaceHolder="{{ 'SelectCustomerType' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+             <nz-option *ngFor="let type of CustomerTypeOptions" [nzValue]="type.value" [nzLabel]="type.label | translate"></nz-option>
+           </nz-select>
+         </nz-form-control>
+       </nz-form-item>
 
-        <nz-form-item class="input_holder_full-width w33_33">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "Resbonsible" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterResbonsible' | translate">
-            <input nz-input id="resbonsible" formControlName="resbonsible"
-              placeholder="{{ 'Resbonsible' | translate }}" />
-          </nz-form-control>
-        </nz-form-item>
-      </div>
+       <nz-form-item class="input_holder_full-width w33_33">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="CompanyOwnerFullName" nzRequired>{{ "CompanyOwnerFullName" | translate }}<span class="required-asterisk">*</span></nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCompanyOwner' | translate">
+           <input nz-input id="CompanyOwnerFullName" formControlName="CompanyOwnerFullName" [disabled]="hasRecord && !editPressed" placeholder="{{ 'EnterCompanyOwner' | translate }}" />
+         </nz-form-control>
+       </nz-form-item>
 
-      <div class="row">
-        <nz-form-item class="input_holder_full-width">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="dateFrom" nzRequired>
-            {{ "DateFrom" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDate' | translate">
-            <nz-date-picker id="dateFrom" formControlName="dateFrom" [nzFormat]="'yyyy-MM-dd'"
-              nzPlaceHolder="{{ 'DateFrom' | translate }}" style="width: 100%"></nz-date-picker>
-          </nz-form-control>
-        </nz-form-item>
+       <nz-form-item class="input_holder_full-width w33_33">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="tax" nzRequired>{{ "Tax Number" | translate }}<span class="required-asterisk">*</span></nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterTax' | translate">
+           <input nz-input id="tax" formControlName="tax" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Tax Number' | translate }}" />
+         </nz-form-control>
+       </nz-form-item>
+     </div>
 
-        <nz-form-item class="input_holder_full-width">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="dateTo" nzRequired>
-            {{ "DateTo" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDate' | translate">
-            <nz-date-picker id="dateTo" formControlName="dateTo" [nzFormat]="'yyyy-MM-dd'"
-              nzPlaceHolder="{{ 'DateTo' | translate }}" style="width: 100%"></nz-date-picker>
-          </nz-form-control>
-        </nz-form-item>
-      </div>
-    </div>
+     <div class="row">
+       <nz-form-item class="input_holder_full-width w70">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="buildingNumber">{{ "Building Number" | translate }}</nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24">
+           <input nz-input id="buildingNumber" formControlName="buildingNumber" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Building Number' | translate }}" />
+         </nz-form-control>
+       </nz-form-item>
 
-    <div class="generalData">
-      <h3>{{ "SalesArea" | translate }}</h3>
-      <div class="row">
-        <nz-form-item class="input_holder_full-width">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "SalesORG" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterSalesORG' | translate">
-            <input nz-input id="salesOrg" formControlName="salesOrg" placeholder="{{ 'SalesORG' | translate }}" />
-          </nz-form-control>
-        </nz-form-item>
-      </div>
+       <nz-form-item class="input_holder_full-width w70">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="street">{{ "Street" | translate }}</nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24">
+           <input nz-input id="street" formControlName="street" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Street Name' | translate }}" />
+         </nz-form-control>
+       </nz-form-item>
+     </div>
 
-      <div class="row">
-        <nz-form-item class="input_holder_full-width">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "DistributionChannel" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDistributionChannel' | translate">
-            <input nz-input id="distChannel" formControlName="distChannel"
-              placeholder="{{ 'DistributionChannel' | translate }}" />
-          </nz-form-control>
-        </nz-form-item>
+     <div class="row">
+       <nz-form-item class="input_holder_full-width w50">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="country" nzRequired>{{ 'Country' | translate }}<span class="required-asterisk">*</span></nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'Select Country' | translate">
+           <nz-select id="country" formControlName="country" nzPlaceHolder="{{ 'Select Country' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+             <nz-option *ngFor="let c of CountryOptions" [nzValue]="c.value" [nzLabel]="c.label"></nz-option>
+           </nz-select>
+         </nz-form-control>
+       </nz-form-item>
 
-        <nz-form-item class="input_holder_full-width">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "Division" | translate }}
-          </nz-form-label>
-          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterDivision' | translate">
-            <input nz-input id="division" formControlName="division" placeholder="{{ 'Division' | translate }}" />
-          </nz-form-control>
-        </nz-form-item>
-      </div>
+       <nz-form-item class="input_holder_full-width w50">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="city" nzRequired>{{ 'City' | translate }}<span class="required-asterisk">*</span></nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'Select City' | translate">
+           <nz-select id="city" formControlName="city" nzPlaceHolder="{{ 'Select City' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+             <nz-option *ngFor="let city of filteredCityOptions" [nzValue]="city.value" [nzLabel]="city.label"></nz-option>
+           </nz-select>
+         </nz-form-control>
+       </nz-form-item>
+     </div>
+   </div>
 
-      <div class="btnBox" *ngIf="editPressed || (!canEdit && !canView)">
-        <button class="Primary_fill" nz-button>
-          {{ "SendRequest" | translate }}
-        </button>
-      </div>
-    </div>
-  </form>
+   <!-- Contacts Section -->
+   <div class="generalData">
+     <div class="flex items-center justify-between" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+       <h3 style="margin: 0;">{{ "Contacts" | translate }}</h3>
+       <button type="button" nz-button nzType="default" (click)="addContact()" [disabled]="hasRecord && !editPressed || userType==='2'">
+         + {{ 'Add' | translate }}
+       </button>
+     </div>
 
-  <nz-modal [(nzVisible)]="isApprovedVisible" [nzTitle]="'Request Approved' | translate" (nzOnCancel)="handleCancel()"
-    (nzOnOk)="handleOk()">
-    <ng-container *nzModalContent>
-      <img src="./assets/img/approvedIcon.svg" class="popupImg" alt="">
-      <p class="popupText">{{ "You have successfully approved this request.It will now appear in the Golden Records." |
-        translate }}
-      </p>
-      <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
-      <label nz-checkbox class="checkboxHolder">
-        <input class="hiddenInput" type="checkbox" nz-checkbox [(ngModel)]="approvedChecked" />
-        <p class="checkboxText">{{ "Don’t Show again" | translate }}</p>
-      </label>
-      <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="submitApprove()">{{ "Submit" | translate }}
-        </button>
-      </div>
+     <nz-table [nzData]="contactsFGs" nzSize="middle" class="contacts-table" *ngIf="contactsFGs?.length; else noContacts">
+       <thead>
+         <tr>
+           <th>{{ 'Name' | translate }}</th>
+           <th>{{ 'Job Title' | translate }}</th>
+           <th>{{ 'Email Address' | translate }}</th>
+           <th>{{ 'Mobile Number' | translate }}</th>
+           <th>{{ 'Landline' | translate }}</th>
+           <th>{{ 'Preferred Language' | translate }}</th>
+           <th class="text-right" *ngIf="userType!=='2'">{{ 'Actions' | translate }}</th>
+         </tr>
+       </thead>
+       <tbody>
+         <tr *ngFor="let cg of contactsFGs; let i = index" [formGroup]="cg">
+           <td><input nz-input formControlName="name" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="{{'Full name'|translate}}"/></td>
+           <td><input nz-input formControlName="jobTitle" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="{{'Job Title'|translate}}"/></td>
+           <td><input nz-input formControlName="email" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="email@example.com"/></td>
+           <td><input nz-input formControlName="mobile" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="+2..."/></td>
+           <td><input nz-input formControlName="landline" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="02..."/></td>
+           <td>
+             <nz-select formControlName="preferredLanguage" [nzDisabled]="(hasRecord && !editPressed) || userType==='2'" nzPlaceHolder="{{'Select'|translate}}" style="width: 100%">
+               <nz-option *ngFor="let l of PrefferedLanguage" [nzValue]="l.value" [nzLabel]="l.label | translate"></nz-option>
+             </nz-select>
+           </td>
+           <td class="text-right" *ngIf="userType!=='2'">
+             <button type="button" nz-button nzType="text" nzDanger (click)="removeContact(i)" [disabled]="hasRecord && !editPressed">
+               <span nz-icon nzType="delete"></span>
+             </button>
+           </td>
+         </tr>
+       </tbody>
+     </nz-table>
 
-    </ng-container>
-  </nz-modal>
+     <ng-template #noContacts>
+       <nz-empty>
+         <ng-container *nzEmptyDescription>{{ 'No contacts yet.' | translate }}</ng-container>
+       </nz-empty>
+     </ng-template>
+   </div>
 
-  <nz-modal [(nzVisible)]="isRejectedConfirmVisible" [nzTitle]="'Request Rejected' | translate"
-    (nzOnCancel)="handleCancel()" (nzOnOk)="handleOk()">
-    <ng-container *nzModalContent>
-      <img src="./assets/img/rejectIcon.svg" class="popupImg" alt="">
-      <p class="popupText">{{ "You have successfully rejected this request. The requester will be notified with yourreason." | translate }}
-      </p>
-      <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
-      <label nz-checkbox class="checkboxHolder">
-        <input class="hiddenInput" type="checkbox" nz-checkbox [(ngModel)]="rejectedChecked" />
-        <p class="checkboxText">{{ "Don’t Show again" | translate }}</p>
-      </label>
-      <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="rejectApprove()">{{ "Submit" | translate }}
-        </button>
-      </div>
+   <!-- Documents Section -->
+   <div class="generalData doc-card">
+     <div class="doc-card__header">
+       <h3 class="doc-title">
+         <span nz-icon nzType="paper-clip"></span>
+         {{ 'Documents' | translate }}
+       </h3>
 
-    </ng-container>
-  </nz-modal>
+       <div class="doc-meta-inline" *ngIf="documentsFA.length">
+         <nz-tag nzColor="processing">
+           {{ documentsFA.length }} {{ documentsFA.length === 1 ? ('file' | translate) : ('files' | translate) }}
+         </nz-tag>
+         <span class="dot"></span>
+         <span class="hint">Max {{maxSizeMB}}MB / file</span>
+       </div>
+     </div>
 
-  <nz-modal [(nzVisible)]="isRejectedVisible" [nzTitle]="'Add a Rejection Note' | translate"
-    (nzOnCancel)="handleCancel()" (nzOnOk)="handleOk()">
-    <ng-container *nzModalContent>
-      <p class="popupRejectText">{{ "Enter Rejection Comments" | translate }}</p>
-      <textarea rows="4" nz-input [(ngModel)]="inputValue"></textarea>
-      <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
+     <nz-upload
+       nzType="drag"
+       class="doc-dropzone glass"
+       [nzMultiple]="true"
+       [nzBeforeUpload]="beforeUploadNz"
+       [nzShowUploadList]="false"
+       [nzDisabled]="(hasRecord && !editPressed) || userType==='2'">
+       <div class="dz-inner">
+         <div class="dz-icon"><span nz-icon nzType="inbox"></span></div>
+         <div class="dz-title">{{ 'Drop files here or click to upload' | translate }}</div>
+         <div class="dz-hint">
+           PDF, JPG, PNG, WEBP, DOC, DOCX, XLS, XLSX, TXT (≤ {{maxSizeMB}}MB)
+         </div>
+       </div>
+     </nz-upload>
 
-      <div class="fullWidth btnsHolder">
-        <button class=" cancelBtn" (click)="handleCancel()">{{ "Cancel" | translate }}</button>
-        <button class="Primary_fill submitBtn" [disabled]="!inputValue" (click)="confirmReject()">{{ "Submit" |
-          translate }}
-        </button>
-      </div>
+     <nz-empty *ngIf="!documentsFA.length" nzClassName="doc-empty">
+       <ng-container *nzEmptyDescription>
+         <div class="empty-text">
+           {{ 'Upload your customer documents to appear here.' | translate }}
+         </div>
+       </ng-container>
+     </nz-empty>
 
-    </ng-container>
-  </nz-modal>
-  <nz-modal [(nzVisible)]="isAssignVisible" [nzTitle]="'Assign to' | translate" (nzOnCancel)="handleCancel()"
-    (nzOnOk)="handleOk()">
-    <ng-container *nzModalContent>
-      <img src="./assets/img/assignIcon.svg" class="popupImg" alt="">
-      <p class="popupText">{{ "Select the department you want to assign this request to" | translate }}
-      </p>
+     <div class="doc-table-wrap" *ngIf="documentsFA.length">
+       <nz-table [nzData]="documentsFGs" nzSize="middle" class="doc-table">
+         <thead>
+           <tr>
+             <th class="col-file">{{ 'File' | translate }}</th>
+             <th class="col-type">{{ 'Type' | translate }}</th>
+             <th class="col-desc">{{ 'Description' | translate }}</th>
+             <th class="col-size">{{ 'Size' | translate }}</th>
+             <th class="col-date">{{ 'Uploaded' | translate }}</th>
+             <th class="col-actions text-right">{{ 'Actions' | translate }}</th>
+           </tr>
+         </thead>
 
-      <nz-select [(ngModel)]="selectedDepartment" name="department" nzPlaceHolder="{{'Select Department'|translate}}"
-        style="width: 100%">
+         <tbody>
+           <tr *ngFor="let grp of documentsFGs; let i = index" [formGroup]="grp">
+             <td class="col-file">
+               <div class="file-cell">
+                 <ng-container [ngSwitch]="true">
+                   <div class="thumb" *ngSwitchCase="grp.value.mime?.includes('image')">
+                     <img [src]="grp.value.contentBase64" alt="" />
+                   </div>
+                   <div class="icon" *ngSwitchDefault>
+                     <span nz-icon [nzType]="getDocIcon(grp.value.mime)"></span>
+                   </div>
+                 </ng-container>
+                 <span class="file-name" nz-typography nzEllipsis [nzEllipsisRows]="1" [title]="grp.value.name">
+                   {{ grp.value.name }}
+                 </span>
+               </div>
+             </td>
+
+             <td class="col-type">
+               <nz-tag [nzColor]="getTypeColor(grp.value.type)">{{ grp.value.type }}</nz-tag>
+             </td>
+
+             <td class="col-desc">
+               <span class="desc-text" [title]="grp.value.description || '—'">
+                 {{ grp.value.description || '—' }}
+               </span>
+             </td>
+
+             <td class="col-size text-right">
+               {{ (grp.value.size / 1024 / 1024) | number:'1.2-2' }} MB
+             </td>
+
+             <td class="col-date">
+               {{ grp.value.uploadedAt | date:'medium' }}
+             </td>
+
+             <td class="col-actions text-right">
+               <button
+                 type="button"
+                 nz-button
+                 nzType="text"
+                 nzShape="circle"
+                 nz-tooltip
+                 nzTooltipTitle="Download"
+                 (click)="downloadDoc(grp.value)"
+                 aria-label="Download">
+                 <span nz-icon nzType="download"></span>
+               </button>
+
+               <button
+                 type="button"
+                 nz-button
+                 nzType="text"
+                 class="icon-btn"
+                 nzDanger
+                 nz-tooltip
+                 nzTooltipTitle="Remove"
+                 (click)="removeDoc(i)"
+                 aria-label="Remove"
+                 [disabled]="(hasRecord && !editPressed) || userType==='2'">
+                 <span nz-icon nzType="delete"></span>
+               </button>
+             </td>
+           </tr>
+         </tbody>
+       </nz-table>
+     </div>
+   </div>
+
+   <!-- Sales Area -->
+   <div class="generalData">
+     <h3>{{ "SalesArea" | translate }}</h3>
+     <div class="row">
+       <nz-form-item class="input_holder_full-width w33_33">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="SalesOrgOption">{{ "SalesORG" | translate }}</nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24">
+           <nz-select id="SalesOrgOption" formControlName="SalesOrgOption" nzPlaceHolder="{{ 'Select Sales Org' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+             <nz-option *ngFor="let s of SalesOrgOption" [nzValue]="s.value" [nzLabel]="s.label | translate"></nz-option>
+           </nz-select>
+         </nz-form-control>
+       </nz-form-item>
+     </div>
+
+     <div class="row">
+       <nz-form-item class="input_holder_full-width w33_33">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="DistributionChannelOption">{{ "DistributionChannel" | translate }}</nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24">
+           <nz-select id="DistributionChannelOption" formControlName="DistributionChannelOption" nzPlaceHolder="{{ 'Select Distribution Channel' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+             <nz-option *ngFor="let d of DistributionChannelOption" [nzValue]="d.value" [nzLabel]="d.label | translate"></nz-option>
+           </nz-select>
+         </nz-form-control>
+       </nz-form-item>
+
+       <nz-form-item class="input_holder_full-width w33_33">
+         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="DivisionOption">{{ "Division" | translate }}</nz-form-label>
+         <nz-form-control [nzSm]="24" [nzXs]="24">
+           <nz-select id="DivisionOption" formControlName="DivisionOption" nzPlaceHolder="{{ 'Select Division' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+             <nz-option *ngFor="let dv of DivisionOption" [nzValue]="dv.value" [nzLabel]="dv.label | translate"></nz-option>
+           </nz-select>
+         </nz-form-control>
+       </nz-form-item>
+     </div>
+
+     <!-- Submit Button for Data Entry -->
+     <div class="btnBox" *ngIf="(editPressed || (!hasRecord)) && userType==='1'">
+       <button class="Primary_fill" nz-button type="submit" [disabled]="requestForm.invalid || isLoading" [nzLoading]="isLoading">
+         {{ "SendRequest" | translate }}
+       </button>
+     </div>
+   </div>
+ </form>
+
+ <!-- Modals -->
+ <!-- Approve Modal -->
+ <nz-modal [(nzVisible)]="isApprovedVisible" [nzTitle]="'Request Approved' | translate"
+           [nzFooter]="null" (nzOnCancel)="closeAllModals()">
+   <ng-container *nzModalContent>
+     <img src="./assets/img/approvedIcon.svg" class="popupImg" alt="">
+     <p class="popupText">{{ "You have successfully approved this request. It will now appear in the Golden Records." | translate }}</p>
+     <div class="fullWidth">
+       <button class="Primary_fill submitBtn" nz-button [nzLoading]="isLoading" (click)="submitApprove()">{{ "Submit" | translate }}</button>
+     </div>
+   </ng-container>
+ </nz-modal>
+
+ <!-- Reject Modal -->
+ <nz-modal [(nzVisible)]="isRejectedVisible" [nzTitle]="'Add a Rejection Note' | translate"
+           [nzFooter]="null" (nzOnCancel)="closeAllModals()">
+   <ng-container *nzModalContent>
+     <p class="popupRejectText">{{ "Enter Rejection Comments" | translate }}</p>
+     <textarea rows="4" nz-input [(ngModel)]="rejectComment"></textarea>
+     <div class="fullWidth btnsHolder">
+       <button class="cancelBtn" (click)="closeAllModals()">{{ "Cancel" | translate }}</button>
+       <button class="Primary_fill submitBtn" nz-button [disabled]="!rejectComment || isLoading" [nzLoading]="isLoading" (click)="submitReject()">{{ "Submit" | translate }}</button>
+     </div>
+   </ng-container>
+ </nz-modal>
+
+ <!-- Assign Modal -->
+ <nz-modal [(nzVisible)]="isAssignVisible" [nzTitle]="'Assign to' | translate"
+           [nzFooter]="null" (nzOnCancel)="closeAllModals()">
+   <ng-container *nzModalContent>
+     <img src="./assets/img/assignIcon.svg" class="popupImg" alt="">
+     <p class="popupText">{{ "Select the department you want to assign this request to" | translate }}</p>
+     <nz-select [(ngModel)]="selectedDepartment" name="department" nzPlaceHolder="{{'Select Department'|translate}}" style="width: 100%">
        <nz-option nzValue="sales" nzLabel="{{'Sales'|translate}}"></nz-option>
-        <nz-option nzValue="manufacturing" nzLabel="{{'Manufacturing'|translate}}"></nz-option>
-        <nz-option nzValue="supply" nzLabel="{{'Supply Chain'|translate}}"></nz-option>
-      </nz-select>
+       <nz-option nzValue="manufacturing" nzLabel="{{'Manufacturing'|translate}}"></nz-option>
+       <nz-option nzValue="supply" nzLabel="{{'Supply Chain'|translate}}"></nz-option>
+     </nz-select>
+     <div class="fullWidth margintop">
+       <button class="Primary_fill submitBtn" [disabled]="!selectedDepartment" (click)="assignToBtn()">{{ "Submit" | translate }}</button>
+     </div>
+   </ng-container>
+ </nz-modal>
 
-      <div class="fullWidth margintop"><button class="Primary_fill submitBtn" [disabled]="!selectedDepartment"
-          (click)="assignToBtn()">{{ "Submit" | translate }}
-        </button>
-      </div>
-
-    </ng-container>
-  </nz-modal>
+ <!-- Document Meta Modal - UPDATED to use docTypeOptions from component -->
+ <nz-modal [(nzVisible)]="isMetaModalOpen" nzTitle="Document details" nzClassName="doc-meta-modal" [nzFooter]="null" (nzOnCancel)="isMetaModalOpen=false">
+   <ng-container *nzModalContent>
+     <form [formGroup]="metaForm" class="grid grid-cols-1 gap-3">
+       <nz-select formControlName="type" nzPlaceHolder="Select document type">
+         <nz-option *ngFor="let t of docTypeOptions" [nzValue]="t.value" [nzLabel]="t.label"></nz-option>
+       </nz-select>
+       <textarea nz-input rows="3" formControlName="description" placeholder="Short description (optional)"></textarea>
+     </form>
+     <div class="fullWidth btnsHolder" style="margin-top:12px">
+       <button nz-button (click)="isMetaModalOpen=false">{{ 'Cancel' | translate }}</button>
+       <button nz-button nzType="primary" [disabled]="!pendingFile || !metaForm.valid" (click)="confirmMeta()">
+         {{ 'Add' | translate }}
+       </button>
+     </div>
+   </ng-container>
+ </nz-modal>
 </div>

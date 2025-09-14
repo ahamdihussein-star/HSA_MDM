@@ -1,311 +1,63 @@
 <div class="titleActionHolder">
-  <h1 class="pageTitle" *ngIf="user == '2'">
-    {{ "GoldenRecords" | translate }}
-  </h1>
-  <h1 class="pageTitle" *ngIf="user == '1'">
-    {{ "GoldenRequests" | translate }}
-  </h1>
+  <h1 class="pageTitle" *ngIf="user == '2'">{{ 'GoldenRecords' | translate }}</h1>
+  <h1 class="pageTitle" *ngIf="user == '1'">{{ 'GoldenRequests' | translate }}</h1>
+
   <div class="actionHolderTitleTabs">
-    <div *ngIf="mixedStatuses()">
-      <button class="deleteBtn actionBtn" (click)="deleteRows()">
-        <img src="./assets/img/redTrash.svg" alt="" />{{ "Delete" | translate }}
-      </button>
-    </div>
     <div class="seachInputHolder">
       <img src="./assets/img/search.svg" alt="" />
       <input type="text" [placeholder]="'Search' | translate" />
+      <!-- ملاحظة: صندوق البحث هنا شكلي فقط حالياً؛ الجدول بيعرض rows مباشرة زي ما الكومبوننت بيجهزها -->
     </div>
     <img src="./assets/img/filter.svg" alt="" />
   </div>
 </div>
-<div>
-  <nz-tabset
-    [nzSelectedIndex]="selectedIndex"
-    (nzSelectedIndexChange)="onTabChange($event)"
-  >
-    >
-    <nz-tab nzTitle="{{ 'All' | translate }}"></nz-tab>
-    <nz-tab nzTitle="{{user == '1'? ('CustomerRequests' | translate) : ('CustomerRecords' | translate) }}"></nz-tab>
-    <nz-tab nzTitle="{{ user == '1'? ('ProductRequests' | translate) : ('ProductRecords' | translate) }}"></nz-tab>
-    <nz-tab nzTitle="{{ user == '1'? ('SupplierRequests' | translate) : ('SupplierRecords' | translate)}}"></nz-tab>
-  </nz-tabset>
 
-  <!-- All Requests table-->
-  <div *ngIf="selectedIndex === 0">
-    <nz-table #basicTable [nzPageSize]="7" [nzData]="AllRequests">
-      <thead>
-        <tr>
-          <th
-            [(nzChecked)]="checkedStates['all']"
-            [nzIndeterminate]="indeterminateStates['all']"
-            (nzCheckedChange)="onAllChecked($event)"
-            (nzCheckedChange)="onAllChecked($event)"
-          ></th>
+<!-- Loading Indicator -->
+<div *ngIf="loading" style="text-align: center; padding: 20px;">
+  <nz-spin [nzSpinning]="true" nzTip="Loading Golden Records...">
+    <div style="height: 200px;"></div>
+  </nz-spin>
+</div>
 
-          <th>{{ "RecordID" | translate }}</th>
-          <th>{{ "Name" | translate }}</th>
-          <th>{{ "Date" | translate }}</th>
-          <th>{{ "Action" | translate }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let data of basicTable.data; let i = index">
-          <td
-            [nzChecked]="setOfCheckedIds['all'].has(data.id)"
-            (nzCheckedChange)="onItemChecked(data.id, data.status, $event)"
-          ></td>
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.name }}</td>
-          <td>{{ data.date }}</td>
-          <td>
-            <!-- <a>{{data.id}}</a> -->
-            <a
-              [routerLink]="['/dashboard/data-lineage']"
-              class="primaryColor"
-              *ngIf="user === '2'"
-            >
-              {{ "DataLineage" | translate }}
-            </a>
-            <div class="actionHolder" *ngIf="user === '1'">
-              <!-- <img src="./assets/img/edit.svg" alt="" />
-              <img class="iconSpacing" src="./assets/img/trash.svg" alt=""  (click)="deleteRecod(i)"/> -->
-              <a
-                nz-dropdown
-                nzTrigger="click"
-                [nzDropdownMenu]="menu"
-                class="actionHolderBtn"
-              >
-                <img src="./assets/img/moreAction.svg" alt="" />
-                <span nz-icon nzType="down"></span>
-              </a>
-              <nz-dropdown-menu #menu="nzDropdownMenu">
-                <ul nz-menu>
-                  <li nz-menu-item (click)="handleAction('view', data)">
-                    {{ "ViewDetails" | translate }}
-                  </li>
-                  <li nz-menu-item [routerLink]="['/dashboard/data-lineage']">
-                    {{ "DataLineage" | translate }}
-                  </li>
-                  <li nz-menu-item (click)="handleAction('Update', data)">
-                    {{ "Request Update" | translate }}
-                  </li>
-                  <li nz-menu-item (click)="handleAction('Delete', data)">
-                    {{ "Request Delete" | translate }}
-                  </li>
-                </ul>
-              </nz-dropdown-menu>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </nz-table>
-  </div>
-  <!-- Customer Requests table-->
-  <div *ngIf="selectedIndex === 1">
-    <nz-table #basicTable [nzPageSize]="7" [nzData]="CustomerRequests">
-      <thead>
-        <tr>
-          <th
-            [(nzChecked)]="checkedStates['customer']"
-            [nzIndeterminate]="indeterminateStates['customer']"
-            (nzCheckedChange)="onAllChecked($event)"
-          ></th>
+<!-- Golden Records Table -->
+<div *ngIf="!loading">
+  <nz-table #goldenTable [nzPageSize]="7" [nzData]="rows || []" [nzLoading]="loading">
+    <thead>
+      <tr>
+        <th>{{ 'Golden Record Code' | translate }}</th>
+        <th>{{ 'Record Type' | translate }}</th>
+        <th>{{ 'Company Name' | translate }}</th>
+        <th>{{ 'Country' | translate }}</th>
+        <th>{{ 'Status' | translate }}</th>
+        <th>{{ 'Actions' | translate }}</th>
+      </tr>
+    </thead>
 
-          <th>{{ "RecordID" | translate }}</th>
-          <th>{{ "CustomerName" | translate }}</th>
-          <th>{{ "Date" | translate }}</th>
-          <th>{{ "Action" | translate }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let data of basicTable.data; let i = index">
-          <td
-            [nzChecked]="setOfCheckedIds['customer'].has(data.id)"
-            (nzCheckedChange)="onItemChecked(data.id, data.status, $event)"
-          ></td>
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.name }}</td>
-          <td>{{ data.date }}</td>
-          <td>
-            <!-- <a>{{data.id}}</a> -->
-            <a
-              [routerLink]="['/dashboard/data-lineage']"
-              class="primaryColor"
-              *ngIf="user === '2'"
-            >
-              {{ "DataLineage" | translate }}
-            </a>
-            <div class="actionHolder" *ngIf="user === '1'">
-              <!-- <img src="./assets/img/edit.svg" alt="" />
-              <img class="iconSpacing" src="./assets/img/trash.svg" alt="" (click)="deleteRecod(i)" /> -->
-              <a
-                nz-dropdown
-                nzTrigger="click"
-                [nzDropdownMenu]="menu"
-                class="actionHolderBtn"
-              >
-                <img src="./assets/img/moreAction.svg" alt="" />
-                <span nz-icon nzType="down"></span>
-              </a>
-              <nz-dropdown-menu #menu="nzDropdownMenu">
-                <ul nz-menu>
-                  <li nz-menu-item (click)="handleAction('view', data)">
-                    {{ "ViewDetails" | translate }}
-                  </li>
-                  <li nz-menu-item [routerLink]="['/dashboard/data-lineage']">
-                    {{ "DataLineage" | translate }}
-                  </li>
-                  <li nz-menu-item (click)="handleAction('Update', data)">
-                    {{ "Request Update" | translate }}
-                  </li>
-                  <li nz-menu-item (click)="handleAction('Delete', data)">
-                    {{ "Request Delete" | translate }}
-                  </li>
-                </ul>
-              </nz-dropdown-menu>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </nz-table>
-  </div>
+    <tbody>
+      <tr *ngFor="let r of goldenTable.data">
+        <td>{{ r.goldenCode }}</td>
+        <td>{{ r.recordType }}</td>
+        <td>{{ r.name }}</td>
+        <td>{{ r.country }}</td>
+        <td>
+          <span [ngClass]="statusClass(r.status)">
+            {{ (r.status || '').toLowerCase() === 'blocked' ? 'Blocked' : 'Active' }}
+          </span>
+        </td>
+        <td>
+          <a class="primaryColor" (click)="viewDetails(r)" style="margin-right:16px">
+            {{ 'ViewDetails' | translate }}
+          </a>
+          <a class="primaryColor" (click)="goDataLineage(r)">
+            {{ 'DataLineage' | translate }}
+          </a>
+        </td>
+      </tr>
+    </tbody>
+  </nz-table>
 
-  <!-- Product Requests table-->
-  <div *ngIf="selectedIndex === 2">
-    <nz-table #basicTable [nzPageSize]="7" [nzData]="ProductRequests">
-      <thead>
-        <tr>
-          <th
-            [(nzChecked)]="checkedStates['product']"
-            [nzIndeterminate]="indeterminateStates['product']"
-            (nzCheckedChange)="onAllChecked($event)"
-          ></th>
-
-          <th>{{ "RecordID" | translate }}</th>
-          <th>{{ "ProductName" | translate }}</th>
-          <th>{{ "Date" | translate }}</th>
-          <th>{{ "Action" | translate }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let data of basicTable.data; let i = index">
-          <td
-            [nzChecked]="setOfCheckedIds['product'].has(data.id)"
-            (nzCheckedChange)="onItemChecked(data.id, data.status, $event)"
-          ></td>
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.name }}</td>
-          <td>{{ data.date }}</td>
-          <td>
-            <!-- <a>{{data.id}}</a> -->
-            <a
-              [routerLink]="['/dashboard/data-lineage']"
-              class="primaryColor"
-              *ngIf="user === '2'"
-            >
-              {{ "DataLineage" | translate }}
-            </a>
-            <div class="actionHolder" *ngIf="user === '1'">
-              <!-- <img src="./assets/img/edit.svg" alt="" />
-              <img class="iconSpacing" src="./assets/img/trash.svg" alt="" (click)="deleteRecod(i)" /> -->
-              <a
-                nz-dropdown
-                nzTrigger="click"
-                [nzDropdownMenu]="menu"
-                class="actionHolderBtn"
-              >
-                <img src="./assets/img/moreAction.svg" alt="" />
-                <span nz-icon nzType="down"></span>
-              </a>
-              <nz-dropdown-menu #menu="nzDropdownMenu">
-                <ul nz-menu>
-                  <li nz-menu-item (click)="handleAction('view', data)">
-                    {{ "ViewDetails" | translate }}
-                  </li>
-                  <li nz-menu-item [routerLink]="['/dashboard/data-lineage']">
-                    {{ "DataLineage" | translate }}
-                  </li>
-                  <li nz-menu-item (click)="handleAction('Update', data)">
-                    {{ "Request Update" | translate }}
-                  </li>
-                  <li nz-menu-item (click)="handleAction('Delete', data)">
-                    {{ "Request Delete" | translate }}
-                  </li>
-                </ul>
-              </nz-dropdown-menu>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </nz-table>
-  </div>
-  <!-- Supplier Requests table-->
-  <div *ngIf="selectedIndex === 3">
-    <nz-table #basicTable [nzPageSize]="7" [nzData]="SupplierRequests">
-      <thead>
-        <tr>
-          <th
-            [(nzChecked)]="checkedStates['supplier']"
-            [nzIndeterminate]="indeterminateStates['supplier']"
-            (nzCheckedChange)="onAllChecked($event)"
-          ></th>
-
-          <th>{{ "RecordID" | translate }}</th>
-          <th>{{ "SupplierName" | translate }}</th>
-          <th>{{ "Date" | translate }}</th>
-          <th>{{ "Action" | translate }}</th>
-        </tr>
-      </thead>
-      <tbody>
-        <tr *ngFor="let data of basicTable.data; let i = index">
-          <td
-            [nzChecked]="setOfCheckedIds['supplier'].has(data.id)"
-            (nzCheckedChange)="onItemChecked(data.id, data.status, $event)"
-          ></td>
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.name }}</td>
-          <td>{{ data.date }}</td>
-          <td>
-            <!-- <a>{{data.id}}</a> -->
-            <a
-              [routerLink]="['/dashboard/data-lineage']"
-              class="primaryColor"
-              *ngIf="user === '2'"
-            >
-              {{ "DataLineage" | translate }}
-            </a>
-            <div class="actionHolder" *ngIf="user === '1'">
-              <!-- <img src="./assets/img/edit.svg" alt="" />
-              <img class="iconSpacing" src="./assets/img/trash.svg" (click)="deleteRecod(i)" alt="" /> -->
-              <a
-                nz-dropdown
-                nzTrigger="click"
-                [nzDropdownMenu]="menu"
-                class="actionHolderBtn"
-              >
-                <img src="./assets/img/moreAction.svg" alt="" />
-                <span nz-icon nzType="down"></span>
-              </a>
-              <nz-dropdown-menu #menu="nzDropdownMenu">
-                <ul nz-menu>
-                  <li nz-menu-item (click)="handleAction('view', data)">
-                    {{ "ViewDetails" | translate }}
-                  </li>
-                  <li nz-menu-item [routerLink]="['/dashboard/data-lineage']">
-                    {{ "DataLineage" | translate }}
-                  </li>
-                  <li nz-menu-item (click)="handleAction('Update', data)">
-                    {{ "Request Update" | translate }}
-                  </li>
-                  <li nz-menu-item (click)="handleAction('Delete', data)">
-                    {{ "Request Delete" | translate }}
-                  </li>
-                </ul>
-              </nz-dropdown-menu>
-            </div>
-          </td>
-        </tr>
-      </tbody>
-    </nz-table>
+  <!-- Empty State -->
+  <div *ngIf="!loading && (!rows || rows.length === 0)" style="text-align: center; padding: 40px;">
+    <p>{{ 'NoGoldenRecordsFound' | translate }}</p>
   </div>
 </div>

@@ -1,0 +1,60 @@
+.welcomeMessage {
+    font-size: 20px;
+}
+
+.subMessage {
+    margin: 10px 0 30px;
+    color: #6c757d;
+}
+
+.seachInputHolder {
+    background-color: white;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    width: 215px;
+    height: 48px;
+    border-radius: 100px;
+    margin: 0 12px;
+    padding: 12px 18px;
+}
+
+.titleActionHolder {
+    width: 100%;
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.actionHolderTitle {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin-bottom: 20px;
+}
+
+.actionHolder {
+    display: flex;
+    align-items: center;
+    justify-content: flex-start;
+    img {
+        cursor: pointer;
+    }
+}
+
+.text-right {
+    text-align: right;
+}
+
+.pageTitle {
+    font-size: 22px;
+    font-weight: bold;
+}
+
+nz-table {
+    margin-top: 20px;
+}
+
+nz-empty {
+    margin-top: 40px;
+}

@@ -1,5 +1,6 @@
-import { NgModule } from '@angular/core';
+
 import { CommonModule } from '@angular/common';
+import { NgModule } from '@angular/core';
 
 import { AiAssistantRoutingModule } from './ai-assistant-routing.module';
 import { AiAssistantComponent } from './ai-assistant.component';
@@ -7,6 +8,7 @@ import { AiAssistantComponent } from './ai-assistant.component';
 
 import { FormsModule,ReactiveFormsModule} from '@angular/forms';
 import { TranslateModule } from '@ngx-translate/core';
+import { Router } from "@angular/router";
 
 @NgModule({
   declarations: [
@@ -24,4 +26,7 @@ import { TranslateModule } from '@ngx-translate/core';
     AiAssistantComponent
   ]
 })
-export class AiAssistantModule { }
+export class AiAssistantModule {
+    constructor() {
+    }
+ }

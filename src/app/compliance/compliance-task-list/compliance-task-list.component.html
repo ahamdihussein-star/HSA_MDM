@@ -1,0 +1,298 @@
+<h3 class="welcomeMessage">
+  {{ "WelcomeBack" | translate }}, {{ "Compliance" | translate }}!
+  <img src="assets/img/waving.svg" alt="Welcome Icon" class="welcomeIcon" />
+</h3>
+<p class="subMessage">{{ "HereIsYourTasksForToday" | translate }}</p>
+
+<div class="titleActionHolder">
+  <h1 class="pageTitle">{{ "Compliance Task List" | translate }}</h1>
+
+  <div class="actionHolderTitle">
+    <div class="seachInputHolder">
+      <img src="./assets/img/search.svg" alt="" />
+      <input
+        type="text"
+        [placeholder]="'Search' | translate"
+        [(ngModel)]="search"
+        (ngModelChange)="onSearchChange($event)"
+      />
+    </div>
+    <button nz-button nzType="default" (click)="refreshData()">
+      <i nz-icon nzType="reload"></i>
+      {{ "Refresh" | translate }}
+    </button>
+  </div>
+</div>
+
+<!-- Filter Tabs - Simplified -->
+<div style="margin: 16px 0; display: flex; gap: 8px;">
+  <button nz-button 
+          [nzType]="activeFilter === 'all' ? 'primary' : 'default'"
+          (click)="setFilter('all')">
+    {{ 'All Records' | translate }}
+    <span style="margin-left: 4px; padding: 2px 6px; background: #f0f2f5; border-radius: 10px; font-size: 12px;">
+      {{filterCounts.all}}
+    </span>
+  </button>
+  
+  <button nz-button 
+          [nzType]="activeFilter === 'new' ? 'primary' : 'default'"
+          (click)="setFilter('new')">
+    {{ 'New Requests' | translate }}
+    <span style="margin-left: 4px; padding: 2px 6px; background: #52c41a; color: white; border-radius: 10px; font-size: 12px;">
+      {{filterCounts.new}}
+    </span>
+  </button>
+  
+  <button nz-button 
+          [nzType]="activeFilter === 'duplicate' ? 'primary' : 'default'"
+          (click)="setFilter('duplicate')">
+    {{ 'Duplicate Records' | translate }}
+    <span style="margin-left: 4px; padding: 2px 6px; background: #1890ff; color: white; border-radius: 10px; font-size: 12px;">
+      {{filterCounts.duplicate}}
+    </span>
+  </button>
+  
+  <button nz-button 
+          [nzType]="activeFilter === 'quarantine' ? 'primary' : 'default'"
+          (click)="setFilter('quarantine')">
+    {{ 'Quarantine Records' | translate }}
+    <span style="margin-left: 4px; padding: 2px 6px; background: #faad14; color: white; border-radius: 10px; font-size: 12px;">
+      {{filterCounts.quarantine}}
+    </span>
+  </button>
+  
+  <button nz-button 
+          [nzType]="activeFilter === 'golden_update' ? 'primary' : 'default'"
+          (click)="setFilter('golden_update')">
+    {{ 'Golden Updates' | translate }}
+    <span style="margin-left: 4px; padding: 2px 6px; background: #722ed1; color: white; border-radius: 10px; font-size: 12px;">
+      {{filterCounts.golden_update}}
+    </span>
+  </button>
+</div>
+
+<!-- Bulk Actions Bar -->
+<div style="margin-bottom: 16px; padding: 12px; background: #f0f2f5; border-radius: 4px; display: flex; gap: 12px; align-items: center;" 
+     *ngIf="setOfCheckedId.size > 0">
+  <span>
+    <strong>{{ setOfCheckedId.size }}</strong> {{ 'items selected' | translate }}
+  </span>
+  <button nz-button nzType="primary" nzSize="small" (click)="showBulkApprove()">
+    <i nz-icon nzType="check-circle"></i>
+    {{ 'Bulk Approve as Active' | translate }}
+  </button>
+  <button nz-button nzDanger nzSize="small" (click)="showBulkBlock()">
+    <i nz-icon nzType="stop"></i>
+    {{ 'Bulk Block' | translate }}
+  </button>
+</div>
+
+<!-- Table -->
+<nz-table 
+  #basicTable 
+  [nzPageSize]="7" 
+  [nzData]="filtered || []" 
+  [nzLoading]="loading" 
+  [nzScroll]="{ x: '1400px' }">
+  
+  <thead>
+    <tr>
+      <th nzWidth="60px">
+        <input type="checkbox" 
+               [checked]="checked" 
+               [indeterminate]="indeterminate"
+               (change)="onAllChecked($event.target ? $any($event.target).checked : false)">
+      </th>
+      <th style="min-width:120px">{{ 'RequestID' | translate }}</th>
+      <th style="min-width:120px">{{ 'Origin' | translate }}</th>
+      <th style="min-width:200px">{{ 'Company Name' | translate }}</th>
+      <th style="min-width:150px">{{ 'Country / City' | translate }}</th>
+      <th style="min-width:140px">{{ 'Customer Type' | translate }}</th>
+      <th style="min-width:120px">{{ 'Submitted Date' | translate }}</th>
+      <th style="min-width:150px">{{ 'Actions' | translate }}</th>
+    </tr>
+  </thead>
+
+  <tbody>
+    <!-- Empty state row -->
+    <tr *ngIf="!loading && (!filtered || filtered.length === 0)">
+      <td colspan="8" style="text-align: center; padding: 40px;">
+        <nz-empty [nzNotFoundContent]="'No tasks pending compliance review' | translate"></nz-empty>
+      </td>
+    </tr>
+    
+    <!-- Data rows -->
+    <tr *ngFor="let row of basicTable.data">
+      <td>
+        <input type="checkbox" 
+               [checked]="setOfCheckedId.has((row.id || row.requestId) || '')" 
+               (change)="onItemChecked((row.id || row.requestId) || '', $event.target ? $any($event.target).checked : false)">
+      </td>
+      
+      <td>
+        <div style="display:flex; flex-direction:column;">
+          <span style="font-weight: 500;">#{{ row.requestId || row.id }}</span>
+          <nz-tag *ngIf="row.isMaster" nzColor="purple" style="margin-top:4px">
+            <i nz-icon nzType="crown"></i> Master
+          </nz-tag>
+        </div>
+      </td>
+      
+      <!-- Origin Column -->
+      <td>
+        <div style="display:flex; flex-direction:column; gap:4px;">
+          <nz-tag [nzColor]="getOriginColor(row)">
+            {{ getOriginBadge(row) }}
+          </nz-tag>
+          <small style="opacity:.7; font-size:11px">
+            {{ getRequestTypeLabel(row) }}
+          </small>
+        </div>
+      </td>
+      
+      <td>
+        <div style="display:flex; flex-direction:column;">
+          <strong>{{ row.firstName || 'غير محدد' }}</strong>
+          <small *ngIf="row.firstNameAr" style="opacity:.7">{{ row.firstNameAr }}</small>
+          <small *ngIf="row.tax" style="opacity:.7; margin-top:2px">
+            <i nz-icon nzType="number" style="margin-right:2px"></i>
+            Tax: {{ row.tax }}
+          </small>
+        </div>
+      </td>
+      
+      <td>{{ row.country || '-' }} / {{ row.city || '-' }}</td>
+      
+      <td>
+        <nz-tag [nzColor]="'default'">
+          {{ getCustomerTypeLabel(row.customerType || '') }}
+        </nz-tag>
+      </td>
+      
+      <td>{{ formatDate(row.submittedAt) }}</td>
+      
+      <td>
+        <div style="display: flex; gap: 8px;">
+          <button nz-button nzType="primary" nzSize="small" (click)="viewDetails(row)">
+            <i nz-icon nzType="eye"></i>
+            {{ "Review" | translate }}
+          </button>
+          <button nz-button nzType="default" nzSize="small" (click)="processSingle(row)">
+            <i nz-icon nzType="check"></i>
+            {{ "Process" | translate }}
+          </button>
+        </div>
+      </td>
+    </tr>
+  </tbody>
+</nz-table>
+
+<!-- Approve Modal -->
+<nz-modal
+  [(nzVisible)]="isApproveModalVisible"
+  [nzTitle]="'Process as Golden Record' | translate"
+  [nzFooter]="approveFooter"
+  [nzWidth]="520"
+  (nzOnCancel)="cancelApprove()">
+  
+  <ng-container *nzModalContent>
+    <div style="padding: 12px; background: #d1ecf1; border-left: 4px solid #0c5460; margin-bottom: 16px;">
+      <strong style="color: #0c5460;">Golden Record Creation</strong>
+      <p style="margin: 8px 0 0; color: #0c5460;">This record will become a Golden Record. Please choose the company status:</p>
+    </div>
+    
+    <div *ngIf="currentRow" style="margin-bottom: 16px; padding: 12px; background: #f0f2f5; border-radius: 4px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <small><strong>Company:</strong> {{ currentRow.firstName }}</small>
+        <nz-tag [nzColor]="getOriginColor(currentRow)">{{ getOriginBadge(currentRow) }}</nz-tag>
+      </div>
+      <small style="display:block">
+        <strong>Type:</strong> {{ getRequestTypeLabel(currentRow) }}
+      </small>
+      <small *ngIf="currentRow.tax" style="display:block; margin-top:4px">
+        <strong>Tax #:</strong> {{ currentRow.tax }}
+      </small>
+    </div>
+    
+    <div style="margin-top: 16px;">
+      <label>{{ "Note (Optional):" | translate }}</label>
+      <textarea
+        nz-input
+        [(ngModel)]="approveNote"
+        [placeholder]="'Enter approval note...' | translate"
+        rows="3"
+        style="width: 100%; margin-top: 8px;">
+      </textarea>
+    </div>
+  </ng-container>
+  
+  <ng-template #approveFooter>
+    <button nz-button nzType="default" (click)="cancelApprove()">
+      {{ 'Cancel' | translate }}
+    </button>
+    <button nz-button nzType="primary" (click)="processAsActive(currentRow ? [currentRow] : getSelectedRows())">
+      <i nz-icon nzType="check-circle"></i>
+      {{ 'Set as Active' | translate }}
+    </button>
+    <button nz-button nzDanger (click)="switchToBlockModal()">
+      <i nz-icon nzType="stop"></i>
+      {{ 'Set as Blocked' | translate }}
+    </button>
+  </ng-template>
+</nz-modal>
+
+<!-- Block Modal -->
+<nz-modal
+  [(nzVisible)]="isBlockModalVisible"
+  [nzTitle]="'Block Golden Record' | translate"
+  [nzOkText]="'Confirm Block' | translate"
+  [nzCancelText]="'Cancel' | translate"
+  [nzOkDanger]="true"
+  [nzOkLoading]="loading"
+  (nzOnOk)="confirmBlock()"
+  (nzOnCancel)="cancelBlock()">
+  
+  <ng-container *nzModalContent>
+    <div style="padding: 12px; background: #f8d7da; border-left: 4px solid #721c24; margin-bottom: 16px;">
+      <strong style="color: #721c24;">Block Golden Record</strong>
+      <p style="margin: 8px 0 0; color: #721c24;">This will create a blocked Golden Record. The company will not be able to transact.</p>
+    </div>
+    
+    <div *ngIf="currentRow" style="margin-bottom: 16px; padding: 12px; background: #fff2e8; border-radius: 4px;">
+      <div style="display: flex; justify-content: space-between; margin-bottom: 8px;">
+        <small><strong>Company:</strong> {{ currentRow.firstName }}</small>
+        <nz-tag [nzColor]="getOriginColor(currentRow)">{{ getOriginBadge(currentRow) }}</nz-tag>
+      </div>
+      <small style="display:block">
+        <strong>Type:</strong> {{ getRequestTypeLabel(currentRow) }}
+      </small>
+      <small *ngIf="currentRow.tax" style="display:block; margin-top:4px">
+        <strong>Tax #:</strong> {{ currentRow.tax }}
+      </small>
+    </div>
+    
+    <div *ngIf="!currentRow && setOfCheckedId.size > 0" style="margin-bottom: 16px;">
+      <div style="padding: 12px; background: #fff2e8; border-left: 4px solid #fa8c16;">
+        <strong style="color: #fa8c16;">Bulk Block: {{ setOfCheckedId.size }} records selected</strong>
+      </div>
+    </div>
+    
+    <div style="margin-top: 16px;">
+      <label style="color: #ff4d4f;">
+        <span style="color: red;">*</span> {{ "Block Reason (Required):" | translate }}
+      </label>
+      <textarea
+        nz-input
+        [(ngModel)]="blockReason"
+        [placeholder]="'Enter detailed reason for blocking this company...' | translate"
+        rows="4"
+        style="width: 100%; margin-top: 8px; border-color: #ff4d4f;"
+        required>
+      </textarea>
+      <small style="color: #8c8c8c; display: block; margin-top: 4px;">
+        This reason will be recorded in the audit trail and visible in reports.
+      </small>
+    </div>
+  </ng-container>
+</nz-modal>

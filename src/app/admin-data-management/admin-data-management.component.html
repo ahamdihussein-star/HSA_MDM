@@ -1,0 +1,185 @@
+<div class="data-management-page">
+  
+  <!-- Header -->
+  <div class="page-header">
+    <div class="header-content">
+      <button nz-button (click)="goBack()" class="back-btn">
+        <span nz-icon nzType="arrow-left"></span>
+        Back to Dashboard
+      </button>
+      <h1>
+        <span nz-icon nzType="database" nzTheme="outline"></span>
+        Data Management
+      </h1>
+      <button nz-button nzType="primary" (click)="loadStats()" [nzLoading]="loading">
+        <span nz-icon nzType="reload"></span>
+        Refresh
+      </button>
+    </div>
+  </div>
+
+  <!-- Loading Spinner -->
+  <nz-spin [nzSpinning]="loading" nzTip="Loading statistics...">
+    
+    <!-- Statistics Cards -->
+    <div nz-row [nzGutter]="[16, 16]" class="stats-section">
+      
+      <!-- Duplicate Records Card -->
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="8" [nzLg]="6">
+        <nz-card nzHoverable>
+          <nz-statistic
+            [nzValue]="stats.duplicateRecords"
+            nzTitle="Duplicate Records"
+            [nzPrefix]="duplicateTemplate">
+          </nz-statistic>
+          <ng-template #duplicateTemplate>
+            <span nz-icon nzType="copy" style="color: #1890ff;"></span>
+          </ng-template>
+          <div class="card-actions">
+            <button nz-button nzType="link" nzDanger 
+                    (click)="clearSpecificData('duplicates')"
+                    [disabled]="stats.duplicateRecords === 0">
+              Clear
+            </button>
+          </div>
+        </nz-card>
+      </div>
+
+      <!-- Quarantine Records Card -->
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="8" [nzLg]="6">
+        <nz-card nzHoverable>
+          <nz-statistic
+            [nzValue]="stats.quarantineRecords"
+            nzTitle="Quarantine Records"
+            [nzPrefix]="quarantineTemplate">
+          </nz-statistic>
+          <ng-template #quarantineTemplate>
+            <span nz-icon nzType="warning" style="color: #faad14;"></span>
+          </ng-template>
+          <div class="card-actions">
+            <button nz-button nzType="link" nzDanger 
+                    (click)="clearSpecificData('quarantine')"
+                    [disabled]="stats.quarantineRecords === 0">
+              Clear
+            </button>
+          </div>
+        </nz-card>
+      </div>
+
+      <!-- Golden Records Card -->
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="8" [nzLg]="6">
+        <nz-card nzHoverable>
+          <nz-statistic
+            [nzValue]="stats.goldenRecords"
+            nzTitle="Golden Records"
+            [nzPrefix]="goldenTemplate">
+          </nz-statistic>
+          <ng-template #goldenTemplate>
+            <span nz-icon nzType="star" style="color: #52c41a;"></span>
+          </ng-template>
+          <div class="card-actions">
+            <button nz-button nzType="link" nzDanger 
+                    (click)="clearSpecificData('golden')"
+                    [disabled]="stats.goldenRecords === 0">
+              Clear
+            </button>
+          </div>
+        </nz-card>
+      </div>
+
+      <!-- Total Requests Card -->
+      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="8" [nzLg]="6">
+        <nz-card nzHoverable>
+          <nz-statistic
+            [nzValue]="stats.totalRequests"
+            nzTitle="Total Requests"
+            [nzPrefix]="requestsTemplate">
+          </nz-statistic>
+          <ng-template #requestsTemplate>
+            <span nz-icon nzType="file-text" style="color: #722ed1;"></span>
+          </ng-template>
+          <div class="card-actions">
+            <button nz-button nzType="link" nzDanger 
+                    (click)="clearSpecificData('requests')"
+                    [disabled]="stats.totalRequests === 0">
+              Clear
+            </button>
+          </div>
+        </nz-card>
+      </div>
+
+    </div>
+
+    <!-- Generate Test Data Section -->
+    <div class="generate-data-section" style="margin-top: 30px;">
+      <nz-card>
+        <h2>
+          <span nz-icon nzType="experiment" style="color: #1890ff;"></span>
+          Generate Test Data
+        </h2>
+        
+        <nz-alert
+          nzType="info"
+          nzMessage="Test Data Generation"
+          nzDescription="Generate sample data for testing quarantine and duplicate record workflows"
+          nzShowIcon
+          style="margin-bottom: 20px;">
+        </nz-alert>
+
+        <div style="display: flex; gap: 15px; flex-wrap: wrap;">
+          <button nz-button nzType="primary" nzSize="large"
+                  (click)="generateQuarantineData()" 
+                  [nzLoading]="loading">
+            <span nz-icon nzType="plus-circle"></span>
+            Generate Quarantine Data
+          </button>
+          
+          <button nz-button nzType="primary" nzSize="large"
+                  (click)="generateDuplicateData()" 
+                  [nzLoading]="loading">
+            <span nz-icon nzType="copy"></span>
+            Generate Duplicate Data
+          </button>
+        </div>
+        
+        <p style="margin-top: 15px; color: #8c8c8c; font-size: 13px;">
+          <span nz-icon nzType="info-circle"></span>
+          This will create sample records for testing purposes.
+        </p>
+      </nz-card>
+    </div>
+
+    <!-- Danger Zone -->
+    <div class="danger-zone" style="margin-top: 30px;">
+      <nz-card style="border: 2px solid #ffccc7;">
+        <h2>
+          <span nz-icon nzType="warning" nzTheme="twotone" [nzTwotoneColor]="'#ff4d4f'"></span>
+          Danger Zone
+        </h2>
+        
+        <nz-alert
+          nzType="warning"
+          nzMessage="Warning"
+          nzDescription="These actions are permanent and cannot be undone!"
+          nzShowIcon
+          style="margin-bottom: 20px;">
+        </nz-alert>
+
+        <div class="danger-actions">
+          <button nz-button nzType="primary" nzDanger nzSize="large"
+                  (click)="openConfirmModal()"
+                  [disabled]="loading">
+            <span nz-icon nzType="delete"></span>
+            Clear All Data
+          </button>
+          
+          <p class="danger-note" style="margin-top: 15px; color: #8c8c8c;">
+            This will delete all records, requests, and related data.<br>
+            User accounts will be preserved.
+          </p>
+        </div>
+      </nz-card>
+    </div>
+
+  </nz-spin>
+</div>

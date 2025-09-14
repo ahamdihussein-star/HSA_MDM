@@ -1,32 +1,35 @@
-import { NgModule } from "@angular/core";
-import { RouterModule, Routes } from "@angular/router";
+// src/app/app-routing.module.ts
+
+import { NgModule } from '@angular/core';
+import { RouterModule, Routes } from '@angular/router';
 
 const routes: Routes = [
+  // Login (lazy)
   {
     path: "",
     loadChildren: () =>
       import("./login/login.module").then((m) => m.LoginModule),
   },
+
+  // Dashboard shell + كل الصفحات الداخلية كـ children داخل DashboardRoutingModule
   {
-    path: "dashboard/:page",
+    path: "dashboard",
     loadChildren: () =>
       import("./dashboard/dashboard.module").then((m) => m.DashboardModule),
   },
-  { path: 'golden-requests', loadChildren: () => import('./golden-requests/golden-requests.module').then(m => m.GoldenRequestsModule) },
-  { path: 'my-requests', loadChildren: () => import('./my-requests/my-requests.module').then(m => m.MyRequestsModule) },
-  { path: 'home', loadChildren: () => import('./home/home.module').then(m => m.HomeModule) },
-  { path: 'ai-assistant', loadChildren: () => import('./ai-assistant/ai-assistant.module').then(m => m.AiAssistantModule) },
-  {
-    path: "dashboard/new-request/:id",
-    loadChildren: () =>
-      import("./dashboard/dashboard.module").then((m) => m.DashboardModule),
-  },
-  { path: 'my-task-list', loadChildren: () => import('./my-task-list/my-task-list.module').then(m => m.MyTaskListModule) },
-  { path: 'data-lineage', loadChildren: () => import('./data-lineage/data-lineage.module').then(m => m.DataLineageModule) },
-  { path: 'admin-task-list', loadChildren: () => import('./admin-task-list/admin-task-list.module').then(m => m.AdminTaskListModule) },
-  { path: 'duplicate-records', loadChildren: () => import('./duplicate-records/duplicate-records.module').then(m => m.DuplicateRecordsModule) },
-  { path: 'duplicate-customer', loadChildren: () => import('./duplicate-customer/duplicate-customer.module').then(m => m.DuplicateCustomerModule) },
-  { path: 'rejected', loadChildren: () => import('./rejected/rejected.module').then(m => m.RejectedModule) },
+
+  // ====== Redirects قديمة إلى المسارات الجديدة تحت /dashboard ======
+  { path: "my-task-list", redirectTo: "dashboard/my-task", pathMatch: "full" },
+  { path: "admin-task-list", redirectTo: "dashboard/admin-task-list", pathMatch: "full" },
+  { path: "golden-requests", redirectTo: "dashboard/golden-requests", pathMatch: "full" },
+  { path: "my-requests", redirectTo: "dashboard/my-requests", pathMatch: "full" },
+  { path: "data-lineage", redirectTo: "dashboard/data-lineage", pathMatch: "full" },
+  { path: "duplicate-records", redirectTo: "dashboard/duplicate-records", pathMatch: "full" },
+  { path: "duplicate-customer", redirectTo: "dashboard/duplicate-customer", pathMatch: "full" },
+  { path: "rejected", redirectTo: "dashboard/rejected", pathMatch: "full" },
+
+  // Fallback
+  { path: "**", redirectTo: "" }
 ];
 
 @NgModule({

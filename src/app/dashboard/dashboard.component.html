@@ -1,136 +1,228 @@
-<app-header></app-header>
-<div class="dashboardContainer mainPageMargin">
-  <div class="dashboardNavigation">
-    <div *ngIf="user == '1'">
-      <p class="navTab" [routerLink]="['/dashboard', 'my-task']"
-        [ngClass]="[router.url == '/dashboard/my-task' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/my-task'" src="assets/img/homeGrey.svg" alt="Home Icon" class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/my-task'" src="assets/img/homeYellow.svg" alt="Home Icon"
-          class="navIcon" />
+<!-- Loading Spinner while fetching user data from API -->
+<div *ngIf="isLoading" class="loading-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center;">
+ <nz-spin nzTip="Loading user data..." [nzSpinning]="true" nzSize="large"></nz-spin>
+</div>
 
-        {{ "MyTaskList" | translate }}
-      </p>
-       <p class="navTab" [routerLink]="['/dashboard', 'golden-requests']"
-        [ngClass]="[router.url == '/dashboard/golden-requests' || router.url == '/dashboard/data-lineage'  ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/golden-requests' && router.url != '/dashboard/data-lineage'" src="assets/img/goldenGrey.svg" alt="Home Icon"
-          class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/golden-requests' ||router.url == '/dashboard/data-lineage'" src="assets/img/goldenYellow.svg" alt="Home Icon"
-          class="navIcon" />
-        {{ "GoldenRequests" | translate }}
-      </p>
-      <p class="navTab" [routerLink]="['/dashboard', 'my-requests']"
-        [ngClass]="[router.url == '/dashboard/my-requests' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/my-requests'" src="assets/img/MyRequestsGrey.svg" alt="Home Icon"
-          class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/my-requests'" src="assets/img/MyRequestsYellow.svg" alt="Home Icon"
-          class="navIcon" />
-        {{ "MyRequests" | translate }}
-      </p>
-    </div>
-    <div *ngIf="user == '2'">
-      <p class="navTab" [routerLink]="['/dashboard', 'admin-task-list']"
-        [ngClass]="[router.url == '/dashboard/admin-task-list' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/admin-task-list'" src="assets/img/homeGrey.svg" alt="quarantined Icon"
-          class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/admin-task-list'" src="assets/img/homeYellow.svg" alt="quarantined Icon"
-          class="navIcon" />
-        {{ "MyTaskList" | translate }}
-      </p>
-      <!-- <p class="navTab" [routerLink]="['/dashboard', 'quarantined-requests']"
-        [ngClass]="[router.url == '/dashboard/quarantined-requests' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/quarantined-requests'" src="assets/img/quarantinedGrey.svg"
-          alt="quarantined Icon" class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/quarantined-requests'" src="assets/img/quarantinedYellow.svg"
-          alt="quarantined Icon" class="navIcon" />
-        {{ "QuarantinedRequests" | translate }}
-      </p> -->
-      <p class="navTab" [routerLink]="['/dashboard', 'golden-requests']"
-        [ngClass]="[router.url == '/dashboard/golden-requests' || router.url == '/dashboard/data-lineage'  ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/golden-requests' && router.url != '/dashboard/data-lineage'" src="assets/img/goldenGrey.svg" alt="Home Icon"
-          class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/golden-requests' ||router.url == '/dashboard/data-lineage'" src="assets/img/goldenYellow.svg" alt="Home Icon"
-          class="navIcon" />
-        {{ "GoldenRecords" | translate }}
-      </p>
-      <p class="navTab" [routerLink]="['/dashboard', 'duplicate-requests']" [ngClass]="[router.url == '/dashboard/duplicate-requests' || 
-        router.url == '/dashboard/duplicate-customer'  ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/duplicate-requests' &&
-        router.url != '/dashboard/duplicate-customer'" src="assets/img/duplicateGrey.svg" alt="Home Icon"
-          class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/duplicate-requests' || 
-        router.url == '/dashboard/duplicate-customer'" src="assets/img/duplicateYellow.svg" alt="Home Icon"
-          class="navIcon" />
-        {{ "DuplicateRecords" | translate }}
-      </p>
-      <p class="navTab" [routerLink]="['/dashboard', 'rejected']"
-        [ngClass]="[router.url == '/dashboard/rejected' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/rejected'" src="assets/img/rejectedGrey.svg" alt="rejected Icon"
-          class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/rejected'" src="assets/img/rejectedYellow.svg"
-          alt="rejected Icon" class="navIcon" />
-        {{ "RejectedRecords" | translate }}
-      </p>
-      <!-- <p class="navTab" [routerLink]="['/dashboard', 'pending-requests']"
-        [ngClass]="[router.url == '/dashboard/pending-requests' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/pending-requests'" src="assets/img/pendingGrey.svg" alt="pending Icon"
-          class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/pending-requests'" src="assets/img/pendingYellow.svg" alt="pending Icon"
-          class="navIcon" />
-        {{ "PendingRequests" | translate }}
-      </p> -->
-      <p class="navTab" [routerLink]="['/dashboard', 'home']"
-        [ngClass]="[router.url == '/dashboard/home' ? 'activeTab' : '']">
-        <img *ngIf="router.url != '/dashboard/home'" src="assets/img/dashboardGray.svg" alt="Home Icon"
-          class="navIcon" />
-        <img *ngIf="router.url == '/dashboard/home'" src="assets/img/dashboardYellow.svg" alt="Home Icon"
-          class="navIcon" />
-        {{ "Dashboard" | translate }}
-      </p>
-    </div>
-  </div>
-  <div class="dashboardContent">
-    <!-- ==== user1 ==== -->
-    <div *ngIf="user == '1'">
-      <app-ai-assistant></app-ai-assistant>
-    </div>
+<!-- Main Content - Shows after loading -->
+<div *ngIf="!isLoading">
+ <app-header></app-header>
+ <div class="dashboardContainer mainPageMargin">
+   <div class="dashboardNavigation">
+     <!-- ==== user1 (Data Entry) ==== -->
+     <div *ngIf="user == '1'">
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'my-task-list']"
+          [ngClass]="[router.url.startsWith('/dashboard/my-task') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/my-task')" src="assets/img/homeGrey.svg" alt="Home Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/my-task')" src="assets/img/homeYellow.svg" alt="Home Icon" class="navIcon" />
+         {{ "MyTaskList" | translate }}
+       </p>
 
-    <div *ngIf="router.url == '/dashboard/my-task'">
-      <app-my-task-list></app-my-task-list>
-    </div>
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'golden-requests']"
+          [ngClass]="[router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/golden-requests') && !router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenGrey.svg" alt="Home Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenYellow.svg" alt="Home Icon" class="navIcon" />
+         {{ "GoldenRequests" | translate }}
+       </p>
 
-    <!-- ==== user2 ==== -->
-    <!-- <div *ngIf="router.url == '/dashboard/quarantined-requests'">
-      <app-quarantined-requests></app-quarantined-requests>
-    </div> -->
-    
-    <div *ngIf="router.url.includes('/dashboard/new-request')">
-      <app-new-request></app-new-request>
-    </div>
-    <div *ngIf="router.url == '/dashboard/my-requests'">
-      <app-my-requests></app-my-requests>
-    </div>
-    <div *ngIf="router.url == '/dashboard/home'">
-      <app-home></app-home>
-    </div>
-    <div *ngIf="router.url == '/dashboard/admin-task-list'">
-      <app-admin-task-list></app-admin-task-list>
-    </div>
-    <div *ngIf="router.url == '/dashboard/duplicate-requests'">
-      <app-duplicate-records></app-duplicate-records>
-    </div>
-    <div *ngIf="router.url == '/dashboard/rejected'">
-      <app-rejected></app-rejected>
-    </div>
-    <div *ngIf="router.url == '/dashboard/duplicate-customer'">
-      <app-duplicate-customer></app-duplicate-customer>
-    </div>
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'quarantine']"
+          [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" alt="Quarantine Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" alt="Quarantine Icon" class="navIcon" />
+         Quarantine
+       </p>
 
-    <!-- commen in the 2 users  -->
-     <div *ngIf="router.url == '/dashboard/golden-requests'">
-      <app-golden-requests></app-golden-requests>
-    </div>
-    <div *ngIf="router.url == '/dashboard/data-lineage'">
-      <app-data-lineage></app-data-lineage>
-    </div>
-  </div>
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'duplicate-records']"
+          [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') || router.url.startsWith('/dashboard/duplicate-customer') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/duplicate-records') && !router.url.startsWith('/dashboard/duplicate-customer')" src="assets/img/duplicateGrey.svg" alt="Duplicate Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/duplicate-records') || router.url.startsWith('/dashboard/duplicate-customer')" src="assets/img/duplicateYellow.svg" alt="Duplicate Icon" class="navIcon" />
+         {{ "DuplicateRecords" | translate }}
+       </p>
+     </div>
+
+     <!-- ==== user2 (Master/Reviewer) ==== -->
+     <div *ngIf="user == '2'">
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'admin-task-list']"
+          [ngClass]="[router.url.startsWith('/dashboard/admin-task-list') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeGrey.svg" alt="quarantined Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeYellow.svg" alt="quarantined Icon" class="navIcon" />
+         {{ "MyTaskList" | translate }}
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'golden-requests']"
+          [ngClass]="[router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/golden-requests') && !router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenGrey.svg" alt="Home Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenYellow.svg" alt="Home Icon" class="navIcon" />
+         {{ "GoldenRecords" | translate }}
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'home']"
+          [ngClass]="[router.url.startsWith('/dashboard/home') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/home')" src="assets/img/dashboardGray.svg" alt="Home Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/home')" src="assets/img/dashboardYellow.svg" alt="Home Icon" class="navIcon" />
+         {{ "Dashboard" | translate }}
+       </p>
+     </div>
+
+     <!-- ==== user3 (Compliance) ==== -->
+     <div *ngIf="user == '3'">
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'compliance-task-list']"
+          [ngClass]="[router.url.startsWith('/dashboard/compliance-task-list') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeGrey.svg" alt="compliance Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeYellow.svg" alt="compliance Icon" class="navIcon" />
+         {{ "Compliance Tasklist" | translate }}
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'golden-requests']"
+          [ngClass]="[router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/golden-requests') && !router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenGrey.svg" alt="Home Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenYellow.svg" alt="Home Icon" class="navIcon" />
+         {{ "GoldenRecords" | translate }}
+       </p>
+     </div>
+
+     <!-- ==== user4 (System Admin) ==== -->
+     <div *ngIf="user == '4' || isAdmin">
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'data-management']"
+          [ngClass]="[router.url.startsWith('/dashboard/data-management') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardGray.svg" alt="Data Management" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardYellow.svg" alt="Data Management" class="navIcon" />
+         Data Management
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'golden-requests']"
+          [ngClass]="[router.url.startsWith('/dashboard/golden-requests') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenGrey.svg" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenYellow.svg" class="navIcon" />
+         Golden Records
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'duplicate-records']"
+          [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+         All Duplicates
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'quarantine']"
+          [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+         All Quarantine
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'admin-task-list']"
+          [ngClass]="[router.url.startsWith('/dashboard/admin-task-list') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeGrey.svg" alt="Task List Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeYellow.svg" alt="Task List Icon" class="navIcon" />
+         Reviewer Tasks
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'compliance-task-list']"
+          [ngClass]="[router.url.startsWith('/dashboard/compliance-task-list') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeGrey.svg" alt="Compliance Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeYellow.svg" alt="Compliance Icon" class="navIcon" />
+         Compliance Tasks
+       </p>
+     </div>
+
+     <!-- ==== demo-admin ==== -->
+     <div *ngIf="user === 'demo-admin' || isDemoAdmin">
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'demo-admin']"
+          [ngClass]="[router.url.startsWith('/dashboard/demo-admin') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/demo-admin')" src="assets/img/dashboardGray.svg" alt="Demo Admin" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/demo-admin')" src="assets/img/dashboardYellow.svg" alt="Demo Admin" class="navIcon" />
+         Demo Admin
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'data-management']"
+          [ngClass]="[router.url.startsWith('/dashboard/data-management') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardGray.svg" alt="Data Management" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardYellow.svg" alt="Data Management" class="navIcon" />
+         Data Management
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'admin-task-list']"
+          [ngClass]="[router.url.startsWith('/dashboard/admin-task-list') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeGrey.svg" alt="Task List Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeYellow.svg" alt="Task List Icon" class="navIcon" />
+         {{ "ReviewerTasks" | translate }}
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'compliance-task-list']"
+          [ngClass]="[router.url.startsWith('/dashboard/compliance-task-list') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeGrey.svg" alt="Compliance Icon" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeYellow.svg" alt="Compliance Icon" class="navIcon" />
+         {{ "ComplianceTasks" | translate }}
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'golden-requests']"
+          [ngClass]="[router.url.startsWith('/dashboard/golden-requests') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenGrey.svg" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenYellow.svg" class="navIcon" />
+         Golden Records
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'duplicate-requests']"
+          [ngClass]="[router.url.startsWith('/dashboard/duplicate-requests') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/duplicate-requests')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/duplicate-requests')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+         Duplicate Records
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'quarantine']"
+          [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+         Quarantine
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'new-request']"
+          [ngClass]="[router.url.includes('/new-request') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.includes('/new-request')" src="assets/img/addGrey.svg" alt="New Request Icon" class="navIcon" />
+         <img *ngIf="router.url.includes('/new-request')" src="assets/img/addYellow.svg" alt="New Request Icon" class="navIcon" />
+         {{ "NewRequest" | translate }}
+       </p>
+     </div>
+
+     <!-- User Info Section -->
+     <div class="user-info-section" style="margin-top: auto; padding: 20px; border-top: 1px solid #e8e8e8;">
+       <div class="user-role">
+         <span style="color: #8c8c8c; font-size: 12px;">Logged in as:</span>
+         <div style="font-weight: 600; margin-top: 4px;">{{ getUserRoleName() }}</div>
+       </div>
+       <button nz-button nzType="text" nzDanger (click)="logout()" style="margin-top: 10px; width: 100%;">
+         <span nz-icon nzType="logout"></span>
+         {{ "Logout" | translate }}
+       </button>
+     </div>
+   </div>
+
+   <div class="dashboardContent">
+     <!-- Router outlet for child components -->
+     <router-outlet></router-outlet>
+   </div>
+ </div>
 </div>

@@ -4,7 +4,6 @@
 
 .subMessage {
     margin: 10px 0 30px;
-
     color: #6c757d;
 }
 
@@ -35,7 +34,6 @@
     img {
         cursor: pointer;
     }
-
 }
 
 .iconSpacing {
@@ -56,8 +54,6 @@
     border-radius: 10px;
 }
 
-
-
 .popupText {
     max-width: 80%;
     color: #99959E;
@@ -70,8 +66,6 @@
     color: #99959E;
     font-size: 14px;
 }
-
-
 
 .checkboxHolder {
     display: flex;
@@ -136,14 +130,14 @@
 .ant-input {
     resize: none;
 }
- // modal style//
+
+// modal style//
 .ant-modal {
     width: 445px;
 }
 
 .ant-modal-content {
     border-radius: 20px !important;
-    /* or whatever value you want */
 }
 
 .ant-modal-header {
@@ -166,6 +160,7 @@
     border-radius: 50%;
     text-align: center !important;
 }
+
 .ant-modal-footer {
     display: none;
 }
@@ -183,10 +178,12 @@
     justify-content: center;
     margin-top: 15px;
 }
+
 .ant-modal-header {
     border: none !important;
 }
 //modal stye//
+
 textarea.ant-input {
     min-height: 141px;   
     border: 1px solid #2323231A;
@@ -249,21 +246,231 @@ textarea.ant-input {
 
 .approveBtn {
     background-color: #0DB919;
-
 }
 
 .deleteBtn {
     background-color: #EF4444;
+}
 
+/* NEW: Reject button style */
+.rejectBtn {
+    background-color: #ff4d4f;
 }
 
 .dFelx {
     display: flex;
 }
+
 .popupImg{
     width: 98px;
     margin-bottom: 25px;
 }
+
 .margintop {
   margin-top: 15px;
+}
+
+/* ==== NEW STYLES FOR DUPLICATE FEATURES ==== */
+
+/* Request ID Container */
+.request-id-container {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+/* Duplicate Badge */
+.duplicate-badge {
+    font-size: 11px !important;
+    padding: 2px 6px !important;
+    border-radius: 4px !important;
+    margin: 0 !important;
+    white-space: nowrap;
+}
+
+/* Type Container */
+.type-container {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+/* Confidence Badge */
+.confidence-badge {
+    font-size: 10px !important;
+    padding: 1px 4px !important;
+    border-radius: 3px !important;
+    margin: 0 !important;
+    align-self: flex-start;
+}
+
+/* Source Badge */
+.source-badge {
+    font-size: 11px !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    margin: 0 !important;
+}
+
+/* Status Badge */
+.status-badge {
+    font-size: 12px !important;
+    padding: 2px 8px !important;
+    border-radius: 4px !important;
+    margin: 0 !important;
+    display: inline-flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+}
+
+/* Company Name Container */
+.name-container {
+    display: flex;
+    flex-direction: column;
+    gap: 2px;
+}
+
+.name-container .arabic-name {
+    color: #8c8c8c;
+    font-size: 12px;
+    font-style: italic;
+    direction: rtl;
+    text-align: right;
+}
+
+/* Statistics Summary */
+.statistics-summary {
+    display: flex;
+    gap: 24px;
+    margin-top: 16px;
+    padding: 16px;
+    background: #fafafa;
+    border-radius: 6px;
+    border: 1px solid #f0f0f0;
+}
+
+.statistics-summary .ant-statistic {
+    text-align: center;
+    flex: 1;
+}
+
+.statistics-summary .ant-statistic-title {
+    font-size: 12px !important;
+    color: #8c8c8c !important;
+    margin-bottom: 4px !important;
+}
+
+.statistics-summary .ant-statistic-content {
+    font-size: 24px !important;
+    font-weight: 600 !important;
+}
+
+/* Loading Container */
+.loading-container {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    justify-content: center;
+    padding: 60px 20px;
+    gap: 16px;
+}
+
+.loading-container p {
+    color: #8c8c8c;
+    margin: 0;
+}
+
+/* Enhanced Action Holder for new icons */
+.actionHolder img[src*="check"] {
+    filter: brightness(0) saturate(100%) invert(27%) sepia(96%) saturate(3207%) hue-rotate(130deg) brightness(95%) contrast(80%);
+}
+
+.actionHolder img[src*="close"] {
+    filter: brightness(0) saturate(100%) invert(15%) sepia(91%) saturate(7471%) hue-rotate(3deg) brightness(98%) contrast(96%);
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .statistics-summary {
+        flex-direction: column;
+        gap: 16px;
+    }
+    
+    .actionHolderTitle {
+        flex-direction: column;
+        gap: 12px;
+        align-items: stretch;
+    }
+    
+    .seachInputHolder {
+        width: 100%;
+    }
+    
+    .request-id-container {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 4px;
+    }
+}
+
+/* Table enhancements */
+.ant-table-tbody > tr > td {
+    vertical-align: top !important;
+    padding: 12px 16px !important;
+}
+
+.ant-table-thead > tr > th {
+    background-color: #fafafa !important;
+    font-weight: 600 !important;
+    color: #262626 !important;
+}
+
+/* Tooltip customizations */
+.ant-tooltip-inner {
+    font-size: 12px;
+    padding: 6px 8px;
+}
+
+/* Tag customizations for better visibility */
+.ant-tag {
+    margin: 0 !important;
+    border: none !important;
+    font-weight: 500 !important;
+}
+
+/* Custom colors for different source systems */
+.ant-tag-blue {
+    background-color: #e6f7ff !important;
+    color: #1890ff !important;
+}
+
+.ant-tag-red {
+    background-color: #fff2f0 !important;
+    color: #ff4d4f !important;
+}
+
+.ant-tag-orange {
+    background-color: #fff7e6 !important;
+    color: #fa8c16 !important;
+}
+
+.ant-tag-gray {
+    background-color: #f5f5f5 !important;
+    color: #8c8c8c !important;
+}
+
+.ant-tag-purple {
+    background-color: #f9f0ff !important;
+    color: #722ed1 !important;
+}
+
+.ant-tag-green {
+    background-color: #f6ffed !important;
+    color: #52c41a !important;
+}
+
+.ant-tag-gold {
+    background-color: #fffbe6 !important;
+    color: #faad14 !important;
 }

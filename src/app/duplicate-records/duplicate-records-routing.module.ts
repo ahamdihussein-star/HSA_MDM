@@ -1,6 +1,9 @@
+
+
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { DuplicateRecordsComponent } from './duplicate-records.component';
+import { Router } from "@angular/router";
 
 const routes: Routes = [{ path: '', component: DuplicateRecordsComponent }];
 
@@ -8,4 +11,7 @@ const routes: Routes = [{ path: '', component: DuplicateRecordsComponent }];
   imports: [RouterModule.forChild(routes)],
   exports: [RouterModule]
 })
-export class DuplicateRecordsRoutingModule { }
+export class DuplicateRecordsRoutingModule {
+    constructor() {
+    }
+ }

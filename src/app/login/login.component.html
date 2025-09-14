@@ -15,30 +15,30 @@
         (ngSubmit)="onSubmit()"
         class="form_holder"
       >
+        <!-- Changed from email to username -->
         <nz-form-item class="input_holder_full-width">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="price" nzRequired>
-            {{ "Email" | translate }}
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="username" nzRequired>
+            {{ "Username" | translate }}
           </nz-form-label>
           <nz-form-control
             [nzSm]="24"
             [nzXs]="24"
-            [nzErrorTip]="'EmailRequired' | translate"
+            [nzErrorTip]="'UsernameRequired' | translate"
           >
             <input
               nz-input
-              id="email"
-              formControlName="email"
-              placeholder="johndoe@email.com"
-              pattern='^(([^<>()[\]\\.,;:\s@"]+(\.[^<>()[\]\\.,;:\s@"]+)*)|(".+"))@((\[[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\.[0-9]{1,3}\])|(([a-zA-Z\-0-9]+\.)+[a-zA-Z]{2,}))$'
-
+              id="username"
+              formControlName="username"
+              placeholder="{{ 'EnterUsername' | translate }}"
+              autocomplete="username"
             />
           </nz-form-control>
         </nz-form-item>
 
         <nz-form-item class="input_holder_full-width">
-          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="password" nzRequired>{{
-            "Password" | translate
-          }}</nz-form-label>
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="password" nzRequired>
+            {{ "Password" | translate }}
+          </nz-form-label>
           <nz-form-control
             [nzSm]="24"
             [nzXs]="24"
@@ -51,20 +51,43 @@
               (keyup.enter)="onSubmit()"
               formControlName="password"
               placeholder="{{ 'EnterYourPassword' | translate }}"
+              autocomplete="current-password"
             />
           </nz-form-control>
         </nz-form-item>
 
-        <div class="btnBox">
-          <button  class="Primary_fill" nz-button>
+        <!-- Loading spinner while authenticating -->
+        <nz-spin *ngIf="loading" nzTip="Authenticating..." style="margin: 20px 0;">
+          <div style="height: 40px;"></div>
+        </nz-spin>
+
+        <div class="btnBox" *ngIf="!loading">
+          <button class="Primary_fill" nz-button [disabled]="!loginForm.valid || loading">
             {{ "Login" | translate }}
           </button>
         </div>
       </form>
 
-      <a class="forgotPassword" href="#">{{"ForgotPassword"|translate}}</a>
+      <!-- Demo credentials hint -->
+      <div style="margin-top: 30px; padding: 15px; background: #f0f2f5; border-radius: 8px; font-size: 12px;">
+        <p style="margin: 0 0 10px 0; font-weight: 600; color: #666;">{{ "Demo Credentials" | translate }}:</p>
+        <div style="display: grid; gap: 8px; color: #888;">
+          <div>
+            <strong>Data Entry:</strong> data_entry / pass123
+          </div>
+          <div>
+            <strong>Reviewer:</strong> reviewer / pass123
+          </div>
+          <div>
+            <strong>Compliance:</strong> compliance / pass123
+          </div>
+          <div>
+            <strong>Admin:</strong> admin / admin123
+          </div>
+        </div>
+      </div>
+
+      <a class="forgotPassword" href="#" style="display: none;">{{ "ForgotPassword" | translate }}</a>
     </div>
   </div>
-
-
 </div>

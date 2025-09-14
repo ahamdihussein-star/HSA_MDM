@@ -1,52 +1,66 @@
-
-
+<!-- زر عائم لفتح / إغلاق الشات -->
 <img
   src="assets/img/ChatBotButton.svg"
-  alt="AI Assistant"
+  alt="HSA Master Data Assistant"
   class="chat-float-button"
   (click)="toggleChat()"
 />
 
-<!-- Chat Box -->
+<!-- صندوق الدردشة -->
 <div class="chat-box" *ngIf="isChatOpen">
+  <!-- الرأس -->
   <div class="chat-header">
     <p>
-      <img src="assets/img/aiIcon.svg" alt="AI Assistant" class="bot-avatar" />
-      <span>{{"AIAssistant"|translate}}</span>
+      <img src="assets/img/aiIcon.svg" class="bot-avatar" />
+      <span>{{ 'AIAssistant' | translate }}</span>
     </p>
-    
     <button class="close-btn" (click)="toggleChat()">×</button>
   </div>
-  <div class="chat-body" #chatContainer>
-    <!-- <div *ngFor="let message of messages" [ngClass]="message.from === 'user' ? 'user-message' : 'bot-message'">
-          <img *ngIf="message.from === 'bot'" src="assets/img/aiIcon.svg" alt="AI Assistant" class="bot-avatar" />
 
-      {{ message.text }}
-    </div> -->
-    <div
-      class="chat-message"
-      *ngFor="let message of messages"
-      [ngClass]="message.from === 'bot' ? '' : 'user-reverse'"
-    >
-      <img
-        *ngIf="message.from === 'bot'"
-        src="assets/img/aiIcon.svg"
-        alt="AI Assistant"
-        class="bot-avatar"
-      />
-      <div [ngClass]="message.from === 'bot' ? 'bot-message' : 'user-message'">
-        {{ message.text | translate }}
+  <!-- جسم الرسائل -->
+  <div class="chat-body" #chatContainer>
+    <!-- رسائل -->
+    <ng-container *ngFor="let m of messages">
+      <!-- فقاعة بوت -->
+      <div class="chat-message" *ngIf="m.from==='bot'">
+        <img src="assets/img/aiIcon.svg" class="bot-avatar" />
+        <!-- إذا كانت رسالة طلب مستند نجعل الفقاعة قابلة للنقر -->
+        <div
+          [ngClass]="'bot-message'"
+          (click)="m.text.startsWith('📑') ? fileInput.click() : null"
+          style="cursor: pointer;"
+        >
+          {{ m.text }}
+        </div>
       </div>
-    </div>
+
+      <!-- فقاعة مستخدم -->
+      <div class="chat-message user-reverse" *ngIf="m.from==='user'">
+        <div class="user-message">{{ m.text }}</div>
+      </div>
+    </ng-container>
   </div>
+
+  <!-- قدم الشات -->
   <div class="chat-footer">
     <input
       [(ngModel)]="currentInput"
-      (keydown.enter)="sendMessage()"
-      placeholder="{{'WriteSomething'|translate}}"
+      (keydown.enter)="send()"
+      [placeholder]="'WriteSomething' | translate"
     />
-    <button (click)="sendMessage()">
-      <img src="assets/img/send.svg" alt="send">
+    <button (click)="send()">
+      <img src="assets/img/send.svg" alt="send" />
     </button>
+    <!-- زر 📂 احتياطي يُظهر أثناء انتظار ملف -->
+    <button
+      *ngIf="awaitingFile"
+      class="upload-btn"
+      title="Upload"
+      (click)="fileInput.click()"
+    >📂</button>
   </div>
 </div>
+
+<!-- input خفي لاختيار الملفات -->
+<input #fileInput type="file" style="display:none"
+       (change)="onFileSelected($event)" />

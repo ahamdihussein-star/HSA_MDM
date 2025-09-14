@@ -1,169 +1,196 @@
 <h3 class="welcomeMessage">
-    {{"WelcomeBack" | translate}}, Ahmed!
-    <img src="assets/img/waving.svg" alt="Welcome Icon" class="welcomeIcon" />
+  {{ "WelcomeBack" | translate }}, {{ "Ahmed" | translate }}!
+  <img src="assets/img/waving.svg" alt="Welcome Icon" class="welcomeIcon" />
 </h3>
-<p class="subMessage">{{"HereIsYourTasksForToday"|translate}}</p>
-<div class="titleActionHolder">
-    <h1 class="pageTitle">
-        {{ "MyTaskList" | translate }}
-    </h1>
-    <div class="actionHolderTitle">
-        <!-- Only Pending -->
-        <div class="dFelx" *ngIf="onlyPending()">
-            <button class="deleteBtn actionBtn" (click)="deleteRows()"><img src="./assets/img/redTrash.svg" alt="">{{ "Delete" | translate
-                }}</button>
-            <button class="approveBtn actionBtn"><img src="./assets/img/verify.svg" alt="">{{ "Approve" | translate
-                }}</button>
-        </div>
-        <!-- Only Quarantined -->
-        <div class="dFelx" *ngIf="onlyQuarantined()">
-            <button class="deleteBtn actionBtn" (click)="deleteRows()"><img src="./assets/img/redTrash.svg" alt="">{{ "Delete" | translate
-                }}</button>
-            <button class="approveBtn actionBtn" (click)="showAssignModal()"><img src="./assets/img/verify.svg" alt="">
-                {{ "AssignTo" | translate }}
-            </button>
-        </div>
-        <!-- Mixed -->
-        <div *ngIf="mixedStatuses()">
-            <button class="deleteBtn actionBtn"(click)="deleteRows()"><img src="./assets/img/redTrash.svg" alt="">{{ "Delete" | translate
-                }}</button>
-        </div>
-        <div class="seachInputHolder">
-            <img src="./assets/img/search.svg" alt="">
-            <input type="text" [placeholder]="'Search' | translate">
-        </div>
-        <img src="./assets/img/filter.svg" alt="">
-    </div>
+<p class="subMessage">{{ "HereIsYourTasksForToday" | translate }}</p>
+
+<!-- Loading State -->
+<div *ngIf="loading" class="loading-container">
+  <nz-spin nzSize="large"></nz-spin>
+  <p>Loading tasks...</p>
 </div>
 
-<div>
+<!-- Error State -->
+<nz-alert *ngIf="error" [nzMessage]="error" nzType="error" nzShowIcon></nz-alert>
 
+<!-- Main Content -->
+<div *ngIf="!loading && !error">
+  <div class="titleActionHolder">
+    <h1 class="pageTitle">{{ "ReviewerTaskList" | translate }}</h1>
 
-
-    <nz-table #basicTable [nzPageSize]="7" [nzData]="taskList">
-        <thead>
-            <tr>
-                <th [(nzChecked)]="checked" [nzIndeterminate]="indeterminate" (nzCheckedChange)="onAllChecked($event)">
-                </th>
-                <th>{{"RequestID"|translate}}</th>
-                <th>{{"RequestType"|translate}}</th>
-                <th>{{"Date"|translate}}</th>
-                <th>{{"status"|translate}}</th>
-                <th>{{"Action"|translate}}</th>
-            </tr>
-        </thead>
-        <tbody>
-            <tr *ngFor="let data of basicTable.data; let i = index">
-                <td [nzChecked]="setOfCheckedId.has(data.id)"
-                    (nzCheckedChange)="onItemChecked(data.id,data.status, $event)"></td>
-                <td>{{ data.requestId }}</td>
-                <td>{{ data.requestType }}</td>
-                <td>{{ data.date }}</td>
-                <td>
-                    <p class="generalStatus" [ngClass]="data.status === 'Pending' ? 'pendingText' : 'otherText'">
-                        {{ data.status | translate}}
-                    </p>
-                </td>
-
-                <td>
-                    <!-- <a>{{data.id}}</a> -->
-
-                    <!-- <a class="primaryColor">
-                        {{ "FixIssue" | translate }}
-                    </a> -->
-                    <div class="actionHolder">
-                        <img src="./assets/img/edit.svg" alt="">
-                        <img class="iconSpacing" src="./assets/img/trash.svg" alt="" (click)="deleteRecodr(i)">
-                        <a nz-dropdown nzTrigger="click" [nzDropdownMenu]="menu" class="actionHolderBtn">
-                            <img src="./assets/img/moreAction.svg" alt="" />
-                            <span nz-icon nzType="down"></span>
-                        </a>
-                        <nz-dropdown-menu #menu="nzDropdownMenu">
-                            <ul nz-menu>
-                                <li nz-menu-item (click)="viewOrEditRequest(data.id,data.status, true)">{{ "ViewDetails" | translate }}
-                                </li>
-                                <li *ngIf="data.status == 'Pending'" nz-menu-item (click)="showApproveModal()">
-                                    {{ "Approve" | translate }}</li>
-                                <li *ngIf="data.status == 'Quarantined'" nz-menu-item
-                                    (click)="showAssignModal()">{{ "AssignTo" | translate }}</li>
-                                <li class="redText" nz-menu-item (click)="handleAction('delete', data)"
-                                    (click)="showRejectedModal()">{{ "Reject" | translate }}</li>
-                            </ul>
-                        </nz-dropdown-menu>
-
-                    </div>
-                </td>
-            </tr>
-        </tbody>
-    </nz-table>
-    <nz-modal [(nzVisible)]="isApprovedVisible" [nzTitle]="'Request Approved' | translate" (nzOnCancel)="handleCancel()"
-        (nzOnOk)="handleOk()">
-        <ng-container *nzModalContent>
-            <img src="./assets/img/approvedIcon.svg" class="popupImg" alt="">
-            <p class="popupText">{{ "You have successfully approved this request.It will now appear in the Golden Records." | translate }}
-            </p>
-            <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
-            <label nz-checkbox class="checkboxHolder">
-                <input class="hiddenInput" type="checkbox" nz-checkbox [(ngModel)]="approvedChecked" />
-                <p class="checkboxText">{{ "Don’t Show again" | translate }}</p>
-            </label>
-            <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="submitApprove()">{{ "Submit" | translate }} </button>
-            </div>
-
-        </ng-container>
-    </nz-modal>
-
-    <nz-modal [(nzVisible)]="isRejectedConfirmVisible" [nzTitle]="'Request Rejected' | translate" (nzOnCancel)="handleCancel()"
-        (nzOnOk)="handleOk()">
-        <ng-container *nzModalContent>
-            <img src="./assets/img/rejectIcon.svg"  class="popupImg" alt="">
-            <p class="popupText">{{ "You have successfully rejected this request. The requester will be notified with your reason." | translate }}
-            </p>
-            <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
-            <label nz-checkbox class="checkboxHolder">
-                <input class="hiddenInput" type="checkbox" nz-checkbox [(ngModel)]="rejectedChecked" />
-                <p class="checkboxText">{{ "Don’t Show again" | translate }}</p>
-            </label>
-            <div class="fullWidth"><button class="Primary_fill submitBtn" (click)="rejectApprove()">{{ "Submit" | translate }} </button>
-            </div>
-
-        </ng-container>
-    </nz-modal>
-
-    <nz-modal [(nzVisible)]="isRejectedVisible" [nzTitle]="'Add a Rejection Note' | translate" (nzOnCancel)="handleCancel()"
-        (nzOnOk)="handleOk()">
-        <ng-container *nzModalContent>
-            <p class="popupRejectText">{{ "Enter Rejection Comments" | translate }}</p>
-            <textarea rows="4" nz-input [(ngModel)]="inputValue"></textarea>
-            <!-- <label nz-checkbox [(ngModel)]="checked">Don’t Show again</label> -->
-
-            <div class="fullWidth btnsHolder">
-                <button class=" cancelBtn" (click)="handleCancel()">{{ "Cancel" | translate }}</button>
-                <button class="Primary_fill submitBtn" [disabled]="!inputValue" (click)="confirmReject()">{{ "Submit" | translate }}
-                </button>
-            </div>
-
-        </ng-container>
-    </nz-modal>
-    <nz-modal [(nzVisible)]="isAssignVisible" [nzTitle]="'Assign to' | translate" (nzOnCancel)="handleCancel()"
-    (nzOnOk)="handleOk()">
-    <ng-container *nzModalContent>
-      <img src="./assets/img/assignIcon.svg" class="popupImg" alt="">
-      <p class="popupText">{{ "Select the department you want to assign this request to" | translate }}
-      </p>
-
-      <nz-select [(ngModel)]="selectedDepartment" name="department" nzPlaceHolder="{{'Select Department'|translate}}"
-        style="width: 100%">
-        <nz-option nzValue="sales" nzLabel="{{'Sales'|translate}}"></nz-option>
-        <nz-option nzValue="manufacturing" nzLabel="{{'Manufacturing'|translate}}"></nz-option>
-        <nz-option nzValue="supply" nzLabel="{{'Supply Chain'|translate}}"></nz-option>
-      </nz-select>
-
-      <div class="fullWidth margintop"><button class="Primary_fill submitBtn" [disabled]="!selectedDepartment"
-          (click)="assignToBtn()">{{ "Submit" | translate }}
-        </button>
+    <div class="actionHolderTitle">
+      <!-- Clean header - only search and filter -->
+      <div class="seachInputHolder">
+        <img src="./assets/img/search.svg" alt="" />
+        <input type="text" [placeholder]="'Search' | translate" />
       </div>
+      <img src="./assets/img/filter.svg" alt="" />
+    </div>
+  </div>
 
-    </ng-container>
-  </nz-modal>
+  <!-- Empty State -->
+  <nz-empty *ngIf="taskList.length === 0" 
+            nzNotFoundImage="simple"
+            [nzNotFoundContent]="'No pending requests found' | translate">
+  </nz-empty>
+
+  <!-- Table -->
+  <nz-table #basicTable [nzPageSize]="7" [nzData]="taskList" *ngIf="taskList.length > 0" [nzScroll]="{ x: '1300px' }">
+    <thead>
+      <tr>
+        <th style="min-width:120px">{{ 'RequestID' | translate }}</th>
+        <th style="min-width:120px">{{ 'Origin' | translate }}</th>
+        <th style="min-width:140px">{{ 'Type' | translate }}</th>
+        <th style="min-width:200px">{{ 'Name' | translate }}</th>
+        <th style="min-width:120px">{{ 'Source' | translate }}</th>
+        <th style="min-width:100px">{{ 'Date' | translate }}</th>
+        <th style="min-width:140px">{{ 'Status' | translate }}</th>
+        <th style="min-width:120px">{{ 'Action' | translate }}</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      <tr *ngFor="let data of basicTable.data; let i = index">
+        <!-- Request ID with request type badge -->
+        <td>
+          <div class="request-id-container">
+            <span>{{ data.requestId || data.id }}</span>
+            <!-- Request Type badge -->
+            <nz-tag *ngIf="data.requestType" 
+                    [nzColor]="getRequestTypeColor(data)" 
+                    class="request-type-badge">
+              <span nz-icon [nzType]="getStatusIcon(data.displayStatus || data.status || 'Unknown')"></span>
+              {{ getRequestTypeLabel(data) }}
+            </nz-tag>
+          </div>
+        </td>
+
+        <!-- Origin Column - NEW -->
+        <td>
+          <div style="display:flex; flex-direction:column; gap:4px;">
+            <nz-tag [nzColor]="getOriginColor(data)">
+              {{ getOriginBadge(data) }}
+            </nz-tag>
+            <small style="opacity:.7; font-size:11px">
+              {{ getRecordOrigin(data) }}
+            </small>
+          </div>
+        </td>
+
+        <!-- Type Column -->
+        <td>
+          <div class="type-container">
+            <span>{{ data['CustomerType'] || 'Customer Request' }}</span>
+            <!-- Confidence score for duplicates -->
+            <nz-tag *ngIf="isDuplicateRecord(data) && data.confidence" 
+                    [nzColor]="getConfidenceColor(data.confidence)"
+                    class="confidence-badge">
+              {{ formatConfidence(data.confidence) }}
+            </nz-tag>
+          </div>
+        </td>
+
+        <!-- Company Name -->
+        <td>
+          <div class="name-container">
+            <strong>{{ data.firstName || data['name'] || '-' }}</strong>
+            <div *ngIf="data.firstNameAr" class="arabic-name">{{ data.firstNameAr }}</div>
+            <div *ngIf="data.tax" class="tax-number">
+              <small style="opacity:.7">
+                <i nz-icon nzType="number" style="margin-right:2px"></i>
+                Tax: {{ data.tax }}
+              </small>
+            </div>
+          </div>
+        </td>
+
+        <!-- Source System -->
+        <td>
+          <nz-tag [nzColor]="getSourceSystemColor(data.sourceSystem || 'Manual')"
+                  class="source-badge">
+            {{ data.sourceSystem || 'Manual' }}
+          </nz-tag>
+        </td>
+
+        <!-- Date -->
+        <td>{{ data.createdAt | date:'MMM d, y' }}</td>
+
+        <!-- Status - Using displayStatus based on requestType -->
+        <td>
+          <nz-tag [nzColor]="getStatusColor(data.displayStatus || data.status || 'Unknown')"
+                  class="status-badge">
+            <span nz-icon [nzType]="getStatusIcon(data.displayStatus || data.status || 'Unknown')"></span>
+            {{ (data.displayStatus || data.status || 'Unknown') | translate }}
+          </nz-tag>
+          <!-- Show if originally from quarantine -->
+          <div *ngIf="data.originalRequestType === 'quarantine' && data.status === 'Pending'" 
+               style="margin-top:4px">
+            <small style="color:#ff7a45; font-size:11px">
+              <i nz-icon nzType="warning" style="margin-right:2px"></i>
+              From quarantine
+            </small>
+          </div>
+        </td>
+
+        <!-- Actions - Unified "View Details" only -->
+        <td>
+          <div class="actionHolder">
+            <!-- View Details Button - Universal for all request types -->
+            <button nz-button nzType="primary" nzGhost nzSize="small"
+                    nz-tooltip
+                    [nzTooltipTitle]="getViewTooltip(data)"
+                    (click)="viewOrEditRequest(data, false)"
+                    class="view-details-btn">
+              <span nz-icon nzType="eye"></span>
+              {{ "View Details" | translate }}
+            </button>
+          </div>
+        </td>
+      </tr>
+    </tbody>
+  </nz-table>
+
+  <!-- Enhanced Statistics Summary - Show all 5 request types -->
+  <div *ngIf="taskList.length > 0" class="statistics-summary">
+    <nz-statistic 
+      [nzValue]="newRequestsCount"
+      [nzTitle]="'New Requests' | translate"
+      [nzValueStyle]="{ color: '#faad14' }">
+      <span nz-icon nzType="plus" slot="prefix"></span>
+    </nz-statistic>
+    
+    <nz-statistic 
+      [nzValue]="quarantineCount"
+      [nzTitle]="'Quarantine Updated' | translate"
+      [nzValueStyle]="{ color: '#fa8c16' }">
+      <span nz-icon nzType="alert" slot="prefix"></span>
+    </nz-statistic>
+    
+    <nz-statistic 
+      [nzValue]="rejectedCount"
+      [nzTitle]="'Rejected & Resubmitted' | translate"
+      [nzValueStyle]="{ color: '#f5222d' }">
+      <span nz-icon nzType="reload" slot="prefix"></span>
+    </nz-statistic>
+    
+    <nz-statistic 
+      [nzValue]="goldenCount"
+      [nzTitle]="'Golden Record Updates' | translate"
+      [nzValueStyle]="{ color: '#722ed1' }">
+      <span nz-icon nzType="star" slot="prefix"></span>
+    </nz-statistic>
+    
+    <nz-statistic 
+      [nzValue]="duplicatesCount"
+      [nzTitle]="'Duplicates' | translate"
+      [nzValueStyle]="{ color: '#1890ff' }">
+      <span nz-icon nzType="copy" slot="prefix"></span>
+    </nz-statistic>
+    
+    <nz-statistic 
+      [nzValue]="totalTasksCount"
+      [nzTitle]="'Total Tasks' | translate"
+      [nzValueStyle]="{ color: '#52c41a' }">
+    </nz-statistic>
+  </div>
 </div>

@@ -1,40 +1,65 @@
 <div class="titleActionHolder">
-
   <h1 class="pageTitle">
-    {{ "DuplicateRecords" | translate }}
+    {{ "DuplicateRecords" | translate }} ({{ duplicateRecords.length }} Groups)
   </h1>
+
   <div class="actionHolderTitleTabs">
     <div class="seachInputHolder">
-      <img src="./assets/img/search.svg" alt="">
-      <input type="text" [placeholder]="'Search' | translate">
+      <img src="./assets/img/search.svg" alt="" />
+      <input type="text" [placeholder]="'Search' | translate" />
     </div>
-    <img src="./assets/img/filter.svg" alt="">
+    <img src="./assets/img/filter.svg" alt="" />
   </div>
 </div>
-<div>
-  <nz-tabset [nzSelectedIndex]="1">
-    <nz-tab nzTitle="{{'All'|translate}}"></nz-tab>
-    <nz-tab nzTitle="{{user == '1'? ('CustomerRequests' | translate) : ('CustomerRecords' | translate) }}"></nz-tab>
-    <nz-tab nzTitle="{{ user == '1'? ('ProductRequests' | translate) : ('ProductRecords' | translate) }}"></nz-tab>
-    <nz-tab nzTitle="{{ user == '1'? ('SupplierRequests' | translate) : ('SupplierRecords' | translate)}}"></nz-tab>
-  </nz-tabset>
-  <nz-table #basicTable [nzPageSize]="7" [nzData]="duplicateRecords">
+
+<br>
+<br>
+
+<!-- Loading State -->
+<div *ngIf="loading" class="text-center p-4">
+  <div class="loading">Loading duplicate records...</div>
+</div>
+
+<!-- TABLE -->
+<div *ngIf="!loading">
+  <nz-table #customerTable [nzPageSize]="9" [nzData]="duplicateRecords">
     <thead>
       <tr>
-        <th>{{"RequestID"|translate}}</th>
-        <th>{{"NumOfDuplicates"|translate}}</th>
-        <th>{{"Date"|translate}}</th>
-        <th>{{"Action"|translate}}</th>
+        <th>{{ 'TaxNumber' | translate }}</th>
+        <th>{{ 'CompanyNames' | translate }}</th>
+        <th>{{ 'SourceSystems' | translate }}</th>
+        <th>{{ 'NumOfDuplicates' | translate }}</th>
+        <th>{{ 'Confidence' | translate }}</th>
+        <th>{{ 'Action' | translate }}</th>
       </tr>
     </thead>
+
     <tbody>
-      <tr *ngFor="let data of basicTable.data; let i = index">
-        <td>{{ data.requestId }}</td>
-        <td>{{ data.NumOfDuplicates }} {{"records"|translate}}</td>
-        <td>{{ data.date }}</td>
+      <tr *ngFor="let data of customerTable.data">
         <td>
-          <!-- <a>{{data.id}}</a> -->
-          <a class="primaryColor" [routerLink]="['/dashboard', 'duplicate-customer']">
+          <span class="mono">{{ data.tax }}</span>
+        </td>
+        <td>
+          <div class="primary-name">{{ getPrimaryCompanyName(data) }}</div>
+          <div class="other-names" *ngIf="getOtherCompanyNames(data)">
+            <small class="text-muted">Also: {{ getOtherCompanyNames(data) }}</small>
+          </div>
+        </td>
+        <td>
+          <span class="badge badge-info">{{ formatSourceSystems(data.sourceSystems) }}</span>
+        </td>
+        <td>
+          <span class="badge badge-primary">{{ data.duplicateCount }} records</span>
+        </td>
+        <td>
+          <span [class]="'badge ' + getConfidenceBadgeClass(data.confidence)">
+            {{ (data.confidence * 100).toFixed(0) }}% - {{ getConfidenceText(data.confidence) }}
+          </span>
+        </td>
+        <td>
+          <a class="primaryColor" 
+             style="cursor: pointer; text-decoration: underline; color: #1890ff;"
+             (click)="viewDetails(data)">
             {{ "ViewDetails" | translate }}
           </a>
         </td>
@@ -42,3 +67,66 @@
     </tbody>
   </nz-table>
 </div>
+
+<!-- Empty State -->
+<div *ngIf="!loading && duplicateRecords.length === 0" class="empty-state text-center p-5">
+  <h3>No Duplicate Records Found</h3>
+  <p>All records have been processed or there are no duplicates to review.</p>
+</div>
+
+<style>
+  .mono {
+    font-family: monospace;
+    font-size: 12px;
+  }
+  
+  .primary-name {
+    font-weight: 500;
+  }
+  
+  .other-names {
+    margin-top: 2px;
+  }
+  
+  .badge {
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 11px;
+  }
+  
+  .badge-primary {
+    background: #007bff;
+    color: white;
+  }
+  
+  .badge-info {
+    background: #17a2b8;
+    color: white;
+  }
+  
+  .badge-danger {
+    background: #dc3545;
+    color: white;
+  }
+  
+  .badge-warning {
+    background: #ffc107;
+    color: black;
+  }
+  
+  .badge-default {
+    background: #6c757d;
+    color: white;
+  }
+  
+  .empty-state {
+    background: #f8f9fa;
+    border-radius: 8px;
+    margin: 20px;
+  }
+  
+  .primaryColor:hover {
+    text-decoration: underline !important;
+    opacity: 0.8;
+  }
+</style>

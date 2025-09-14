@@ -1,0 +1,529 @@
+<!-- src/app/dashboard/golden-summary/golden-summary.component.html -->
+
+<div class="golden-summary-container">
+  <!-- Loading State -->
+  <div *ngIf="isLoading" class="loading-container">
+    <div class="spinner"></div>
+    <p>Loading Golden Record...</p>
+  </div>
+
+  <!-- Main Content -->
+  <div *ngIf="!isLoading" class="content">
+    
+    <!-- Hero Section -->
+    <div class="gr-hero">
+      <div class="gr-hero__left">
+        <div class="gr-hero__title">Golden Record Summary</div>
+        <div class="gr-kpis">
+          <div class="gr-kpi">
+            <span class="gr-kpi__label">Record Type</span>
+            <div class="gr-kpi__value">{{ master.recordType || 'Customer' }}</div>
+          </div>
+          <div class="gr-kpi">
+            <span class="gr-kpi__label">Status</span>
+            <div class="gr-kpi__value">
+              <span 
+                class="gr-kpi__chip" 
+                [ngClass]="{'is-blocked': isBlocked}">
+                {{ master.status || 'Active' }}
+              </span>
+            </div>
+          </div>
+          <div class="gr-kpi">
+            <span class="gr-kpi__label">Country</span>
+            <div class="gr-kpi__value">{{ master.country || 'N/A' }}</div>
+          </div>
+        </div>
+      </div>
+      
+      <div class="gr-hero__right">
+        <div class="gr-code__label">Golden Code</div>
+        <div class="gr-code__chip" (click)="copyGoldenCode()">
+          <span class="gr-code__text">{{ master.goldenCode || 'N/A' }}</span>
+          <span *ngIf="!copied">📋</span>
+          <span *ngIf="copied">✅</span>
+        </div>
+        <div *ngIf="copied" class="copied-tip">Copied!</div>
+      </div>
+    </div>
+
+    <!-- Action Bar -->
+    <div class="action-bar">
+      <button class="pill" (click)="goBack()">← Back to Golden Records</button>
+      
+      <!-- Data Entry Edit Button -->
+      <button 
+        *ngIf="isDataEntry" 
+        class="pill success"
+        (click)="editAndResubmit()"
+        title="Edit this Golden Record - Creates a new request through the workflow"
+        style="cursor: pointer;">
+        ✏️ Edit & Resubmit
+      </button>
+      
+      <!-- Reviewer Approve/Reject Buttons -->
+      <button 
+        *ngIf="canReviewerApprove && !isProcessing" 
+        class="pill success"
+        (click)="approveGoldenRecord()"
+        title="Approve golden record changes"
+        style="cursor: pointer; background: #28a745; border-color: #28a745; color: white;">
+        ✅ Approve Changes
+      </button>
+      
+      <button 
+        *ngIf="canReviewerApprove && !isProcessing" 
+        class="pill danger"
+        (click)="openRejectModal()"
+        title="Reject golden record changes"
+        style="cursor: pointer; background: #dc3545; border-color: #dc3545; color: white;">
+        Reject Changes
+      </button>
+
+      <!-- Processing indicator -->
+      <span 
+        *ngIf="isProcessing" 
+        style="background: #ffc107; color: #212529; padding: 8px 16px; border-radius: 20px; font-size: 14px;">
+        🔄 Processing...
+      </span>
+      
+      <!-- Compliance Actions -->
+      <button 
+        *ngIf="isCompliance && isBlocked"
+        class="pill success" 
+        (click)="setActive()">
+        ✅ Set as Active
+      </button>
+      
+      <button 
+        *ngIf="isCompliance && isActive"
+        class="pill danger" 
+        (click)="openBlockModal()">
+        🚫 Block Record
+      </button>
+      
+      <!-- Data Lineage -->
+      <button class="pill primary" (click)="goToDataLineage()">
+        🔗 Data Lineage
+      </button>
+    </div>
+
+    <!-- User Role Info - REMOVE IN PRODUCTION -->
+    <div *ngIf="currentUser && false" style="background: #e8f5e9; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px; border-left: 4px solid #4caf50;">
+      <strong>User Info:</strong> {{ currentUser?.username || 'Unknown' }} 
+      ({{ currentUser?.role || 'Unknown Role' }}) | 
+      Permissions: 
+      <span *ngIf="isDataEntry" style="color: #2e7d32;">✓ Data Entry</span>
+      <span *ngIf="isCompliance" style="color: #d32f2f;">✓ Compliance</span>
+      <span *ngIf="isReviewer" style="color: #1976d2;">✓ Reviewer</span>
+      <span *ngIf="canReviewerApprove" style="color: #ff9800; font-weight: bold;">✓ Can Approve/Reject</span>
+    </div>
+
+    <!-- Debug CustomerType - REMOVE IN PRODUCTION -->
+    <div *ngIf="false" style="background: #fff3cd; padding: 10px; margin: 10px 0; border-radius: 5px; font-size: 12px; border-left: 4px solid #ffc107;">
+      <strong>Debug - CustomerType:</strong> 
+      recordType: "{{ master.recordType }}" | 
+      CustomerType: "{{ master.CustomerType }}" | 
+      Label: "{{ getCustomerTypeLabel(master.recordType) }}"
+    </div>
+
+    <!-- Cards Grid -->
+    <div class="gr-card-grid">
+      
+      <!-- Company Information Card -->
+      <div class="gr-card">
+        <div class="gr-card__head">
+          <h3>Company Information</h3>
+        </div>
+        <div class="kv-grid">
+          <div class="kv">
+            <div class="k">Company Name</div>
+            <div class="v">{{ master.name || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Company Name (Arabic)</div>
+            <div class="v">{{ master.nameAr || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Customer Type</div>
+            <div class="v">{{ getCustomerTypeLabel(master.recordType) }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Company Owner</div>
+            <div class="v">{{ master.companyOwnerName || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Tax Number</div>
+            <div class="v">{{ master.taxNumber || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Customer Code</div>
+            <div class="v">{{ master.customerCode || master.oldCode || 'N/A' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Contact Information Card -->
+      <div class="gr-card">
+        <div class="gr-card__head">
+          <h3>Primary Contact</h3>
+          <button 
+            *ngIf="contacts.length > 1" 
+            class="btn ghost sm" 
+            (click)="openContactsModal()">
+            All ({{ contacts.length }})
+          </button>
+        </div>
+        
+        <!-- Empty State for Contacts -->
+        <div *ngIf="contacts.length === 0" class="empty-state" style="text-align: center; color: #6c757d; padding: 20px;">
+          No contacts available
+        </div>
+        
+        <!-- Contact Details -->
+        <div class="kv-grid" *ngIf="contacts.length > 0">
+          <div class="kv">
+            <div class="k">Contact Name</div>
+            <div class="v">{{ master.contactName || contacts[0]?.name || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Job Title</div>
+            <div class="v">{{ master.jobTitle || contacts[0]?.jobTitle || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Email</div>
+            <div class="v">{{ master.email || contacts[0]?.email || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Mobile</div>
+            <div class="v">{{ master.phone || contacts[0]?.mobile || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Landline</div>
+            <div class="v">{{ master.landline || contacts[0]?.landline || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Language</div>
+            <div class="v">{{ master.preferredLanguage || contacts[0]?.preferredLanguage || 'N/A' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Address Information Card -->
+      <div class="gr-card">
+        <div class="gr-card__head">
+          <h3>Address Information</h3>
+        </div>
+        <div class="kv-grid">
+          <div class="kv">
+            <div class="k">Building Number</div>
+            <div class="v">{{ master.buildingNumber || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Street</div>
+            <div class="v">{{ master.streetName || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">City</div>
+            <div class="v">{{ master.city || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Country</div>
+            <div class="v">{{ master.country || 'N/A' }}</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Sales Information Card -->
+      <div class="gr-card">
+        <div class="gr-card__head">
+          <h3>Sales Information</h3>
+        </div>
+        <div class="kv-grid">
+          <div class="kv">
+            <div class="k">Sales Organization</div>
+            <div class="v">{{ master.salesOrg || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Distribution Channel</div>
+            <div class="v">{{ master.distributionChannel || 'N/A' }}</div>
+          </div>
+          <div class="kv">
+            <div class="k">Division</div>
+            <div class="v">{{ master.division || 'N/A' }}</div>
+          </div>
+        </div>
+      </div>
+
+    </div>
+
+    <!-- Documents Section -->
+    <div class="gr-card">
+      <div class="gr-card__head">
+        <h3>📄 Documents</h3>
+        <button 
+          *ngIf="documents.length > 0" 
+          class="btn ghost sm" 
+          (click)="openDocsModal()">
+          View All ({{ documents.length }})
+        </button>
+      </div>
+      
+      <!-- Show actual documents if available -->
+      <div class="doc-list" *ngIf="documents.length > 0">
+        <div class="doc" *ngFor="let doc of documents.slice(0, 2)">
+          <div>
+            <div class="doc__label">{{ doc.type || 'Document' }}:</div>
+            <div class="doc__name">{{ doc.name || 'Unnamed' }}</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Show "No documents" message if empty -->
+      <div class="doc-list" *ngIf="documents.length === 0">
+        <div class="doc">
+          <div>
+            <div class="doc__label">Commercial Registration:</div>
+            <div class="doc__name">Not Uploaded</div>
+          </div>
+        </div>
+        <div class="doc">
+          <div>
+            <div class="doc__label">Tax Certificate:</div>
+            <div class="doc__name">Not Uploaded</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Linked Records Section -->
+    <div class="gr-card" *ngIf="hasLinkedRecords">
+      <div class="gr-card__head">
+        <h3>🔗 Linked Records ({{ linkedRecords.length }})</h3>
+      </div>
+      <div class="linked-records-grid">
+        <div class="linked-record-card is-linked" *ngFor="let record of linkedRecords; trackBy: trackByLinkedRecord">
+          <div class="linked-record-header">
+            <div class="record-name">{{ record.firstName || record.firstNameAr || 'Record ' + record.id }}</div>
+            <span class="record-badge linked-badge">Linked</span>
+          </div>
+          <div class="linked-record-details">
+            <div class="detail-row">
+              <span class="detail-label">ID:</span>
+              <span class="detail-value">{{ record.id }}</span>
+            </div>
+            <div class="detail-row">
+              <span class="detail-label">Tax:</span>
+              <span class="detail-value">{{ record.tax || 'N/A' }}</span>
+            </div>
+            <div class="detail-row" *ngIf="record.sourceSystem">
+              <span class="detail-label">Source:</span>
+              <span class="detail-value">{{ record.sourceSystem }}</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Block Reason (only if blocked and COMPLIANCE user only) -->
+    <div *ngIf="isBlocked && blockReason && isCompliance" class="gr-card">
+      <div class="gr-card__head">
+        <h3>Block Reason</h3>
+      </div>
+      <div class="block-reason">
+        {{ blockReason }}
+      </div>
+    </div>
+
+    <!-- Duplicates Section (only if has duplicates) -->
+    <div *ngIf="hasDuplicates" class="gr-card">
+      <div class="gr-card__head">
+        <h3>Related Records</h3>
+      </div>
+      <div class="table-wrap">
+        <table class="goldTable">
+          <thead>
+            <tr>
+              <th>Golden Code</th>
+              <th>Company Name</th>
+              <th>Country</th>
+              <th>Email</th>
+              <th>Tax Number</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let dup of duplicates; trackBy: trackByDuplicate">
+              <td class="golden-code">{{ dup.goldenCode || dup.oldCode }}</td>
+              <td>{{ dup.name }}</td>
+              <td>{{ dup.country }}</td>
+              <td>{{ dup.email }}</td>
+              <td>{{ dup.taxNumber }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Block Modal (Compliance) -->
+  <div *ngIf="isBlockModalOpen" class="modal-backdrop" (click)="cancelBlock()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Block Golden Record</h3>
+        <button class="x" (click)="cancelBlock()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <p style="margin-bottom: 16px;">Please provide a reason for blocking this golden record:</p>
+        <textarea 
+          [(ngModel)]="blockReasonDraft"
+          placeholder="Enter block reason..."
+          rows="4"
+          style="width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 6px; font-family: inherit; font-size: 14px; resize: vertical;"
+          ></textarea>
+      </div>
+      
+      <div class="modal-foot">
+        <button class="btn ghost" (click)="cancelBlock()">Cancel</button>
+        <button 
+          class="btn primary" 
+          (click)="submitBlock()"
+          [disabled]="!blockReasonDraft.trim()"
+          style="background: #dc3545; border-color: #dc3545;">
+          Block Record
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Reject Modal (Reviewer) -->
+  <div *ngIf="isRejectModalOpen" class="modal-backdrop" (click)="cancelReject()">
+    <div class="modal" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>Reject Golden Record Changes</h3>
+        <button class="x" (click)="cancelReject()">×</button>
+      </div>
+      
+      <div class="modal-body">
+        <p style="margin-bottom: 16px;">Please provide a reason for rejecting this golden record update:</p>
+        <textarea 
+          [(ngModel)]="rejectReasonDraft"
+          placeholder="Enter rejection reason (e.g., 'Missing required documents', 'Data validation errors', etc.)..."
+          rows="4"
+          style="width: 100%; padding: 12px; border: 1px solid #ced4da; border-radius: 6px; font-family: inherit; font-size: 14px; resize: vertical;"
+          [disabled]="isProcessing"
+          ></textarea>
+        
+        <div style="margin-top: 12px; padding: 10px; background: #fff3cd; border-radius: 5px; font-size: 13px; color: #856404;">
+          <strong>Note:</strong> This will send the request back to the data entry team for corrections.
+        </div>
+      </div>
+      
+      <div class="modal-foot">
+        <button 
+          class="btn ghost" 
+          (click)="cancelReject()"
+          [disabled]="isProcessing">
+          Cancel
+        </button>
+        <button 
+          class="btn primary" 
+          (click)="submitReject()"
+          [disabled]="!rejectReasonDraft.trim() || isProcessing"
+          style="background: #dc3545; border-color: #dc3545;">
+          <span *ngIf="!isProcessing">Reject Changes</span>
+          <span *ngIf="isProcessing">Rejecting...</span>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Contacts Modal -->
+  <div *ngIf="isContactsModalOpen" class="modal-backdrop" (click)="closeContactsModal()">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>All Contacts</h3>
+        <button class="x" (click)="closeContactsModal()">×</button>
+      </div>
+      
+      <div class="modal-body contacts-modal">
+        <div *ngIf="contacts.length === 0" class="empty-state">
+          No additional contacts found.
+        </div>
+        
+        <div class="contacts-grid">
+          <div *ngFor="let contact of contacts; trackBy: trackByContact" class="contact-card">
+            <div class="avatar">
+              {{ (contact.name || 'C').charAt(0).toUpperCase() }}
+            </div>
+            <div class="info">
+              <div class="name">{{ contact.name || 'Unnamed Contact' }}</div>
+              <div class="meta">{{ contact.jobTitle || 'No Job Title' }}</div>
+              <div class="methods">
+                <div *ngIf="contact.email" class="method">
+                  📧 {{ contact.email }}
+                </div>
+                <div *ngIf="contact.mobile" class="method">
+                  📱 {{ contact.mobile }}
+                </div>
+                <div *ngIf="contact.landline" class="method">
+                  ☎️ {{ contact.landline }}
+                </div>
+                <div *ngIf="contact.preferredLanguage" class="method lang">
+                  🌐 {{ contact.preferredLanguage }}
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Documents Modal -->
+  <div *ngIf="isDocsModalOpen" class="modal-backdrop" (click)="closeDocsModal()">
+    <div class="modal modal-lg" (click)="$event.stopPropagation()">
+      <div class="modal-head">
+        <h3>All Documents</h3>
+        <button class="x" (click)="closeDocsModal()">×</button>
+      </div>
+      
+      <div class="modal-body docs-modal">
+        <div *ngIf="documents.length === 0" class="empty-state">
+          No documents uploaded.
+        </div>
+        
+        <div class="docs-grid">
+          <div *ngFor="let doc of documents; trackBy: trackByDoc" class="doc-card">
+            <div class="doc-card__icon">{{ docIcon(doc) }}</div>
+            <div style="flex: 1;">
+              <div class="doc-card__title">{{ doc.type || 'Document' }}</div>
+              <div class="doc-card__name">{{ doc.name || 'Unnamed Document' }}</div>
+              <div class="doc-card__meta">
+                <span *ngIf="doc.size">{{ (doc.size / 1024).toFixed(1) }} KB</span>
+                <span *ngIf="doc.mime && doc.size"> • {{ doc.mime }}</span>
+                <span *ngIf="!doc.size">Unknown size</span>
+              </div>
+            </div>
+            <div class="doc-card__actions">
+              <button 
+                *ngIf="doc.contentBase64" 
+                class="btn primary" 
+                (click)="openDoc(doc)">
+                View
+              </button>
+              <button 
+                *ngIf="doc.contentBase64" 
+                class="btn ghost" 
+                (click)="downloadDoc(doc)">
+                Download
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+</div>

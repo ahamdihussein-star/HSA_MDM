@@ -53,26 +53,26 @@
       </thead>
       <tbody>
         <tr *ngFor="let data of basicTable.data; let i = index">
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.name }}</td>
+          <td>{{ data['requestId'] }}</td>
+          <td>{{ data['name'] }}</td>
           <td>{{ data.date }}</td>
           <td>
             <p
               class="generalStatus"
               [ngClass]="{
-                'status-approved': data.status === 'Approved',
-                'status-pending': data.status === 'Pending',
-                'status-rejected': data.status === 'Rejected',
-                'status-updated': data.status === 'Updated',
-                'status-quarantined': data.status === 'Quarantined'
+                'status-approved': data['status'] === 'Approved',
+                'status-pending': data['status'] === 'Pending',
+                'status-rejected': data['status'] === 'Rejected',
+                'status-updated': data['status'] === 'Updated',
+                'status-quarantined': data['status'] === 'Quarantined'
               }"
             >
-              {{ data.status | translate }}
+              {{ data['status'] | translate }}
             </p>
           </td>
           <td>
-            <!-- <a>{{data.id}}</a> -->
-             <a class="primaryColor" (click)="viewOrEditRequest(data.id, data.status, false)">
+            <!-- <a>{{data['id']}}</a> -->
+             <a class="primaryColor" (click)="viewOrEditRequest(data['id'], data['status'], false)">
               {{ "ViewDetails" | translate }}
             </a>
           </td>
@@ -93,26 +93,26 @@
       </thead>
       <tbody>
         <tr *ngFor="let data of basicTable.data; let i = index">
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.name }}</td>
+          <td>{{ data['requestId'] }}</td>
+          <td>{{ data['name'] }}</td>
           <td>{{ data.date }}</td>
           <td>
             <p
               class="generalStatus"
               [ngClass]="{
-                'status-approved': data.status === 'Approved',
-                'status-pending': data.status === 'Pending',
-                'status-rejected': data.status === 'Rejected',
-                'status-updated': data.status === 'Updated',
-                'status-quarantined': data.status === 'Quarantined'
+                'status-approved': data['status'] === 'Approved',
+                'status-pending': data['status'] === 'Pending',
+                'status-rejected': data['status'] === 'Rejected',
+                'status-updated': data['status'] === 'Updated',
+                'status-quarantined': data['status'] === 'Quarantined'
               }"
             >
-              {{ data.status | translate }}
+              {{ data['status'] | translate }}
             </p>
           </td>
           <td>
-            <!-- <a>{{data.id}}</a> -->
-             <a class="primaryColor" (click)="viewOrEditRequest(data.id, data.status, false)">
+            <!-- <a>{{data['id']}}</a> -->
+             <a class="primaryColor" (click)="viewOrEditRequest(data['id'], data['status'], false)">
               {{ "ViewDetails" | translate }}
             </a>
           </td>
@@ -133,26 +133,26 @@
       </thead>
       <tbody>
         <tr *ngFor="let data of basicTable.data; let i = index">
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.name }}</td>
+          <td>{{ data['requestId'] }}</td>
+          <td>{{ data['name'] }}</td>
           <td>{{ data.date }}</td>
           <td>
             <p
               class="generalStatus"
               [ngClass]="{
-                'status-approved': data.status === 'Approved',
-                'status-pending': data.status === 'Pending',
-                'status-rejected': data.status === 'Rejected',
-                'status-updated': data.status === 'Updated',
-                'status-quarantined': data.status === 'Quarantined'
+                'status-approved': data['status'] === 'Approved',
+                'status-pending': data['status'] === 'Pending',
+                'status-rejected': data['status'] === 'Rejected',
+                'status-updated': data['status'] === 'Updated',
+                'status-quarantined': data['status'] === 'Quarantined'
               }"
             >
-              {{ data.status | translate }}
+              {{ data['status'] | translate }}
             </p>
           </td>
           <td>
-            <!-- <a>{{data.id}}</a> -->
-             <a class="primaryColor" (click)="viewOrEditRequest(data.id, data.status, false)">
+            <!-- <a>{{data['id']}}</a> -->
+             <a class="primaryColor" (click)="viewOrEditRequest(data['id'], data['status'], false)">
               {{ "ViewDetails" | translate }}
             </a>
           </td>
@@ -173,26 +173,26 @@
       </thead>
       <tbody>
         <tr *ngFor="let data of basicTable.data; let i = index">
-          <td>{{ data.requestId }}</td>
-          <td>{{ data.name }}</td>
+          <td>{{ data['requestId'] }}</td>
+          <td>{{ data['name'] }}</td>
           <td>{{ data.date }}</td>
           <td>
             <p
               class="generalStatus"
               [ngClass]="{
-                'status-approved': data.status === 'Approved',
-                'status-pending': data.status === 'Pending',
-                'status-rejected': data.status === 'Rejected',
-                'status-updated': data.status === 'Updated',
-                'status-quarantined': data.status === 'Quarantined'
+                'status-approved': data['status'] === 'Approved',
+                'status-pending': data['status'] === 'Pending',
+                'status-rejected': data['status'] === 'Rejected',
+                'status-updated': data['status'] === 'Updated',
+                'status-quarantined': data['status'] === 'Quarantined'
               }"
             >
-              {{ data.status | translate }}
+              {{ data['status'] | translate }}
             </p>
           </td>
           <td>
-            <!-- <a>{{data.id}}</a> -->
-            <a class="primaryColor" (click)="viewOrEditRequest(data.id, data.status, false)">
+            <!-- <a>{{data['id']}}</a> -->
+            <a class="primaryColor" (click)="viewOrEditRequest(data['id'], data['status'], false)">
               {{ "ViewDetails" | translate }}
             </a>
           </td>
