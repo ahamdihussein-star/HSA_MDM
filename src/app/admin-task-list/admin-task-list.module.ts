@@ -29,8 +29,11 @@ import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzStatisticModule } from 'ng-zorro-antd/statistic';
 
+
 @NgModule({
-  declarations: [AdminTaskListComponent],
+  declarations: [
+    AdminTaskListComponent
+  ],
   imports: [
     CommonModule,
     AdminTaskListRoutingModule,

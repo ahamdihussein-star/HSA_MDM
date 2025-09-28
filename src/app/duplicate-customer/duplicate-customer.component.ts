@@ -1,8 +1,10 @@
-import { Component, OnInit, ViewEncapsulation, ChangeDetectorRef } from '@angular/core';
+import { Component, OnInit, OnDestroy, ViewEncapsulation, ChangeDetectorRef } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { environment } from '../../environments/environment';
 import { firstValueFrom } from 'rxjs';
+import { NzNotificationService } from 'ng-zorro-antd/notification';
 
 // Import unified lookup data
 import {
@@ -33,10 +35,10 @@ interface DropdownOption {
 @Component({
   selector: 'app-duplicate-customer',
   templateUrl: './duplicate-customer.component.html',
-  styleUrls: ['./duplicate-customer.component.scss'],
+  styleUrls: ['./duplicate-customer.component.scss', './duplicate-customer-table-styles.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class DuplicateCustomerComponent implements OnInit {
+export class DuplicateCustomerComponent implements OnInit, OnDestroy {
 
   private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
   
@@ -66,6 +68,10 @@ export class DuplicateCustomerComponent implements OnInit {
   activeTab: string = 'contacts';
   expandedFields: string[] = [];
   showHelp: boolean = false;
+  
+  // Document Preview Properties
+  showDocumentPreviewModal: boolean = false;
+  selectedDocument: any = null;
   showSuccessModal: boolean = false;
   successMessage: string = '';
   focusedField: string | null = null;
@@ -167,12 +173,25 @@ export class DuplicateCustomerComponent implements OnInit {
   buildSuccess: boolean = false;
   buildError: string = '';
 
+  // Auto-fill functionality
+  private keydownListener?: (event: KeyboardEvent) => void;
+  private lastSpaceTime: number = 0;
+  public currentDemoCompany: any = null;
+
   constructor(
     private http: HttpClient,
     private router: Router,
     private route: ActivatedRoute,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private notification: NzNotificationService,
+    private sanitizer: DomSanitizer
   ) {}
+
+  ngOnDestroy(): void {
+    if (this.keydownListener) {
+      document.removeEventListener('keydown', this.keydownListener);
+    }
+  }
 
   async ngOnInit(): Promise<void> {
     const queryParams = this.route.snapshot.queryParams;
@@ -262,6 +281,20 @@ export class DuplicateCustomerComponent implements OnInit {
     
     this.contacts = this.masterContacts;
     this.documents = this.masterDocuments;
+    
+    // Setup auto-fill for data entry users
+    console.log('🔍 Checking auto-fill setup:', {
+      userRole: this.userRole,
+      isDataEntry: this.isDataEntry,
+      shouldSetup: this.userRole === 'data_entry' || this.isDataEntry
+    });
+    
+    if (this.userRole === 'data_entry' || this.isDataEntry) {
+      console.log('✅ Setting up auto-fill for data entry user');
+      this.setupKeyboardAutoFill();
+    } else {
+      console.log('❌ Auto-fill not setup - not data entry user');
+    }
   }
 
   async loadMasterRecordForCompliance(): Promise<void> {
@@ -355,10 +388,6 @@ export class DuplicateCustomerComponent implements OnInit {
   }
 
   async confirmActive(): Promise<void> {
-    if (!confirm('Are you sure you want to approve this as an Active Golden Record?')) {
-      return;
-    }
-    
     this.processing = true;
     
     try {
@@ -372,16 +401,12 @@ export class DuplicateCustomerComponent implements OnInit {
       );
       
       if (response) {
-        this.successMessage = 'Master record approved as Active Golden Record successfully!';
-        this.showSuccessModal = true;
-        
-        setTimeout(() => {
-          this.router.navigate(['/dashboard/compliance-task-list']);
-        }, 2000);
+        this.notification.success('Master record approved as Active Golden Record successfully!', '');
+        this.router.navigate(['/dashboard/compliance-task-list']);
       }
     } catch (error) {
       console.error('Error approving as active:', error);
-      alert('Error approving record. Please try again.');
+      this.notification.error('Error approving record. Please try again.', '');
     } finally {
       this.processing = false;
       this.closeActiveModal();
@@ -404,10 +429,6 @@ export class DuplicateCustomerComponent implements OnInit {
       return;
     }
     
-    if (!confirm('Are you sure you want to block this company? This will prevent them from transacting.')) {
-      return;
-    }
-    
     this.processing = true;
     
     try {
@@ -421,16 +442,12 @@ export class DuplicateCustomerComponent implements OnInit {
       );
       
       if (response) {
-        this.successMessage = 'Master record created as Blocked Golden Record!';
-        this.showSuccessModal = true;
-        
-        setTimeout(() => {
-          this.router.navigate(['/dashboard/compliance-task-list']);
-        }, 2000);
+        this.notification.success('Master record created as Blocked Golden Record!', '');
+        this.router.navigate(['/dashboard/compliance-task-list']);
       }
     } catch (error) {
       console.error('Error blocking record:', error);
-      alert('Error blocking record. Please try again.');
+      this.notification.error('Error blocking record. Please try again.', '');
     } finally {
       this.processing = false;
       this.closeBlockModal();
@@ -789,10 +806,6 @@ export class DuplicateCustomerComponent implements OnInit {
   }
 
   async approveAndSendToCompliance(): Promise<void> {
-    if (!confirm('Are you sure you want to approve this master record and send it to compliance?')) {
-      return;
-    }
-    
     this.processing = true;
     
     try {
@@ -812,15 +825,14 @@ export class DuplicateCustomerComponent implements OnInit {
       if (response) {
         let message = 'Master record approved and sent to compliance!';
         if (quarantineRecordIds.length > 0) {
-          message += `\n${quarantineRecordIds.length} records marked for quarantine.`;
+          message += ` ${quarantineRecordIds.length} records marked for quarantine.`;
         }
-        alert(message);
+        this.notification.success(message, '');
         this.router.navigate(['/dashboard/admin-task-list']);
       }
     } catch (error) {
       console.error('Error in approval:', error);
-      alert('Master record may have been approved. Please check the task list.');
-      this.router.navigate(['/dashboard/admin-task-list']);
+      this.notification.error('Error approving record. Please try again.', '');
     } finally {
       this.processing = false;
     }
@@ -838,7 +850,7 @@ export class DuplicateCustomerComponent implements OnInit {
 
   async confirmReject(): Promise<void> {
     if (!this.rejectionReason || this.rejectionReason.trim().length < 10) {
-      alert('Please provide a detailed rejection reason (at least 10 characters)');
+      // Validation handled by the UI (disabled button)
       return;
     }
     
@@ -852,13 +864,13 @@ export class DuplicateCustomerComponent implements OnInit {
       );
       
       if (response) {
-        alert('Master record rejected and returned to data entry!');
         this.closeRejectModal();
+        this.notification.success('Request rejected and returned to data entry', '');
         this.router.navigate(['/dashboard/admin-task-list']);
       }
     } catch (error) {
       console.error('Error rejecting record:', error);
-      alert('Error rejecting record. Please try again.');
+      this.notification.error('Error rejecting record. Please try again.', '');
     } finally {
       this.processing = false;
     }
@@ -1525,56 +1537,106 @@ export class DuplicateCustomerComponent implements OnInit {
     return (size / (1024 * 1024)).toFixed(2) + ' MB';
   }
 
+  /**
+   * Handles document click - preview for supported types, download for others
+   */
   viewDocument(doc: any): void {
-    if (doc.contentBase64) {
-      try {
-        let mimeType = doc.mime || 'application/octet-stream';
-        
-        if (!doc.mime && doc.name) {
-          const extension = doc.name.split('.').pop()?.toLowerCase();
-          const mimeTypes: { [key: string]: string } = {
-            'pdf': 'application/pdf',
-            'doc': 'application/msword',
-            'docx': 'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
-            'xls': 'application/vnd.ms-excel',
-            'xlsx': 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
-            'png': 'image/png',
-            'jpg': 'image/jpeg',
-            'jpeg': 'image/jpeg',
-            'gif': 'image/gif',
-            'txt': 'text/plain'
-          };
-          mimeType = mimeTypes[extension || ''] || 'application/octet-stream';
-        }
-
-        const byteCharacters = atob(doc.contentBase64);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: mimeType });
-        
-        const url = window.URL.createObjectURL(blob);
-        const link = document.createElement('a');
-        link.href = url;
-        link.download = doc.name || 'document';
-        
-        document.body.appendChild(link);
-        link.click();
-        document.body.removeChild(link);
-        
-        setTimeout(() => {
-          window.URL.revokeObjectURL(url);
-        }, 100);
-        
-      } catch (error) {
-        console.error('Error downloading document:', error);
-        alert('Error downloading document. Please try again.');
-      }
+    if (this.canPreview(doc)) {
+      // Open preview for PDF and images
+      this.previewDocument(doc);
     } else {
-      alert('Document content not available for download.');
+      // Direct download for Word, Excel, and other files
+      this.downloadDocument(doc);
+      this.notification.info('Downloading file...', 'Preview not available for this file type.');
     }
+  }
+
+  /**
+   * Opens document preview modal
+   */
+  previewDocument(doc: any): void {
+    this.selectedDocument = doc;
+    this.showDocumentPreviewModal = true;
+  }
+
+  /**
+   * Closes document preview modal
+   */
+  closeDocumentPreview(): void {
+    this.showDocumentPreviewModal = false;
+    this.selectedDocument = null;
+  }
+
+  /**
+   * Downloads document
+   */
+  downloadDocument(doc: any): void {
+    if (!doc.contentBase64) {
+      this.notification.error('Document content not available', '');
+      return;
+    }
+    
+    try {
+      // Extract base64 content
+      let base64Content = doc.contentBase64;
+      if (base64Content.includes(',')) {
+        base64Content = base64Content.split(',')[1];
+      }
+      
+      // Convert to blob
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: doc.mime || 'application/octet-stream' });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = doc.name || 'document';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      this.notification.success('Document downloaded successfully', '');
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      this.notification.error('Failed to download document', '');
+    }
+  }
+
+  /**
+   * Checks if document can be previewed
+   */
+  canPreview(doc: any): boolean {
+    if (!doc || !doc.mime) return false;
+    const mime = doc.mime.toLowerCase();
+    return mime.includes('image') || mime.includes('pdf');
+  }
+
+  /**
+   * Gets preview URL for document
+   */
+  getPreviewUrl(doc: any): string {
+    if (!doc || !doc.contentBase64) return '';
+    
+    if (doc.contentBase64.startsWith('data:')) {
+      return doc.contentBase64;
+    }
+    
+    return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+  }
+
+  /**
+   * Gets safe preview URL for iframe
+   */
+  getSafePreviewUrl(doc: any): SafeResourceUrl {
+    const url = this.getPreviewUrl(doc);
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   closeDocumentModal(): void {
@@ -1832,16 +1894,12 @@ export class DuplicateCustomerComponent implements OnInit {
         this.buildSuccess = true;
         
         const message = this.isEditingRejected ? 
-          `Successfully resubmitted for Master Data Review!` :
-          `Successfully sent for Master Data Review!`;
+          `Request updated and resubmitted for review` :
+          `New request created successfully`;
           
-        this.successMessage = `${message}\n\nMaster Record ID: ${response.masterId}\nLinked Duplicates: ${response.linkedCount}\nQuarantined Records: ${response.quarantineCount}`;
-        
-        this.showSuccessModal = true;
-        
-        setTimeout(() => {
-          this.navigateToList();
-        }, 3000);
+        // Use notification instead of modal
+        this.notification.success(message, '');
+        this.navigateToList();
       } else {
         this.buildError = response.error || 'Failed to build master record';
       }
@@ -1889,7 +1947,7 @@ getRecordSourceSystem(recordId: string): string {
     if (this.isComplianceMode) {
       this.router.navigate(['/dashboard/compliance-task-list']);
     } else {
-      this.router.navigate(['/dashboard/duplicate-records']);
+      this.router.navigate(['/dashboard/my-task-list']);
     }
   }
 
@@ -1900,4 +1958,82 @@ getRecordSourceSystem(recordId: string): string {
       this.router.navigate(['/dashboard/duplicate-records']);
     }
   }
+
+  // Auto-fill functionality for contacts
+  private setupKeyboardAutoFill(): void {
+    console.log('🚀 Setting up auto-fill for duplicate-customer');
+    this.keydownListener = (event: KeyboardEvent) => {
+      if (event.key === ' ') {
+        console.log('🔍 Space detected, target:', event.target);
+        if (event.target instanceof HTMLInputElement) {
+          const now = Date.now();
+          console.log('🔍 Time since last space:', now - this.lastSpaceTime);
+          if (now - this.lastSpaceTime < 300) { // Double space within 300ms
+            console.log('🎯 Double space detected! Triggering auto-fill');
+            this.handleAutoFillKeypress(event);
+          }
+          this.lastSpaceTime = now;
+        }
+      }
+    };
+    document.addEventListener('keydown', this.keydownListener);
+    console.log('✅ Auto-fill listener added to document');
+  }
+
+  private handleAutoFillKeypress(event: KeyboardEvent): void {
+    const target = event.target as HTMLInputElement;
+    console.log('🔍 Auto-fill triggered on:', target.placeholder);
+    
+    const fieldName = this.getFieldNameFromElement(target);
+    console.log('🎯 Detected field:', fieldName);
+    
+    if (fieldName && fieldName.includes('contact')) {
+      console.log('✅ Filling contact field:', fieldName);
+      event.preventDefault();
+      this.fillContactField(target, fieldName);
+    } else {
+      console.log('❌ Not a contact field or field not recognized');
+    }
+  }
+
+  private getFieldNameFromElement(element: HTMLInputElement): string | null {
+    const name = element.name || element.id || '';
+    const placeholder = element.placeholder.toLowerCase() || '';
+    
+    // Debug what we're getting
+    console.log('🔍 Field detection - placeholder:', placeholder, 'name:', name);
+    
+    if (placeholder.includes('contact name') || placeholder.includes('enter contact name') || name.includes('name')) return 'contact.name';
+    if (placeholder.includes('example@company.com') || placeholder.includes('email') || name.includes('email')) return 'contact.email';
+    if (placeholder.includes('+1234567890') || placeholder.includes('mobile') || placeholder.includes('phone') || name.includes('mobile')) return 'contact.mobile';
+    if (placeholder.includes('sales manager') || placeholder.includes('job') || name.includes('job')) return 'contact.jobTitle';
+    
+    // Try any input field in contact modal
+    const parentModal = element.closest('.ant-modal');
+    if (parentModal && parentModal.textContent?.includes('Add New Contact')) {
+      if (element === parentModal.querySelector('input[type="text"]:first-of-type')) return 'contact.name';
+      if (element.type === 'email') return 'contact.email';
+      if (element.type === 'tel') return 'contact.mobile';
+      if (element === parentModal.querySelector('input[type="text"]:nth-of-type(2)')) return 'contact.jobTitle';
+    }
+    
+    return null;
+  }
+
+  private fillContactField(element: HTMLInputElement, fieldName: string): void {
+    const demoData = {
+      'contact.name': ['Ahmed Al-Rashid', 'Fatima Al-Zahra', 'Omar Al-Balawi', 'Layla Al-Saud'],
+      'contact.email': ['ahmed.rashid@company.com', 'fatima.zahra@company.com', 'omar.balawi@company.com', 'layla.saud@company.com'],
+      'contact.mobile': ['+966501234567', '+966509876543', '+966512345678', '+966598765432'],
+      'contact.jobTitle': ['General Manager', 'Operations Manager', 'Sales Manager', 'Finance Manager']
+    };
+
+    const values = demoData[fieldName as keyof typeof demoData];
+    if (values && values.length > 0) {
+      const randomValue = values[Math.floor(Math.random() * values.length)];
+      element.value = randomValue;
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+    }
+  }
+
 }

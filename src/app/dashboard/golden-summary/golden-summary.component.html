@@ -4,7 +4,7 @@
   <!-- Loading State -->
   <div *ngIf="isLoading" class="loading-container">
     <div class="spinner"></div>
-    <p>Loading Golden Record...</p>
+    <p>{{ 'Loading Golden Record...' | translate }}</p>
   </div>
 
   <!-- Main Content -->
@@ -13,14 +13,14 @@
     <!-- Hero Section -->
     <div class="gr-hero">
       <div class="gr-hero__left">
-        <div class="gr-hero__title">Golden Record Summary</div>
+        <div class="gr-hero__title">{{ 'Golden Record Summary' | translate }}</div>
         <div class="gr-kpis">
           <div class="gr-kpi">
-            <span class="gr-kpi__label">Record Type</span>
+            <span class="gr-kpi__label">{{ 'Record Type' | translate }}</span>
             <div class="gr-kpi__value">{{ master.recordType || 'Customer' }}</div>
           </div>
           <div class="gr-kpi">
-            <span class="gr-kpi__label">Status</span>
+            <span class="gr-kpi__label">{{ 'Status' | translate }}</span>
             <div class="gr-kpi__value">
               <span 
                 class="gr-kpi__chip" 
@@ -30,36 +30,27 @@
             </div>
           </div>
           <div class="gr-kpi">
-            <span class="gr-kpi__label">Country</span>
+            <span class="gr-kpi__label">{{ 'Country' | translate }}</span>
             <div class="gr-kpi__value">{{ master.country || 'N/A' }}</div>
           </div>
         </div>
       </div>
       
       <div class="gr-hero__right">
-        <div class="gr-code__label">Golden Code</div>
+        <div class="gr-code__label">{{ 'Golden Code' | translate }}</div>
         <div class="gr-code__chip" (click)="copyGoldenCode()">
           <span class="gr-code__text">{{ master.goldenCode || 'N/A' }}</span>
           <span *ngIf="!copied">📋</span>
           <span *ngIf="copied">✅</span>
         </div>
-        <div *ngIf="copied" class="copied-tip">Copied!</div>
+        <div *ngIf="copied" class="copied-tip">{{ 'Copied!' | translate }}</div>
       </div>
     </div>
 
     <!-- Action Bar -->
     <div class="action-bar">
-      <button class="pill" (click)="goBack()">← Back to Golden Records</button>
+      <button class="pill" (click)="goBack()">← {{ 'Back to Golden Records' | translate }}</button>
       
-      <!-- Data Entry Edit Button -->
-      <button 
-        *ngIf="isDataEntry" 
-        class="pill success"
-        (click)="editAndResubmit()"
-        title="Edit this Golden Record - Creates a new request through the workflow"
-        style="cursor: pointer;">
-        ✏️ Edit & Resubmit
-      </button>
       
       <!-- Reviewer Approve/Reject Buttons -->
       <button 
@@ -68,7 +59,7 @@
         (click)="approveGoldenRecord()"
         title="Approve golden record changes"
         style="cursor: pointer; background: #28a745; border-color: #28a745; color: white;">
-        ✅ Approve Changes
+        ✅ {{ 'Approve Changes' | translate }}
       </button>
       
       <button 
@@ -77,14 +68,14 @@
         (click)="openRejectModal()"
         title="Reject golden record changes"
         style="cursor: pointer; background: #dc3545; border-color: #dc3545; color: white;">
-        Reject Changes
+        {{ 'Reject Changes' | translate }}
       </button>
 
       <!-- Processing indicator -->
       <span 
         *ngIf="isProcessing" 
         style="background: #ffc107; color: #212529; padding: 8px 16px; border-radius: 20px; font-size: 14px;">
-        🔄 Processing...
+        🔄 {{ 'Processing...' | translate }}
       </span>
       
       <!-- Compliance Actions -->
@@ -92,20 +83,16 @@
         *ngIf="isCompliance && isBlocked"
         class="pill success" 
         (click)="setActive()">
-        ✅ Set as Active
+        ✅ {{ 'Set as Active' | translate }}
       </button>
       
       <button 
         *ngIf="isCompliance && isActive"
         class="pill danger" 
         (click)="openBlockModal()">
-        🚫 Block Record
+        🚫 {{ 'Block Record' | translate }}
       </button>
       
-      <!-- Data Lineage -->
-      <button class="pill primary" (click)="goToDataLineage()">
-        🔗 Data Lineage
-      </button>
     </div>
 
     <!-- User Role Info - REMOVE IN PRODUCTION -->
@@ -127,108 +114,63 @@
       Label: "{{ getCustomerTypeLabel(master.recordType) }}"
     </div>
 
-    <!-- Cards Grid -->
+    <!-- Company & Address Info Grid -->
     <div class="gr-card-grid">
       
       <!-- Company Information Card -->
       <div class="gr-card">
         <div class="gr-card__head">
-          <h3>Company Information</h3>
+          <h3>{{ 'Company Information' | translate }}</h3>
         </div>
         <div class="kv-grid">
           <div class="kv">
-            <div class="k">Company Name</div>
+            <div class="k">{{ 'Company Name' | translate }}</div>
             <div class="v">{{ master.name || 'N/A' }}</div>
           </div>
           <div class="kv">
-            <div class="k">Company Name (Arabic)</div>
+            <div class="k">{{ 'Company Name (Arabic)' | translate }}</div>
             <div class="v">{{ master.nameAr || 'N/A' }}</div>
           </div>
           <div class="kv">
-            <div class="k">Customer Type</div>
+            <div class="k">{{ 'Customer Type' | translate }}</div>
             <div class="v">{{ getCustomerTypeLabel(master.recordType) }}</div>
           </div>
           <div class="kv">
-            <div class="k">Company Owner</div>
+            <div class="k">{{ 'Company Owner' | translate }}</div>
             <div class="v">{{ master.companyOwnerName || 'N/A' }}</div>
           </div>
           <div class="kv">
-            <div class="k">Tax Number</div>
+            <div class="k">{{ 'Tax Number' | translate }}</div>
             <div class="v">{{ master.taxNumber || 'N/A' }}</div>
           </div>
           <div class="kv">
-            <div class="k">Customer Code</div>
+            <div class="k">{{ 'Customer Code' | translate }}</div>
             <div class="v">{{ master.customerCode || master.oldCode || 'N/A' }}</div>
           </div>
         </div>
       </div>
 
-      <!-- Contact Information Card -->
-      <div class="gr-card">
-        <div class="gr-card__head">
-          <h3>Primary Contact</h3>
-          <button 
-            *ngIf="contacts.length > 1" 
-            class="btn ghost sm" 
-            (click)="openContactsModal()">
-            All ({{ contacts.length }})
-          </button>
-        </div>
-        
-        <!-- Empty State for Contacts -->
-        <div *ngIf="contacts.length === 0" class="empty-state" style="text-align: center; color: #6c757d; padding: 20px;">
-          No contacts available
-        </div>
-        
-        <!-- Contact Details -->
-        <div class="kv-grid" *ngIf="contacts.length > 0">
-          <div class="kv">
-            <div class="k">Contact Name</div>
-            <div class="v">{{ master.contactName || contacts[0]?.name || 'N/A' }}</div>
-          </div>
-          <div class="kv">
-            <div class="k">Job Title</div>
-            <div class="v">{{ master.jobTitle || contacts[0]?.jobTitle || 'N/A' }}</div>
-          </div>
-          <div class="kv">
-            <div class="k">Email</div>
-            <div class="v">{{ master.email || contacts[0]?.email || 'N/A' }}</div>
-          </div>
-          <div class="kv">
-            <div class="k">Mobile</div>
-            <div class="v">{{ master.phone || contacts[0]?.mobile || 'N/A' }}</div>
-          </div>
-          <div class="kv">
-            <div class="k">Landline</div>
-            <div class="v">{{ master.landline || contacts[0]?.landline || 'N/A' }}</div>
-          </div>
-          <div class="kv">
-            <div class="k">Language</div>
-            <div class="v">{{ master.preferredLanguage || contacts[0]?.preferredLanguage || 'N/A' }}</div>
-          </div>
-        </div>
-      </div>
 
       <!-- Address Information Card -->
       <div class="gr-card">
         <div class="gr-card__head">
-          <h3>Address Information</h3>
+          <h3>{{ 'Address Information' | translate }}</h3>
         </div>
         <div class="kv-grid">
           <div class="kv">
-            <div class="k">Building Number</div>
+            <div class="k">{{ 'Building Number' | translate }}</div>
             <div class="v">{{ master.buildingNumber || 'N/A' }}</div>
           </div>
           <div class="kv">
-            <div class="k">Street</div>
+            <div class="k">{{ 'Street' | translate }}</div>
             <div class="v">{{ master.streetName || 'N/A' }}</div>
           </div>
           <div class="kv">
-            <div class="k">City</div>
+            <div class="k">{{ 'City' | translate }}</div>
             <div class="v">{{ master.city || 'N/A' }}</div>
           </div>
           <div class="kv">
-            <div class="k">Country</div>
+            <div class="k">{{ 'Country' | translate }}</div>
             <div class="v">{{ master.country || 'N/A' }}</div>
           </div>
         </div>
@@ -237,19 +179,19 @@
       <!-- Sales Information Card -->
       <div class="gr-card">
         <div class="gr-card__head">
-          <h3>Sales Information</h3>
+          <h3>{{ 'Sales Information' | translate }}</h3>
         </div>
         <div class="kv-grid">
           <div class="kv">
-            <div class="k">Sales Organization</div>
+            <div class="k">{{ 'Sales Organization' | translate }}</div>
             <div class="v">{{ master.salesOrg || 'N/A' }}</div>
           </div>
           <div class="kv">
-            <div class="k">Distribution Channel</div>
+            <div class="k">{{ 'Distribution Channel' | translate }}</div>
             <div class="v">{{ master.distributionChannel || 'N/A' }}</div>
           </div>
           <div class="kv">
-            <div class="k">Division</div>
+            <div class="k">{{ 'Division' | translate }}</div>
             <div class="v">{{ master.division || 'N/A' }}</div>
           </div>
         </div>
@@ -257,42 +199,108 @@
 
     </div>
 
-    <!-- Documents Section -->
-    <div class="gr-card">
+    <!-- Contacts Information Table - Full Width -->
+    <div class="gr-card full-width-table">
       <div class="gr-card__head">
-        <h3>📄 Documents</h3>
-        <button 
-          *ngIf="documents.length > 0" 
-          class="btn ghost sm" 
-          (click)="openDocsModal()">
-          View All ({{ documents.length }})
-        </button>
+        <h3>👥 {{ 'Contacts' | translate }} ({{ contacts.length }})</h3>
       </div>
       
-      <!-- Show actual documents if available -->
-      <div class="doc-list" *ngIf="documents.length > 0">
-        <div class="doc" *ngFor="let doc of documents.slice(0, 2)">
-          <div>
-            <div class="doc__label">{{ doc.type || 'Document' }}:</div>
-            <div class="doc__name">{{ doc.name || 'Unnamed' }}</div>
-          </div>
-        </div>
+      <!-- Empty State for Contacts -->
+      <div *ngIf="contacts.length === 0" class="empty-state" style="text-align: center; color: #6c757d; padding: 20px;">
+        No contacts available
       </div>
       
-      <!-- Show "No documents" message if empty -->
-      <div class="doc-list" *ngIf="documents.length === 0">
-        <div class="doc">
-          <div>
-            <div class="doc__label">Commercial Registration:</div>
-            <div class="doc__name">Not Uploaded</div>
-          </div>
-        </div>
-        <div class="doc">
-          <div>
-            <div class="doc__label">Tax Certificate:</div>
-            <div class="doc__name">Not Uploaded</div>
-          </div>
-        </div>
+      <!-- Contacts Table -->
+      <div class="contacts-table-container" *ngIf="contacts.length > 0">
+        <table class="contacts-table">
+          <thead>
+            <tr>
+              <th>Name</th>
+              <th>Job Title</th>
+              <th>Email</th>
+              <th>Mobile</th>
+              <th>Landline</th>
+              <th>Language</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let contact of contacts; let i = index" class="contact-row">
+              <td class="contact-name">{{ contact.name || 'N/A' }}</td>
+              <td class="contact-job">{{ contact.jobTitle || 'N/A' }}</td>
+              <td class="contact-email">{{ contact.email || 'N/A' }}</td>
+              <td class="contact-mobile">{{ contact.mobile || 'N/A' }}</td>
+              <td class="contact-landline">{{ contact.landline || 'N/A' }}</td>
+              <td class="contact-language">{{ contact.preferredLanguage || 'N/A' }}</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- Documents Section - Professional Table -->
+    <div class="gr-card full-width-table">
+      <div class="gr-card__head">
+        <h3>📄 {{ 'Documents' | translate }} ({{ documents.length }})</h3>
+      </div>
+      
+      <!-- Empty State for Documents -->
+      <div *ngIf="documents.length === 0" class="empty-state" style="text-align: center; color: #6c757d; padding: 20px;">
+        No documents available
+      </div>
+      
+      <!-- Documents Table -->
+      <div class="documents-table-container" *ngIf="documents.length > 0">
+        <table class="documents-table">
+          <thead>
+            <tr>
+              <th class="col-icon">Type</th>
+              <th class="col-name">Document Name</th>
+              <th class="col-category">Category</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let doc of documents; let i = index" class="document-row">
+              
+              <!-- File Type Icon -->
+              <td class="col-icon">
+                <div class="file-type-icon" [attr.data-type]="doc.mime?.includes('pdf') ? 'pdf' : 'other'">
+                  <span *ngIf="doc.mime?.includes('pdf')" class="pdf-icon">📄</span>
+                  <span *ngIf="!doc.mime?.includes('pdf')" class="file-icon">📎</span>
+                </div>
+              </td>
+              
+              <!-- Document Name -->
+              <td class="col-name">
+                <div class="doc-name-wrapper">
+                  <span class="doc-name" [title]="doc.name">{{ doc.name || 'Unnamed Document' }}</span>
+                </div>
+              </td>
+              
+              <!-- Document Type/Category -->
+              <td class="col-category">
+                <span class="doc-type-badge">
+                  {{ doc.type || 'Document' }}
+                </span>
+              </td>
+              
+              <!-- Actions -->
+              <td class="col-actions">
+                <div class="action-buttons">
+                  <button 
+                          nz-button 
+                          nzType="primary" 
+                          nzSize="small"
+                          class="action-btn view-btn"
+                          (click)="previewDocument(doc)">
+                    <span nz-icon nzType="eye" nzTheme="outline"></span>
+                    View
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -521,6 +529,69 @@
               </button>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Preview Modal -->
+  <div class="document-preview-overlay" *ngIf="showDocumentPreviewModal" (click)="closeDocumentPreview()">
+    <div class="document-preview-container" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="preview-header">
+        <div class="preview-title">
+          <span class="doc-type-icon">📄</span>
+          <span>{{ selectedDocument?.name }}</span>
+        </div>
+        <div class="preview-actions">
+          <button type="button" class="action-btn download-btn" (click)="downloadDoc(selectedDocument)">
+            <span>⬇</span>
+            Download
+          </button>
+          <button type="button" class="action-btn close-btn" (click)="closeDocumentPreview()">
+            ✕
+          </button>
+        </div>
+      </div>
+      
+      <!-- Content -->
+      <div class="preview-content">
+        <!-- Image Preview -->
+        <div *ngIf="selectedDocument?.mime?.includes('image')" class="image-preview">
+          <img [src]="getPreviewUrl(selectedDocument)" [alt]="selectedDocument?.name" />
+        </div>
+        
+        <!-- PDF Preview -->
+        <div *ngIf="selectedDocument?.mime?.includes('pdf')" class="pdf-preview">
+          <iframe [src]="getSafePreviewUrl(selectedDocument)" 
+                  frameborder="0"
+                  width="100%"
+                  height="100%"></iframe>
+        </div>
+        
+        <!-- Non-previewable file -->
+        <div *ngIf="!canPreview(selectedDocument)" class="no-preview">
+          <div class="no-preview-icon">
+            <span>📎</span>
+          </div>
+          <h3>Preview not available</h3>
+          <p>{{ selectedDocument?.name }}</p>
+          <p class="file-info">
+            <span class="file-type">{{ selectedDocument?.type }}</span>
+            <span class="file-size">{{ selectedDocument?.size ? ((selectedDocument.size / 1024).toFixed(1) + ' KB') : 'Unknown size' }}</span>
+          </p>
+          <button type="button" class="download-large-btn" (click)="downloadDoc(selectedDocument)">
+            <span>⬇</span>
+            Download to view
+          </button>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="preview-footer">
+        <div class="document-info">
+          <span><strong>Type:</strong> {{ selectedDocument?.type }}</span>
+          <span><strong>Size:</strong> {{ selectedDocument?.size ? ((selectedDocument.size / 1024).toFixed(1) + ' KB') : 'Unknown size' }}</span>
         </div>
       </div>
     </div>

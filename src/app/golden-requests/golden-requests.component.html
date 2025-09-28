@@ -5,23 +5,32 @@
   <div class="actionHolderTitleTabs">
     <div class="seachInputHolder">
       <img src="./assets/img/search.svg" alt="" />
-      <input type="text" [placeholder]="'Search' | translate" />
-      <!-- ملاحظة: صندوق البحث هنا شكلي فقط حالياً؛ الجدول بيعرض rows مباشرة زي ما الكومبوننت بيجهزها -->
+      <input 
+        type="text" 
+        [placeholder]="'Search by company name, code, country...' | translate"
+        [(ngModel)]="searchTerm"
+        (input)="onSearch($event)" />
     </div>
     <img src="./assets/img/filter.svg" alt="" />
+    
+    <!-- Sync Button -->
+    <button nz-button nzType="primary" class="sync-btn" (click)="goToSyncPage()">
+      <i nz-icon nzType="sync" nzTheme="outline"></i>
+      {{ 'Sync Records' | translate }}
+    </button>
   </div>
 </div>
 
 <!-- Loading Indicator -->
 <div *ngIf="loading" style="text-align: center; padding: 20px;">
-  <nz-spin [nzSpinning]="true" nzTip="Loading Golden Records...">
+  <nz-spin [nzSpinning]="true" nzTip="{{ 'Loading Golden Records...' | translate }}">
     <div style="height: 200px;"></div>
   </nz-spin>
 </div>
 
 <!-- Golden Records Table -->
 <div *ngIf="!loading">
-  <nz-table #goldenTable [nzPageSize]="7" [nzData]="rows || []" [nzLoading]="loading">
+  <nz-table #goldenTable [nzPageSize]="7" [nzData]="filteredRows || []" [nzLoading]="loading">
     <thead>
       <tr>
         <th>{{ 'Golden Record Code' | translate }}</th>
@@ -41,16 +50,27 @@
         <td>{{ r.country }}</td>
         <td>
           <span [ngClass]="statusClass(r.status)">
-            {{ (r.status || '').toLowerCase() === 'blocked' ? 'Blocked' : 'Active' }}
+            {{ (r.status || '').toLowerCase() === 'blocked' ? ('Blocked' | translate) : ('Active' | translate) }}
           </span>
         </td>
         <td>
-          <a class="primaryColor" (click)="viewDetails(r)" style="margin-right:16px">
-            {{ 'ViewDetails' | translate }}
-          </a>
-          <a class="primaryColor" (click)="goDataLineage(r)">
-            {{ 'DataLineage' | translate }}
-          </a>
+          <button nz-button nz-dropdown [nzDropdownMenu]="actionMenu" nzTrigger="click" nzPlacement="bottomRight" class="actions-dropdown">
+            <i nz-icon nzType="more" nzTheme="outline"></i>
+            {{ 'Actions' | translate }}
+            <i nz-icon nzType="down"></i>
+          </button>
+          <nz-dropdown-menu #actionMenu="nzDropdownMenu">
+            <ul nz-menu>
+              <li nz-menu-item (click)="viewDetails(r)">
+                <i nz-icon nzType="eye" nzTheme="outline"></i>
+                {{ 'ViewDetails' | translate }}
+              </li>
+              <li nz-menu-item (click)="goDataLineage(r)">
+                <i nz-icon nzType="apartment" nzTheme="outline"></i>
+                {{ 'DataLineage' | translate }}
+              </li>
+            </ul>
+          </nz-dropdown-menu>
         </td>
       </tr>
     </tbody>

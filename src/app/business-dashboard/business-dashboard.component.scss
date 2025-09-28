@@ -1,0 +1,308 @@
+.business-dashboard {
+  min-height: 100vh;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  
+  &.rtl {
+    direction: rtl;
+  }
+
+  // Header Section
+  .dashboard-header {
+    background: rgba(255, 255, 255, 0.98);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+    position: sticky;
+    top: 0;
+    z-index: 100;
+
+    .header-content {
+      padding: 20px 30px;
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+      flex-wrap: wrap;
+      gap: 20px;
+
+      .title-section {
+        h1 {
+          margin: 0 0 10px 0;
+          font-size: 28px;
+          font-weight: 600;
+          color: #262626;
+          display: flex;
+          align-items: center;
+          gap: 10px;
+
+          i {
+            color: #1890ff;
+          }
+        }
+
+        .stats-summary {
+          display: flex;
+          gap: 20px;
+          flex-wrap: wrap;
+
+          .stat-item {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 14px;
+            color: #595959;
+            padding: 4px 12px;
+            background: #f5f5f5;
+            border-radius: 16px;
+
+            i {
+              font-size: 16px;
+            }
+
+            &.success {
+              background: rgba(82, 196, 26, 0.1);
+              color: #52c41a;
+            }
+
+            &.danger {
+              background: rgba(255, 77, 79, 0.1);
+              color: #ff4d4f;
+            }
+
+            &.warning {
+              background: rgba(250, 173, 20, 0.1);
+              color: #faad14;
+            }
+          }
+        }
+      }
+
+      .header-actions {
+        display: flex;
+        gap: 12px;
+        align-items: center;
+      }
+    }
+  }
+
+  // Filters Section
+  .filters-section {
+    background: white;
+    padding: 20px 30px;
+    border-bottom: 1px solid #f0f0f0;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+
+    .filters-container {
+      display: flex;
+      gap: 15px;
+      flex-wrap: wrap;
+      align-items: flex-end;
+
+      .filter-group {
+        flex: 1;
+        min-width: 150px;
+
+        label {
+          display: block;
+          margin-bottom: 5px;
+          font-size: 12px;
+          color: #8c8c8c;
+          font-weight: 500;
+          text-transform: uppercase;
+        }
+
+        .filter-select {
+          width: 100%;
+        }
+      }
+
+      .filter-actions {
+        display: flex;
+        gap: 8px;
+        align-items: center;
+      }
+    }
+  }
+
+  // Content
+  .dashboard-content {
+    padding: 30px;
+
+    .loading-spinner {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      min-height: 400px;
+    }
+
+    // Grid View
+    .charts-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(400px, 1fr));
+      gap: 20px;
+
+      .chart-card {
+        background: white;
+        border-radius: 12px;
+        padding: 0;
+        box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        transition: all 0.3s ease;
+
+        &:hover {
+          transform: translateY(-2px);
+          box-shadow: 0 8px 24px rgba(0, 0, 0, 0.12);
+        }
+
+        &.large {
+          grid-column: span 2;
+
+          @media (max-width: 900px) {
+            grid-column: span 1;
+          }
+        }
+
+        .chart-header {
+          padding: 16px 20px;
+          border-bottom: 1px solid #f0f0f0;
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+
+          h3 {
+            margin: 0;
+            font-size: 16px;
+            font-weight: 600;
+            color: #262626;
+          }
+
+          .subtitle {
+            font-size: 12px;
+            color: #8c8c8c;
+          }
+        }
+
+        .chart-body {
+          padding: 20px;
+          height: 300px;
+          position: relative;
+
+          canvas {
+            cursor: pointer;
+          }
+        }
+
+        .chart-footer {
+          padding: 8px 20px;
+          background: #fafafa;
+          border-top: 1px solid #f0f0f0;
+          text-align: center;
+
+          .hint {
+            font-size: 11px;
+            color: #8c8c8c;
+            font-style: italic;
+          }
+        }
+      }
+    }
+
+    // Single View
+    .single-view {
+      background: white;
+      border-radius: 12px;
+      padding: 30px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+
+      .chart-selector {
+        margin-bottom: 30px;
+        text-align: center;
+      }
+
+      .single-chart-container {
+        height: 500px;
+        position: relative;
+
+        canvas {
+          cursor: pointer;
+        }
+      }
+    }
+  }
+}
+
+// Modal Styles
+::ng-deep .ant-modal {
+  .company-name {
+    strong {
+      display: block;
+      font-weight: 600;
+      color: #262626;
+    }
+
+    .arabic {
+      display: block;
+      font-size: 12px;
+      color: #8c8c8c;
+      direction: rtl;
+      margin-top: 2px;
+    }
+  }
+}
+
+// Responsive Design
+@media (max-width: 1200px) {
+  .business-dashboard {
+    .charts-grid {
+      grid-template-columns: repeat(auto-fit, minmax(350px, 1fr));
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .business-dashboard {
+    .dashboard-header .header-content {
+      flex-direction: column;
+
+      .header-actions {
+        width: 100%;
+        justify-content: space-between;
+      }
+    }
+
+    .filters-section .filters-container {
+      .filter-group {
+        flex: 1 1 100%;
+      }
+    }
+
+    .charts-grid {
+      grid-template-columns: 1fr;
+
+      .chart-card.large {
+        grid-column: span 1;
+      }
+    }
+  }
+}
+
+// Dark Mode Support (Optional)
+@media (prefers-color-scheme: dark) {
+  .business-dashboard {
+    background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+
+    .dashboard-header,
+    .filters-section,
+    .chart-card,
+    .single-view {
+      background: #1f1f1f;
+      color: #fff;
+
+      h1, h3, strong {
+        color: #fff;
+      }
+
+      label, .subtitle, .hint {
+        color: #8c8c8c;
+      }
+    }
+  }
+}
+

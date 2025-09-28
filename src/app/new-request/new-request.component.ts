@@ -1,7 +1,7 @@
-// src/app/new-request/new-request.component.ts
 import { Location, isPlatformBrowser } from '@angular/common';
 import { Router, ActivatedRoute } from '@angular/router';
-import { Component, Inject, PLATFORM_ID, ViewEncapsulation, OnInit } from '@angular/core';
+import { Component, Inject, PLATFORM_ID, ViewEncapsulation, OnInit, OnDestroy, ChangeDetectionStrategy, ChangeDetectorRef } from '@angular/core';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { HttpClient } from '@angular/common/http';
 import { environment } from '../../environments/environment';
 
@@ -18,6 +18,8 @@ import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzUploadFile } from 'ng-zorro-antd/upload';
 import { Observable, firstValueFrom } from 'rxjs';
+import { DemoDataGeneratorService, DemoCompany } from '../services/demo-data-generator.service';
+import { AutoTranslateService } from '../services/auto-translate.service';
 
 // Import unified lookup data
 import {
@@ -110,9 +112,13 @@ interface CurrentUser {
   selector: 'app-new-request',
   templateUrl: './new-request.component.html',
   styleUrls: ['./new-request.component.scss'],
-  encapsulation: ViewEncapsulation.None
+  encapsulation: ViewEncapsulation.None,
+  changeDetection: ChangeDetectionStrategy.OnPush
 })
-export class NewRequestComponent implements OnInit {
+export class NewRequestComponent implements OnInit, OnDestroy {
+  // Anti-loop protection
+  private initCount = 0;
+  private maxInitCalls = 1;
   requestForm!: FormGroup;
   private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
   
@@ -136,6 +142,10 @@ export class NewRequestComponent implements OnInit {
   isGoldenEditMode = false;
   isEditingGoldenRecord = false;
   sourceGoldenRecordId: string | null = null;
+  hasDuplicate = false;
+  duplicateRecord: any = null;
+  showDuplicateModal = false;
+  private validationTimer: any = null;
 
   // Quarantine mode flag
   isFromQuarantine = false;
@@ -183,7 +193,10 @@ export class NewRequestComponent implements OnInit {
     'text/plain'
   ];
 
-  docTypeOptions = DOCUMENT_TYPE_OPTIONS;
+  docTypeOptions = DOCUMENT_TYPE_OPTIONS.map(option => ({
+    ...option,
+    label: option.value === 'Other' ? this.translate.instant('Other') : option.label
+  }));
 
   metaForm = this.fb.group({
     type: ['Other'],
@@ -200,7 +213,20 @@ export class NewRequestComponent implements OnInit {
   PrefferedLanguage = PREFERRED_LANGUAGE_OPTIONS;
 
   private originalRecord: TaskRecord | null = null;
-  private currentRecordId: string | null = null;
+  currentRecordId: string | null = null;
+
+  // ====== Upload Document Modal ======
+  showUploadModal = false;
+  newDocument: any = {
+    name: '',
+    type: '',
+    description: '',
+    file: null
+  };
+
+  // ====== Document Preview & Download ======
+  showDocumentPreviewModal = false;
+  selectedDocument: any = null;
 
   // Getters
   get documentsFA(): FormArray { return this.requestForm.get('documents') as FormArray; }
@@ -229,51 +255,310 @@ export class NewRequestComponent implements OnInit {
     private location: Location,
     private msg: NzMessageService,
     @Inject(PLATFORM_ID) private platformId: Object,
-    private http: HttpClient
+    private http: HttpClient,
+    private demoDataGenerator: DemoDataGeneratorService,
+    private autoTranslate: AutoTranslateService,
+    private sanitizer: DomSanitizer,
+    private cdr: ChangeDetectorRef
   ) {}
 
   async ngOnInit(): Promise<void> {
+    // Protection against multiple calls
+    this.initCount++;
+    if (this.initCount > this.maxInitCalls) {
+      console.error('BLOCKED: Too many init calls!');
+      return;
+    }
+    
+    console.log('🚀 === INIT START === 🚀');
+    
+    // Add showDuplicateDetails to window for onclick access
+    (window as any).showDuplicateDetails = () => this.showDuplicateDetails();
+    
+    // Initialize form first
     this.i18n.setLocale(en_US);
     this.initForm();
-    this.setupCountryCityLogic();
     
-    // Get current user from API first (no localStorage)
-    await this.getCurrentUser();
+    // Initialize city options
+    this.filteredCityOptions = [];
     
-    // Check for golden record editing mode FIRST
-    const mode = this.route.snapshot.queryParamMap.get('mode');
-    const from = this.route.snapshot.queryParamMap.get('from');
-    const fromQuarantine = this.route.snapshot.queryParamMap.get('fromQuarantine');
+    // Get ID from route
+    const routeId = this.route.snapshot.paramMap.get('id');
+    const queryParams = this.route.snapshot.queryParams;
     
-    // Check if coming from Quarantine page
-    if (fromQuarantine === 'true') {
-      console.log('=== QUARANTINE MODE DETECTED ===');
-      this.isFromQuarantine = true;
-      // Force data_entry role for quarantine records
+    // Set role from query params
+    if (queryParams['userRole'] === 'reviewer') {
+      this.userRole = 'reviewer';
+      this.userType = '2';
+      this.canView = true;
+      this.canEdit = false;
+      this.canApproveReject = true;
+    }
+
+    // Enhanced compliance detection from query params
+    if (queryParams['userRole'] === 'compliance' || 
+        queryParams['action'] === 'compliance-review' ||
+        queryParams['from'] === 'compliance-task-list') {
+      
+      console.log('=== COMPLIANCE MODE ACTIVATED ===');
+      this.userRole = 'compliance';
+      this.userType = '3';
+      this.currentUserRole = 'compliance';
+      
+      // Set permissions for compliance
+      if (routeId && routeId !== 'new') {
+        // Will be set properly after loading record
+        this.canView = true;
+        this.canEdit = false;
+      }
+    }
+
+    // Force compliance permissions if ID exists and compliance role
+    if (routeId && routeId !== 'new' && this.userRole === 'compliance') {
+      console.log('Pre-setting compliance permissions for ID:', routeId);
+      this.canView = true;
+      this.canEdit = false;
+      this.userType = '3';
+      // canComplianceAction will be set after loading record
+    }
+    
+    // Enhanced check for data entry permissions
+    if ((queryParams['from'] === 'my-task-list' || 
+         queryParams['from'] === 'quarantine' || 
+         queryParams['fromQuarantine'] === 'true') && 
+        (queryParams['edit'] === 'true' || queryParams['edit'] === true || 
+         queryParams['mode'] === 'edit')) {
+      
+      console.log('🔧 Force setting data_entry role from navigation');
       this.userRole = 'data_entry';
       this.userType = '1';
       this.currentUserRole = 'data_entry';
+      this.canEdit = true;
+      this.editPressed = true;
     }
     
-    if (mode === 'edit-golden' && from === 'golden-summary') {
-      console.log('=== GOLDEN EDIT MODE DETECTED ===');
-      this.isGoldenEditMode = true;
-      this.isEditingGoldenRecord = true;
-      await this.loadGoldenRecordForEditing();
+    // Load data if ID exists with timeout protection
+    if (routeId && routeId !== 'new') {
+      this.isLoading = true;
+      
+      // Set a timeout to prevent infinite loading
+      const loadTimeout = setTimeout(() => {
+        console.error('Load timeout - stopping');
+        this.isLoading = false;
+        this.msg.error('Loading timeout');
+      }, 10000); // 10 seconds timeout
+      
+      try {
+        await this.loadSimpleData(routeId);
+      } catch (error) {
+        console.error('Load error:', error);
+      } finally {
+        clearTimeout(loadTimeout);
+        this.isLoading = false;
+      }
     } else {
-      // Then load regular request data
-      await this.loadRequestData();
+      this.isNewRequest = true;
+      this.isLoading = false;
+    }
+    
+    // Setup keyboard auto-fill for data entry users
+    // Force setup regardless of userType for debugging
+    console.log('Setting up auto-fill:', { userType: this.userType, isNewRequest: this.isNewRequest });
+    this.setupKeyboardAutoFill();
+    
+    // Ensure userType is properly set for new requests
+    if (this.isNewRequest && (!this.userType || this.userType === null)) {
+      console.log('🔧 Setting default userType for new request');
+      this.userType = '1';
+      this.userRole = 'data_entry';
     }
 
-    // Language setting
-    if (isPlatformBrowser(this.platformId)) {
-      this.isArabic = false; // Default to English
-    }
-
-    // Duplicate warning
-    this.requestForm.get('firstName')?.valueChanges.subscribe(() => this.checkForDuplicates());
-    this.requestForm.get('tax')?.valueChanges.subscribe(() => this.checkForDuplicates());
+    console.log('=== INIT COMPLETE ===', {
+      userType: this.userType,
+      isNewRequest: this.isNewRequest,
+      userRole: this.userRole,
+      editPressed: this.editPressed,
+      hasRecord: this.hasRecord,
+      canUploadOld: this.userType === '1' && (this.editPressed || !this.hasRecord),
+      canUploadNew: this.userType === '1'
+    });
   }
+
+  private async loadSimpleData(id: string): Promise<void> {
+    console.log('🔍 === LOADING SIMPLE DATA === 🔍');
+    console.log('🆔 Record ID:', id);
+    console.log('👤 Current User State:', {
+      userRole: this.userRole,
+      userType: this.userType,
+      currentUserRole: this.currentUserRole
+    });
+    
+    // CRITICAL DEBUG - User Role Values
+    console.log('🔍 USER ROLE DEBUG:');
+    console.log('userRole value:', this.userRole);
+    console.log('userRole type:', typeof this.userRole);
+    console.log('userType value:', this.userType);
+    console.log('userType type:', typeof this.userType);
+    console.log('userRole === "data_entry":', this.userRole === 'data_entry');
+    console.log('userType === "1":', this.userType === '1');
+    this.isLoading = true;
+    
+    // Force data_entry mode for quarantine and my-task-list navigation
+    const queryParams = this.route.snapshot.queryParams;
+    if ((queryParams['fromQuarantine'] === 'true' || 
+         queryParams['from'] === 'quarantine' ||
+         queryParams['from'] === 'my-task-list') && 
+        (queryParams['mode'] === 'edit' || queryParams['edit'] === 'true' || queryParams['edit'] === true)) {
+      
+      console.log('🔧 Forcing data_entry permissions for quarantine/rejected records');
+      this.userRole = 'data_entry';
+      this.userType = '1';
+      this.currentUserRole = 'data_entry';
+      this.canEdit = true;
+      this.editPressed = true;
+      
+      // Enable the form
+      setTimeout(() => {
+        this.requestForm.enable();
+        console.log('✅ Form enabled for data_entry editing');
+      }, 100);
+    }
+    
+    try {
+      // Use HttpClient instead of fetch for consistency
+      const url = `${this.apiBase}/requests/${id}`;
+      const record = await firstValueFrom(
+        this.http.get<any>(url)
+      );
+      
+      if (record) {
+          console.log('🔍 Record loaded:', record);
+          console.log('👥 Contacts in record:', record.contacts);
+          console.log('📄 Documents in record:', record.documents);
+          console.log('🎯 CRITICAL - Record Status Info:', {
+            id: record.id,
+            status: record.status,
+            assignedTo: record.assignedTo,
+            userRole: this.userRole,
+            userType: this.userType,
+            currentUserRole: this.currentUserRole
+          });
+        
+        this.currentRecordId = id;
+        this.originalRecord = record;
+        this.hasRecord = true;
+        this.status = record.status || 'Pending';
+        
+        // Use patchFromRecord to load everything including contacts/documents
+        this.patchFromRecord(record);
+        
+        // REMOVED loadContactsAndDocuments - it's causing the loop!
+        // The contacts and documents should already be in the record
+        
+        // Setup permissions for reviewer
+        if (this.userRole === 'reviewer') {
+          this.canApproveReject = record.status === 'Pending' && 
+                                 record.assignedTo === 'reviewer';
+          this.canView = true;
+          this.canEdit = false;
+          this.requestForm.disable();
+        }
+
+        // Setup permissions for compliance
+        if (this.userRole === 'compliance') {
+          this.canComplianceAction = record.status === 'Approved';
+          this.canView = true;
+          this.canEdit = false;
+          this.userType = '3';
+          this.requestForm.disable();
+          
+          console.log('Compliance setup in loadSimpleData:', {
+            canComplianceAction: this.canComplianceAction,
+            status: record.status
+          });
+        }
+
+        // 🚨 CRITICAL FIX: Setup permissions for data entry users
+        console.log('🔍 CHECKING DATA ENTRY CONDITIONS:');
+        console.log('userRole === "data_entry":', this.userRole === 'data_entry');
+        console.log('userType === "1":', this.userType === '1');
+        console.log('Combined condition:', this.userRole === 'data_entry' || this.userType === '1');
+        
+        if (this.userRole === 'data_entry' || this.userType === '1') {
+          console.log('🔧 === DATA ENTRY PERMISSIONS SETUP === 🔧');
+          console.log('📋 Record info for data entry:', {
+            id: record.id,
+            status: record.status,
+            assignedTo: record.assignedTo,
+            userRole: this.userRole,
+            userType: this.userType
+          });
+          
+          // Check if data entry can edit this rejected or quarantine record
+          const isRejectedRecord = record.status === 'Rejected';
+          const isQuarantineRecord = record.status === 'Quarantine' || record.status === 'Quarantined';
+          const isAssignedToDataEntry = record.assignedTo === 'data_entry' || 
+                                       record.assignedTo === 'system_import' || 
+                                       !record.assignedTo;
+          
+          console.log('🔍 Data Entry Conditions:', {
+            isRejectedRecord,
+            isQuarantineRecord,
+            isAssignedToDataEntry,
+            shouldBeEditable: (isRejectedRecord || isQuarantineRecord) && isAssignedToDataEntry
+          });
+          
+          if ((isRejectedRecord || isQuarantineRecord) && isAssignedToDataEntry) {
+            // Data entry can edit rejected or quarantine records
+            this.canEdit = true;
+            this.canView = true;
+            this.editPressed = true;
+            this.requestForm.enable();
+            
+            console.log('🚨 ENABLING FORM - Data entry can edit rejected/quarantine record');
+            console.log('🎯 FINAL DATA ENTRY STATE:', {
+              canEdit: this.canEdit,
+              editPressed: this.editPressed,
+              formEnabled: this.requestForm.enabled
+            });
+          } else {
+            // Data entry view mode
+            this.canEdit = false;
+            this.canView = true;
+            this.editPressed = false;
+            this.requestForm.disable();
+            
+            console.log('🔒 READ-ONLY MODE - Data entry cannot edit this record (not rejected/quarantine or not assigned)');
+          }
+        }
+
+        // Debug compliance state if compliance user
+        if (this.userRole === 'compliance') {
+          this.debugComplianceState();
+        }
+      }
+    } catch (error) {
+      console.error('Error loading data:', error);
+      this.msg.error('Failed to load data');
+      
+      // Set fallback permissions
+      if (this.userRole === 'reviewer') {
+        this.canView = true;
+        this.canApproveReject = false;
+        this.requestForm.disable();
+      }
+    } finally {
+      this.isLoading = false;
+    }
+  }
+
+  /*
+  // COMMENTED OUT - Causing infinite loop
+  private async loadContactsAndDocuments(requestId: string): Promise<void> {
+    // This method is not needed if contacts/documents come with the main record
+    // It was causing infinite loops due to pending API requests
+  }
+  */
 
   // ENHANCED: Load golden record for editing
   private async loadGoldenRecordForEditing(): Promise<void> {
@@ -398,6 +683,8 @@ export class NewRequestComponent implements OnInit {
 
   private async getCurrentUser(): Promise<void> {
     try {
+      console.log('=== GET CURRENT USER START ===');
+      
       // Check multiple storage locations for username
       const username = sessionStorage.getItem('username') || 
                       localStorage.getItem('username') || 
@@ -409,19 +696,37 @@ export class NewRequestComponent implements OnInit {
         console.error('No username found in storage');
         this.currentUser = { username: 'data_entry', role: 'data_entry' };
         this.mapUserRole('data_entry');
+        console.log('=== GET CURRENT USER END (no username) ===');
         return;
       }
       
       const url = `${this.apiBase}/auth/me?username=${username}`;
       
       try {
-        const user = await firstValueFrom(this.http.get<any>(url));
+        console.log('Making API call to:', url);
+        const userResponse = await Promise.race([
+          firstValueFrom(this.http.get<any>(url)),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 3000)
+          )
+        ]);
+        const user = userResponse as any;
         
-        if (user) {
-          this.currentUser = user;
-          this.mapUserRole(user.role);
-          console.log('Current user loaded:', user);
+        console.log('User API response:', user);
+        if (user && (user.username || user.id)) {
+          this.currentUser = {
+            username: user.username || username,
+            role: user.role || 'data_entry',
+            id: user.id
+          };
+          this.mapUserRole(user.role || 'data_entry');
+          console.log('Current user loaded:', this.currentUser);
+        } else {
+          console.warn('Invalid user response, using fallback');
+          this.currentUser = { username: username, role: 'data_entry' };
+          this.mapUserRole('data_entry');
         }
+        console.log('=== GET CURRENT USER SUCCESS ===');
       } catch (apiError) {
         console.error('API call failed, using fallback user data');
         this.currentUser = {
@@ -438,29 +743,45 @@ export class NewRequestComponent implements OnInit {
       this.currentUser = { username: 'data_entry', role: 'data_entry' };
       this.mapUserRole('data_entry');
     }
+    
+    console.log('=== GET CURRENT USER END ===');
+    console.log('🔥 FINAL USER STATE FOR UPLOAD BUTTON:', {
+      currentUser: this.currentUser,
+      userRole: this.userRole,
+      userType: this.userType,
+      shouldShowUploadButton: this.userType === '1',
+      uploadCondition: `userType === '1' ? ${this.userType === '1'}`
+    });
   }
 
   private mapUserRole(apiRole: string): void {
     // Fix role mapping - handle the database inconsistency
     let correctedRole = apiRole;
     
-    // If username is data_entry but role is wrong, fix it
+    // Get username for verification
     const username = this.currentUser?.username;
+    
+    // Check query params first (from navigation)
+    const queryRole = this.route.snapshot.queryParams['userRole'];
+    if (queryRole) {
+      correctedRole = queryRole;
+      console.log('Using role from query params:', queryRole);
+    } else {
+      // Fix based on username
     if (username === 'data_entry' && apiRole !== 'data_entry' && apiRole !== '1') {
       console.log('Fixing role for data_entry user');
       correctedRole = 'data_entry';
     }
     
-    // If username is reviewer but role is wrong, fix it  
     if (username === 'reviewer' && apiRole !== 'reviewer' && apiRole !== '2') {
       console.log('Fixing role for reviewer user');
       correctedRole = 'reviewer';
     }
     
-    // If username is compliance but role is wrong, fix it
     if (username === 'compliance' && apiRole !== 'compliance' && apiRole !== '3') {
       console.log('Fixing role for compliance user');
       correctedRole = 'compliance';
+      }
     }
     
     // Map corrected roles to component roles
@@ -486,7 +807,8 @@ export class NewRequestComponent implements OnInit {
       originalApiRole: apiRole,
       correctedRole: correctedRole,
       userRole: this.userRole,
-      userType: this.userType
+      userType: this.userType,
+      queryRole: queryRole
     });
   }
 
@@ -576,44 +898,175 @@ export class NewRequestComponent implements OnInit {
       contacts: this.fb.array([]),
       documents: this.fb.array([])
     });
+
+    // Setup country/city logic after form creation
+    setTimeout(() => {
+      this.setupCountryCityLogic();
+      this.setupDuplicateValidation();
+    }, 100);
   }
 
   private setupCountryCityLogic(): void {
+    console.log('Setting up Country-City logic');
     this.previousCountry = this.requestForm.get('country')?.value || null;
+    
+    // Add protection flags
+    let isUpdatingCity = false;
+    let isProcessing = false;
+    
     this.requestForm.get('country')?.valueChanges.subscribe(selectedCountry => {
+      // CRITICAL: Prevent loops
+      if (isUpdatingCity || isProcessing || this.showUploadModal) return;
+      
+      isProcessing = true;
+      
+      console.log('Country changed to:', selectedCountry);
+      
       // Use helper function from shared constants
       this.filteredCityOptions = getCitiesByCountry(selectedCountry || '');
+      console.log('Filtered cities:', this.filteredCityOptions);
 
       if (this.suppressCityReset) {
         this.previousCountry = selectedCountry;
+        isProcessing = false;
         return;
       }
       
       const currentCity = this.requestForm.get('city')?.value;
       const cityStillValid = this.filteredCityOptions.some(o => o.value === currentCity);
       if ((this.editPressed || this.isNewRequest || this.isGoldenEditMode) && !cityStillValid) {
-        this.requestForm.get('city')?.setValue(null);
+        isUpdatingCity = true;
+        this.requestForm.get('city')?.setValue(null, { emitEvent: false });
+        setTimeout(() => { 
+          isUpdatingCity = false; 
+          isProcessing = false;
+        }, 100);
+      } else {
+        isProcessing = false;
       }
+      
       this.previousCountry = selectedCountry;
     });
+    
+    // Just set initial city options without subscriptions
+    const currentCountry = this.requestForm.get('country')?.value;
+    if (currentCountry) {
+      this.filteredCityOptions = getCitiesByCountry(currentCountry);
+    }
+  }
+
+  private setupDuplicateValidation(): void {
+    console.log('Setting up duplicate validation');
+    
+    // Watch for changes in tax and CustomerType
+    this.requestForm.get('tax')?.valueChanges.subscribe(() => {
+      this.validateForDuplicate();
+    });
+    
+    this.requestForm.get('CustomerType')?.valueChanges.subscribe(() => {
+      this.validateForDuplicate();
+    });
+    
+    // Also validate on initial load if fields are already filled
+    setTimeout(() => {
+      const tax = this.requestForm.get('tax')?.value;
+      const customerType = this.requestForm.get('CustomerType')?.value;
+      
+      if (tax && customerType && !this.currentRecordId && !this.isGoldenEditMode) {
+        console.log('Initial duplicate validation for:', tax, customerType);
+        this.validateForDuplicate();
+      }
+    }, 500);
+  }
+  
+  private validateForDuplicate(): void {
+    // Clear previous timer if exists
+    if (this.validationTimer) {
+      clearTimeout(this.validationTimer);
+    }
+    
+    // Set new timer to validate after 1 second of no changes
+    this.validationTimer = setTimeout(async () => {
+      const tax = this.requestForm.get('tax')?.value;
+      const customerType = this.requestForm.get('CustomerType')?.value;
+      
+      if (tax && customerType) {
+        console.log('Real-time duplicate validation for:', tax, customerType);
+        console.log('Validation conditions:', { 
+          tax, 
+          customerType, 
+          currentRecordId: this.currentRecordId, 
+          isGoldenEditMode: this.isGoldenEditMode,
+          isFromQuarantine: this.isFromQuarantine,
+          status: this.status
+        });
+        
+        // Run validation for all cases except golden records in edit mode
+        if (!this.isGoldenEditMode) {
+          console.log('Running duplicate validation for:', {
+            type: this.currentRecordId ? 'existing record' : 'new record',
+            status: this.status,
+            isFromQuarantine: this.isFromQuarantine
+          });
+          await this.checkForDuplicate();
+        } else {
+          console.log('Skipping validation for golden record edit');
+        }
+      } else {
+        console.log('Validation skipped - missing data:', { tax, customerType });
+      }
+    }, 1000);
   }
 
   private async loadRequestData(): Promise<void> {
     const routeId = this.route.snapshot.paramMap.get('id');
     const queryParams = this.route.snapshot.queryParams;
     
+    console.log('=== LOAD REQUEST DATA ===');
+    console.log('Route ID:', routeId);
+    console.log('Query params:', queryParams);
+    console.log('Current user role:', this.userRole);
+    console.log('Current user type:', this.userType);
+    
     // Clean up ID if it has REQ- prefix
     const cleanId = routeId?.replace('REQ-', '');
+    console.log('Clean ID:', cleanId);
     
+    // Check if this is coming from reviewer
+    if (queryParams['userRole'] === 'reviewer' && queryParams['action'] === 'review') {
+      console.log('Reviewer mode detected from query params');
+      this.userRole = 'reviewer';
+      this.userType = '2';
+      this.currentUserRole = 'reviewer';
+    }
+
+    // Force compliance mode if coming from compliance-task-list
+    if (queryParams['from'] === 'compliance-task-list') {
+      this.userRole = 'compliance';
+      this.userType = '3';
+      this.currentUserRole = 'compliance';
+      console.log('Forced compliance mode from navigation');
+    }
+    
+    // CRITICAL FIX: Handle the case where ID exists but needs loading
     if (cleanId && cleanId !== 'new') {
       // Load existing record from API
       this.isLoading = true;
+      console.log('Loading request data for ID:', cleanId, 'Query params:', queryParams);
       try {
-        const record = await firstValueFrom(
-          this.http.get<TaskRecord>(`${this.apiBase}/requests/${cleanId}`)
-        );
+        const apiUrl = `${this.apiBase}/requests/${cleanId}`;
+        console.log('Making API call to:', apiUrl);
+        const record = await Promise.race([
+          firstValueFrom(this.http.get<TaskRecord>(apiUrl)),
+          new Promise((_, reject) => 
+            setTimeout(() => reject(new Error('Timeout')), 10000)
+          )
+        ]) as TaskRecord;
+        console.log('API response received:', record);
+        console.log('Record type:', typeof record);
+        console.log('Record keys:', record ? Object.keys(record) : 'No record');
         
-        if (record) {
+        if (record && record.id) {
           this.currentRecordId = cleanId; // CRITICAL: Store the ID for updates
           this.originalRecord = record;
           this.hasRecord = true;
@@ -631,15 +1084,50 @@ export class NewRequestComponent implements OnInit {
             this.requestForm.enable();
           } else {
             // Set permissions based on API data
+            console.log('🔧 === SETTING PERMISSIONS === 🔧');
+            console.log('📋 Record before permissions:', {
+              id: record.id,
+              status: record.status,
+              assignedTo: record.assignedTo,
+              userRole: this.userRole
+            });
             this.setPermissionsFromRecord(record);
+            console.log('✅ === PERMISSIONS SET === ✅');
             
             // Set form state based on permissions
-            if (!this.canEdit && !this.canApproveReject && !this.canComplianceAction) {
-              this.requestForm.disable();
-            } else if (this.canEdit) {
+            if (this.canEdit) {
+              // Data entry can edit
+              console.log('🔓 ENABLING FORM - Data entry can edit this record');
               this.requestForm.enable();
               this.editPressed = true;
+            } else {
+              // Reviewer, Compliance, and view-only modes
+              console.log('🔒 DISABLING FORM - Read-only mode');
+              this.requestForm.disable();
+              this.editPressed = false;
+              
+              // For reviewer/compliance, ensure they can still interact with documents
+              if (this.canApproveReject || this.canComplianceAction) {
+                console.log('Form disabled for review/compliance mode');
+              }
             }
+            
+            console.log('🎯 FINAL FORM STATE:', {
+              canEdit: this.canEdit,
+              editPressed: this.editPressed,
+              formDisabled: this.requestForm.disabled,
+              formEnabled: this.requestForm.enabled
+            });
+          }
+          
+          // CRITICAL FIX: Force enable form for rejected records assigned to data_entry
+          if (record.status === 'Rejected' && 
+              record.assignedTo === 'data_entry' && 
+              this.userRole === 'data_entry') {
+            console.log('🚨 FORCE ENABLING FORM for rejected record assigned to data_entry');
+            this.canEdit = true;
+            this.editPressed = true;
+            this.requestForm.enable();
           }
           
           // Patch form with record data
@@ -660,14 +1148,55 @@ export class NewRequestComponent implements OnInit {
             requestType: record.requestType,
             originalRequestType: record.originalRequestType
           });
+        } else {
+          console.error('No valid record received from API!');
+          this.msg.error('Invalid record data received');
+          
+          // Set basic reviewer permissions anyway
+          if (queryParams['userRole'] === 'reviewer') {
+            this.userRole = 'reviewer';
+            this.userType = '2';
+            this.canView = true;
+            this.canApproveReject = false; // Cannot approve without data
+            this.canEdit = false;
+            this.requestForm.disable();
+          }
         }
-      } catch (error) {
-        console.error('Error loading request:', error);
-        this.msg.error('Failed to load request data');
+      } catch (error: any) {
+        console.error('Error loading request:', {
+          error: error,
+          message: error?.message,
+          status: error?.status,
+          url: error?.url,
+          cleanId: cleanId,
+          apiBase: this.apiBase
+        });
+        
+        // Set fallback permissions for reviewer
+        if (queryParams['userRole'] === 'reviewer') {
+          console.log('Setting fallback reviewer permissions');
+          this.userRole = 'reviewer';
+          this.userType = '2';
+          this.canView = true;
+          this.canApproveReject = true;
+          this.canEdit = false;
+          this.requestForm.disable();
+          this.editPressed = false;
+        }
+        
+        if (error?.status === 404) {
+          this.msg.error('Request not found');
+        } else if (error?.status === 0) {
+          this.msg.error('Cannot connect to server. Please check if the API server is running.');
+        } else if (error?.name === 'TimeoutError') {
+          this.msg.error('Request timed out. Please try again.');
+        } else {
+          this.msg.error(`Failed to load request data: ${error?.message || 'Unknown error'}`);
+        }
       } finally {
         this.isLoading = false;
       }
-    } else {
+    } else if (!cleanId || cleanId === 'new') {
       // New request mode
       this.isNewRequest = true;
       this.editPressed = true;
@@ -712,39 +1241,72 @@ export class NewRequestComponent implements OnInit {
 
     switch (effectiveRole) {
       case 'data_entry':
-        // FIXED: Check for multiple assignedTo values including system_import
+        // Check for multiple assignedTo values including system_import
         const isAssignedToDataEntry = record.assignedTo === 'data_entry' || 
                                        record.assignedTo === 'system_import' ||
                                        !record.assignedTo;
         
-        // Can edit rejected requests (including quarantine rejected)
-        this.canEdit = (record.status === 'Rejected' && (isAssignedToDataEntry || isQuarantineRejected)) ||
+        // FIXED: Can edit rejected requests (including quarantine rejected)
+        this.canEdit = (record.status === 'Rejected' && isAssignedToDataEntry) ||
+                      (record.status === 'Rejected' && isQuarantineRejected) ||
                       record.status === 'Quarantine' || 
                       record.status === 'Quarantined';
+        
         this.canView = !this.canEdit;
+        
+        console.log('🔧 Data Entry Permissions:', {
+          status: record.status,
+          assignedTo: record.assignedTo,
+          isAssignedToDataEntry,
+          isQuarantineRejected,
+          canEdit: this.canEdit,
+          canView: this.canView,
+          shouldBeEditable: record.status === 'Rejected' && isAssignedToDataEntry
+        });
         break;
         
       case 'reviewer':
-        // Can approve/reject pending requests assigned to reviewer
+        // FIXED: Reviewer should be able to review pending requests
         this.canApproveReject = record.status === 'Pending' && 
                                (record.assignedTo === 'reviewer' || !record.assignedTo);
-        this.canView = !this.canApproveReject;
-        // Ensure userType is set for template
-        if (!this.userType) {
+        this.canView = true; // Reviewer can always view
+        this.canEdit = false; // Reviewer cannot edit
+        
+        // CRITICAL: Ensure userType is set for template
           this.userType = '2';
+        
+        // CRITICAL: Disable the form for reviewer but keep it viewable
+        if (this.canApproveReject) {
+          this.requestForm.disable();
+          this.editPressed = false; // Make sure edit mode is off
         }
         break;
         
       case 'compliance':
         // Can approve/block approved requests assigned to compliance
+        // FIXED: More flexible condition
         this.canComplianceAction = record.status === 'Approved' && 
-                                  record.assignedTo === 'compliance' && 
-                                  (!record.ComplianceStatus || record.ComplianceStatus === '');
-        this.canView = !this.canComplianceAction;
-        // Ensure userType is set for template
-        if (!this.userType) {
+                                  (record.assignedTo === 'compliance' || 
+                                   record.assignedTo === 'reviewer' || // Sometimes still assigned to reviewer
+                                   !record.ComplianceStatus); // Or no compliance status yet
+        
+        this.canView = true; 
+        this.canEdit = false;
+        
+        // CRITICAL: Ensure userType is set
           this.userType = '3';
-        }
+        
+        // Disable form for compliance
+        this.requestForm.disable();
+        this.editPressed = false;
+        
+        console.log('Compliance permissions set:', {
+          canComplianceAction: this.canComplianceAction,
+          userType: this.userType,
+          recordStatus: record.status,
+          assignedTo: record.assignedTo,
+          ComplianceStatus: record.ComplianceStatus
+        });
         break;
         
       case 'admin':
@@ -754,9 +1316,7 @@ export class NewRequestComponent implements OnInit {
         this.canComplianceAction = record.status === 'Approved' && 
                                   (!record.ComplianceStatus || record.ComplianceStatus === '');
         this.canView = true;
-        if (!this.userType) {
           this.userType = 'admin';
-        }
         break;
         
       default:
@@ -771,6 +1331,7 @@ export class NewRequestComponent implements OnInit {
       canComplianceAction: this.canComplianceAction,
       canView: this.canView,
       effectiveRole: effectiveRole,
+      userType: this.userType,
       isQuarantineRejected: isQuarantineRejected
     });
   }
@@ -793,14 +1354,11 @@ export class NewRequestComponent implements OnInit {
       this.isBlockModalVisible = false;
       this.blockReason = '';
 
-      const message = await firstValueFrom(
-        this.translate.get('Request blocked successfully')
-      );
-      this.notification.success(message, '');
+      this.notification.success('Master record created as Blocked Golden Record!', '');
       this.router.navigate(['/dashboard/compliance-task-list']);
     } catch (error) {
       console.error('Error blocking request:', error);
-      this.msg.error('Failed to block request');
+      this.notification.error('Error blocking record. Please try again.', '');
     }
   }
 
@@ -815,15 +1373,98 @@ export class NewRequestComponent implements OnInit {
         })
       );
 
-      const message = await firstValueFrom(
-        this.translate.get('Request approved successfully')
-      );
-      this.notification.success(message, '');
+      this.notification.success('Master record approved as Active Golden Record successfully!', '');
       this.router.navigate(['/dashboard/compliance-task-list']);
     } catch (error) {
       console.error('Error approving request:', error);
-      this.msg.error('Failed to approve request');
+      this.notification.error('Error approving record. Please try again.', '');
     }
+  }
+
+  // Check for duplicate golden records
+  async checkForDuplicate(): Promise<boolean> {
+    const formData = this.requestForm.value;
+    const tax = formData.tax;
+    const customerType = formData.CustomerType;
+    
+    console.log('🔍 Checking for duplicate:', { tax, customerType });
+    
+    if (!tax || !customerType) {
+      console.log('❌ Missing tax or customerType, resetting hasDuplicate');
+      this.hasDuplicate = false; // Reset if fields are empty
+      this.duplicateRecord = null;
+      return false; // No validation needed if required fields are missing
+    }
+    
+    try {
+      console.log('📡 Making API call to check duplicate...');
+      const response = await firstValueFrom(
+        this.http.post<any>(`${this.apiBase}/requests/check-duplicate`, {
+          tax: tax,
+          CustomerType: customerType
+        })
+      );
+      
+      console.log('📡 API Response:', response);
+      
+      if (response.isDuplicate) {
+        console.log('🚨 DUPLICATE FOUND! Setting hasDuplicate = true');
+        console.log('🔍 UI Visibility Check:', {
+          hasDuplicate: true,
+          editPressed: this.editPressed,
+          hasRecord: this.hasRecord,
+          userType: this.userType
+        });
+        this.hasDuplicate = true;
+        this.duplicateRecord = response.existingRecord;
+        console.log('🔍 Duplicate record saved:', this.duplicateRecord);
+        console.log('🔍 hasDuplicate after setting:', this.hasDuplicate);
+        console.log('🔍 duplicateRecord after setting:', this.duplicateRecord);
+        this.msg.error(`Duplicate found: ${response.message}`);
+        return true; // Duplicate found
+      }
+      
+      console.log('✅ No duplicate found, setting hasDuplicate = false');
+      this.hasDuplicate = false;
+      this.duplicateRecord = null;
+      console.log('🔍 Duplicate record cleared:', this.duplicateRecord);
+      return false; // No duplicate
+    } catch (error) {
+      console.error('❌ Error checking for duplicate:', error);
+      this.hasDuplicate = false; // Assume no duplicate if API call fails
+      this.duplicateRecord = null;
+      return false; // Allow submission if check fails
+    }
+  }
+
+  // Check if submit button should be disabled
+  isSubmitDisabled(): boolean {
+    return this.hasDuplicate || this.isLoading;
+  }
+
+  // Show duplicate record details
+  showDuplicateDetails(): void {
+    console.log('🔍 Opening duplicate details for:', this.duplicateRecord);
+    if (this.duplicateRecord) {
+      this.showDuplicateModal = true;
+    } else {
+      console.log('❌ No duplicate record found');
+    }
+  }
+
+  // Close duplicate modal
+  closeDuplicateModal(): void {
+    this.showDuplicateModal = false;
+  }
+
+  // Get duplicate message with company name
+  getDuplicateMessage(): any {
+    if (!this.duplicateRecord?.name) {
+      return this.sanitizer.bypassSecurityTrustHtml('⚠️ WARNING: A customer with the same tax number and company type already exists in golden records. Please check the details and use a different tax number or company type. This is a test message to check if caching is working properly.');
+    }
+    
+    const htmlContent = `⚠️ WARNING: A customer with the same tax number and company type already exists in golden records. Please check the details and use a different tax number or company type. This is a test message to check if caching is working properly.<br><br><strong>Duplicate company: ${this.duplicateRecord.name}</strong>`;
+    return this.sanitizer.bypassSecurityTrustHtml(htmlContent);
   }
 
   // FIXED: Submit form - handle quarantine records properly with UPDATE
@@ -846,6 +1487,23 @@ export class NewRequestComponent implements OnInit {
       });
       this.msg.warning('Please fill all required fields');
       return;
+    }
+
+    // Check for duplicate golden records (for all cases except golden records in edit mode)
+    if (!this.isGoldenEditMode) {
+      console.log('Checking for duplicate golden records...', {
+        type: this.currentRecordId ? 'existing record' : 'new record',
+        status: this.status,
+        isFromQuarantine: this.isFromQuarantine,
+        currentRecordId: this.currentRecordId
+      });
+      const isDuplicate = await this.checkForDuplicate();
+      if (isDuplicate) {
+        console.log('Duplicate found, preventing submission');
+        return;
+      }
+    } else {
+      console.log('Skipping duplicate check for golden record edit');
     }
 
     const payload = this.buildPayloadFromForm();
@@ -986,6 +1644,13 @@ export class NewRequestComponent implements OnInit {
       assignedTo: 'reviewer'
     };
 
+    // Add update tracking fields when updating existing records
+    if (this.currentRecordId && !this.isGoldenEditMode) {
+      payload.updatedBy = this.currentUser?.username || 'data_entry';
+      payload.updatedByRole = this.userRole || 'data_entry';
+      payload.updateReason = 'User update';
+    }
+
     // Add golden edit specific fields
     if (this.isGoldenEditMode && this.sourceGoldenRecordId) {
       payload.origin = 'goldenEdit';
@@ -1009,11 +1674,18 @@ export class NewRequestComponent implements OnInit {
   }
 
   private patchFromRecord(rec: TaskRecord): void {
-    if (!rec) return;
+    console.log('=== PATCH FROM RECORD ===');
+    console.log('Record to patch:', rec);
+    
+    if (!rec) {
+      console.error('No record provided to patch!');
+      return;
+    }
     
     this.suppressCityReset = true;
     this.status = rec.status || 'Pending';
 
+    // Patch basic fields
     this.requestForm.patchValue({
       firstName: rec.firstName,
       firstNameAR: rec.firstNameAr,
@@ -1034,36 +1706,62 @@ export class NewRequestComponent implements OnInit {
       CustomerType: rec.CustomerType,
       CompanyOwnerFullName: rec.CompanyOwner,
       ComplianceStatus: rec.ComplianceStatus
-    });
+    }, { emitEvent: false });
 
-    // Setup city options based on country using helper function
-    const selectedCountry = rec.country;
-    if (selectedCountry) {
-      this.filteredCityOptions = getCitiesByCountry(selectedCountry);
+    // Setup city options
+    if (rec.country) {
+      this.filteredCityOptions = getCitiesByCountry(rec.country);
     }
 
-    // Load contacts
+    // CRITICAL: Load contacts properly
+    console.log('Loading contacts:', rec.contacts);
     this.contactsFA.clear();
-    if (Array.isArray(rec.contacts)) {
-      rec.contacts.forEach((c: any) => {
-        this.contactsFA.push(this.fb.group({
+    
+    // Check multiple possible locations for contacts
+    const contacts = rec.contacts || rec['contacts'] || [];
+    
+    if (Array.isArray(contacts) && contacts.length > 0) {
+      contacts.forEach((c: any) => {
+        const contactGroup = this.fb.group({
           id: [c.id || this.uid()],
-          name: [c.name, Validators.required],
-          jobTitle: [c.jobTitle],
-          email: [c.email],
-          mobile: [c.mobile],
-          landline: [c.landline],
-          preferredLanguage: [c.preferredLanguage]
-        }));
+          name: [c.name || '', Validators.required],
+          jobTitle: [c.jobTitle || ''],
+          email: [c.email || ''],
+          mobile: [c.mobile || ''],
+          landline: [c.landline || ''],
+          preferredLanguage: [c.preferredLanguage || '']
+        });
+        this.contactsFA.push(contactGroup);
       });
+      console.log('Contacts loaded:', this.contactsFA.length);
+    } else {
+      console.log('No contacts found in record');
     }
 
-    // Load documents
+    // CRITICAL: Load documents properly
+    console.log('Loading documents:', rec.documents);
     this.documentsFA.clear();
-    if (Array.isArray(rec.documents)) {
-      rec.documents.forEach((d: any) => {
-        this.documentsFA.push(this.fb.group(d));
+    
+    // Check multiple possible locations for documents
+    const documents = rec.documents || rec['documents'] || [];
+    
+    if (Array.isArray(documents) && documents.length > 0) {
+      documents.forEach((d: any) => {
+        const docGroup = this.fb.group({
+          id: [d.id || this.uid()],
+          name: [d.name || ''],
+          type: [d.type || 'Other'],
+          description: [d.description || ''],
+          size: [d.size || 0],
+          mime: [d.mime || ''],
+          uploadedAt: [d.uploadedAt || new Date().toISOString()],
+          contentBase64: [d.contentBase64 || '']
+        });
+        this.documentsFA.push(docGroup);
       });
+      console.log('Documents loaded:', this.documentsFA.length);
+    } else {
+      console.log('No documents found in record');
     }
 
     // Show summary for rejected/quarantined
@@ -1074,6 +1772,12 @@ export class NewRequestComponent implements OnInit {
       this.showSummary = true;
     }
 
+    // If no contacts loaded, add at least one empty contact for entry
+    if (this.contactsFA.length === 0 && this.userType === '1' && !this.hasRecord) {
+      this.addContact();
+    }
+    
+    console.log('=== PATCH COMPLETED ===');
     this.suppressCityReset = false;
   }
 
@@ -1117,14 +1821,11 @@ export class NewRequestComponent implements OnInit {
         })
       );
 
-      const message = await firstValueFrom(
-        this.translate.get('Request approved successfully')
-      );
-      this.notification.success(message, '');
+      this.notification.success('Request approved and sent to compliance!', '');
       this.navigateToTaskList();
     } catch (error) {
       console.error('Error approving request:', error);
-      this.msg.error('Failed to approve request');
+      this.notification.error('Error approving request. Please try again.', '');
     } finally {
       this.isLoading = false;
       this.closeAllModals();
@@ -1147,14 +1848,11 @@ export class NewRequestComponent implements OnInit {
         this.http.post(`${this.apiBase}/requests/${id}/reject`, { reason })
       );
 
-      const message = await firstValueFrom(
-        this.translate.get('Request rejected successfully')
-      );
-      this.notification.success(message, '');
+      this.notification.success('Request rejected and returned to data entry', '');
       this.navigateToTaskList();
     } catch (error) {
       console.error('Error rejecting request:', error);
-      this.msg.error('Failed to reject request');
+      this.notification.error('Error rejecting record. Please try again.', '');
     } finally {
       this.isLoading = false;
       this.closeAllModals();
@@ -1230,6 +1928,25 @@ export class NewRequestComponent implements OnInit {
     });
   }
 
+  // Add this helper method for chunked processing
+  private toBase64Chunked(file: File): Promise<string> {
+    return new Promise((resolve, reject) => {
+      const reader = new FileReader();
+      
+      reader.onload = () => {
+        const result = reader.result as string;
+        resolve(result);
+      };
+      
+      reader.onerror = () => {
+        reject(new Error('Failed to read file'));
+      };
+      
+      // Read as data URL (includes base64)
+      reader.readAsDataURL(file);
+    });
+  }
+
   beforeUpload = (file: File): boolean => {
     if (!this.allowedTypes.includes(file.type)) {
       this.msg.error('Unsupported file type');
@@ -1293,13 +2010,6 @@ export class NewRequestComponent implements OnInit {
     }
   }
 
-  downloadDoc(doc: UploadedDoc): void {
-    const a = document.createElement('a');
-    a.href = doc.contentBase64;
-    a.download = doc.name;
-    a.click();
-  }
-
   // Duplicate checking
   duplicateCheckList = [
     { firstName: 'Unilever', tax: 'EG123' },
@@ -1332,9 +2042,13 @@ export class NewRequestComponent implements OnInit {
     this.isBlockModalVisible = false;
   }
 
+  stopPropagation(event: Event): void {
+    event.stopPropagation();
+  }
+
   showApproveModal(): void { 
     if (this.canApproveReject || this.userRole === 'admin') {
-      this.isApprovedVisible = true;
+      this.submitApprove();
     } else {
       this.msg.warning('You do not have permission to approve this request');
     }
@@ -1365,4 +2079,1094 @@ export class NewRequestComponent implements OnInit {
     this.msg.success('Assigned successfully');
     this.location.back();
   }
+
+  // ====== Demo Data Generator ======
+  
+  /**
+   * Fills the form with demo data from a real company
+   * Perfect for demonstrations and testing
+   */
+  fillWithDemoData(): void {
+    try {
+      const demoCompany = this.demoDataGenerator.generateDemoData();
+      
+      // Show loading animation
+      this.msg.loading('Generating demo data...', { nzDuration: 1000 });
+      
+      // Fill general data
+      this.requestForm.patchValue({
+        firstName: demoCompany.name,
+        firstNameAr: demoCompany.nameAr,
+        customerType: demoCompany.customerType,
+        CompanyOwnerFullName: demoCompany.ownerName,
+        tax: demoCompany.taxNumber,
+        buildingNumber: demoCompany.buildingNumber,
+        street: demoCompany.street,
+        country: demoCompany.country,
+        city: demoCompany.city,
+        salesOrg: demoCompany.salesOrg,
+        distributionChannel: demoCompany.distributionChannel,
+        division: demoCompany.division
+      });
+
+      // Clear existing contacts and add demo contacts
+      this.clearAllContacts();
+      demoCompany.contacts.forEach(contact => {
+        this.addContact();
+        const lastIndex = this.contactsFA.length - 1;
+        this.contactsFA.at(lastIndex).patchValue({
+          name: contact.name,
+          jobTitle: contact.jobTitle,
+          email: contact.email,
+          mobile: contact.mobile,
+          landline: contact.landline,
+          preferredLanguage: contact.preferredLanguage
+        });
+      });
+
+      // Add some additional random contacts for variety
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(2);
+      additionalContacts.forEach(contact => {
+        this.addContact();
+        const lastIndex = this.contactsFA.length - 1;
+        this.contactsFA.at(lastIndex).patchValue({
+          name: contact.name,
+          jobTitle: contact.jobTitle,
+          email: contact.email,
+          mobile: contact.mobile,
+          landline: contact.landline,
+          preferredLanguage: contact.preferredLanguage
+        });
+      });
+
+      // Update city options based on selected country
+      this.filteredCityOptions = getCitiesByCountry(demoCompany.country);
+
+      // Show success message with company name
+      setTimeout(() => {
+        this.msg.success(`Demo data loaded: ${demoCompany.name}`, { nzDuration: 3000 });
+      }, 1000);
+
+      // Log remaining companies for reference
+      const remaining = this.demoDataGenerator.getRemainingCompaniesCount();
+      console.log(`Demo data loaded for: ${demoCompany.name}`);
+      console.log(`Remaining companies: ${remaining}`);
+
+    } catch (error) {
+      console.error('Error generating demo data:', error);
+      this.msg.error('Failed to generate demo data. Please try again.');
+    }
+  }
+
+  /**
+   * Clears all contacts from the form
+   */
+  private clearAllContacts(): void {
+    while (this.contactsFA.length !== 0) {
+      this.contactsFA.removeAt(0);
+    }
+  }
+
+  /**
+   * Gets the current demo company info (for display)
+   */
+  getCurrentDemoCompany(): DemoCompany | null {
+    return this.demoDataGenerator.getLastUsedCompany();
+  }
+
+  /**
+   * Gets remaining demo companies count
+   */
+  getRemainingDemoCompanies(): number {
+    return this.demoDataGenerator.getRemainingCompaniesCount();
+  }
+
+  /**
+   * Resets the demo generator (clears used companies)
+   */
+  resetDemoGenerator(): void {
+    this.demoDataGenerator.resetGenerator();
+    this.msg.success('Demo generator reset. All companies available again!');
+  }
+
+  // ====== Auto Translation ======
+  
+  /**
+   * Automatically translates English company name to Arabic
+   * Triggered when English name field changes
+   */
+  onEnglishNameChange(englishName: string): void {
+    if (!englishName || englishName.trim() === '') {
+      return;
+    }
+
+    // Check if the name needs translation
+    if (this.autoTranslate.needsTranslation(englishName)) {
+      const arabicTranslation = this.autoTranslate.translateCompanyName(englishName);
+      
+      if (arabicTranslation && arabicTranslation !== englishName) {
+        // Update the Arabic name field
+        this.requestForm.patchValue({
+          firstNameAR: arabicTranslation
+        });
+        
+        // Silent translation - no notification needed
+      }
+    }
+  }
+
+  /**
+   * Manually trigger translation (for button click)
+   */
+  translateToArabic(): void {
+    const englishName = this.requestForm.get('firstName')?.value;
+    
+    if (!englishName || englishName.trim() === '') {
+      this.msg.warning('Please enter an English company name first');
+      return;
+    }
+
+    const arabicTranslation = this.autoTranslate.translateCompanyName(englishName);
+    
+    if (arabicTranslation && arabicTranslation !== englishName) {
+      this.requestForm.patchValue({
+        firstNameAR: arabicTranslation
+      });
+      
+      // Silent translation - no notification needed
+    } else {
+      this.msg.warning('Unable to translate this name automatically');
+    }
+  }
+
+  /**
+   * Gets translation confidence for current names
+   */
+  getTranslationConfidence(): number {
+    const englishName = this.requestForm.get('firstName')?.value;
+    const arabicName = this.requestForm.get('firstNameAR')?.value;
+    
+    if (!englishName || !arabicName) return 0;
+    
+    return this.autoTranslate.getTranslationConfidence(englishName, arabicName);
+  }
+
+  /**
+   * Gets alternative translations
+   */
+  getAlternativeTranslations(): string[] {
+    const englishName = this.requestForm.get('firstName')?.value;
+    
+    if (!englishName) return [];
+    
+    return this.autoTranslate.getAlternativeTranslations(englishName);
+  }
+
+  // ====== Upload Document Modal ======
+  
+  /**
+   * Opens the upload document modal
+   */
+  openUploadModal(): void {
+    // CRITICAL: Prevent change detection loops
+    if (this.showUploadModal) {
+      return;
+    }
+    
+    // Stop console spam immediately
+    const originalLog = console.log;
+    let logCount = 0;
+    console.log = (...args: any[]) => {
+      logCount++;
+      if (logCount < 50) {
+        originalLog.apply(console, args);
+      }
+    };
+    
+    // Reset document with timeout to avoid change detection
+    setTimeout(() => {
+      this.newDocument = {
+        name: '',
+        type: '',
+        description: '',
+        file: null
+      };
+      this.showUploadModal = true;
+      
+      // Restore console after modal opens
+      setTimeout(() => {
+        console.log = originalLog;
+      }, 500);
+    }, 0);
+  }
+
+  /**
+   * Closes the upload document modal
+   */
+  closeUploadModal(): void {
+    console.log('❌ CLOSING UPLOAD MODAL');
+    this.showUploadModal = false;
+    this.newDocument = {
+      name: '',
+      type: '',
+      description: '',
+      file: null
+    };
+  }
+
+  // Helper methods for modal inputs to avoid ngModel loops
+  updateDocumentName(event: any): void {
+    setTimeout(() => {
+      this.newDocument.name = event.target.value;
+    }, 0);
+  }
+
+  updateDocumentType(event: any): void {
+    setTimeout(() => {
+      this.newDocument.type = event.target.value;
+    }, 0);
+  }
+
+  updateDocumentDescription(event: any): void {
+    setTimeout(() => {
+      this.newDocument.description = event.target.value;
+    }, 0);
+  }
+
+  // TrackBy function to prevent unnecessary re-renders
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  /**
+   * Handles file selection
+   */
+  onFileSelected(event: any): void {
+    // Prevent repeated calls
+    if (!event?.target?.files?.[0]) {
+      return;
+    }
+    
+    const file = event.target.files[0];
+    
+    // Use timeout to avoid change detection loops
+    setTimeout(() => {
+      this.newDocument.file = file;
+      this.newDocument.name = file.name;
+      
+      // Auto-detect type
+      const extension = file.name.split('.').pop()?.toLowerCase();
+      if (extension === 'pdf') {
+        this.newDocument.type = 'Commercial Registration';
+      } else if (['jpg', 'jpeg', 'png'].includes(extension || '')) {
+        this.newDocument.type = 'Tax Certificate';
+      } else {
+        this.newDocument.type = 'Other';
+      }
+    }, 0);
+  }
+
+  /**
+   * Saves the new document
+   */
+  async saveNewDocument(): Promise<void> {
+    console.log('🚀 SAVE NEW DOCUMENT - OPTIMIZED');
+    
+    if (!this.newDocument.file) {
+      this.msg.warning('Please select a file first');
+      return;
+    }
+
+    if (!this.newDocument.type) {
+      this.msg.warning('Please select a document type');
+      return;
+    }
+
+    // Strict size limit
+    const MAX_FILE_SIZE = 2 * 1024 * 1024; // 2MB only!
+    if (this.newDocument.file.size > MAX_FILE_SIZE) {
+      this.msg.error('File size must be less than 2MB for now');
+      return;
+    }
+
+    const loadingMsg = this.msg.loading('Processing...', { nzDuration: 0 });
+
+    // Use setTimeout to avoid blocking UI
+    setTimeout(async () => {
+      try {
+        // Convert in chunks to avoid blocking
+        const base64Content = await this.toBase64(this.newDocument.file);
+        
+        // Create minimal document object
+        const docData = {
+          id: this.uid(),
+          name: this.newDocument.name || this.newDocument.file.name,
+          type: this.newDocument.type,
+          description: this.newDocument.description || '',
+          size: this.newDocument.file.size,
+          mime: this.newDocument.file.type,
+          uploadedAt: new Date().toISOString(),
+          // Store base64 separately to avoid Angular change detection issues
+          contentBase64: ''
+        };
+        
+        // Add to FormArray first
+        const docFormGroup = this.fb.group(docData);
+        this.documentsFA.push(docFormGroup);
+        
+        // Trigger change detection
+        this.cdr.markForCheck();
+        
+        // Then update base64 after a delay
+        setTimeout(() => {
+          docFormGroup.patchValue({ contentBase64: base64Content }, { emitEvent: false });
+          this.cdr.markForCheck();
+        }, 100);
+        
+        this.msg.remove(loadingMsg.messageId);
+        this.msg.success('Document uploaded');
+        this.closeUploadModal();
+        
+      } catch (error) {
+        console.error('Error:', error);
+        this.msg.remove(loadingMsg?.messageId);
+        this.msg.error('Failed to process file');
+      }
+    }, 10);
+  }
+
+  // ====== Document Preview & Download (NEW) ======
+
+  /**
+   * Opens document preview modal
+   */
+  previewDocument(doc: any): void {
+    const documentData = doc.value || doc;
+    
+    console.log('=== PREVIEW DOCUMENT ===');
+    console.log('Document data:', documentData);
+    console.log('MIME type:', documentData?.mime);
+    console.log('Is PDF:', this.isPdf(documentData));
+    console.log('Has contentBase64:', !!documentData?.contentBase64);
+    
+    if (!documentData) {
+      this.msg.error('Document data not found');
+      return;
+    }
+    
+    if (!documentData.contentBase64) {
+      this.msg.error('Document content not available');
+      return;
+    }
+    
+    this.selectedDocument = documentData;
+    this.showDocumentPreviewModal = true;
+  }
+
+  /**
+   * Closes document preview modal
+   */
+  closeDocumentPreview(): void {
+    this.showDocumentPreviewModal = false;
+    this.selectedDocument = null;
+  }
+
+  /**
+   * Downloads document - Fixed implementation
+   */
+  downloadDocument(doc: any): void {
+    try {
+      const docData = doc.value || doc;
+      // Extract base64 content (remove data URL prefix if exists)
+      let base64Content = docData.contentBase64 || '';
+      
+      // If it's a data URL, extract the base64 part
+      if (base64Content.includes(',')) {
+        base64Content = base64Content.split(',')[1];
+      }
+      
+      // Convert base64 to blob
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: docData.mime || 'application/octet-stream' });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = docData.name || 'document';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      this.msg.success('Document downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      this.msg.error('Failed to download document');
+    }
+  }
+
+  /**
+   * Gets preview URL for document
+   */
+  getPreviewUrl(doc: any): string {
+    if (!doc || !doc.contentBase64) {
+      return '';
+    }
+    
+    if (doc.contentBase64.startsWith('data:')) {
+      return doc.contentBase64;
+    }
+    
+    return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+  }
+
+  /**
+   * Gets safe preview URL for iframe (bypasses security)
+   */
+  getSafePreviewUrl(doc: any): SafeResourceUrl {
+    const url = this.getPreviewUrl(doc);
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
+
+  /**
+   * Checks if document can be previewed in browser
+   */
+  canPreview(doc: any): boolean {
+    if (!doc) return false;
+    
+    // REMOVED console.log to prevent spam
+    const docData = doc.value || doc;
+    const mime = (docData.mime || '').toLowerCase();
+    const name = (docData.name || '').toLowerCase();
+    
+    return mime.includes('pdf') || 
+           mime === 'application/pdf' ||
+           mime.includes('image') ||
+           name.endsWith('.pdf');
+  }
+
+  /**
+   * Handles document click - preview for supported types, download for others
+   */
+  handleDocumentClick(doc: any): void {
+    // Extract the actual document data
+    const docData = doc.value || doc;
+    
+    console.log('=== HANDLE DOCUMENT CLICK ===');
+    console.log('Raw doc:', doc);
+    console.log('Doc data:', docData);
+    console.log('MIME:', docData.mime);
+    console.log('Can preview:', this.canPreview(docData));
+    
+    if (this.canPreview(docData)) {
+      this.previewDocument(docData);
+    } else {
+      this.downloadDocument(docData);
+      this.msg.info('Downloading file... Preview not available for this file type.');
+    }
+  }
+
+  /**
+   * Format file size for display
+   */
+  formatFileSize(bytes: number): string {
+    if (!bytes) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  /**
+   * Enhanced helper methods for document type detection
+   */
+  isPdf(doc: any): boolean {
+    if (!doc) return false;
+    
+    // REMOVED console.log
+    const docData = doc.value || doc;
+    const mime = (docData.mime || '').toLowerCase();
+    const name = (docData.name || '').toLowerCase().trim();
+    
+    return mime === 'application/pdf' || 
+           mime.includes('pdf') ||
+           name.endsWith('.pdf');
+  }
+
+  isImage(doc: any): boolean {
+    if (!doc) return false;
+    const mime = doc.mime || '';
+    const name = doc.name || '';
+    const result = mime.includes('image') || 
+           name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|bmp)$/);
+    return !!result; // Force boolean instead of null
+  }
+
+  isWord(doc: any): boolean {
+    if (!doc) return false;
+    const mime = doc.mime || '';
+    const name = doc.name || '';
+    return mime.includes('word') || 
+           mime.includes('document') || 
+           mime.includes('officedocument') ||
+           name.toLowerCase().match(/\.(doc|docx)$/);
+  }
+
+  isExcel(doc: any): boolean {
+    if (!doc) return false;
+    const mime = doc.mime || '';
+    const name = doc.name || '';
+    return mime.includes('excel') || 
+           mime.includes('spreadsheet') ||
+           name.toLowerCase().match(/\.(xls|xlsx)$/);
+  }
+
+
+
+  /**
+   * Opens document in new tab - Simple solution (OLD - kept for compatibility)
+   */
+  downloadDoc(doc: any): void {
+    try {
+      // Simple solution - just open in new tab
+      const dataUrl = `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+      window.open(dataUrl, '_blank');
+    } catch (error) {
+      console.error('Error opening document:', error);
+      alert('Error opening document. Please try again.');
+    }
+  }
+
+  /**
+   * Check if user can manage documents (add/delete)
+   */
+  get canManageDocuments(): boolean {
+    return this.userType === '1' && (this.editPressed || !this.hasRecord);
+  }
+
+  /**
+   * Check if user is in view-only mode for documents
+   */
+  get isDocumentsViewOnly(): boolean {
+    return this.userType === '2' || this.userType === '3';
+  }
+
+  /**
+   * Gets documents count
+   */
+  getDocumentsCount(): number {
+    if (this.documentsFA) {
+      return this.documentsFA.length;
+    }
+    if (this.originalRecord?.documents) {
+      return this.originalRecord.documents.length;
+    }
+    return 0;
+  }
+
+  /**
+   * Gets documents list for display (extracts from FormArray)
+   */
+  getDocumentsList(): any[] {
+    // Extract from FormArray
+    if (this.documentsFA && this.documentsFA.length > 0) {
+      return this.documentsFA.controls.map(control => {
+        const rawValue = control.getRawValue ? control.getRawValue() : control.value;
+        return rawValue;
+      });
+    }
+    
+    // Direct documents from record
+    if (this.originalRecord?.documents && Array.isArray(this.originalRecord.documents)) {
+      return this.originalRecord.documents;
+    }
+    
+    return [];
+  }
+
+  /**
+   * Downloads document directly (handles both FormGroup and plain objects)
+   */
+  downloadDocumentDirect(doc: any): void {
+    try {
+      // Handle both FormGroup values and direct objects
+      const docData = doc.value || doc;
+      
+      // Extract base64 content
+      let base64Content = docData.contentBase64 || '';
+      
+      if (!base64Content) {
+        this.msg.error('Document content not available');
+        return;
+      }
+      
+      // If it's a data URL, extract the base64 part
+      if (base64Content.includes(',')) {
+        base64Content = base64Content.split(',')[1];
+      }
+      
+      // Convert base64 to blob
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: docData.mime || 'application/octet-stream' });
+      
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = docData.name || 'document';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+      this.msg.success('Document downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      this.msg.error('Failed to download document');
+    }
+  }
+
+  /**
+   * View document - alias for handleDocumentClick for compatibility
+   */
+  viewDocument(doc: any): void {
+    this.handleDocumentClick(doc);
+  }
+
+  /**
+   * Get file extension from document
+   */
+  getFileExtension(doc: any): string {
+    const name = doc?.name || '';
+    const parts = name.split('.');
+    return parts.length > 1 ? '.' + parts[parts.length - 1].toUpperCase() : '';
+  }
+
+
+  /**
+   * Approve compliance action
+   */
+  approveCompliance(): void {
+    console.log('=== APPROVE COMPLIANCE ===');
+    console.log('Current Record ID:', this.currentRecordId);
+    console.log('User Type:', this.userType);
+    console.log('Can Compliance Action:', this.canComplianceAction);
+    
+    if (!this.currentRecordId) {
+      this.msg.error('No record to approve');
+      return;
+    }
+
+    this.isLoading = true;
+    
+    // FIXED: Use correct endpoint
+    this.http.post(`${this.apiBase}/requests/${this.currentRecordId}/compliance/approve`, {
+      note: 'Approved by compliance officer'
+    }).subscribe({
+      next: (response) => {
+        console.log('Compliance approval response:', response);
+        this.notification.success('Master record approved as Active Golden Record!', '');
+        this.router.navigate(['/dashboard/compliance-task-list']);
+        this.isLoading = false;
+      },
+      error: (error) => {
+        console.error('Compliance approval error:', error);
+        this.msg.error('Failed to approve request');
+        this.isLoading = false;
+      }
+    });
+  }
+
+  /**
+   * Debug compliance state for troubleshooting
+   */
+  debugComplianceState(): void {
+    console.log('=== COMPLIANCE DEBUG ===');
+    console.log('User Role:', this.userRole);
+    console.log('User Type:', this.userType);
+    console.log('Current User Role:', this.currentUserRole);
+    console.log('Has Record:', this.hasRecord);
+    console.log('Can Compliance Action:', this.canComplianceAction);
+    console.log('Status:', this.status);
+    console.log('Original Record:', this.originalRecord);
+    console.log('Assigned To:', this.originalRecord?.assignedTo);
+    console.log('Compliance Status:', this.originalRecord?.ComplianceStatus);
+  }
+
+  // ============== Keyboard Auto-Fill Functionality ==============
+  
+  currentDemoCompany: any = null;
+  private keyboardListener: ((event: KeyboardEvent) => void) | null = null;
+  private lastSpaceTime: number = 0;
+  private spaceClickCount: number = 0;
+
+  /**
+   * Setup keyboard auto-fill functionality
+   * Press Ctrl+D (or Cmd+D on Mac) to auto-fill the focused field
+   */
+  setupKeyboardAutoFill(): void {
+    console.log('Setting up keyboard auto-fill for data entry user');
+    
+    // Generate demo company data once
+    this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+    
+    // Create keyboard listener - Double Space for auto-fill
+    this.keyboardListener = (event: KeyboardEvent) => {
+      // Check for Space key
+      if (event.key === ' ' || event.code === 'Space') {
+        const now = Date.now();
+        
+        // If less than 500ms since last space, it's a double space
+        if (now - this.lastSpaceTime < 500) {
+          this.spaceClickCount++;
+          if (this.spaceClickCount >= 2) {
+            event.preventDefault();
+            console.log('Double space detected - triggering auto-fill');
+            this.handleAutoFillKeypress();
+            this.spaceClickCount = 0;
+          }
+        } else {
+          this.spaceClickCount = 1;
+        }
+        
+        this.lastSpaceTime = now;
+      }
+    };
+
+    // Add event listener
+    if (isPlatformBrowser(this.platformId)) {
+      document.addEventListener('keydown', this.keyboardListener);
+      
+      // No tip notification - keep it clean
+    }
+  }
+
+  /**
+   * Handle auto-fill keypress
+   */
+  handleAutoFillKeypress(): void {
+    console.log('=== AUTO-FILL TRIGGERED ===');
+    
+    const activeElement = document.activeElement as HTMLElement;
+    console.log('Active element:', activeElement);
+    console.log('Demo company:', this.currentDemoCompany);
+    
+    if (!activeElement || !this.currentDemoCompany) {
+      this.msg.warning('Please focus on a form field first');
+      return;
+    }
+
+    // Get the field name from various possible attributes
+    const fieldName = this.getFieldNameFromElement(activeElement);
+    console.log('Detected field name:', fieldName);
+    
+    if (!fieldName) {
+      this.msg.warning('Cannot auto-fill this field');
+      return;
+    }
+
+    // Get demo value for this field
+    const demoValue = this.getDemoValueForField(fieldName);
+    console.log('Demo value for field:', fieldName, '=', demoValue);
+    
+    if (demoValue !== null && demoValue !== undefined) {
+      // Fill the field
+      this.fillFieldWithValue(fieldName, demoValue);
+      
+      // Visual feedback only - no notification message
+    } else {
+      this.msg.warning(`No demo data available for "${fieldName}"`);
+    }
+  }
+
+  /**
+   * Extract field name from DOM element
+   */
+  private getFieldNameFromElement(element: HTMLElement): string | null {
+    // Check various attributes to identify the field
+    const formControlName = element.getAttribute('formControlName');
+    if (formControlName) return formControlName;
+    
+    const name = element.getAttribute('name');
+    if (name) return name;
+    
+    const id = element.getAttribute('id');
+    if (id) return id;
+    
+    // Check for nz-select elements
+    const nzSelectId = element.getAttribute('nzSelectId');
+    if (nzSelectId) return nzSelectId;
+    
+    // Check parent elements for form control name
+    let parent = element.parentElement;
+    while (parent && parent.tagName !== 'FORM') {
+      const parentFormControlName = parent.getAttribute('formControlName');
+      if (parentFormControlName) return parentFormControlName;
+      
+      // Check for nz-form-item with specific classes
+      if (parent.classList.contains('nz-form-item')) {
+        const label = parent.querySelector('nz-form-label');
+        if (label) {
+          const labelText = label.textContent?.toLowerCase();
+          if (labelText?.includes('name')) return 'name';
+          if (labelText?.includes('email')) return 'email';
+          if (labelText?.includes('mobile')) return 'mobile';
+          if (labelText?.includes('job')) return 'jobTitle';
+          if (labelText?.includes('landline')) return 'landline';
+          if (labelText?.includes('language')) return 'preferredLanguage';
+        }
+      }
+      
+      parent = parent.parentElement;
+    }
+    
+    return null;
+  }
+
+  /**
+   * Get demo value for specific field
+   */
+  private getDemoValueForField(fieldName: string): any {
+    if (!this.currentDemoCompany) return null;
+
+    // Generate additional contacts if needed
+    const allContacts = [...this.currentDemoCompany.contacts];
+    if (allContacts.length < 3) {
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(3 - allContacts.length);
+      allContacts.push(...additionalContacts);
+    }
+
+    const fieldMapping: { [key: string]: any } = {
+      // Company Info
+      'firstName': this.currentDemoCompany.name,
+      'firstNameAR': this.currentDemoCompany.nameAr,
+      'firstNameAr': this.currentDemoCompany.nameAr,
+      'tax': this.currentDemoCompany.taxNumber,
+      'CustomerType': this.currentDemoCompany.customerType,
+      'customerType': this.currentDemoCompany.customerType,
+      'CompanyOwnerFullName': this.currentDemoCompany.ownerName,
+      'companyOwner': this.currentDemoCompany.ownerName,
+      
+      // Address Info
+      'buildingNumber': this.currentDemoCompany.buildingNumber,
+      'street': this.currentDemoCompany.street,
+      'country': this.currentDemoCompany.country,
+      'city': this.currentDemoCompany.city,
+      
+      // Sales Info
+      'salesOrg': this.currentDemoCompany.salesOrg,
+      'SalesOrgOption': this.currentDemoCompany.salesOrg,
+      'distributionChannel': this.currentDemoCompany.distributionChannel,
+      'DistributionChannelOption': this.currentDemoCompany.distributionChannel,
+      'division': this.currentDemoCompany.division,
+      'DivisionOption': this.currentDemoCompany.division,
+      
+      // Contact Info - Dynamic based on which contact we're filling
+      'name': this.getContactDataByField('name', fieldName),
+      'contactName': this.getContactDataByField('name', fieldName),
+      'ContactName': this.getContactDataByField('name', fieldName),
+      'email': this.getContactDataByField('email', fieldName),
+      'EmailAddress': this.getContactDataByField('email', fieldName),
+      'mobile': this.getContactDataByField('mobile', fieldName),
+      'MobileNumber': this.getContactDataByField('mobile', fieldName),
+      'jobTitle': this.getContactDataByField('jobTitle', fieldName),
+      'JobTitle': this.getContactDataByField('jobTitle', fieldName),
+      'landline': this.getContactDataByField('landline', fieldName),
+      'Landline': this.getContactDataByField('landline', fieldName),
+      'preferredLanguage': this.getContactDataByField('preferredLanguage', fieldName),
+      'PrefferedLanguage': this.getContactDataByField('preferredLanguage', fieldName)
+    };
+
+    return fieldMapping[fieldName] || null;
+  }
+
+  /**
+   * Get contact data by field type - SIMPLIFIED
+   */
+  private getContactDataByField(dataType: string, fieldName: string): any {
+    if (!this.currentDemoCompany) return null;
+    
+    // Use the last contact index for variety
+    const contactIndex = Math.max(0, this.contactsFA.length - 1);
+    
+    // Generate additional contacts if needed
+    const allContacts = [...this.currentDemoCompany.contacts];
+    if (allContacts.length <= contactIndex) {
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(contactIndex + 1 - allContacts.length);
+      allContacts.push(...additionalContacts);
+    }
+    
+    const contact = allContacts[contactIndex];
+    if (!contact) return null;
+    
+    // Return the specific field data
+    switch (dataType) {
+      case 'name': return contact.name;
+      case 'email': return contact.email;
+      case 'mobile': return contact.mobile;
+      case 'jobTitle': return contact.jobTitle;
+      case 'landline': return contact.landline;
+      case 'preferredLanguage': return contact.preferredLanguage;
+      default: return null;
+    }
+  }
+
+  /**
+   * Fill specific field with value
+   */
+  private fillFieldWithValue(fieldName: string, value: any): void {
+    try {
+      console.log(`Trying to fill field: ${fieldName} with value:`, value);
+      
+      // First try main form controls
+      const control = this.requestForm.get(fieldName);
+      if (control) {
+        control.patchValue(value, { emitEvent: false });
+        
+        // Special handling for country/city dependency
+        if (fieldName === 'country') {
+          setTimeout(() => {
+            this.filteredCityOptions = getCitiesByCountry(value || '');
+          }, 100);
+        }
+        
+        // Trigger change detection
+        control.markAsTouched();
+        control.updateValueAndValidity();
+        
+        this.addVisualFeedback();
+        console.log(`Successfully filled main form field: ${fieldName}`);
+        return;
+      }
+
+      // Try to fill FormArray fields (contacts)
+      if (this.fillFormArrayField(fieldName, value)) {
+        this.addVisualFeedback();
+        console.log(`Successfully filled FormArray field: ${fieldName}`);
+        return;
+      }
+
+      console.log(`Could not find field: ${fieldName}`);
+    } catch (error) {
+      console.error('Error filling field:', error);
+    }
+  }
+
+  /**
+   * Fill FormArray field (for contacts) - SUPER SIMPLIFIED
+   */
+  private fillFormArrayField(fieldName: string, value: any): boolean {
+    // Check if we're dealing with contact fields
+    const contactFields = ['name', 'email', 'mobile', 'jobTitle', 'landline', 'preferredLanguage'];
+    
+    if (contactFields.includes(fieldName)) {
+      console.log('Trying to fill contact field:', fieldName);
+      
+      // Find the focused input element
+      const activeElement = document.activeElement as HTMLInputElement;
+      
+      // Simple approach: try to fill the focused element directly
+      if (activeElement && (activeElement.tagName === 'INPUT' || activeElement.tagName === 'SELECT')) {
+        const formControlName = activeElement.getAttribute('formControlName');
+        
+        if (formControlName === fieldName) {
+          // Generate demo value based on total contacts (for variety)
+          const demoValue = this.getContactDemoValue(fieldName, this.contactsFA.length - 1);
+          
+          // Set the value directly
+          activeElement.value = demoValue || '';
+          
+          // Trigger Angular form update
+          const event = new Event('input', { bubbles: true });
+          activeElement.dispatchEvent(event);
+          
+          console.log(`Direct fill: "${fieldName}" with: ${demoValue}`);
+          return true;
+        }
+      }
+      
+      // Fallback: try to fill any empty contact field
+      for (let i = 0; i < this.contactsFA.length; i++) {
+        const contact = this.contactsFA.at(i);
+        const control = contact.get(fieldName);
+        
+        if (control && !control.value) {
+          const demoValue = this.getContactDemoValue(fieldName, i);
+          control.patchValue(demoValue, { emitEvent: false });
+          control.markAsTouched();
+          control.updateValueAndValidity();
+          
+          console.log(`Fallback fill: "${fieldName}" in contact #${i + 1} with: ${demoValue}`);
+          return true;
+        }
+      }
+    }
+    
+    return false;
+  }
+
+  /**
+   * Get demo value for specific contact field and index
+   */
+  private getContactDemoValue(fieldName: string, contactIndex: number): any {
+    if (!this.currentDemoCompany) return null;
+    
+    // Generate enough contacts
+    const allContacts = [...this.currentDemoCompany.contacts];
+    while (allContacts.length <= contactIndex) {
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(1);
+      allContacts.push(...additionalContacts);
+    }
+    
+    const contact = allContacts[contactIndex];
+    if (!contact) return null;
+    
+    switch (fieldName) {
+      case 'name': return contact.name;
+      case 'email': return contact.email;
+      case 'mobile': return contact.mobile;
+      case 'jobTitle': return contact.jobTitle;
+      case 'landline': return contact.landline;
+      case 'preferredLanguage': return contact.preferredLanguage;
+      default: return null;
+    }
+  }
+
+
+
+
+  /**
+   * Add visual feedback to focused element
+   */
+  private addVisualFeedback(): void {
+    const element = document.activeElement as HTMLElement;
+    if (element) {
+      element.style.background = '#e6f7ff';
+      element.style.transition = 'background 0.3s ease';
+      setTimeout(() => {
+        element.style.background = '';
+      }, 1000);
+    }
+  }
+
+  /**
+   * Cleanup keyboard listener
+   */
+  ngOnDestroy(): void {
+    if (this.keyboardListener && isPlatformBrowser(this.platformId)) {
+      document.removeEventListener('keydown', this.keyboardListener);
+    }
+  }
+
 }

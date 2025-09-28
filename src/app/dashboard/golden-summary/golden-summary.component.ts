@@ -3,13 +3,14 @@
 import { Component, OnInit } from '@angular/core';
 import { ActivatedRoute, Router } from '@angular/router';
 import { HttpClient } from '@angular/common/http';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../../environments/environment';
 
 @Component({
   selector: 'app-golden-summary',
   templateUrl: './golden-summary.component.html',
-  styleUrls: ['./golden-summary.component.scss']
+  styleUrls: ['./golden-summary.component.scss', './golden-summary-table-styles.scss']
 })
 export class GoldenSummaryComponent implements OnInit {
   // API configuration
@@ -31,6 +32,10 @@ export class GoldenSummaryComponent implements OnInit {
   isBlockModalOpen = false;
   isContactsModalOpen = false;
   isDocsModalOpen = false;
+  
+  // Document Preview
+  showDocumentPreviewModal = false;
+  selectedDocument: any = null;
   blockReasonDraft = '';
   isLoading = false;
   
@@ -110,7 +115,8 @@ export class GoldenSummaryComponent implements OnInit {
   constructor(
     private route: ActivatedRoute,
     private router: Router,
-    private http: HttpClient
+    private http: HttpClient,
+    private sanitizer: DomSanitizer
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -1153,28 +1159,73 @@ async loadLinkedRecords(taxNumber: string): Promise<void> {
   }
 
   openDoc(doc: any): void {
-    if (doc.contentBase64) {
-      // Open base64 content in new tab
-      const newWindow = window.open();
-      if (newWindow) {
-        newWindow.document.write(`
-          <html>
-            <head><title>${doc.name || 'Document'}</title></head>
-            <body style="margin:0;">
-              <embed src="${doc.contentBase64}" width="100%" height="100%" />
-            </body>
-          </html>
-        `);
-      }
+    this.previewDocument(doc);
+  }
+
+  previewDocument(doc: any): void {
+    this.selectedDocument = doc;
+    this.showDocumentPreviewModal = true;
+  }
+
+  closeDocumentPreview(): void {
+    this.showDocumentPreviewModal = false;
+    this.selectedDocument = null;
+  }
+
+  canPreview(doc: any): boolean {
+    if (!doc || !doc.mime) return false;
+    const mime = doc.mime.toLowerCase();
+    return mime.includes('image') || mime.includes('pdf');
+  }
+
+  getPreviewUrl(doc: any): string {
+    if (!doc || !doc.contentBase64) return '';
+    
+    if (doc.contentBase64.startsWith('data:')) {
+      return doc.contentBase64;
     }
+    
+    return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+  }
+
+  // Add method for Safe URL
+  getSafePreviewUrl(doc: any): SafeResourceUrl {
+    const url = this.getPreviewUrl(doc);
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
   }
 
   downloadDoc(doc: any): void {
-    if (doc.contentBase64) {
-      const a = document.createElement('a');
-      a.href = doc.contentBase64;
-      a.download = doc.name || 'document';
-      a.click();
+    if (!doc.contentBase64) {
+      alert('Document content not available');
+      return;
+    }
+    
+    try {
+      let base64Content = doc.contentBase64;
+      if (base64Content.includes(',')) {
+        base64Content = base64Content.split(',')[1];
+      }
+      
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: doc.mime || 'application/octet-stream' });
+      
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = doc.name || 'document';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+      
+    } catch (error) {
+      console.error('Error downloading document:', error);
+      alert('Failed to download document');
     }
   }
 

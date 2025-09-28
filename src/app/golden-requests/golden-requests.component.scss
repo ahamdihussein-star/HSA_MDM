@@ -90,3 +90,67 @@
     align-items: center;
     justify-content: center;
 }
+
+// ====== SYNC BUTTON ======
+
+.sync-btn {
+  height: 40px;
+  border-radius: 8px;
+  font-weight: 500;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 16px;
+  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.2);
+  
+  &:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 12px rgba(24, 144, 255, 0.3);
+  }
+  
+  .anticon {
+    font-size: 16px;
+  }
+}
+
+// Actions dropdown menu styles
+.actions-dropdown {
+  .ant-btn {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    padding: 4px 12px;
+    height: 32px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    
+    &:hover {
+      border-color: #40a9ff;
+      color: #40a9ff;
+    }
+  }
+}
+
+// Menu items styling
+:host ::ng-deep {
+  .ant-dropdown-menu {
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.15);
+    
+    .ant-dropdown-menu-item {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      padding: 8px 16px;
+      
+      &:hover {
+        background-color: #f5f5f5;
+      }
+      
+      .anticon {
+        font-size: 14px;
+        color: #666;
+      }
+    }
+  }
+}

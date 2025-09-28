@@ -142,3 +142,279 @@
     }
   }
 }
+
+/* Loading spinner animation */
+.loading-spinner {
+  animation: spin 1s linear infinite;
+  font-size: 16px;
+}
+
+@keyframes spin {
+  from { transform: rotate(0deg); }
+  to { transform: rotate(360deg); }
+}
+
+/* File Upload Styles */
+.file-upload-area {
+  border: 2px dashed #ddd;
+  border-radius: 8px;
+  padding: 20px;
+  text-align: center;
+  background: #f9f9f9;
+  transition: all 0.3s ease;
+  margin: 10px 0;
+}
+
+.file-upload-area.drag-over {
+  border-color: #007bff;
+  background: #e3f2fd;
+  transform: scale(1.02);
+}
+
+.upload-content {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 10px;
+}
+
+.upload-icon {
+  font-size: 48px;
+  margin-bottom: 10px;
+}
+
+.upload-text {
+  font-size: 16px;
+  font-weight: 600;
+  color: #333;
+  margin: 0;
+}
+
+.upload-hint {
+  font-size: 14px;
+  color: #666;
+  margin: 0;
+}
+
+.upload-buttons {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+}
+
+.upload-btn {
+  background: #007bff;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s ease;
+}
+
+.upload-btn:hover {
+  background: #0056b3;
+}
+
+.cancel-upload-btn {
+  background: #6c757d;
+  color: white;
+  border: none;
+  padding: 10px 20px;
+  border-radius: 5px;
+  cursor: pointer;
+  font-size: 14px;
+  transition: background 0.3s ease;
+}
+
+.cancel-upload-btn:hover {
+  background: #545b62;
+}
+
+// Button Options Styling
+.buttons-container {
+  display: flex;
+  gap: 10px;
+  margin-top: 10px;
+  justify-content: center;
+  flex-wrap: wrap;
+}
+
+.action-button {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 8px;
+  cursor: pointer;
+  font-size: 14px;
+  font-weight: 500;
+  transition: all 0.3s ease;
+  min-width: 80px;
+  
+  &:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+  }
+  
+  &:active {
+    transform: translateY(0);
+  }
+}
+
+.yes-button {
+  background: #28a745;
+  color: white;
+  
+  &:hover {
+    background: #218838;
+  }
+}
+
+.no-button {
+  background: #dc3545;
+  color: white;
+  
+  &:hover {
+    background: #c82333;
+  }
+}
+
+.skip-button {
+  background: #6c757d;
+  color: white;
+  
+  &:hover {
+    background: #545b62;
+  }
+}
+
+
+.text-input-area {
+  display: flex;
+  gap: 10px;
+  align-items: center;
+
+  .file-picker-btn {
+    background: #28a745;
+    border: none;
+    border-radius: 50%;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    font-size: 16px;
+
+    &:hover:not(:disabled) {
+      background: #1e7e34;
+      transform: scale(1.05);
+    }
+
+    &:disabled {
+      background: #6c757d;
+      cursor: not-allowed;
+      transform: none;
+    }
+  }
+}
+
+/* File Preview Styles */
+.file-preview {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+  padding: 10px;
+  background: #f8f9fa;
+  border-radius: 5px;
+  margin: 5px 0;
+}
+
+.file-preview-icon {
+  font-size: 24px;
+}
+
+.file-preview-info {
+  flex: 1;
+}
+
+.file-preview-name {
+  font-weight: 600;
+  color: #333;
+}
+
+.file-preview-size {
+  font-size: 12px;
+  color: #666;
+}
+
+.file-preview-remove {
+  background: #dc3545;
+  color: white;
+  border: none;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  cursor: pointer;
+  font-size: 12px;
+}
+
+.file-preview-remove:hover {
+  background: #c82333;
+}
+
+/* AI processing indicator */
+.ai-processing {
+  opacity: 0.7;
+  pointer-events: none;
+}
+
+/* Dropdown Container Styles */
+.dropdown-container {
+  margin-top: 8px;
+  max-width: 80%;
+  margin-left: 50px; /* نفس margin الـ bot message */
+  margin-bottom: 10px;
+}
+
+.dropdown-select {
+  width: 100%;
+  padding: 10px 12px;
+  border: 2px solid #eeb42f;
+  border-radius: 8px;
+  background: #ffffff;
+  color: #1b2559;
+  font-size: 14px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+  appearance: none;
+  background-image: url("data:image/svg+xml;charset=UTF-8,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%23eeb42f' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'%3e%3cpolyline points='6,9 12,15 18,9'%3e%3c/polyline%3e%3c/svg%3e");
+  background-repeat: no-repeat;
+  background-position: right 12px center;
+  background-size: 16px;
+  padding-right: 40px;
+}
+
+.dropdown-select:hover {
+  border-color: #d4a017;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.dropdown-select:focus {
+  outline: none;
+  border-color: #d4a017;
+  box-shadow: 0 0 0 3px rgba(238, 180, 47, 0.1);
+}
+
+.dropdown-select option {
+  padding: 8px 12px;
+  background: #ffffff;
+  color: #1b2559;
+}
+
+.dropdown-select option:hover {
+  background: #eeb42f;
+  color: white;
+}

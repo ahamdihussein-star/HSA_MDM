@@ -7,8 +7,12 @@
   display: flex; align-items: center; justify-content: space-between;
 }
 .actionHolderTitle {
-  display: flex; align-items: center; justify-content: center;
+  display: flex; 
+  align-items: center; 
+  justify-content: center;
   margin-bottom: 20px;
+  flex-wrap: wrap;
+  gap: 8px;
 }
 .seachInputHolder {
   background-color: #fff;
@@ -65,3 +69,281 @@
 /* Utilities */
 .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, monospace; font-size: 12px; color: #555; }
 .loading { padding: 16px 0; color: #666; }
+
+/* Full page table layout */
+:host {
+  display: flex;
+  flex-direction: column;
+  height: 100vh;
+  overflow: hidden;
+  padding: 0 16px;
+}
+
+.titleActionHolder {
+  flex-shrink: 0;
+  margin-bottom: 16px;
+}
+
+/* Table container - Responsive */
+nz-table {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  width: 100%;
+}
+
+/* Responsive table styles */
+::ng-deep .ant-table {
+  width: 100% !important;
+}
+
+::ng-deep .ant-table-container {
+  width: 100% !important;
+}
+
+::ng-deep .ant-table-content {
+  width: 100% !important;
+}
+
+/* Table header responsive */
+::ng-deep .ant-table-thead > tr > th {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  padding: 12px 8px !important;
+  font-size: 13px;
+}
+
+/* Table body responsive */
+::ng-deep .ant-table-tbody > tr > td {
+  padding: 12px 8px !important;
+  font-size: 13px;
+  word-break: break-word;
+}
+
+/* Company Name column */
+::ng-deep .ant-table-tbody > tr > td:nth-child(1) {
+  min-width: 200px;
+  max-width: 250px;
+}
+
+/* Company Type column */
+::ng-deep .ant-table-tbody > tr > td:nth-child(2) {
+  min-width: 100px;
+  max-width: 120px;
+}
+
+/* Source System column */
+::ng-deep .ant-table-tbody > tr > td:nth-child(3) {
+  min-width: 140px;
+  max-width: 160px;
+}
+
+/* Missing Fields column */
+::ng-deep .ant-table-tbody > tr > td:nth-child(4) {
+  min-width: 200px;
+  max-width: 250px;
+}
+
+/* Actions column */
+::ng-deep .ant-table-tbody > tr > td:nth-child(5) {
+  min-width: 120px;
+  max-width: 140px;
+}
+
+/* Mobile responsive */
+@media (max-width: 768px) {
+  :host {
+    padding: 0 8px;
+  }
+  
+  .titleActionHolder {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 12px;
+  }
+  
+  .actionHolderTitle {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 8px;
+    width: 100%;
+  }
+  
+  .seachInputHolder {
+    width: 100%;
+    max-width: 300px;
+  }
+  
+  .filter-select {
+    width: 100%;
+    max-width: 200px;
+  }
+  
+  /* Mobile table adjustments */
+  ::ng-deep .ant-table-thead > tr > th {
+    padding: 8px 4px !important;
+    font-size: 12px;
+  }
+  
+  ::ng-deep .ant-table-tbody > tr > td {
+    padding: 8px 4px !important;
+    font-size: 12px;
+  }
+  
+  /* Adjust column widths for mobile */
+  ::ng-deep .ant-table-tbody > tr > td:nth-child(1) {
+    min-width: 150px;
+    max-width: 180px;
+  }
+  
+  ::ng-deep .ant-table-tbody > tr > td:nth-child(4) {
+    min-width: 150px;
+    max-width: 180px;
+  }
+}
+
+/* Tablet responsive */
+@media (max-width: 1024px) and (min-width: 769px) {
+  ::ng-deep .ant-table-thead > tr > th {
+    padding: 10px 6px !important;
+    font-size: 12px;
+  }
+  
+  ::ng-deep .ant-table-tbody > tr > td {
+    padding: 10px 6px !important;
+    font-size: 12px;
+  }
+}
+
+/* Beautiful Statistics Design */
+.stats-container {
+  margin: 20px 0;
+  padding: 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border-radius: 16px;
+  box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(150px, 1fr));
+  gap: 16px;
+}
+
+/* Responsive statistics */
+@media (max-width: 768px) {
+  .stats-container {
+    margin: 16px 0;
+    padding: 16px;
+  }
+  
+  .stats-grid {
+    grid-template-columns: repeat(auto-fit, minmax(120px, 1fr));
+    gap: 12px;
+  }
+  
+  .stat-card {
+    padding: 16px;
+  }
+  
+  .stat-number {
+    font-size: 2rem;
+  }
+  
+  .stat-label {
+    font-size: 0.8rem;
+  }
+}
+
+@media (max-width: 480px) {
+  .stats-grid {
+    grid-template-columns: repeat(2, 1fr);
+    gap: 8px;
+  }
+  
+  .stat-card {
+    padding: 12px;
+  }
+  
+  .stat-number {
+    font-size: 1.8rem;
+  }
+  
+  .stat-label {
+    font-size: 0.75rem;
+  }
+}
+
+.stat-card {
+  background: rgba(255, 255, 255, 0.95);
+  border-radius: 12px;
+  padding: 20px;
+  text-align: center;
+  backdrop-filter: blur(10px);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  transition: transform 0.3s ease, box-shadow 0.3s ease;
+}
+
+.stat-card:hover {
+  transform: translateY(-4px);
+  box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.stat-number {
+  font-size: 2.5rem;
+  font-weight: 700;
+  margin-bottom: 8px;
+  line-height: 1;
+}
+
+.stat-label {
+  font-size: 0.875rem;
+  color: #666;
+  font-weight: 500;
+}
+
+/* Color variations for different stat cards */
+.stat-card.total .stat-number { color: #2c3e50; }
+.stat-card.quarantine .stat-number { color: #e67e22; }
+.stat-card.duplicates .stat-number { color: #3498db; }
+.stat-card.sap-s4 .stat-number { color: #2980b9; }
+.stat-card.sap-byd .stat-number { color: #16a085; }
+.stat-card.oracle .stat-number { color: #e74c3c; }
+
+/* Filter styles */
+.filter-select {
+  height: 40px;
+  padding: 0 12px;
+  border: 1px solid #d9d9d9;
+  border-radius: 6px;
+  background: #fff;
+  margin: 0 8px;
+  font-size: 14px;
+  min-width: 150px;
+}
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 40px;
+  padding: 0 16px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  font-size: 14px;
+  cursor: pointer;
+  user-select: none;
+  transition: all 0.3s ease;
+}
+
+.btn-primary {
+  background: #1890ff;
+  border-color: #1890ff;
+  color: #fff;
+}
+
+.btn-primary:hover {
+  background: #40a9ff;
+  border-color: #40a9ff;
+}

@@ -17,23 +17,48 @@ export class HeaderComponent {
   constructor(private translate: TranslateService, @Inject(PLATFORM_ID) private platformId: Object, private router: Router ) {}
 
   switchLang(lang: string) {
-    // console.log(this.langSelect, "|||this.langSelect");
     if (lang == "en") {
-      localStorage.setItem("lang", "en");
-
       this.translate.use("en");
       this.lang = "en";
-      location.reload();
+      document.body.classList.add("ltr");
+      document.body.classList.remove("rtl");
+      document.documentElement.setAttribute("dir", "ltr");
+      document.body.setAttribute("dir", "ltr");
+      // Save to sessionStorage
+      sessionStorage.setItem("language", "en");
     } else if (lang == "ar") {
       this.translate.use("ar");
-      localStorage.setItem("lang", "ar");
       this.lang = "ar";
-      location.reload();
+      document.body.classList.add("rtl");
+      document.body.classList.remove("ltr");
+      document.documentElement.setAttribute("dir", "rtl");
+      document.body.setAttribute("dir", "rtl");
+      // Save to sessionStorage
+      sessionStorage.setItem("language", "ar");
     }
   }
 
   ngOnInit(): void {
-    this.lang = localStorage.getItem("lang") || "en";
+    // Check sessionStorage first, then default to English
+    const savedLang = sessionStorage.getItem("language");
+    if (savedLang === "ar") {
+      this.lang = "ar";
+      this.translate.use("ar");
+      document.body.classList.add("rtl");
+      document.body.classList.remove("ltr");
+      document.documentElement.setAttribute("dir", "rtl");
+      document.body.setAttribute("dir", "rtl");
+    } else {
+      // Default to English
+      this.lang = "en";
+      this.translate.use("en");
+      document.body.classList.add("ltr");
+      document.body.classList.remove("rtl");
+      document.documentElement.setAttribute("dir", "ltr");
+      document.body.setAttribute("dir", "ltr");
+      // Save default to sessionStorage
+      sessionStorage.setItem("language", "en");
+    }
     this.user = localStorage.getItem("user")  || "2"; 
   }
 

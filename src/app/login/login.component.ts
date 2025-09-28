@@ -105,6 +105,16 @@ export class LoginComponent implements OnInit {
         let roleEnum = 'DATA_ENTRY';
         let targetRoute = '/dashboard/my-task';
 
+        // Special case for manager user (stored as admin role but different username)
+        if (response.user.username === 'manager') {
+          sessionStorage.setItem('user', '5');
+          sessionStorage.setItem('userRole', 'manager');
+          sessionStorage.setItem('username', 'manager');
+          this.message.success(`Welcome ${response.user.fullName}!`);
+          await this.router.navigateByUrl('/dashboard/business');
+          return;
+        }
+
         switch (response.user.role) {
           case 'data_entry':
           case '1':
@@ -130,6 +140,14 @@ export class LoginComponent implements OnInit {
             sessionStorage.setItem('userRole', 'admin');
             this.message.success(`Welcome ${response.user.fullName}!`);
             await this.router.navigateByUrl('/dashboard/data-management');
+            return;  // نخرج مباشرة بدون استخدام RoleService
+          case 'manager':
+            // Manager منفصل - يروح للـ Business Dashboard
+            sessionStorage.setItem('user', '5');
+            sessionStorage.setItem('userRole', 'manager');
+            sessionStorage.setItem('username', 'manager');
+            this.message.success(`Welcome ${response.user.fullName}!`);
+            await this.router.navigateByUrl('/dashboard/business');
             return;  // نخرج مباشرة بدون استخدام RoleService
           default:
             console.warn('Unknown role:', response.user.role);

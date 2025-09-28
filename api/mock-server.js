@@ -22,10 +22,55 @@ app.use((req, res, next) => {
   next();
 });
 
+// Health Check
+app.get('/api/health', (req, res) => {
+  res.json({ 
+    ok: true, 
+    ts: new Date().toISOString(),
+    server: 'Mock API Server'
+  });
+});
+
+// Login endpoint
+app.post('/api/login', (req, res) => {
+  try {
+    const { username, password } = req.body;
+    
+    const user = db.users.find(u => u.username === username && u.password === password);
+    
+    if (user) {
+      res.json({
+        success: true,
+        user: {
+          username: user.username,
+          role: user.role
+        },
+        token: 'mock-token-' + username
+      });
+    } else {
+      res.status(401).json({
+        success: false,
+        message: 'Invalid credentials'
+      });
+    }
+  } catch (error) {
+    res.status(500).json({
+      success: false,
+      message: 'Login failed'
+    });
+  }
+});
+
 
 // In-memory DB (بتروح مع إعادة التشغيل)
 const db = {
-  requests: []
+  requests: [],
+  users: [
+    { username: 'data_entry', password: 'pass123', role: 'data_entry' },
+    { username: 'reviewer', password: 'pass123', role: 'reviewer' },
+    { username: 'compliance', password: 'pass123', role: 'compliance' },
+    { username: 'admin', password: 'admin123', role: 'admin' }
+  ]
 };
 
 // Seed data بسيطة
@@ -138,6 +183,81 @@ app.post('/api/requests/:id/compliance/block', (req, res) => {
   rec.status = 'Quarantined';
   rec.updatedAt = new Date().toISOString();
   res.json({ ok: true });
+});
+
+// Get workflow history for a request
+app.get('/api/requests/:id/history', (req, res) => {
+  const { id } = req.params;
+  const request = db.requests.find(r => r.id === id);
+  if (!request) {
+    return res.status(404).json({ error: 'Request not found' });
+  }
+  
+  // Mock workflow history
+  const history = [
+    {
+      id: 1,
+      requestId: id,
+      action: 'CREATE',
+      fromStatus: null,
+      toStatus: 'Pending',
+      performedBy: request.createdBy || 'system',
+      performedByRole: 'data_entry',
+      note: 'Request created',
+      payload: JSON.stringify({
+        operation: 'create',
+        changes: null,
+        requestType: 'new',
+        documentsAdded: request.documents ? request.documents.length : 0,
+        contactsAdded: request.contacts ? request.contacts.length : 0
+      }),
+      performedAt: request.createdAt || new Date().toISOString()
+    }
+  ];
+  
+  // Add update history if request was updated
+  if (request.updatedAt) {
+    const changes = [];
+    
+    // Check for field changes
+    if (request.firstName && request.firstName !== 'Test Company') {
+      changes.push({
+        field: 'firstName',
+        oldValue: 'Test Company',
+        newValue: request.firstName
+      });
+    }
+    
+    // Check for document changes (only if documents exist and were actually changed)
+    if (request.documents && request.documents.length > 0) {
+      // For mock purposes, we'll only show document changes if they were actually modified
+      // In a real implementation, this would compare old vs new documents
+      // For now, we'll skip document changes in updates to avoid duplication
+      // Documents are only logged during creation
+    }
+    
+    // Only add update history if there are actual changes
+    if (changes.length > 0) {
+      history.push({
+        id: 2,
+        requestId: id,
+        action: 'UPDATE',
+        fromStatus: 'Pending',
+        toStatus: 'Pending',
+        performedBy: request.updatedBy || 'system',
+        performedByRole: 'data_entry',
+        note: 'Request updated',
+        payload: JSON.stringify({
+          changes: changes,
+          updatedBy: request.updatedBy || 'system',
+          updateReason: 'User update'
+        }),
+        performedAt: request.updatedAt
+      });
+    }
+  }
+  
+  res.json(history);
 });
 
 app.listen(PORT, () => {

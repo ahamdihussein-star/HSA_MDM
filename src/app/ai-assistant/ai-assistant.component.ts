@@ -1,9 +1,36 @@
-
-import { Component, ViewChild, ElementRef, AfterViewChecked, ViewEncapsulation } from '@angular/core';
+import { Component, ViewChild, ElementRef, AfterViewChecked, ViewEncapsulation, OnInit, Inject } from '@angular/core';
 import { Router } from '@angular/router';
+import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
+import { isPlatformBrowser } from '@angular/common';
+import { PLATFORM_ID } from '@angular/core';
+import { AiService } from '../services/ai.service';
+import { SimpleAiService } from '../services/simple-ai.service';
+import { AnalyticalBotService, AnalyticalResponse } from '../services/analytical-bot.service';
 
 
-interface ChatMessage { from: 'bot' | 'user'; text: string; }
+interface ChatMessage { 
+  from: 'bot' | 'user'; 
+  text: string; 
+  dropdownOptions?: DropdownOption[];
+  isDropdown?: boolean;
+  buttons?: ButtonOption[];
+  isButtons?: boolean;
+  showDocumentForm?: boolean;
+}
+
+interface ButtonOption {
+  text: string;
+  value: string;
+  type: 'yes' | 'no' | 'skip';
+}
+
+interface DropdownOption {
+  value: string;
+  label: string;
+  id: number;
+}
+
 interface CustomerRecord { [k: string]: string | File; }
 
 @Component({
@@ -12,378 +39,399 @@ interface CustomerRecord { [k: string]: string | File; }
   styleUrls: ['./ai-assistant.component.scss'],
   encapsulation: ViewEncapsulation.None
 })
-export class AiAssistantComponent implements AfterViewChecked {
+export class AiAssistantComponent implements AfterViewChecked, OnInit {
+
+  /* ───────── API & User Management ───────── */
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
+  currentUser: any = null;
+  userRole: string = '';
+  isChatOpen = false;
 
   /* ───────── اللغة & القاموس ───────── */
-  private lang: 'en' | 'ar' =
-    (localStorage.getItem('lang') as 'ar' | 'en') || 'en';
+  private lang: 'en' | 'ar' = 'ar';
+  private dict: { [k: string]: string } = {};
 
-  private dict: Record<'en' | 'ar', Record<string, string>> = {
-    en: {
-      BotGreeting: `Hello Essam! I’m Rashed, the HSA Group Master-Data Bot. I can create a new customer or update an existing one. Type “create customer” or “update customer” to get started.`,
-      SayCreateOrUpdate: `Type "create customer" or "update customer" to begin.`,
-      AskCompanyName: `What's the customer's company name?`,
-      AskAddress: `What's the street address?`,
-      AskCity: `Which city?`,
-      AskCountry: `Which country?`,
-      AskTaxNumber: `What's the tax/VAT number?`,
-      AskContactName: `Contact person name?`,
-      AskJobTitle: `Job title (optional):`,
-      AskEmail: `Email address:`,
-      AskMobile: `Mobile number:`,
-      AskLandline: `Land-line (optional):`,
-      AskPreferredLang: `Preferred language (EN/AR):`,
-      AskSalesOrg: `Sales-ORG code?`,
-      AskDistributionChannel: `Distribution channel?`,
-      AskDivision: `Division?`,
-      AskCommercialDoc: `📑 Upload Commercial Registration document.`,
-      AskTaxDoc: `📑 Upload Tax Certificate document.`,
-      CreateDone: `Customer record has been sent for review`,
-      UpdateDone: `Update has been sent for review`,
-      AskCustomerId: `Enter customer ID to update.`,
-      DocOrField: `Do you want to update a **document** or a normal **field**?`,
-      WhichDocument: `Which document?\n1) Commercial Registration\n2) Tax Certificate`,
-      WhichField: `Field key to change?`,
-      PleaseTypeDocOrField: `Please type "document" or "field".`,
-      ChooseOneOrTwo: `Please choose 1 or 2.`,
-      KeyNotRecognized: `Field key not recognised.`,
-      EnterNewValue: `Enter new value for {{key}}:`,
-      UpdatedAnother: `Updated. Another field? (yes/no)`,
-      IdNotFound: `ID not found.`,
-      AttachedTo: `attached to`,
-    },
-    ar: {
-      BotGreeting: `مرحبًا بك يا عصام، أنا راشد روبوت مجموعة هايل سعيد لإدارة البيانات. أستطيع إنشاء عميل جديد أو تحديث عميل موجود. اكتب "إنشاء عميل" أو "تحديث عميل" للبدء.`,
-      SayCreateOrUpdate: `اكتب "إنشاء عميل" أو "تحديث عميل" للبدء.`,
-      AskCompanyName: `ما اسم الشركة؟`,
-      AskAddress: `ما عنوان الشارع؟`,
-      AskCity: `أي مدينة؟`,
-      AskCountry: `أي دولة؟`,
-      AskTaxNumber: `ما رقم التسجيل الضريبي/القيمة المضافة؟`,
-      AskContactName: `اسم جهة الاتصال؟`,
-      AskJobTitle: `المسمى الوظيفي (اختياري):`,
-      AskEmail: `البريد الإلكتروني:`,
-      AskMobile: `رقم الجوال:`,
-      AskLandline: `الهاتف الأرضي (اختياري):`,
-      AskPreferredLang: `اللغة المفضلة (AR/EN):`,
-      AskSalesOrg: `كود Sales-ORG؟`,
-      AskDistributionChannel: `قناة التوزيع؟`,
-      AskDivision: `القسم؟`,
-      AskCommercialDoc: `📑 ارفع السجل التجاري.`,
-      AskTaxDoc: `📑 ارفع شهادة الضريبة/القيمة المضافة.`,
-      CreateDone: `تم إرسال طلب إنشاء العميل للمراجعة.`,
-      UpdateDone: `تم إرسال التحديث للمراجعة.`,
-      AskCustomerId: `أدخل رقم العميل للتحديث.`,
-      DocOrField: `هل تريد تحديث **مستند** أم **حقل**؟`,
-      WhichDocument: `أي مستند؟\n1) سجل تجاري\n2) شهادة ضريبية`,
-      WhichField: `ما اسم الحقل المراد تعديله؟`,
-      PleaseTypeDocOrField: `اكتب "مستند" أو "حقل".`,
-      ChooseOneOrTwo: `اختر 1 أو 2.`,
-      KeyNotRecognized: `اسم الحقل غير معروف.`,
-      EnterNewValue: `أدخل القيمة الجديدة لـ {{key}}:`,
-      UpdatedAnother: `تم التحديث. حقل آخر؟ (نعم/لا)`,
-      IdNotFound: `لم يتم العثور على هذا الرقم.`,
-      AttachedTo: `أُرفق مع`,
-    }
-  };
-
-  private t(key: string, p: Record<string, string> = {}): string {
-    let txt = this.dict[this.lang][key] || key;
-    Object.entries(p).forEach(([k, v]) => txt = txt.replace(`{{${k}}}`, v));
-    return txt;
-  }
-
-  /* ───────── التحكم فى إظهار الشات ───────── */
-  isChatOpen = false;
-  toggleChat() { this.isChatOpen = !this.isChatOpen; }
-
-  /* ───── DOM refs ───── */
-  @ViewChild('chatContainer') chat!: ElementRef<HTMLDivElement>;
-  @ViewChild('fileInput', { static: true }) file!: ElementRef<HTMLInputElement>;
-
-  /* ───── Chat state ───── */
+  /* ───────── الشات & الرسائل ───────── */
+  @ViewChild('chatContainer') chatContainer!: ElementRef;
   messages: ChatMessage[] = [];
   currentInput = '';
+  isAiProcessing = false;
+  isDropdownOpen = false;
 
-  mode: 'idle' | 'create' | 'update' = 'idle';
-  step = -1;
-
-  /* Update-flow flags */
-  awaitingId = false;
-  askDocOrField = false;
-  awaitingDocChoice = false;
-  awaitingField = false;
+  /* ───────── File Upload State ───────── */
   awaitingFile = false;
-  awaitingYesNo = false;
+  currentFile: File | null = null;
+  isDragOver: boolean = false;
+  selectedDropdownValue: string = '';
 
-  updateKey = '';
-  customerId = '';
-  customer: CustomerRecord = {};
-
-  /* ───── Fields ───── */
-  readonly fields = [
-    { key: 'companyName', labelKey: 'AskCompanyName' },
-    { key: 'address', labelKey: 'AskAddress' },
-    { key: 'city', labelKey: 'AskCity' },
-    { key: 'country', labelKey: 'AskCountry' },
-    { key: 'taxNumber', labelKey: 'AskTaxNumber' },
-    { key: 'contactName', labelKey: 'AskContactName' },
-    { key: 'jobTitle', labelKey: 'AskJobTitle' },
-    { key: 'emailAddress', labelKey: 'AskEmail' },
-    { key: 'mobileNumber', labelKey: 'AskMobile' },
-    { key: 'landline', labelKey: 'AskLandline' },
-    { key: 'preferredLanguage', labelKey: 'AskPreferredLang' },
-    { key: 'salesOrg', labelKey: 'AskSalesOrg' },
-    { key: 'distributionChannel', labelKey: 'AskDistributionChannel' },
-    { key: 'division', labelKey: 'AskDivision' },
-    { key: 'commercialDoc', labelKey: 'AskCommercialDoc' },
-    { key: 'taxCertificateDoc', labelKey: 'AskTaxDoc' },
-  ];
-
-  /* ───── مرادفات ───── */
-  readonly alias: Record<string, string> = {
-    /* EN */
-    'company name': 'companyName', 'address': 'address', 'city': 'city', 'country': 'country',
-    'tax number': 'taxNumber', 'tax': 'taxNumber', 'contact name': 'contactName', 'job title': 'jobTitle',
-    'email': 'emailAddress', 'email address': 'emailAddress', 'mobile': 'mobileNumber',
-    'mobile number': 'mobileNumber', 'landline': 'landline', 'preferred language': 'preferredLanguage',
-    'sales org': 'salesOrg', 'distribution channel': 'distributionChannel', 'division': 'division',
-    'commercial document': 'commercialDoc', 'commercial registration': 'commercialDoc',
-    'tax certificate': 'taxCertificateDoc',
-    /* AR */
-    'اسم الشركة': 'companyName', 'العنوان': 'address', 'المدينة': 'city', 'الدولة': 'country',
-    'رقم الضريبة': 'taxNumber', 'الضريبة': 'taxNumber', 'اسم جهة الاتصال': 'contactName',
-    'المسمى الوظيفي': 'jobTitle', 'البريد الإلكتروني': 'emailAddress', 'جوال': 'mobileNumber',
-    'هاتف أرضي': 'landline', 'اللغة المفضلة': 'preferredLanguage', 'سيلز أورج': 'salesOrg',
-    'قناة التوزيع': 'distributionChannel', 'القسم': 'division', 'سجل تجاري': 'commercialDoc',
-    'شهادة ضريبية': 'taxCertificateDoc'
-  };
-
-  /* Mock DB */
-  db: Record<string, CustomerRecord> = {
-    '1001': {
-      companyName: 'Acme Inc.', address: '123 Demo St', city: 'Cairo',
-      country: 'Egypt', taxNumber: 'EG123456', emailAddress: 'info@acme.com',
-      commercialDoc: 'CR_Acme.pdf', taxCertificateDoc: 'VAT_Acme.pdf'
-    }
-  };
-
-  constructor(public router: Router) { this.bot(this.t('BotGreeting')); }
-
-  ngAfterViewChecked() {
-    try {
-      this.chat.nativeElement.scrollTop = this.chat.nativeElement.scrollHeight;
-    } catch { }
+  /* ───────── AI Service ───────── */
+  constructor(
+    private router: Router,
+    private http: HttpClient,
+    private aiService: AiService,
+    private simpleAiService: SimpleAiService,
+    private analyticalBotService: AnalyticalBotService,
+    @Inject(PLATFORM_ID) private platformId: Object
+  ) {
+    this.initializeUser();
+    this.loadLanguage();
   }
 
-  private bot(txt: string) { this.messages.push({ from: 'bot', text: txt }); }
-  private user(txt: string) { this.messages.push({ from: 'user', text: txt }); }
-
-  /* ───── SEND ───── */
-  send() {
-    if (this.awaitingFile) return;                    // لا تستقبل أمر أثناء انتظار ملف
-    const txt = this.currentInput.trim();
-    if (!txt) return;
-    this.user(txt);
-
-    if (this.mode === 'idle') this.handleIdle(txt);
-    else if (this.mode === 'create') this.handleCreate(txt);
-    else this.handleUpdate(txt);
-
-    this.currentInput = '';
-  }
-
-  /* ───── Idle ───── */
-  private handleIdle(t: string) {
-    if (/create customer/i.test(t) || /إنشاء عميل/.test(t)) {
-      this.mode = 'create'; this.step = 0;
-      this.bot(this.t(this.fields[0].labelKey));
-    } else if (/update customer/i.test(t) || /تحديث عميل/.test(t)) {
-      this.mode = 'update'; this.awaitingId = true;
-      this.bot(this.t('AskCustomerId'));
-    } else {
-      this.bot(this.t('SayCreateOrUpdate'));
+  ngOnInit(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      this.initializeChat();
     }
   }
 
-  /* ───── Create ───── */
-  private handleCreate(val: string) {
-    const field = this.fields[this.step];
-    if (field.key.endsWith('Doc')) {
-      this.awaitingFile = true;
-      this.openFile(field.key);
-      return;
-    }
-    this.customer[field.key] = val;
-    this.step++;
-    this.step < this.fields.length
-      ? this.bot(this.t(this.fields[this.step].labelKey))
-      : this.finish(this.t('CreateDone'));
+  ngAfterViewChecked(): void {
+    this.scrollToBottom();
   }
 
-  /* ───── Update ───── */
-  private handleUpdate(input: string) {
-    const lower = input.toLowerCase().trim();
+  /* ───── User Management ───── */
+  private initializeUser(): void {
+    const username = sessionStorage.getItem('username');
+    const userRole = sessionStorage.getItem('userRole');
+    this.currentUser = { username, userRole };
+  }
 
-    /* 1) ID */
-    if (this.awaitingId) {
-      const rec = this.db[input];
-      if (!rec) { this.bot(this.t('IdNotFound')); return this.reset(); }
-      this.customerId = input; this.customer = { ...rec };
-      this.awaitingId = false; this.askDocOrField = true;
-      return this.bot(this.t('DocOrField'));
+  /* ───── Language Management ───── */
+  private loadLanguage(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      // Don't set language here - let header component handle it
+      this.loadDictionary();
     }
+  }
 
-    /* 2) choose document OR field */
-    if (this.askDocOrField) {
-      if (/(document|مستند)/i.test(lower)) {
-        this.askDocOrField = false; this.awaitingDocChoice = true;
-        return this.bot(this.t('WhichDocument'));
+  private loadDictionary(): void {
+    this.dict = {
+      'Welcome': this.lang === 'ar' ? 'مرحباً! أنا مساعدك الذكي لتحليل البيانات والإحصائيات. يمكنني مساعدتك في:\n\n📊 إحصائيات عامة عن قاعدة البيانات\n📈 تحليل توزيع العملاء\n🔍 مقارنات بين المناطق\n📅 اتجاهات النمو\n\nما الذي تريد معرفته عن بياناتك؟' : 'Welcome! I\'m your AI assistant for data analysis and statistics. How can I help you today?',
+      'WriteSomething': this.lang === 'ar' ? 'اكتب رسالة...' : 'Write a message...',
+      'UploadPrompt': this.lang === 'ar' ? 'اسحب الملف هنا أو اضغط لاختياره' : 'Drag file here or click to select',
+      'UploadHint': this.lang === 'ar' ? 'الملفات المسموحة: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG' : 'Allowed files: PDF, DOC, DOCX, XLS, XLSX, JPG, PNG',
+      'SelectFile': this.lang === 'ar' ? 'اختيار ملف' : 'Select File',
+      'Cancel': this.lang === 'ar' ? 'إلغاء' : 'Cancel',
+      'InvalidFileType': this.lang === 'ar' ? 'نوع الملف غير مدعوم. يرجى اختيار ملف من الأنواع المسموحة.' : 'File type not supported. Please select a file from allowed types.',
+      'FileTooLarge': this.lang === 'ar' ? 'الملف كبير جداً. الحد الأقصى 10 ميجابايت.' : 'File too large. Maximum 10MB.',
+      'CreateDone': this.lang === 'ar' ? 'تم إنشاء طلب العميل بنجاح!' : 'Customer request created successfully!'
+    };
+  }
+
+  t(key: string): string {
+    return this.dict[key] || key;
+  }
+
+  /* ───── Chat Management ───── */
+  private initializeChat(): void {
+    this.bot(this.t('Welcome'));
+  }
+
+  private scrollToBottom(): void {
+    if (this.chatContainer) {
+      const element = this.chatContainer.nativeElement;
+      element.scrollTop = element.scrollHeight;
+    }
+  }
+
+  private focusInput(): void {
+    if (isPlatformBrowser(this.platformId)) {
+      // Try multiple selectors to find the input, prioritizing the chat input
+      const selectors = [
+        '.text-input-area input',  // Most specific - the chat input
+        'input[type="text"]',
+        'input[type="search"]', 
+        'input:not([type])',
+        '.chat-input input',
+        '#chatInput',
+        'input'
+      ];
+      
+      let input: HTMLInputElement | null = null;
+      for (const selector of selectors) {
+        input = document.querySelector(selector) as HTMLInputElement;
+        if (input) {
+          break;
+        }
       }
-      if (/(field|حقل)/i.test(lower)) {
-        this.askDocOrField = false; this.awaitingField = true;
-        return this.bot(this.t('WhichField'));
-      }
-      return this.bot(this.t('PleaseTypeDocOrField'));
-    }
-
-    /* 3) document choice */
-    if (this.awaitingDocChoice) {
-      const key = input.trim() === '1' ? 'commercialDoc'
-        : input.trim() === '2' ? 'taxCertificateDoc' : null;
-      if (!key) return this.bot(this.t('ChooseOneOrTwo'));
-      this.awaitingDocChoice = false; this.awaitingFile = true; this.openFile(key); return;
-    }
-
-    /* 4) field key */
-    if (this.awaitingField) {
-      const key = (this.alias[lower] ?? input).trim();
-      const ok = this.fields.some(f => f.key.toLowerCase() === key.toLowerCase());
-      if (!ok) return this.bot(this.t('KeyNotRecognized'));
-      this.updateKey = key; this.awaitingField = false;
-      if (key.endsWith('Doc')) {
-        this.awaitingFile = true; this.openFile(key);
-      } else {
-        this.bot(this.t('EnterNewValue', { key }));
-      }
-      return;
-    }
-
-    /* 5) new value */
-    if (this.updateKey) {
-      this.customer[this.updateKey] = input;
-      this.updateKey = ''; this.awaitingYesNo = true;
-      return this.bot(this.t('UpdatedAnother'));
-    }
-
-    /* 6) yes/no */
-    if (this.awaitingYesNo) {
-      if (/^(y|yes|نعم)/i.test(input)) {
-        this.awaitingYesNo = false; this.askDocOrField = true;
-        this.bot(this.t('DocOrField'));
-      } else {
-        this.finish(this.t('UpdateDone'));
+      
+      if (input) {
+        // Use setTimeout to ensure the DOM is ready
+        setTimeout(() => {
+          input!.focus();
+          input!.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        }, 100);
       }
     }
   }
 
-  /* ───── File helpers ───── */
-  private openFile(key: string) {
-    this.awaitingField = false;
-    const input = this.file.nativeElement;
-    input.dataset['fieldKey'] = key;
-    setTimeout(() => input.click(), 0);    // يمنح المتصفح فرصة لتعيين data-attr
+  /* ───── Message Handling ───── */
+  private user(txt: string) {
+    this.messages.push({ from: 'user', text: txt });
   }
 
-  onFileSelected(ev: Event) {
-    const inp = ev.target as HTMLInputElement;
-    const f = inp.files?.[0];
-    const key = inp.dataset['fieldKey']!;
-    if (f) {
-      this.customer[key] = f.name;
-      this.bot(`📎 ${f.name} ${this.t('AttachedTo')} ${key}`);
-    }
-    this.awaitingFile = false;
-    inp.value = ''; delete inp.dataset['fieldKey'];
-
-    if (this.mode === 'create') {
-      this.step++;
-      this.step < this.fields.length
-        ? this.bot(this.t(this.fields[this.step].labelKey))
-        : this.finish(this.t('CreateDone'));
-    } else {
-      this.awaitingYesNo = true;
-      this.bot(this.t('UpdatedAnother'));
-    }
-  }
-
-  /* ───── finish + reset ───── */
-  private finish(msg: string) {
-    this.bot(`✅ ${msg}.`);
-    console.table(this.customer);
-    this.reset();
-  }
-  private reset() {
-    this.mode = 'idle'; this.step = -1;
-    this.awaitingId = this.askDocOrField = this.awaitingDocChoice =
-      this.awaitingField = this.awaitingFile = this.awaitingYesNo = false;
-    this.customerId = ''; this.updateKey = ''; this.customer = {};
-  }
-
-
-  /** ====== AUTO-ADDED NAV HELPERS ====== */
-  private getRowId(row: any): string {
-    return ((row?.requestId ?? row?.id ?? row?.key ?? row?.RequestId ?? '') + '');
-  }
-
-  /** Open details page; editable=true opens edit mode, false opens view */
-  viewOrEditRequest(row: any, editable: boolean): void {
-    const id = this.getRowId(row);
-    if (!id) return;
-    this.router?.navigate(['/new-request', id], {
-      queryParams: { mode: editable ? 'edit' : 'view' },
+  private bot(txt: string, dropdownOptions?: DropdownOption[], buttons?: ButtonOption[], showDocumentForm?: boolean) { 
+    this.messages.push({
+      from: 'bot',
+      text: txt,
+      dropdownOptions: dropdownOptions,
+      isDropdown: !!dropdownOptions,
+      buttons: buttons,
+      isButtons: !!buttons,
+      showDocumentForm: !!showDocumentForm
     });
+
+    // Track dropdown state
+    this.isDropdownOpen = !!dropdownOptions;
   }
 
+  /* ───── Button Handling ───── */
+  onButtonClick(value: string, type: 'yes' | 'no' | 'skip'): void {
+    // Add user message to chat
+    this.user(value);
 
+    // Send the button value to AI
+    this.handleWithAI(value);
 
-  /** ====== AUTO-ADDED SAFE STUBS (no-op / defaults) ====== */
-  taskList: any[] = [];
-  checked: boolean = false;
-  indeterminate: boolean = false;
-  setOfCheckedId: Set<string> = new Set<string>();
-  isApprovedVisible: boolean = false;
-  isRejectedConfirmVisible: boolean = false;
-  isRejectedVisible: boolean = false;
-  isAssignVisible: boolean = false;
-  inputValue: string = '';
-  selectedDepartment: string | null = null;
+    // Focus back on input after button click
+    setTimeout(() => {
+      this.focusInput();
+    }, 100);
+  }
 
-  onlyPending(): boolean { return false; }
-  onlyQuarantined(): boolean { return false; }
-  mixedStatuses(): boolean { return false; }
+  /* ───── Dropdown Handling ───── */
+  onDropdownChange(event: Event, message: ChatMessage): void {
+    const select = event.target as HTMLSelectElement;
+    const selectedValue = select.value;
 
-  deleteRows(): void {}
-  deleteSingle(_row?: any): void {}
-  showApproveModal(): void { this.isApprovedVisible = true; }
-  showRejectedModal(): void { this.isRejectedVisible = true; }
-  showAssignModal(): void { this.isAssignVisible = true; }
-  submitApprove(): void { this.isApprovedVisible = false; }
-  rejectApprove(): void { this.isRejectedConfirmVisible = false; }
-  confirmReject(): void { this.isRejectedVisible = false; }
+    if (selectedValue) {
+      // Add user message to chat
+      this.user(selectedValue);
 
-  onAllChecked(_ev?: any): void {}
-  onItemChecked(id: string, checkedOrEvent: any, status?: string): void {
+      // Send the selected value to AI
+      this.handleWithAI(selectedValue);
 
-          const checked = typeof checkedOrEvent === 'boolean' ? checkedOrEvent : !!(checkedOrEvent?.target?.checked ?? checkedOrEvent);
-          try {
-            if (typeof (this as any).updateCheckedSet === 'function') {
-              (this as any).updateCheckedSet(id, checked, status);
-            } else if (typeof (this as any).onItemCheckedCore === 'function') {
-              (this as any).onItemCheckedCore(id, checked, status);
-            }
-          } catch {}
+      // Focus back on input after dropdown selection
+      setTimeout(() => {
+        this.focusInput();
+      }, 100);
+    }
+  }
+
+  /* ───── AI Processing ───── */
+  async handleWithAI(message: string): Promise<void> {
+    if (this.isAiProcessing) {
+      return;
+    }
+
+    this.isAiProcessing = true;
+
+    try {
+      // Check if this is an analytical query
+      if (this.isAnalyticalQuery(message)) {
+        console.log('🧠 Processing analytical query...');
+        const response = await this.analyticalBotService.processAnalyticalQuery(message);
         
+        // Display analytical response
+        this.bot(response.message);
+        
+        // Display chart if available
+        if (response.chart) {
+          this.displayChart(response.chart);
+        }
+        
+        // Display insights if available
+        if (response.insights && response.insights.length > 0) {
+          this.displayInsights(response.insights);
+        }
+      } else {
+        // Use SimpleAiService for customer creation
+        const aiResponse = await this.simpleAiService.processMessage(message);
+        this.bot(aiResponse.message, aiResponse.dropdown, aiResponse.buttons, aiResponse.showUpload);
+      }
+
+    } catch (error) {
+      console.error('🤖 ERROR in AI processing:', error);
+      this.bot(this.lang === 'ar' ? 'عذراً، حدث خطأ في المعالجة. يرجى المحاولة مرة أخرى.' : 'Sorry, an error occurred during processing. Please try again.');
+    } finally {
+      this.isAiProcessing = false;
+      
+      setTimeout(() => {
+        this.scrollToBottom();
+        this.focusInput();
+      }, 300);
+    }
   }
 
+  // Check if the message is an analytical query
+  private isAnalyticalQuery(message: string): boolean {
+    const analyticalKeywords = [
+      'كم', 'عدد', 'أكثر', 'أقل', 'متوسط', 'توزيع', 'نسبة',
+      'مقارنة', 'اتجاه', 'تطور', 'إحصائيات', 'تحليل', 'احصاءيات',
+      'احصائيات', 'عامه', 'عامة', 'بيانات', 'قاعدة', 'database',
+      'count', 'how many', 'most', 'least', 'average', 'distribution',
+      'comparison', 'trend', 'statistics', 'analysis', 'general'
+    ];
+    
+    const msg = message.toLowerCase();
+    const isAnalytical = analyticalKeywords.some(keyword => msg.includes(keyword));
+    
+    console.log('🔍 Checking if analytical query:', message);
+    console.log('🔍 Keywords found:', analyticalKeywords.filter(keyword => msg.includes(keyword)));
+    console.log('🔍 Is analytical:', isAnalytical);
+    
+    return isAnalytical;
+  }
+
+  // Display chart data
+  private displayChart(chart: any): void {
+    const chartMessage = `📊 **${chart.title}**\n\nالبيانات:\n${JSON.stringify(chart.data, null, 2)}`;
+    this.bot(chartMessage);
+  }
+
+  // Display insights
+  private displayInsights(insights: string[]): void {
+    let insightsMessage = '💡 **رؤى مهمة:**\n\n';
+    insights.forEach((insight, index) => {
+      insightsMessage += `${index + 1}. ${insight}\n`;
+    });
+    this.bot(insightsMessage);
+  }
+
+  /* ───── Send Message ───── */
+  async send(): Promise<void> {
+    if (!this.currentInput.trim() || this.isAiProcessing) {
+      return;
+    }
+
+    const message = this.currentInput.trim();
+    this.currentInput = '';
+
+    // Add user message to chat
+    this.user(message);
+
+    // Process with AI
+    await this.handleWithAI(message);
+  }
+
+  /* ───── File Upload Functions ───── */
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragOver = true;
+  }
+
+  onDragLeave(event: DragEvent): void {
+    event.preventDefault();
+    this.isDragOver = false;
+  }
+
+  onDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+    this.isDragOver = false;
+
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      this.handleFileUpload(files[0]);
+    }
+  }
+
+  openFilePicker(): void {
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  onFileSelected(event: Event): void {
+    const input = event.target as HTMLInputElement;
+    if (input.files && input.files.length > 0) {
+      this.handleFileUpload(input.files[0]);
+    }
+  }
+
+  formatFileSize(bytes: number): string {
+    if (bytes === 0) return '0 Bytes';
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+  }
+
+  private handleFileUpload(file: File): void {
+    // Validate file type
+    if (!this.isValidFileType(file)) {
+      this.bot(this.t('InvalidFileType'));
+      return;
+    }
+
+    // Validate file size (max 10MB)
+    if (file.size > 10 * 1024 * 1024) {
+      this.bot(this.t('FileTooLarge'));
+      return;
+    }
+
+    // Store the file
+    this.currentFile = file;
+
+    // Show success message
+    const successMessage = this.lang === 'ar' 
+      ? `ممتاز! تم رفع الملف: ${file.name} (${this.formatFileSize(file.size)})`
+      : `Great! File uploaded: ${file.name} (${this.formatFileSize(file.size)})`;
+    
+    this.bot(successMessage);
+
+    // Continue with the next step
+    this.awaitingFile = false;
+  }
+
+  private isValidFileType(file: File): boolean {
+    const allowedTypes = [
+      'application/pdf',
+      'application/msword',
+      'application/vnd.openxmlformats-officedocument.wordprocessingml.document',
+      'application/vnd.ms-excel',
+      'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet',
+      'image/jpeg',
+      'image/png',
+      'image/jpg'
+    ];
+    return allowedTypes.includes(file.type);
+  }
+
+  /* ───── Utility Functions ───── */
+  getFileAcceptTypes(): string {
+    return '.pdf,.doc,.docx,.xls,.xlsx,.jpg,.jpeg,.png';
+  }
+
+  cancelUpload(): void {
+    this.awaitingFile = false;
+    this.currentFile = null;
+  }
+
+  /* ───── Navigation ───── */
+  goToNewRequest(): void {
+    this.router.navigate(['/new-request']);
+  }
+
+  goToDashboard(): void {
+    this.router.navigate(['/dashboard']);
+  }
+
+  toggleChat(): void {
+    this.isChatOpen = !this.isChatOpen;
+  }
+
+  closeChat(): void {
+    this.isChatOpen = false;
+  }
+
+  // Helper method to get current collected data for logging
+  private getCurrentCollectedData(): any {
+    // This method will be used for logging - we'll get data from AI service
+    return this.aiService ? this.aiService['extractCustomerDataFromConversation']() : {};
+  }
+
+  // Get question statistics for debugging
+  public getQuestionStatistics(): { [key: string]: number } {
+    return this.aiService ? this.aiService.getQuestionStats() : {};
+  }
 }

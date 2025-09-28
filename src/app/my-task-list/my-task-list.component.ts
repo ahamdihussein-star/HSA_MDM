@@ -19,6 +19,11 @@ export class MyTaskListComponent implements OnInit {
   search: string = '';
   statusTab: string = 'all';
   loading: boolean = false;
+  
+  // Filter properties
+  filterByStatus: string = '';
+  uniqueStatuses: Array<{value: string, label: string}> = [];
+  
   counters = {
     rejected: 0,
     duplicate: 0,
@@ -70,6 +75,13 @@ export class MyTaskListComponent implements OnInit {
   ngOnInit(): void {
     console.log('MyTaskList: Loading data entry rejected requests');
     this.loadMyRequests();
+    
+    // Initialize with default statuses
+    this.uniqueStatuses = [
+      { value: 'rejected_new_request', label: 'Rejected New Request' },
+      { value: 'rejected_duplicate', label: 'Rejected Duplicate' },
+      { value: 'rejected_quarantine', label: 'Rejected Quarantine' }
+    ];
   }
 
   // في my-task-list.component.ts - تعديل دالة loadMyRequests()
@@ -124,6 +136,9 @@ async loadMyRequests(): Promise<void> {
       this.updateAllRequests();
       this.updateRows();
       this.updateCounters();
+      
+      // Generate unique statuses for filter
+      this.generateUniqueStatuses();
     },
     (error) => {
       console.error('Error loading requests:', error);
@@ -302,12 +317,117 @@ async loadMyRequests(): Promise<void> {
 
   onSearchChange(value: string): void {
     this.search = value;
-    this.updateRows();
+    this.applyFilters();
+  }
+
+  onFilterChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.filterByStatus = target.value;
+    this.applyFilters();
+  }
+
+  clearFilters(): void {
+    this.search = '';
+    this.filterByStatus = '';
+    this.applyFilters();
   }
 
   setStatusTab(tab: string): void {
     this.statusTab = tab;
     this.updateRows();
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.AllRequests];
+    
+    // Apply search filter
+    if (this.search.trim()) {
+      const query = this.search.toLowerCase();
+      filtered = filtered.filter(row => {
+        const searchText = [
+          row.name || row.firstName || '',
+          row.firstNameAr || '',
+          row.tax || '',
+          row.EmailAddress || '',
+          row.requestId || row.id || ''
+        ].join(' ').toLowerCase();
+        return searchText.includes(query);
+      });
+    }
+    
+    // Apply status filter
+    if (this.filterByStatus) {
+      filtered = filtered.filter(row => {
+        const statusValue = this.getStatusValue(row);
+        return statusValue === this.filterByStatus;
+      });
+    }
+    
+    this.rows = filtered;
+  }
+
+  getStatusValue(row: any): string {
+    // Return the actual value used for filtering
+    if (row.requestType === 'duplicate' && row.status === 'Rejected') {
+      return 'rejected_duplicate';
+    } else if (row.originalRequestType === 'quarantine' && row.status === 'Rejected') {
+      return 'rejected_quarantine';
+    } else if (row.status === 'Rejected') {
+      return 'rejected_new_request';
+    }
+    return 'other';
+  }
+
+  generateUniqueStatuses(): void {
+    console.log('Generating unique statuses for', this.AllRequests.length, 'requests');
+    
+    const statusMap = new Map<string, string>();
+    
+    this.AllRequests.forEach((row, index) => {
+      const statusValue = this.getStatusValue(row);
+      console.log(`Row ${index}:`, {
+        requestType: row.requestType,
+        status: row.status,
+        originalRequestType: row.originalRequestType,
+        statusValue: statusValue
+      });
+      
+      let statusLabel = '';
+      
+      switch (statusValue) {
+        case 'rejected_new_request':
+          statusLabel = 'Rejected New Request';
+          break;
+        case 'rejected_duplicate':
+          statusLabel = 'Rejected Duplicate';
+          break;
+        case 'rejected_quarantine':
+          statusLabel = 'Rejected Quarantine';
+          break;
+        default:
+          statusLabel = 'Other';
+      }
+      
+      if (statusLabel && !statusMap.has(statusValue)) {
+        statusMap.set(statusValue, statusLabel);
+      }
+    });
+    
+    this.uniqueStatuses = Array.from(statusMap.entries()).map(([value, label]) => ({
+      value,
+      label
+    }));
+    
+    // If no statuses found, add the default ones
+    if (this.uniqueStatuses.length === 0) {
+      this.uniqueStatuses = [
+        { value: 'rejected_new_request', label: 'Rejected New Request' },
+        { value: 'rejected_duplicate', label: 'Rejected Duplicate' },
+        { value: 'rejected_quarantine', label: 'Rejected Quarantine' }
+      ];
+    }
+    
+    console.log('Generated unique statuses:', this.uniqueStatuses);
   }
 
   updateRows(): void {
@@ -639,7 +759,12 @@ editRecord(row: any): void {
 
   viewOrEditRequest(id: number | string, status: string, canEdit: boolean): void {
     this.router.navigate(["/dashboard/new-request", id], {
-      queryParams: { edit: canEdit, status },
+      queryParams: { 
+        edit: canEdit, 
+        status,
+        userRole: 'data_entry',  // أضف السطر ده
+        from: 'my-task-list'     // وده كمان
+      },
     });
   }
 }

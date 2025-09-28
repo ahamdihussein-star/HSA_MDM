@@ -1,7 +1,7 @@
 <div class="loginContainer">
   <div class="loginBox">
     <div class="loginImage">
-      <img src="../assets/img/login.png" alt="Login" />
+      <img src="assets/img/login.png" alt="Login" />
     </div>
 
     <div class="loginForm">
@@ -14,6 +14,8 @@
         [formGroup]="loginForm"
         (ngSubmit)="onSubmit()"
         class="form_holder"
+        autocomplete="off"
+        data-lpignore="true"
       >
         <!-- Changed from email to username -->
         <nz-form-item class="input_holder_full-width">
@@ -30,7 +32,9 @@
               id="username"
               formControlName="username"
               placeholder="{{ 'EnterUsername' | translate }}"
-              autocomplete="username"
+              autocomplete="off"
+              data-lpignore="true"
+              data-form-type="other"
             />
           </nz-form-control>
         </nz-form-item>
@@ -51,13 +55,15 @@
               (keyup.enter)="onSubmit()"
               formControlName="password"
               placeholder="{{ 'EnterYourPassword' | translate }}"
-              autocomplete="current-password"
+              autocomplete="new-password"
+              data-lpignore="true"
+              data-form-type="other"
             />
           </nz-form-control>
         </nz-form-item>
 
         <!-- Loading spinner while authenticating -->
-        <nz-spin *ngIf="loading" nzTip="Authenticating..." style="margin: 20px 0;">
+        <nz-spin *ngIf="loading" nzTip="{{ 'Authenticating...' | translate }}" style="margin: 20px 0;">
           <div style="height: 40px;"></div>
         </nz-spin>
 
@@ -73,16 +79,16 @@
         <p style="margin: 0 0 10px 0; font-weight: 600; color: #666;">{{ "Demo Credentials" | translate }}:</p>
         <div style="display: grid; gap: 8px; color: #888;">
           <div>
-            <strong>Data Entry:</strong> data_entry / pass123
+            <strong>{{ 'Data Entry' | translate }}:</strong> data_entry / pass123
           </div>
           <div>
-            <strong>Reviewer:</strong> reviewer / pass123
+            <strong>{{ 'Reviewer' | translate }}:</strong> reviewer / pass123
           </div>
           <div>
-            <strong>Compliance:</strong> compliance / pass123
+            <strong>{{ 'Compliance' | translate }}:</strong> compliance / pass123
           </div>
           <div>
-            <strong>Admin:</strong> admin / admin123
+            <strong>{{ 'Admin' | translate }}:</strong> admin / admin123
           </div>
         </div>
       </div>

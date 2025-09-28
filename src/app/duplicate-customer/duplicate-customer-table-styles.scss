@@ -1,0 +1,152 @@
+/* Professional Documents Table */
+.documents-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+  margin-top: 16px;
+}
+
+.documents-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  
+  thead {
+    background: linear-gradient(135deg, #f5f7fa 0%, #c3cfe2 100%);
+    
+    th {
+      padding: 16px 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #333;
+      border-bottom: 2px solid #e8e8e8;
+      
+      &.col-icon { width: 80px; text-align: center; }
+      &.col-name { width: 40%; }
+      &.col-category { width: 25%; }
+      &.col-actions { width: 120px; text-align: center; }
+    }
+  }
+  
+  tbody {
+    tr.document-row {
+      transition: all 0.2s ease;
+      border-bottom: 1px solid #f0f0f0;
+      
+      &:hover {
+        background: #f8f9fa;
+        transform: translateX(2px);
+      }
+      
+      td {
+        padding: 12px;
+        vertical-align: middle;
+        
+        &.col-icon {
+          text-align: center;
+          
+          .file-type-icon {
+            width: 32px;
+            height: 32px;
+            border-radius: 6px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            
+            &[data-type="pdf"] {
+              background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+              color: white;
+            }
+            
+            &[data-type="other"] {
+              background: linear-gradient(135deg, #a29bfe, #d1ccc0);
+              color: white;
+            }
+            
+            .pdf-icon, .file-icon {
+              font-size: 16px;
+            }
+          }
+        }
+        
+        &.col-name {
+          .doc-name-wrapper {
+            .doc-name {
+              font-weight: 500;
+              color: #333;
+              display: block;
+              white-space: nowrap;
+              overflow: hidden;
+              text-overflow: ellipsis;
+              max-width: 300px;
+            }
+          }
+        }
+        
+        &.col-category {
+          nz-tag {
+            margin: 0;
+          }
+        }
+        
+        &.col-actions {
+          text-align: center;
+          
+          .action-buttons {
+            display: flex;
+            gap: 8px;
+            justify-content: center;
+            
+            .action-btn {
+              padding: 8px 12px;
+              border-radius: 6px;
+              transition: all 0.2s ease;
+              font-weight: 500;
+              min-width: 70px;
+              height: 32px;
+              
+              &.view-btn {
+                &:hover {
+                  transform: scale(1.05);
+                  box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+                }
+              }
+              
+              &.download-btn {
+                &:hover {
+                  transform: scale(1.05);
+                  box-shadow: 0 2px 8px rgba(82, 196, 26, 0.3);
+                }
+              }
+              
+              span[nz-icon] {
+                margin-right: 4px;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .documents-table {
+    font-size: 12px;
+    
+    thead th {
+      padding: 12px 8px;
+    }
+    
+    tbody td {
+      padding: 8px;
+    }
+    
+    .col-name .doc-name {
+      max-width: 150px;
+    }
+  }
+}

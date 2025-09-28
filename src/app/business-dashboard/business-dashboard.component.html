@@ -1,0 +1,337 @@
+<div class="business-dashboard" [class.rtl]="isArabic">
+  <!-- Header Section -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1>
+          <i nz-icon nzType="fund" nzTheme="fill"></i>
+          {{ 'Business Dashboard' | translate }}
+        </h1>
+        <div class="stats-summary">
+          <span class="stat-item">
+            <i nz-icon nzType="shop"></i>
+            {{ totalCompanies }} {{ 'Total Companies' | translate }}
+          </span>
+          <span class="stat-item success">
+            <i nz-icon nzType="check-circle"></i>
+            {{ activeCompanies }} {{ 'Active Companies' | translate }}
+          </span>
+          <span class="stat-item danger">
+            <i nz-icon nzType="stop"></i>
+            {{ blockedCompanies }} {{ 'Blocked Companies' | translate }}
+          </span>
+          <span class="stat-item warning">
+            <i nz-icon nzType="crown"></i>
+            {{ goldenRecords }} {{ 'Golden Companies' | translate }}
+          </span>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <button nz-button (click)="exportDashboard()">
+          <i nz-icon nzType="download"></i>
+          {{ 'Export Dashboard' | translate }}
+        </button>
+        
+        <nz-radio-group [(ngModel)]="chartViewMode" (ngModelChange)="switchChartView($event)">
+          <label nz-radio-button nzValue="grid">
+            <i nz-icon nzType="appstore"></i>
+            {{ 'Grid View' | translate }}
+          </label>
+          <label nz-radio-button nzValue="single">
+            <i nz-icon nzType="bar-chart"></i>
+            {{ 'Single View' | translate }}
+          </label>
+        </nz-radio-group>
+      </div>
+    </div>
+  </div>
+
+  <!-- Filters Section -->
+  <div class="filters-section">
+    <div class="filters-container">
+      <div class="filter-group">
+        <label>{{ 'Country' | translate }}</label>
+        <nz-select [(ngModel)]="selectedCountry" (ngModelChange)="onFilterChange()" class="filter-select">
+          <nz-option nzValue="all" [nzLabel]="'All Countries' | translate"></nz-option>
+          <nz-option *ngFor="let country of filterOptions.countries" 
+                     [nzValue]="country" 
+                     [nzLabel]="country">
+          </nz-option>
+        </nz-select>
+      </div>
+
+      <div class="filter-group">
+        <label>{{ 'City' | translate }}</label>
+        <nz-select [(ngModel)]="selectedCity" (ngModelChange)="onFilterChange()" class="filter-select">
+          <nz-option nzValue="all" [nzLabel]="'All Cities' | translate"></nz-option>
+          <nz-option *ngFor="let city of filterOptions.cities" 
+                     [nzValue]="city" 
+                     [nzLabel]="city">
+          </nz-option>
+        </nz-select>
+      </div>
+
+      <div class="filter-group">
+        <label>{{ 'Company Type' | translate }}</label>
+        <nz-select [(ngModel)]="selectedType" (ngModelChange)="onFilterChange()" class="filter-select">
+          <nz-option nzValue="all" [nzLabel]="'All Types' | translate"></nz-option>
+          <nz-option *ngFor="let type of filterOptions.customerTypes" 
+                     [nzValue]="type" 
+                     [nzLabel]="type">
+          </nz-option>
+        </nz-select>
+      </div>
+
+      <div class="filter-group">
+        <label>{{ 'Sales Organization' | translate }}</label>
+        <nz-select [(ngModel)]="selectedSalesOrg" (ngModelChange)="onFilterChange()" class="filter-select">
+          <nz-option nzValue="all" [nzLabel]="'All Sales Orgs' | translate"></nz-option>
+          <nz-option *ngFor="let org of filterOptions.salesOrgs" 
+                     [nzValue]="org" 
+                     [nzLabel]="org">
+          </nz-option>
+        </nz-select>
+      </div>
+
+      <div class="filter-group">
+        <label>{{ 'Distribution Channel' | translate }}</label>
+        <nz-select [(ngModel)]="selectedChannel" (ngModelChange)="onFilterChange()" class="filter-select">
+          <nz-option nzValue="all" [nzLabel]="'All Channels' | translate"></nz-option>
+          <nz-option *ngFor="let channel of filterOptions.distributionChannels" 
+                     [nzValue]="channel" 
+                     [nzLabel]="channel">
+          </nz-option>
+        </nz-select>
+      </div>
+
+      <div class="filter-group">
+        <label>{{ 'Division' | translate }}</label>
+        <nz-select [(ngModel)]="selectedDivision" (ngModelChange)="onFilterChange()" class="filter-select">
+          <nz-option nzValue="all" [nzLabel]="'All Divisions' | translate"></nz-option>
+          <nz-option *ngFor="let division of filterOptions.divisions" 
+                     [nzValue]="division" 
+                     [nzLabel]="division">
+          </nz-option>
+        </nz-select>
+      </div>
+
+      <div class="filter-group">
+        <label>{{ 'Status' | translate }}</label>
+        <nz-select [(ngModel)]="selectedStatus" (ngModelChange)="onFilterChange()" class="filter-select">
+          <nz-option nzValue="all" [nzLabel]="'All Status' | translate"></nz-option>
+          <nz-option nzValue="Active" [nzLabel]="'Active' | translate"></nz-option>
+          <nz-option nzValue="Blocked" [nzLabel]="'Blocked' | translate"></nz-option>
+        </nz-select>
+      </div>
+
+      <div class="filter-actions">
+        <button nz-button nzType="primary" (click)="applyFilters()">
+          <i nz-icon nzType="filter"></i>
+          {{ 'Apply Filters' | translate }}
+        </button>
+        <button nz-button (click)="resetFilters()">
+          <i nz-icon nzType="clear"></i>
+          {{ 'Reset Filters' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="dashboard-content" *ngIf="!isLoading">
+    <!-- Loading State -->
+    <nz-spin *ngIf="chartsLoading" nzTip="Loading charts..." [nzSpinning]="true" class="loading-spinner">
+      <div style="height: 400px;"></div>
+    </nz-spin>
+
+    <!-- Grid View -->
+    <div class="charts-grid" *ngIf="!chartsLoading && chartViewMode === 'grid'">
+      <!-- Companies by Country -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>{{ 'Companies by Country' | translate }}</h3>
+          <nz-tag nzColor="blue">{{ filteredCompanies.length }} {{ 'companies' | translate }}</nz-tag>
+        </div>
+        <div class="chart-body">
+          <canvas #countryChart></canvas>
+        </div>
+        <div class="chart-footer">
+          <span class="hint">Click on bars to drill down</span>
+        </div>
+      </div>
+
+      <!-- Companies by City -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>{{ 'Companies by City' | translate }}</h3>
+          <span class="subtitle">{{ 'Top 10 cities' | translate }}</span>
+        </div>
+        <div class="chart-body">
+          <canvas #cityChart></canvas>
+        </div>
+      </div>
+
+      <!-- Companies by Type -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>{{ 'Companies by Type' | translate }}</h3>
+        </div>
+        <div class="chart-body">
+          <canvas #typeChart></canvas>
+        </div>
+      </div>
+
+      <!-- Sales Organization -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>{{ 'Companies by Sales Organization' | translate }}</h3>
+        </div>
+        <div class="chart-body">
+          <canvas #salesOrgChart></canvas>
+        </div>
+      </div>
+
+      <!-- Distribution Channels -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>{{ 'Companies by Distribution Channel' | translate }}</h3>
+        </div>
+        <div class="chart-body">
+          <canvas #channelChart></canvas>
+        </div>
+      </div>
+
+      <!-- Divisions -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>{{ 'Companies by Division' | translate }}</h3>
+        </div>
+        <div class="chart-body">
+          <canvas #divisionChart></canvas>
+        </div>
+      </div>
+
+      <!-- Active vs Blocked -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>{{ 'Company Status Distribution' | translate }}</h3>
+        </div>
+        <div class="chart-body">
+          <canvas #statusChart></canvas>
+        </div>
+      </div>
+
+      <!-- Trend Chart -->
+      <div class="chart-card large">
+        <div class="chart-header">
+          <h3>{{ 'Growth Trend' | translate }}</h3>
+          <span class="subtitle">Last 12 months</span>
+        </div>
+        <div class="chart-body">
+          <canvas #trendChart></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Single View (Focus Mode) -->
+    <div class="single-view" *ngIf="!chartsLoading && chartViewMode === 'single'">
+      <div class="chart-selector">
+        <nz-select [(ngModel)]="selectedChart" style="width: 200px;">
+          <nz-option nzValue="country" [nzLabel]="'Companies by Country' | translate"></nz-option>
+          <nz-option nzValue="city" [nzLabel]="'Companies by City' | translate"></nz-option>
+          <nz-option nzValue="type" [nzLabel]="'Companies by Type' | translate"></nz-option>
+          <nz-option nzValue="salesOrg" [nzLabel]="'Companies by Sales Organization' | translate"></nz-option>
+          <nz-option nzValue="channel" [nzLabel]="'Companies by Distribution Channel' | translate"></nz-option>
+          <nz-option nzValue="division" [nzLabel]="'Companies by Division' | translate"></nz-option>
+          <nz-option nzValue="status" [nzLabel]="'Company Status Distribution' | translate"></nz-option>
+          <nz-option nzValue="trend" [nzLabel]="'Growth Trend' | translate"></nz-option>
+        </nz-select>
+      </div>
+
+      <div class="single-chart-container">
+        <canvas [hidden]="selectedChart !== 'country'" #countryChart></canvas>
+        <canvas [hidden]="selectedChart !== 'city'" #cityChart></canvas>
+        <canvas [hidden]="selectedChart !== 'type'" #typeChart></canvas>
+        <canvas [hidden]="selectedChart !== 'salesOrg'" #salesOrgChart></canvas>
+        <canvas [hidden]="selectedChart !== 'channel'" #channelChart></canvas>
+        <canvas [hidden]="selectedChart !== 'division'" #divisionChart></canvas>
+        <canvas [hidden]="selectedChart !== 'status'" #statusChart></canvas>
+        <canvas [hidden]="selectedChart !== 'trend'" #trendChart></canvas>
+      </div>
+    </div>
+  </div>
+
+  <!-- Drill-Down Modal -->
+  <nz-modal
+    [(nzVisible)]="isModalVisible"
+    [nzTitle]="modalTitle"
+    [nzWidth]="1000"
+    [nzFooter]="modalFooter"
+    [nzBodyStyle]="{ direction: isArabic ? 'rtl' : 'ltr' }"
+    (nzOnCancel)="closeModal()">
+    
+    <ng-container *nzModalContent>
+      <nz-table
+        #companyTable
+        [nzData]="modalData"
+        [nzLoading]="modalLoading"
+        [nzPageSize]="modalPageSize"
+        [nzPageIndex]="modalPageIndex"
+        [nzTotal]="modalTotal"
+        [nzShowSizeChanger]="true"
+        [nzPageSizeOptions]="[10, 20, 50]"
+        nzShowQuickJumper>
+        
+        <thead>
+          <tr>
+            <th nzWidth="80px">#</th>
+            <th>{{ 'Company Name' | translate }}</th>
+            <th>{{ 'Tax Number' | translate }}</th>
+            <th>{{ 'Country' | translate }}</th>
+            <th>{{ 'City' | translate }}</th>
+            <th>{{ 'Type' | translate }}</th>
+            <th>{{ 'Status' | translate }}</th>
+            <th nzWidth="100px">{{ 'Actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let company of companyTable.data; let i = index">
+            <td>{{ (modalPageIndex - 1) * modalPageSize + i + 1 }}</td>
+            <td>
+              <div class="company-name">
+                <strong>{{ company.firstName }}</strong>
+                <span class="arabic" *ngIf="company.firstNameAr">{{ company.firstNameAr }}</span>
+              </div>
+            </td>
+            <td>
+              <nz-tag>{{ company.tax }}</nz-tag>
+            </td>
+            <td>{{ company.country }}</td>
+            <td>{{ company.city }}</td>
+            <td>
+              <nz-tag nzColor="blue">{{ company.CustomerType }}</nz-tag>
+            </td>
+            <td>
+              <nz-tag [nzColor]="company.companyStatus === 'Active' ? 'green' : 'red'">
+                {{ company.companyStatus ? (company.companyStatus | translate) : ('N/A' | translate) }}
+              </nz-tag>
+            </td>
+            <td>
+              <button nz-button nzType="link" nzSize="small" (click)="viewCompany(company)">
+                <i nz-icon nzType="eye"></i> {{ 'View' | translate }}
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </nz-table>
+    </ng-container>
+
+    <ng-template #modalFooter>
+      <button nz-button (click)="closeModal()">{{ 'Close' | translate }}</button>
+      <button nz-button nzType="primary" (click)="exportCompanyList()">
+        <i nz-icon nzType="download"></i> {{ 'Export List' | translate }}
+      </button>
+    </ng-template>
+  </nz-modal>
+</div>

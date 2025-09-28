@@ -22,6 +22,7 @@ export class DashboardComponent implements OnInit {
   currentUser: any = null;
   isDemoAdmin: boolean = false;
   isAdmin: boolean = false; // للـ admin user الجديد
+  isManager: boolean = false; // للـ manager user الجديد
   isLoading: boolean = false;
 
   constructor(
@@ -46,6 +47,33 @@ export class DashboardComponent implements OnInit {
       const userRole = sessionStorage.getItem('userRole');
       
       console.log('Session Data:', { username, userRole });
+      
+      // إذا كان manager user
+      if (username === 'manager') {
+        this.user = '5';
+        this.isManager = true;
+        this.isAdmin = false;
+        this.currentUser = { username: 'manager', role: 'manager' };
+        console.log('Set as Manager user');
+        
+        // Redirect manager to business dashboard if on default route
+        if (this.router.url === '/dashboard' || this.router.url === '/dashboard/') {
+          this.router.navigate(['/dashboard/business']);
+        }
+        return;
+      }
+
+      // إذا كان reviewer user
+      if (username === 'reviewer') {
+        this.user = '2';
+        this.currentUser = { username: 'reviewer', role: 'reviewer' };
+        console.log('Set as Reviewer user');
+        
+        // Redirect reviewer away from home dashboard
+        if (this.router.url === '/dashboard/home') {
+          this.router.navigate(['/dashboard/admin-task-list']);
+        }
+      }
       
       // إذا كان admin user
       if (userRole === 'admin' || username === 'admin') {
@@ -82,6 +110,19 @@ export class DashboardComponent implements OnInit {
             this.isAdmin = true;
             this.currentUser = { username: 'admin', role: 'admin' };
             console.log('Set as Admin user');
+            return;
+            
+          case 'manager':
+            this.user = '5';
+            this.isManager = true;
+            this.isAdmin = false; // Manager is NOT admin
+            this.currentUser = { username: 'manager', role: 'manager' };
+            console.log('Set as Manager user');
+            
+            // Redirect manager to business dashboard if on default route
+            if (this.router.url === '/dashboard' || this.router.url === '/dashboard/') {
+              this.router.navigate(['/dashboard/business']);
+            }
             return;
         }
       }
@@ -128,6 +169,10 @@ export class DashboardComponent implements OnInit {
       this.user = '1';
     } else if (role === 'reviewer' || role === 'master' || role === '2') {
       this.user = '2';
+      // Redirect reviewer away from home dashboard
+      if (this.router.url === '/dashboard/home') {
+        this.router.navigate(['/dashboard/admin-task-list']);
+      }
     } else if (role === 'compliance' || role === '3') {
       this.user = '3';
     } else if (role === 'admin' || role === '4') {
@@ -159,6 +204,10 @@ export class DashboardComponent implements OnInit {
       case 'reviewer':
         this.user = '2';
         this.currentUser = { username: 'reviewer', role: 'reviewer' };
+        // Redirect reviewer away from home dashboard
+        if (this.router.url === '/dashboard/home') {
+          this.router.navigate(['/dashboard/admin-task-list']);
+        }
         break;
       case 'compliance':
         this.user = '3';
@@ -168,6 +217,16 @@ export class DashboardComponent implements OnInit {
         this.user = '4';
         this.isAdmin = true;
         this.currentUser = { username: 'admin', role: 'admin' };
+        break;
+      case 'manager':
+        this.user = '5';
+        this.isManager = true;
+        this.isAdmin = false;
+        this.currentUser = { username: 'manager', role: 'manager' };
+        // Redirect to business dashboard
+        if (this.router.url === '/dashboard' || this.router.url === '/dashboard/') {
+          this.router.navigate(['/dashboard/business']);
+        }
         break;
       case 'demo-admin':
         this.user = 'demo-admin';
@@ -245,6 +304,7 @@ export class DashboardComponent implements OnInit {
         case 'reviewer': return 'Reviewer';
         case 'compliance': return 'Compliance';
         case 'admin': return 'System Administrator';
+        case 'manager': return 'Business Manager';
       }
     }
     
@@ -254,6 +314,7 @@ export class DashboardComponent implements OnInit {
       case '2': return 'Reviewer';
       case '3': return 'Compliance';
       case '4': return 'System Administrator';
+      case '5': return 'Business Manager';
       case 'demo-admin': return 'Demo Administrator';
       default: return 'User';
     }

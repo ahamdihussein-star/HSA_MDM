@@ -42,8 +42,23 @@ import {
   EditOutline,
   InboxOutline,
   PaperClipOutline,
-  LoadingOutline
+  LoadingOutline,
+  EyeOutline,
+  ClockCircleOutline,
+  LogoutOutline,
+  NumberOutline,
+  WarningOutline,
+  TranslationOutline,
+  ThunderboltOutline,
+  MinusOutline,
+  ReloadOutline,
+  FilePdfFill,
+  FileWordFill,
+  FileFill,
+  FileExcelFill
 } from '@ant-design/icons-angular/icons';
+
+import { SafePipe } from '../shared/safe.pipe';
 
 const icons = [
   FilePdfOutline,
@@ -56,11 +71,27 @@ const icons = [
   EditOutline,
   InboxOutline,
   PaperClipOutline,
-  LoadingOutline
+  LoadingOutline,
+  EyeOutline,
+  ClockCircleOutline,
+  LogoutOutline,
+  NumberOutline,
+  WarningOutline,
+  TranslationOutline,
+  ThunderboltOutline,
+  MinusOutline,
+  ReloadOutline,
+  FilePdfFill,
+  FileWordFill,
+  FileFill,
+  FileExcelFill
 ];
 
 @NgModule({
-  declarations: [NewRequestComponent],
+  declarations: [
+    NewRequestComponent,
+    SafePipe
+  ],
   imports: [
     CommonModule,
     HttpClientModule,  // Added for API calls
@@ -100,6 +131,4 @@ const icons = [
   providers: [{ provide: NZ_ICONS, useValue: icons }],
   exports: [NewRequestComponent]
 })
-export class NewRequestModule {
-  constructor() {}
-}
+export class NewRequestModule {}

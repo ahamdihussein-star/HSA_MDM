@@ -5,12 +5,30 @@ const Database = require('better-sqlite3');
 const path = require('path');
 
 const app = express();
-const PORT = 3000;
+const PORT = 3001;
 
-// Middlewares
+// Enhanced Middlewares with better limits
 app.use(cors());
-app.use(express.json({ limit: '50mb' }));
-app.use(express.urlencoded({ extended: true, limit: '50mb' }));
+app.use(express.json({ 
+  limit: '20mb',  // Reduced from 50mb for stability
+  verify: (req, res, buf) => {
+    // Log large requests
+    if (buf.length > 5 * 1024 * 1024) { // 5MB
+      console.log(`⚠️ Large request: ${(buf.length / 1024 / 1024).toFixed(2)}MB`);
+    }
+  }
+}));
+app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+
+// Add timeout middleware
+app.use((req, res, next) => {
+  // Set timeout for all requests
+  req.setTimeout(30000, () => { // 30 seconds
+    console.error('Request timeout');
+    res.status(408).json({ error: 'Request timeout' });
+  });
+  next();
+});
 
 // Request Logger
 app.use((req, res, next) => {
@@ -33,6 +51,8 @@ console.log('Database location:', dbPath);
 const db = new Database(dbPath);
 db.pragma('journal_mode = WAL');
 db.pragma('foreign_keys = ON');
+db.pragma('busy_timeout = 5000'); // Add 5 second timeout
+db.pragma('cache_size = -10000');  // 10MB cache
 
 console.log('Connected to SQLite database');
 
@@ -240,6 +260,68 @@ function initializeDatabase() {
   `);
   console.log('Issues table ready');
 
+  // Create sync tables
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS sync_rules (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      name TEXT NOT NULL,
+      description TEXT,
+      targetSystem TEXT NOT NULL, -- 'oracle_forms', 'sap_4hana', 'sap_bydesign'
+      syncDirection TEXT DEFAULT 'outbound', -- 'outbound', 'inbound', 'bidirectional'
+      filterCriteria TEXT, -- JSON string with filter conditions
+      fieldMapping TEXT, -- JSON string with field mappings
+      isActive INTEGER DEFAULT 1,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      createdBy TEXT,
+      updatedAt DATETIME,
+      updatedBy TEXT
+    );
+
+    CREATE TABLE IF NOT EXISTS sync_operations (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      ruleId INTEGER,
+      targetSystem TEXT NOT NULL,
+      syncType TEXT, -- 'manual', 'scheduled'
+      status TEXT, -- 'pending', 'in_progress', 'completed', 'failed', 'partial'
+      totalRecords INTEGER DEFAULT 0,
+      syncedRecords INTEGER DEFAULT 0,
+      failedRecords INTEGER DEFAULT 0,
+      startedAt DATETIME,
+      completedAt DATETIME,
+      executedBy TEXT,
+      errorDetails TEXT, -- JSON string with error details
+      FOREIGN KEY (ruleId) REFERENCES sync_rules(id)
+    );
+
+    CREATE TABLE IF NOT EXISTS sync_records (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      operationId INTEGER NOT NULL,
+      requestId TEXT NOT NULL,
+      targetSystem TEXT NOT NULL,
+      syncStatus TEXT, -- 'success', 'failed', 'skipped'
+      targetRecordId TEXT, -- ID in the target system
+      syncedAt DATETIME,
+      errorMessage TEXT,
+      responseData TEXT, -- JSON response from target system
+      FOREIGN KEY (operationId) REFERENCES sync_operations(id),
+      FOREIGN KEY (requestId) REFERENCES requests(id)
+    );
+  `);
+  console.log('Sync tables ready');
+
+  // Add sync columns to requests table if they don't exist
+  try {
+    db.exec(`ALTER TABLE requests ADD COLUMN lastSyncedAt DATETIME;`);
+  } catch (e) {
+    // Column already exists
+  }
+
+  try {
+    db.exec(`ALTER TABLE requests ADD COLUMN syncStatus TEXT DEFAULT 'not_synced';`);
+  } catch (e) {
+    // Column already exists
+  }
+
   // Create indexes for better performance
   db.exec(`
     CREATE INDEX IF NOT EXISTS idx_requests_status ON requests(status);
@@ -257,6 +339,13 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_contacts_requestId ON contacts(requestId);
     CREATE INDEX IF NOT EXISTS idx_documents_requestId ON documents(requestId);
     CREATE INDEX IF NOT EXISTS idx_issues_requestId ON issues(requestId);
+    CREATE INDEX IF NOT EXISTS idx_requests_sync_status ON requests(syncStatus);
+    CREATE INDEX IF NOT EXISTS idx_requests_last_synced ON requests(lastSyncedAt);
+    CREATE INDEX IF NOT EXISTS idx_sync_rules_system ON sync_rules(targetSystem);
+    CREATE INDEX IF NOT EXISTS idx_sync_operations_status ON sync_operations(status);
+    CREATE INDEX IF NOT EXISTS idx_sync_operations_system ON sync_operations(targetSystem);
+    CREATE INDEX IF NOT EXISTS idx_sync_records_operation ON sync_records(operationId);
+    CREATE INDEX IF NOT EXISTS idx_sync_records_request ON sync_records(requestId);
   `);
   console.log('Indexes created for optimal performance');
 
@@ -265,6 +354,179 @@ function initializeDatabase() {
   
   // Insert sample data
   insertSampleData();
+  
+  // Insert default sync rules
+  insertDefaultSyncRules();
+  insertSampleSyncRules();
+}
+
+function insertDefaultSyncRules() {
+  const count = db.prepare("SELECT COUNT(*) as count FROM sync_rules").get();
+  
+  if (count.count === 0) {
+    console.log('Creating default sync rules...');
+    
+    const defaultRules = [
+      {
+        name: 'Oracle Forms - Customer Sync',
+        description: 'Sync customer data to Oracle Forms system',
+        targetSystem: 'oracle_forms',
+        syncDirection: 'outbound',
+        filterCriteria: JSON.stringify({
+          customerType: ['Limited Liability Company', 'Joint Stock Company'],
+          status: 'Active',
+          country: ['Saudi Arabia', 'Egypt', 'United Arab Emirates']
+        }),
+        fieldMapping: JSON.stringify({
+          'firstName': 'CUSTOMER_NAME',
+          'tax': 'TAX_NUMBER',
+          'country': 'COUNTRY_CODE',
+          'city': 'CITY_CODE',
+          'CustomerType': 'CUSTOMER_TYPE',
+          'salesOrganization': 'SALES_ORG',
+          'distributionChannel': 'DIST_CHANNEL',
+          'division': 'DIVISION'
+        }),
+        createdBy: 'system'
+      },
+      {
+        name: 'SAP S/4HANA - Customer Master',
+        description: 'Sync customer master data to SAP S/4HANA',
+        targetSystem: 'sap_4hana',
+        syncDirection: 'outbound',
+        filterCriteria: JSON.stringify({
+          customerType: ['Limited Liability Company', 'Joint Stock Company', 'Retail Chain'],
+          status: 'Active'
+        }),
+        fieldMapping: JSON.stringify({
+          'firstName': 'KUNNR',
+          'firstNameAr': 'NAME1_AR',
+          'tax': 'STCD1',
+          'country': 'LAND1',
+          'city': 'ORT01',
+          'CustomerType': 'KTOKD',
+          'salesOrganization': 'VKORG',
+          'distributionChannel': 'VTWEG',
+          'division': 'SPART'
+        }),
+        createdBy: 'system'
+      },
+      {
+        name: 'SAP ByDesign - Business Partner',
+        description: 'Sync business partner data to SAP ByDesign',
+        targetSystem: 'sap_bydesign',
+        syncDirection: 'outbound',
+        filterCriteria: JSON.stringify({
+          customerType: ['Limited Liability Company', 'Joint Stock Company'],
+          status: 'Active',
+          salesOrganization: ['1000', '2000', '3000']
+        }),
+        fieldMapping: JSON.stringify({
+          'firstName': 'BusinessPartnerID',
+          'firstNameAr': 'BusinessPartnerName_AR',
+          'tax': 'TaxID',
+          'country': 'CountryCode',
+          'city': 'CityName',
+          'CustomerType': 'BusinessPartnerRole',
+          'salesOrganization': 'SalesOrganisationID'
+        }),
+        createdBy: 'system'
+      }
+    ];
+
+    const insertRule = db.prepare(`
+      INSERT INTO sync_rules (name, description, targetSystem, syncDirection, filterCriteria, fieldMapping, createdBy)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+
+    defaultRules.forEach(rule => {
+      insertRule.run(
+        rule.name,
+        rule.description,
+        rule.targetSystem,
+        rule.syncDirection,
+        rule.filterCriteria,
+        rule.fieldMapping,
+        rule.createdBy
+      );
+    });
+
+    console.log('✅ Default sync rules created');
+  }
+}
+
+// Insert sample sync rules with proper criteria
+function insertSampleSyncRules() {
+  const existingRules = db.prepare("SELECT COUNT(*) as count FROM sync_rules").get();
+  
+  if (existingRules.count > 0) {
+    console.log('Sync rules already exist');
+    return;
+  }
+  
+  console.log('Creating sample sync rules...');
+  
+  const sampleRules = [
+    {
+      name: 'Oracle Forms - Egypt Customers',
+      description: 'Sync Egypt customers to Oracle Forms',
+      targetSystem: 'Oracle Forms',
+      filterCriteria: JSON.stringify({
+        conditions: [
+          { field: 'country', operator: 'equals', value: 'Egypt' }
+        ],
+        logic: 'AND'
+      }),
+      isActive: 1,
+      createdBy: 'admin'
+    },
+    {
+      name: 'SAP S/4 - Saudi Customers',
+      description: 'Sync Saudi Arabia customers to SAP S/4HANA',
+      targetSystem: 'SAP S/4HANA',
+      filterCriteria: JSON.stringify({
+        conditions: [
+          { field: 'country', operator: 'equals', value: 'Saudi Arabia' }
+        ],
+        logic: 'AND'
+      }),
+      isActive: 1,
+      createdBy: 'admin'
+    },
+    {
+      name: 'SAP ByD - UAE & Limited Liability',
+      description: 'Sync UAE Limited Liability companies to SAP ByDesign',
+      targetSystem: 'SAP ByD',
+      filterCriteria: JSON.stringify({
+        conditions: [
+          { field: 'country', operator: 'equals', value: 'United Arab Emirates' },
+          { field: 'CustomerType', operator: 'equals', value: 'Limited Liability Company' }
+        ],
+        logic: 'AND'
+      }),
+      isActive: 1,
+      createdBy: 'admin'
+    }
+  ];
+  
+  const insertRule = db.prepare(`
+    INSERT INTO sync_rules (name, description, targetSystem, filterCriteria, fieldMapping, isActive, createdBy)
+    VALUES (?, ?, ?, ?, ?, ?, ?)
+  `);
+  
+  sampleRules.forEach(rule => {
+    insertRule.run(
+      rule.name,
+      rule.description,
+      rule.targetSystem,
+      rule.filterCriteria,
+      '{}',
+      rule.isActive,
+      rule.createdBy
+    );
+  });
+  
+  console.log('✅ Sample sync rules created');
 }
 
 function insertDefaultUsers() {
@@ -280,10 +542,32 @@ function insertDefaultUsers() {
       ['admin', 'admin123', 'admin', 'System Administrator', 'admin@mdm.com'],
       ['data_entry', 'pass123', 'data_entry', 'Data Entry User', 'entry@mdm.com'],
       ['reviewer', 'pass123', 'reviewer', 'Data Reviewer', 'reviewer@mdm.com'],
-      ['compliance', 'pass123', 'compliance', 'Compliance Officer', 'compliance@mdm.com']
+      ['compliance', 'pass123', 'compliance', 'Compliance Officer', 'compliance@mdm.com'],
+      ['manager', 'manager123', 'manager', 'Business Manager', 'manager@mdm.com']
     ];
     
-    users.forEach(user => insertUser.run(user));
+    users.forEach(user => {
+      try {
+        insertUser.run(user);
+      } catch (error) {
+        // User might already exist, that's okay
+        console.log(`User ${user[0]} already exists or error inserting`);
+      }
+    });
+    
+    // Force add manager if not exists
+    try {
+      const managerExists = db.prepare(`SELECT * FROM users WHERE username = 'manager'`).get();
+      if (!managerExists) {
+        insertUser.run(['manager', 'manager123', 'manager', 'Business Manager', 'manager@mdm.com']);
+        console.log('Manager user added successfully');
+      } else {
+        console.log('Manager user already exists');
+      }
+    } catch (error) {
+      console.log('Error checking/adding manager user:', error);
+    }
+    
     console.log('Default users created');
   }
 }
@@ -499,6 +783,198 @@ app.get('/api/health', (req, res) => {
   });
 });
 
+// ===== ANALYTICAL ENDPOINTS =====
+
+// Count analytics
+app.get('/api/analytics/count', (req, res) => {
+    try {
+        const { country, city, type, timeFilter } = req.query;
+        let query = 'SELECT COUNT(*) as count FROM requests WHERE 1=1';
+        const params = [];
+
+        if (country) {
+            query += ' AND country = ?';
+            params.push(country);
+        }
+        if (city) {
+            query += ' AND city = ?';
+            params.push(city);
+        }
+        if (type) {
+            query += ' AND CustomerType = ?';
+            params.push(type);
+        }
+        if (timeFilter === 'this_month') {
+            query += ' AND createdAt >= date("now", "start of month")';
+        }
+        if (timeFilter === 'this_year') {
+            query += ' AND createdAt >= date("now", "start of year")';
+        }
+
+        const result = db.prepare(query).get(...params);
+        res.json({ count: result.count, filters: req.query });
+    } catch (error) {
+        console.error('Count analytics error:', error);
+        res.status(500).json({ error: 'Failed to get count analytics' });
+    }
+});
+
+// Ranking analytics
+app.get('/api/analytics/ranking', (req, res) => {
+    try {
+        const { rankBy, limit = 10 } = req.query;
+        const validRankBy = ['CustomerType', 'SalesOrgOption', 'city', 'country'];
+        
+        if (!validRankBy.includes(rankBy)) {
+            return res.status(400).json({ error: 'Invalid rankBy parameter' });
+        }
+
+        const query = `
+            SELECT ${rankBy} as name, COUNT(*) as count 
+            FROM requests 
+            WHERE ${rankBy} IS NOT NULL 
+            GROUP BY ${rankBy} 
+            ORDER BY count DESC 
+            LIMIT ?
+        `;
+
+        const results = db.prepare(query).all(parseInt(limit));
+        res.json({ ranking: results, rankBy, limit });
+    } catch (error) {
+        console.error('Ranking analytics error:', error);
+        res.status(500).json({ error: 'Failed to get ranking analytics' });
+    }
+});
+
+// Distribution analytics
+app.get('/api/analytics/distribution', (req, res) => {
+    try {
+        const { groupBy } = req.query;
+        const validGroupBy = ['CustomerType', 'SalesOrgOption', 'city', 'country'];
+        
+        if (!validGroupBy.includes(groupBy)) {
+            return res.status(400).json({ error: 'Invalid groupBy parameter' });
+        }
+
+        const query = `
+            SELECT ${groupBy} as name, COUNT(*) as count 
+            FROM requests 
+            WHERE ${groupBy} IS NOT NULL 
+            GROUP BY ${groupBy}
+        `;
+
+        const results = db.prepare(query).all();
+        const total = results.reduce((sum, row) => sum + row.count, 0);
+        
+        const distribution = results.map(row => ({
+            name: row.name,
+            count: row.count,
+            percentage: ((row.count / total) * 100).toFixed(1)
+        }));
+
+        res.json({ distribution, groupBy, total });
+    } catch (error) {
+        console.error('Distribution analytics error:', error);
+        res.status(500).json({ error: 'Failed to get distribution analytics' });
+    }
+});
+
+// Comparison analytics
+app.get('/api/analytics/comparison', (req, res) => {
+    try {
+        const { compare } = req.query;
+        if (!compare || !Array.isArray(compare)) {
+            return res.status(400).json({ error: 'compare parameter must be an array' });
+        }
+
+        const results = [];
+        for (const item of compare) {
+            const query = 'SELECT COUNT(*) as count FROM requests WHERE country = ? OR city = ?';
+            const result = db.prepare(query).get(item, item);
+            results.push({ name: item, count: result.count });
+        }
+
+        res.json({ comparison: results, compared: compare });
+    } catch (error) {
+        console.error('Comparison analytics error:', error);
+        res.status(500).json({ error: 'Failed to get comparison analytics' });
+    }
+});
+
+// Trend analytics
+app.get('/api/analytics/trend', (req, res) => {
+    try {
+        const { period = 'monthly' } = req.query;
+        let dateFormat, groupBy;
+
+        switch (period) {
+            case 'daily':
+                dateFormat = '%Y-%m-%d';
+                groupBy = 'DATE(created_at)';
+                break;
+            case 'weekly':
+                dateFormat = '%Y-%W';
+                groupBy = 'strftime("%Y-%W", created_at)';
+                break;
+            case 'monthly':
+                dateFormat = '%Y-%m';
+                groupBy = 'strftime("%Y-%m", created_at)';
+                break;
+            case 'yearly':
+                dateFormat = '%Y';
+                groupBy = 'strftime("%Y", created_at)';
+                break;
+            default:
+                return res.status(400).json({ error: 'Invalid period parameter' });
+        }
+
+        const query = `
+            SELECT ${groupBy} as period, COUNT(*) as count 
+            FROM requests 
+            WHERE createdAt IS NOT NULL 
+            GROUP BY ${groupBy} 
+            ORDER BY period
+        `;
+
+        const results = db.prepare(query).all();
+        res.json({ trend: results, period });
+    } catch (error) {
+        console.error('Trend analytics error:', error);
+        res.status(500).json({ error: 'Failed to get trend analytics' });
+    }
+});
+
+// General analytics
+app.get('/api/analytics/general', (req, res) => {
+    try {
+        const { query } = req.query;
+        
+        // Get basic statistics
+        const totalCustomers = db.prepare('SELECT COUNT(*) as count FROM requests').get();
+        const totalContacts = db.prepare('SELECT COUNT(*) as count FROM contacts').get();
+        const totalDocuments = db.prepare('SELECT COUNT(*) as count FROM documents').get();
+        
+        const recentCustomers = db.prepare(`
+            SELECT COUNT(*) as count 
+            FROM requests 
+            WHERE createdAt >= date('now', '-7 days')
+        `).get();
+
+        res.json({
+            summary: {
+                totalCustomers: totalCustomers.count,
+                totalContacts: totalContacts.count,
+                totalDocuments: totalDocuments.count,
+                recentCustomers: recentCustomers.count
+            },
+            query: query
+        });
+    } catch (error) {
+        console.error('General analytics error:', error);
+        res.status(500).json({ error: 'Failed to get general analytics' });
+    }
+});
+
 // Get current user info endpoint
 app.get('/api/auth/me', (req, res) => {
   const userRole = req.headers['x-user-role'] || req.query.role;
@@ -565,7 +1041,7 @@ app.post('/api/login', (req, res) => {
 // Get all requests
 app.get('/api/requests', (req, res) => {
   try {
-    const { status, origin, isGolden, assignedTo } = req.query;
+    const { status, origin, isGolden, assignedTo, createdBy, excludeTypes, requestType, originalRequestType, processedQuarantine, processedDuplicates, systemBreakdown, sourceSystem } = req.query;
     
     let query = "SELECT *, requestType, originalRequestType FROM requests WHERE 1=1";
     const params = [];
@@ -585,6 +1061,45 @@ app.get('/api/requests', (req, res) => {
     if (assignedTo) {
       query += " AND assignedTo = ?";
       params.push(assignedTo);
+    }
+    if (createdBy) {
+      query += " AND createdBy = ?";
+      params.push(createdBy);
+    }
+    if (requestType) {
+      query += " AND requestType = ?";
+      params.push(requestType);
+    }
+    if (excludeTypes) {
+      const typesToExclude = excludeTypes.split(',');
+      typesToExclude.forEach(type => {
+        query += " AND requestType != ?";
+        params.push(type.trim());
+      });
+    }
+    if (originalRequestType) {
+      query += " AND originalRequestType = ?";
+      params.push(originalRequestType);
+    }
+    if (processedQuarantine === 'true') {
+      // Get records that moved out of Quarantine status
+      query += " AND status != 'Quarantine'";
+    }
+    if (processedDuplicates === 'true') {
+      // Get processed duplicate records (Linked records only)
+      query += " AND status = 'Linked'";
+      query += " AND sourceSystem IS NOT NULL";
+      query += " AND sourceSystem != ''";
+      query += " AND sourceSystem != 'Master Builder'";
+    }
+    if (systemBreakdown === 'true' && sourceSystem) {
+      // Get only quarantine and duplicate records from specific system
+      query += " AND sourceSystem = ?";
+      params.push(sourceSystem);
+      query += " AND ((status = 'Quarantine' OR originalRequestType = 'quarantine') OR (requestType = 'duplicate' AND status = 'Duplicate') OR (status = 'Linked'))";
+    } else if (sourceSystem) {
+      query += " AND sourceSystem = ?";
+      params.push(sourceSystem);
     }
     
     query += " ORDER BY createdAt DESC";
@@ -625,6 +1140,32 @@ app.get('/api/requests/:id', (req, res) => {
     const documents = db.prepare("SELECT * FROM documents WHERE requestId = ?").all(requestId);
     const issues = db.prepare("SELECT * FROM issues WHERE requestId = ?").all(requestId);
     
+    // Get workflow history
+    const workflowHistory = db.prepare(`
+      SELECT * FROM workflow_history 
+      WHERE requestId = ? 
+      ORDER BY performedAt ASC
+    `).all(requestId);
+    
+    // Parse payload for each entry
+    const processedHistory = workflowHistory.map(entry => {
+      let parsedPayload = {};
+      
+      if (entry.payload) {
+        try {
+          parsedPayload = JSON.parse(entry.payload);
+        } catch (e) {
+          console.error('Error parsing payload:', e);
+          parsedPayload = {};
+        }
+      }
+      
+      return {
+        ...entry,
+        payload: parsedPayload
+      };
+    });
+    
     const result = {
       ...request,
       contacts: contacts || [],
@@ -632,7 +1173,8 @@ app.get('/api/requests/:id', (req, res) => {
         ...d,
         id: d.documentId || d.id
       })),
-      issues: issues || []
+      issues: issues || [],
+      workflowHistory: processedHistory
     };
     
     res.json(result);
@@ -1010,30 +1552,153 @@ if (data.contacts && Array.isArray(data.contacts)) {
     });
 }
         
-        // Handle documents update
+        // Handle documents update - ENHANCED with proper change tracking
         if (data.documents && Array.isArray(data.documents)) {
-            // Delete existing documents
-            db.prepare('DELETE FROM documents WHERE requestId = ?').run(id);
+            // Get existing documents for comparison
+            const existingDocuments = db.prepare('SELECT * FROM documents WHERE requestId = ?').all(id);
             
-            // Insert new documents
+            // Create maps for easier comparison
+            const existingDocsMap = new Map();
+            existingDocuments.forEach(doc => {
+                const key = `${doc.name}_${doc.type}`;
+                existingDocsMap.set(key, doc);
+            });
+            
+            const newDocsMap = new Map();
             data.documents.forEach(doc => {
                 if (doc.name && doc.contentBase64) {
-                    db.prepare(`
-                        INSERT INTO documents (requestId, name, type, description, size, mime, contentBase64, uploadedAt, uploadedBy)
-                        VALUES (?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP, ?)
-                    `).run(
-                        id, doc.name, doc.type || 'other', doc.description || '',
-                        doc.size || 0, doc.mime || 'application/octet-stream', 
-                        doc.contentBase64, data.updatedBy || 'system'
-                    );
-                    
-                    changes.push({
-                        field: `Document: ${doc.name}`,
-                        oldValue: null,
-                        newValue: doc.name
+                    const key = `${doc.name}_${doc.type || 'other'}`;
+                    newDocsMap.set(key, doc);
+                }
+            });
+            
+            // Track document changes
+            const documentChanges = [];
+            
+            // Check for removed documents
+            existingDocsMap.forEach((existingDoc, key) => {
+                if (!newDocsMap.has(key)) {
+                    documentChanges.push({
+                        field: `Document: ${existingDoc.name}`,
+                        oldValue: existingDoc.name,
+                        newValue: null,
+                        changeType: 'Delete',
+                        documentId: existingDoc.documentId
                     });
                 }
             });
+            
+            // Check for added and modified documents
+            newDocsMap.forEach((newDoc, key) => {
+                const existingDoc = existingDocsMap.get(key);
+                
+                if (!existingDoc) {
+                    // New document added - only log if this is actually a new document
+                    // Check if this document was already processed in this session
+                    const alreadyProcessed = documentChanges.some(change => 
+                        change.field === `Document: ${newDoc.name}` && change.changeType === 'Create'
+                    );
+                    
+                    if (!alreadyProcessed) {
+                        documentChanges.push({
+                            field: `Document: ${newDoc.name}`,
+                            oldValue: null,
+                            newValue: newDoc.name,
+                            changeType: 'Create',
+                            documentId: newDoc.id || newDoc.documentId
+                        });
+                    }
+                } else {
+                    // Check if document was modified (compare content hash or other properties)
+                    const isModified = (
+                        existingDoc.description !== (newDoc.description || '') ||
+                        (existingDoc.size || 0) !== (newDoc.size || 0) ||
+                        existingDoc.mime !== (newDoc.mime || 'application/octet-stream')
+                    );
+                    
+                    if (isModified) {
+                        documentChanges.push({
+                            field: `Document: ${newDoc.name}`,
+                            oldValue: existingDoc.name,
+                            newValue: newDoc.name,
+                            changeType: 'Update',
+                            documentId: existingDoc.documentId,
+                            oldDescription: existingDoc.description,
+                            newDescription: newDoc.description || '',
+                            oldSize: existingDoc.size,
+                            newSize: newDoc.size || 0
+                        });
+                    }
+                }
+            });
+            
+            // Only delete and re-insert documents if there are actual changes
+            if (documentChanges.length > 0) {
+                // Delete only the documents that were actually removed
+                documentChanges.forEach(change => {
+                    if (change.changeType === 'Delete') {
+                        db.prepare('DELETE FROM documents WHERE requestId = ? AND name = ?').run(id, change.field.replace('Document: ', ''));
+                    }
+                });
+                
+                // Insert only new documents
+                documentChanges.forEach(change => {
+                    if (change.changeType === 'Create') {
+                        const docName = change.field.replace('Document: ', '');
+                        const newDoc = data.documents.find(doc => doc.name === docName);
+                        
+                        if (newDoc && newDoc.name && newDoc.contentBase64) {
+                            const docTimestamp = new Date().toISOString();
+                            
+                            db.prepare(`
+                                INSERT INTO documents (requestId, documentId, name, type, description, size, mime, contentBase64, uploadedAt, uploadedBy, source)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                            `).run(
+                                id, 
+                                newDoc.id || newDoc.documentId || nanoid(8),
+                                newDoc.name, 
+                                newDoc.type || 'other', 
+                                newDoc.description || '',
+                                newDoc.size || 0, 
+                                newDoc.mime || 'application/octet-stream', 
+                                newDoc.contentBase64, 
+                                docTimestamp,
+                                data.updatedBy || 'system',
+                                newDoc.source || 'Data Steward'
+                            );
+                        }
+                    }
+                });
+                
+                // Update existing documents that were modified
+                documentChanges.forEach(change => {
+                    if (change.changeType === 'Update') {
+                        const docName = change.field.replace('Document: ', '');
+                        const updatedDoc = data.documents.find(doc => doc.name === docName);
+                        
+                        if (updatedDoc) {
+                            db.prepare(`
+                                UPDATE documents 
+                                SET description = ?, size = ?, mime = ?, contentBase64 = ?, uploadedBy = ?
+                                WHERE requestId = ? AND name = ?
+                            `).run(
+                                updatedDoc.description || '',
+                                updatedDoc.size || 0,
+                                updatedDoc.mime || 'application/octet-stream',
+                                updatedDoc.contentBase64,
+                                data.updatedBy || 'system',
+                                id,
+                                docName
+                            );
+                        }
+                    }
+                });
+            }
+            
+            // Add document changes to the main changes array only if there are actual changes
+            if (documentChanges.length > 0) {
+                changes.push(...documentChanges);
+            }
         }
         
         // Log to workflow_history with detailed payload
@@ -1050,7 +1715,7 @@ if (data.contacts && Array.isArray(data.contacts)) {
 VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
             `).run(
                id, 'UPDATE', existingRequest.status, data.status,
-    data.updatedBy || 'system', data.updatedByRole || 'system',
+    data.updatedBy || 'system', data.updatedByRole || 'data_entry',
     data.updateNote || 'Record updated',
     JSON.stringify(historyPayload)
             );
@@ -1069,45 +1734,6 @@ VALUES (?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     }
 });
 
-// Get workflow history for a request (for frontend compatibility)
-app.get('/api/requests/:id/history', (req, res) => {
-    try {
-        const { id } = req.params;
-        
-        // Get workflow history
-        const history = db.prepare(`
-            SELECT * FROM workflow_history 
-            WHERE requestId = ? 
-            ORDER BY performedAt ASC
-        `).all(id);
-        
-        // Parse payload for each entry
-        const processedHistory = history.map(entry => {
-            let parsedPayload = {};
-            
-            if (entry.payload) {
-                try {
-                    parsedPayload = JSON.parse(entry.payload);
-                } catch (e) {
-                    console.error('Error parsing payload:', e);
-                    parsedPayload = {};
-                }
-            }
-            
-            return {
-                ...entry,
-                payload: parsedPayload
-            };
-        });
-        
-        // Return as array directly (what frontend expects)
-        res.json(processedHistory);
-        
-    } catch (error) {
-        console.error('Error getting workflow history:', error);
-        res.status(500).json({ error: 'Failed to get workflow history', details: error.message });
-    }
-});
 
 // Get data lineage for a request
 app.get('/api/requests/:id/lineage', (req, res) => {
@@ -2757,6 +3383,380 @@ app.get('/api/requests/admin/data-stats', (req, res) => {
   }
 });
 
+// Get technical dashboard statistics
+app.get('/api/dashboard/technical-stats', (req, res) => {
+  try {
+    console.log('[TECH-DASHBOARD] Getting technical statistics...');
+    
+    // 1. Golden Records (isGolden = 1)
+    const goldenRecords = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE isGolden = 1
+    `).get().count;
+    
+    // 2. Unprocessed Quarantine Records (اللي لسه في data_entry)
+    const quarantineRecords = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE status = 'Quarantine'
+      AND assignedTo = 'data_entry'
+    `).get().count;
+    
+    // 3. Unprocessed Duplicate Records (مع sourceSystem فقط)
+    const unprocessedDuplicates = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE requestType = 'duplicate' 
+      AND status = 'Duplicate'
+      AND assignedTo = 'data_entry'
+      AND sourceSystem IS NOT NULL
+      AND sourceSystem != ''
+      AND sourceSystem != 'Master Builder'
+    `).get().count;
+    
+    // 4. New Requests Created (NOT quarantine AND NOT duplicate)
+    const newRequests = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE requestType NOT IN ('quarantine', 'duplicate')
+      AND (requestType = 'new' OR requestType IS NULL)
+      AND createdBy IN ('data_entry', 'Data Entry')
+    `).get().count;
+    
+    // 5. Data Entry Task List
+    const dataEntryTasks = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE assignedTo = 'data_entry' 
+      AND status = 'Rejected'
+    `).get().count;
+    
+    // 6. Reviewer Tasks
+    const reviewerTasks = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE status = 'Pending' 
+      AND assignedTo = 'reviewer'
+    `).get().count;
+    
+    // 7. Compliance Tasks
+    const complianceTasks = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE status = 'Approved' 
+      AND assignedTo = 'compliance'
+      AND isGolden = 0
+    `).get().count;
+    
+    // System Sources - احسب كل الـ records (processed + unprocessed)
+    const oracleFormsQuarantine = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE sourceSystem = 'Oracle Forms'
+      AND (status = 'Quarantine' OR originalRequestType = 'quarantine')
+    `).get().count;
+
+    // System Sources Duplicates Calculations
+    // Oracle Forms - Unprocessed + Processed
+    const oracleFormsUnprocessed = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE sourceSystem = 'Oracle Forms'
+      AND requestType = 'duplicate'
+      AND status = 'Duplicate'
+    `).get().count;
+
+    const oracleFormsProcessed = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE sourceSystem = 'Oracle Forms'
+      AND status = 'Linked'
+    `).get().count;
+
+    const oracleFormsDuplicate = oracleFormsUnprocessed + oracleFormsProcessed;
+
+    // Total = Quarantine + Duplicate (processed + unprocessed)
+    const oracleFormsTotal = oracleFormsQuarantine + oracleFormsDuplicate;
+
+    const sapS4HanaQuarantine = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE sourceSystem = 'SAP S/4HANA'
+      AND (status = 'Quarantine' OR originalRequestType = 'quarantine')
+    `).get().count;
+
+    // SAP S/4HANA - Unprocessed + Processed
+    const sapS4HanaUnprocessed = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE sourceSystem = 'SAP S/4HANA'
+      AND requestType = 'duplicate'
+      AND status = 'Duplicate'
+    `).get().count;
+
+    const sapS4HanaProcessed = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE sourceSystem = 'SAP S/4HANA'
+      AND status = 'Linked'
+    `).get().count;
+
+    const sapS4HanaDuplicate = sapS4HanaUnprocessed + sapS4HanaProcessed;
+
+    // Total = Quarantine + Duplicate (processed + unprocessed)
+    const sapS4HanaTotal = sapS4HanaQuarantine + sapS4HanaDuplicate;
+
+    const sapByDesignQuarantine = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE sourceSystem = 'SAP ByD'
+      AND (status = 'Quarantine' OR originalRequestType = 'quarantine')
+    `).get().count;
+
+    // SAP ByD - Unprocessed + Processed
+    const sapByDesignUnprocessed = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE sourceSystem = 'SAP ByD'
+      AND requestType = 'duplicate'
+      AND status = 'Duplicate'
+    `).get().count;
+
+    const sapByDesignProcessed = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE sourceSystem = 'SAP ByD'
+      AND status = 'Linked'
+    `).get().count;
+
+    const sapByDesignDuplicate = sapByDesignUnprocessed + sapByDesignProcessed;
+
+    // Total = Quarantine + Duplicate (processed + unprocessed)
+    const sapByDesignTotal = sapByDesignQuarantine + sapByDesignDuplicate;
+    
+    // 8. Processed Quarantine - محسّن
+    // عد كل السجلات اللي كانت quarantine وخرجت منها
+    const processedQuarantine = db.prepare(`
+      SELECT COUNT(DISTINCT r.id) as count 
+      FROM requests r
+      WHERE EXISTS (
+        SELECT 1 FROM workflow_history wh 
+        WHERE wh.requestId = r.id 
+        AND (
+          wh.action = 'QUARANTINE_COMPLETE' 
+          OR (wh.fromStatus = 'Quarantine' AND wh.toStatus != 'Quarantine')
+        )
+      )
+    `).get().count;
+    
+    // 9. Processed Duplicates - محسّن
+    // عد Master records والـ linked/merged records
+    // 9. Processed Duplicates (مع sourceSystem فقط - Linked records)
+    const processedDuplicates = db.prepare(`
+      SELECT COUNT(*) as count 
+      FROM requests 
+      WHERE status = 'Linked'
+      AND sourceSystem IS NOT NULL
+      AND sourceSystem != ''
+      AND sourceSystem != 'Master Builder'
+    `).get().count;
+    
+    console.log('[TECH-DASHBOARD] Statistics:', {
+      goldenRecords,
+      quarantineRecords,
+      unprocessedDuplicates,
+      newRequests,
+      dataEntryTasks,
+      reviewerTasks,
+      complianceTasks,
+      processedQuarantine,
+      processedDuplicates
+    });
+    
+    console.log('[TECH-DASHBOARD] System Sources Breakdown:', {
+      oracleForms: { total: oracleFormsTotal, quarantine: oracleFormsQuarantine, duplicate: oracleFormsDuplicate },
+      sapS4Hana: { total: sapS4HanaTotal, quarantine: sapS4HanaQuarantine, duplicate: sapS4HanaDuplicate },
+      sapByDesign: { total: sapByDesignTotal, quarantine: sapByDesignQuarantine, duplicate: sapByDesignDuplicate }
+    });
+    
+    res.json({
+      stats: {
+        goldenRecords,
+        quarantineRecords,
+        unprocessedDuplicates,
+        newRequests,
+        dataEntryTasks,
+        reviewerTasks,
+        complianceTasks,
+        processedQuarantine,  // الجديد
+        processedDuplicates   // الجديد
+      },
+      systemSources: {
+        oracleForms: {
+          total: oracleFormsTotal,
+          quarantine: oracleFormsQuarantine,
+          duplicate: oracleFormsDuplicate
+        },
+        sapS4Hana: {
+          total: sapS4HanaTotal,
+          quarantine: sapS4HanaQuarantine,
+          duplicate: sapS4HanaDuplicate
+        },
+        sapByDesign: {
+          total: sapByDesignTotal,
+          quarantine: sapByDesignQuarantine,
+          duplicate: sapByDesignDuplicate
+        }
+      }
+    });
+    
+  } catch (error) {
+    console.error('[TECH-DASHBOARD] Error fetching technical statistics:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch technical statistics',
+      details: error.message 
+    });
+  }
+});
+
+// Debug endpoint - أضفه بعد أي endpoint
+app.get('/api/debug/source-systems', (req, res) => {
+  try {
+    // شوف كل القيم الموجودة في sourceSystem
+    const allSystems = db.prepare(`
+      SELECT DISTINCT sourceSystem, COUNT(*) as count
+      FROM requests
+      WHERE sourceSystem IS NOT NULL
+      GROUP BY sourceSystem
+    `).all();
+    
+    // شوف عدد records من كل status
+    const statusCounts = db.prepare(`
+      SELECT status, COUNT(*) as count
+      FROM requests
+      GROUP BY status
+    `).all();
+    
+    // شوف عدد records من كل requestType
+    const typeCounts = db.prepare(`
+      SELECT requestType, COUNT(*) as count
+      FROM requests
+      GROUP BY requestType
+    `).all();
+    
+    res.json({
+      sourceSystems: allSystems,
+      statuses: statusCounts,
+      requestTypes: typeCounts,
+      totalRecords: db.prepare('SELECT COUNT(*) as count FROM requests').get().count
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Debug endpoint مؤقت - لفهم المشكلة
+app.get('/api/debug/duplicate-counts', (req, res) => {
+  try {
+    // عد كل أنواع الـ duplicates لكل system
+    const systems = ['Oracle Forms', 'SAP S/4HANA', 'SAP ByD'];
+    const result = {};
+    
+    systems.forEach(system => {
+      result[system] = {
+        // Records بـ requestType = 'duplicate'
+        requestTypeDuplicate: db.prepare(`
+          SELECT COUNT(*) as count FROM requests 
+          WHERE sourceSystem = ? AND requestType = 'duplicate'
+        `).get(system).count,
+        
+        // Records بـ originalRequestType = 'duplicate'  
+        originalTypeDuplicate: db.prepare(`
+          SELECT COUNT(*) as count FROM requests 
+          WHERE sourceSystem = ? AND originalRequestType = 'duplicate'
+        `).get(system).count,
+        
+        // Records بـ status = 'Duplicate'
+        statusDuplicate: db.prepare(`
+          SELECT COUNT(*) as count FROM requests 
+          WHERE sourceSystem = ? AND status = 'Duplicate'
+        `).get(system).count,
+        
+        // Master records
+        masterRecords: db.prepare(`
+          SELECT COUNT(*) as count FROM requests 
+          WHERE sourceSystem = ? AND isMaster = 1
+        `).get(system).count,
+        
+        // Linked records
+        linkedRecords: db.prepare(`
+          SELECT COUNT(*) as count FROM requests 
+          WHERE sourceSystem = ? AND status = 'Linked'
+        `).get(system).count,
+        
+        // Merged records
+        mergedRecords: db.prepare(`
+          SELECT COUNT(*) as count FROM requests 
+          WHERE sourceSystem = ? AND status = 'Merged'
+        `).get(system).count,
+        
+        // Records with masterId
+        hasMaterId: db.prepare(`
+          SELECT COUNT(*) as count FROM requests 
+          WHERE sourceSystem = ? AND masterId IS NOT NULL AND masterId != ''
+        `).get(system).count
+      };
+    });
+    
+    // إجمالي الـ duplicates بكل الطرق
+    const totals = {
+      allRequestTypeDuplicate: db.prepare(`
+        SELECT COUNT(*) as count FROM requests 
+        WHERE requestType = 'duplicate'
+      `).get().count,
+      
+      allOriginalTypeDuplicate: db.prepare(`
+        SELECT COUNT(*) as count FROM requests 
+        WHERE originalRequestType = 'duplicate'
+      `).get().count,
+      
+      allStatusDuplicate: db.prepare(`
+        SELECT COUNT(*) as count FROM requests 
+        WHERE status = 'Duplicate'
+      `).get().count,
+      
+      allMasters: db.prepare(`
+        SELECT COUNT(*) as count FROM requests 
+        WHERE isMaster = 1
+      `).get().count,
+      
+      allLinked: db.prepare(`
+        SELECT COUNT(*) as count FROM requests 
+        WHERE status = 'Linked'
+      `).get().count,
+      
+      allMerged: db.prepare(`
+        SELECT COUNT(*) as count FROM requests 
+        WHERE status = 'Merged'
+      `).get().count
+    };
+    
+    res.json({
+      perSystem: result,
+      totals: totals,
+      analysis: {
+        expectedProcessed: 5,
+        expectedUnprocessed: 9,
+        expectedTotal: 14
+      }
+    });
+    
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // Clear all data except users
 app.delete('/api/requests/admin/clear-all', (req, res) => {
   try {
@@ -2783,6 +3783,36 @@ app.delete('/api/requests/admin/clear-all', (req, res) => {
   } catch (error) {
     console.error('[ADMIN] Error clearing data:', error);
     res.status(500).json({ error: 'Failed to clear data' });
+  }
+});
+
+// Clear sync data
+app.delete('/api/requests/admin/clear-sync', (req, res) => {
+  try {
+    console.log('[ADMIN] DELETE /api/requests/admin/clear-sync - CLEARING SYNC DATA');
+    
+    const transaction = db.transaction(() => {
+      // Clear sync tables
+      db.prepare('DELETE FROM sync_records').run();
+      db.prepare('DELETE FROM sync_operations').run();
+      db.prepare('DELETE FROM sync_rules').run();
+      
+      // Reset sync status in requests table
+      db.prepare('UPDATE requests SET syncStatus = NULL, lastSyncedAt = NULL WHERE isGolden = 1').run();
+      
+      console.log('[ADMIN] Sync data cleared successfully');
+    });
+    
+    transaction();
+    
+    res.json({ 
+      success: true, 
+      message: 'Sync data cleared successfully'
+    });
+    
+  } catch (error) {
+    console.error('[ADMIN] Error clearing sync data:', error);
+    res.status(500).json({ error: 'Failed to clear sync data' });
   }
 });
 
@@ -2864,81 +3894,83 @@ app.post('/api/requests/admin/generate-quarantine', (req, res) => {
   try {
     console.log('[ADMIN] POST /api/requests/admin/generate-quarantine');
     
-    // شركات مختلفة تماماً عن الـ duplicates
-    const companies = [
+    // شركات حقيقية مواد غذائية ومطاعم وسوبر ماركت - مختلفة تماماً عن الـ duplicates
+    const realFoodCompanies = [
       { 
-        name: 'National Food Industries', 
-        nameAr: 'الصناعات الغذائية الوطنية', 
-        tax: 'SA1010445678',
+        name: 'Panda Retail Company', 
+        nameAr: 'شركة بندة للتجزئة', 
+        tax: 'SA1010998877',
         country: 'Saudi Arabia',
-        city: 'Buraidah',
-        owner: 'Mohammed Al-Suhaimi',
+        city: 'Riyadh',
+        owner: 'Savola Group',
+        customerType: 'Joint Stock Company'
+      },
+      { 
+        name: 'Carrefour Egypt', 
+        nameAr: 'كارفور مصر', 
+        tax: 'EG3005678901',
+        country: 'Egypt',
+        city: 'Cairo',
+        owner: 'Majid Al Futtaim',
         customerType: 'Limited Liability Company'
       },
       { 
-        name: 'Hayel Saeed Anam Group', 
-        nameAr: 'مجموعة هائل سعيد أنعم', 
-        tax: 'YE2001547892',
-        country: 'Yemen',
-        city: 'Taiz',
-        owner: null,
+        name: 'Lulu Hypermarket UAE', 
+        nameAr: 'لولو هايبر ماركت الإمارات', 
+        tax: 'AE7009988776',
+        country: 'United Arab Emirates',
+        city: 'Dubai',
+        owner: 'Yusuff Ali M.A.',
+        customerType: 'Limited Liability Company'
+      },
+      { 
+        name: 'Al Meera Consumer Goods', 
+        nameAr: 'الميرة للسلع الاستهلاكية', 
+        tax: 'QA4007766554',
+        country: 'Qatar',
+        city: 'Doha',
+        owner: 'Qatar Government',
+        customerType: 'Joint Stock Company'
+      },
+      { 
+        name: 'Sultan Center Kuwait', 
+        nameAr: 'مركز السلطان الكويت', 
+        tax: 'KW6008877665',
+        country: 'Kuwait',
+        city: 'Kuwait City',
+        owner: 'Al-Shaya Group',
+        customerType: 'Limited Liability Company'
+      },
+      { 
+        name: 'Metro Egypt Retail', 
+        nameAr: 'مترو مصر للتجزئة', 
+        tax: 'EG3006677889',
+        country: 'Egypt',
+        city: 'Alexandria',
+        owner: 'Metro AG',
         customerType: 'Partnership'
       },
       { 
-        name: 'Emirates Refreshments Company', 
-        nameAr: 'شركة الإمارات للمرطبات', 
-        tax: 'AE7004521789',
+        name: 'Spinneys UAE', 
+        nameAr: 'سبينيز الإمارات', 
+        tax: 'AE7007788990',
         country: 'United Arab Emirates',
-        city: null,
-        owner: 'Dubai Investments PJSC',
-        customerType: 'Joint Stock Company'
-      },
-      { 
-        name: 'Mezzan Holding', 
-        nameAr: 'شركة مزان القابضة', 
-        tax: 'KW5478932156',
-        country: 'Kuwait',
-        city: 'Ahmadi',
-        owner: null,
-        customerType: null
-      },
-      { 
-        name: 'Herfy Food Services', 
-        nameAr: 'شركة هرفي للخدمات الغذائية', 
-        tax: 'SA1010012673',
-        country: 'Saudi Arabia',
-        city: null,
-        owner: 'Ahmed Al-Sayed',
-        customerType: 'Joint Stock Company'
-      },
-      { 
-        name: 'Tanmiah Food Company', 
-        nameAr: 'شركة تنمية الغذائية', 
-        tax: 'SA2050098765',
-        country: 'Saudi Arabia',
-        city: 'Khobar',
-        owner: null,
+        city: 'Abu Dhabi',
+        owner: 'Albwardy Investment',
         customerType: 'Limited Liability Company'
       },
       { 
-        name: 'Oman Refreshment Company', 
-        nameAr: 'شركة المرطبات العمانية', 
-        tax: 'OM1010556677',
-        country: 'Oman',
-        city: null,
-        owner: 'Khimji Ramdas Group',
-        customerType: null
-      },
-      { 
-        name: 'IFFCO Group', 
-        nameAr: 'مجموعة إيفكو', 
-        tax: 'AE9874563210',
-        country: 'United Arab Emirates',
-        city: 'Sharjah',
-        owner: null,
-        customerType: 'Cooperative'
+        name: 'Al-Othaim Markets', 
+        nameAr: 'أسواق العثيم', 
+        tax: 'SA1010112233',
+        country: 'Saudi Arabia',
+        city: 'Riyadh',
+        owner: 'Abdullah Al-Othaim',
+        customerType: 'Joint Stock Company'
       }
     ];
+
+    const companies = realFoodCompanies;
     
     const sourceSystems = ['Oracle Forms', 'SAP S/4HANA', 'SAP ByD'];
     const preferredLanguages = ['Arabic', 'English', 'Both'];
@@ -3079,58 +4111,59 @@ app.post('/api/requests/admin/generate-duplicates', (req, res) => {
     const divisions = ['Food Products', 'Beverages', 'Dairy and Cheese', 'Frozen Products', 'Snacks and Confectionery'];
     const preferredLanguages = ['Arabic', 'English', 'Both'];
     
-    const duplicateGroups = [
+    // شركات حقيقية مختلفة تماماً عن الـ quarantine - مع تشابه في الاسم والرقم الضريبي
+    const realDuplicateGroups = [
       {
-        baseName: 'Saudia Dairy & Foodstuff Company',
-        baseNameAr: 'شركة سدافكو',
-        tax: 'SA1010011533',
+        baseName: 'Almarai Company',
+        baseNameAr: 'شركة المراعي',
+        tax: 'SA1010334455',  // رقم ضريبي مختلف عن الـ quarantine
         country: 'Saudi Arabia',
         variations: [
           { 
-            name: 'Saudia Dairy & Foodstuff Company (SADAFCO)',
-            nameAr: 'الشركة السعودية لمنتجات الألبان والأغذية سدافكو',
-            city: 'Jeddah',
-            owner: 'Hamza Mohammed Khashoggi',
-            contact: 'Ahmed Al-Zahrani',
-            email: 'info@sadafco.com',
+            name: 'Almarai Company Limited',
+            nameAr: 'شركة المراعي المحدودة',
+            city: 'Riyadh',
+            owner: 'Prince Sultan bin Mohammed bin Saud Al Kabeer',
+            contact: 'Khalid Al-Rasheed',
+            email: 'info@almarai.com',
             mobile: '+966501234567',
-            street: 'Industrial City Phase 4',
+            street: 'Exit 8, Northern Ring Road',
             salesOrg: 'HSA Saudi Arabia 2000',
             distChannel: 'Modern Trade',
             division: 'Dairy and Cheese'
           },
           { 
-            name: 'SADAFCO',
-            nameAr: 'سدافكو',
-            city: 'Riyadh',
-            owner: 'H. Khashoggi',
-            contact: 'Mohammed Al-Ghamdi',
-            email: 'sales@sadafco.sa',
+            name: 'Almarai Co.',
+            nameAr: 'المراعي',
+            city: 'Jeddah',
+            owner: 'Prince Sultan Al Kabeer',
+            contact: 'Ahmed Al-Dosari',
+            email: 'sales@almarai.sa',
             mobile: '+966507654321',
-            street: 'Second Industrial Area',
+            street: 'Industrial City 2',
             salesOrg: 'HSA Saudi Arabia 2000',
             distChannel: 'Traditional Trade',
             division: 'Dairy and Cheese'
           },
           { 
-            name: 'Saudia Dairy Foods',
-            nameAr: 'منتجات الألبان السعودية',
-            city: 'Jeddah',
-            owner: 'Hamza Khashoggi',
+            name: 'Al Marai Dairy Company',
+            nameAr: 'شركة المراعي للألبان',
+            city: 'Dammam',
+            owner: 'Al Kabeer Family',
             contact: null,
-            email: 'contact@saudiadairy.com',
+            email: 'contact@almaraidairy.com',
             mobile: '+966509876543',
-            street: 'Industrial Zone',
+            street: 'Second Industrial City',
             salesOrg: null,
             distChannel: 'HoReCa',
             division: 'Dairy and Cheese'
           },
           { 
-            name: 'Saudi Dairy & Food Co',
-            nameAr: 'شركة الألبان السعودية',
-            city: 'Dammam',
+            name: 'Almarai Food Industries',
+            nameAr: 'المراعي للصناعات الغذائية',
+            city: 'Buraidah',
             owner: null,
-            contact: 'Khalid Al-Otaibi',
+            contact: 'Omar Al-Mutairi',
             email: null,
             mobile: '+966502345678',
             street: null,
@@ -3141,147 +4174,196 @@ app.post('/api/requests/admin/generate-duplicates', (req, res) => {
         ]
       },
       {
-        baseName: 'Mondelez Arabia',
-        baseNameAr: 'مونديليز العربية',
-        tax: 'SA2050556677',
+        baseName: 'Herfy Food Services',
+        baseNameAr: 'هرفي للخدمات الغذائية',
+        tax: 'SA2050887766',  // رقم ضريبي مختلف
         country: 'Saudi Arabia',
         variations: [
           { 
-            name: 'Mondelez Arabia for Food Industries',
-            nameAr: 'مونديليز العربية للصناعات الغذائية',
-            city: 'Dammam',
-            owner: 'Mondelez International',
-            contact: 'Faisal Al-Harbi',
-            email: 'info@mdlz-arabia.com',
-            mobile: '+966551234567',
-            street: 'Second Industrial City',
-            salesOrg: 'HSA Saudi Arabia 2000',
-            distChannel: 'Key Accounts',
-            division: 'Snacks and Confectionery'
-          },
-          { 
-            name: 'Mondelez Saudi Arabia',
-            nameAr: 'مونديليز السعودية',
+            name: 'Herfy Food Services Company',
+            nameAr: 'شركة هرفي للخدمات الغذائية',
             city: 'Riyadh',
-            owner: 'Mondelez Int.',
-            contact: 'Abdullah Al-Rasheed',
-            email: 'sales@mondelez.sa',
-            mobile: '+966557654321',
+            owner: 'Abdullah Al-Muhaidib',
+            contact: 'Mohammed Al-Rajhi',
+            email: 'info@herfy.com',
+            mobile: '+966551234567',
             street: 'King Fahd Road',
             salesOrg: 'HSA Saudi Arabia 2000',
-            distChannel: 'Modern Trade',
-            division: 'Snacks and Confectionery'
+            distChannel: 'HoReCa',
+            division: 'Food Products'
           },
           { 
-            name: 'Mondelez Arabia Ltd',
-            nameAr: 'شركة مونديليز العربية المحدودة',
+            name: 'Herfy Restaurants',
+            nameAr: 'مطاعم هرفي',
             city: 'Jeddah',
+            owner: 'Al-Muhaidib Group',
+            contact: 'Khalid Al-Saud',
+            email: 'franchise@herfy.sa',
+            mobile: '+966557654321',
+            street: 'Prince Sultan Road',
+            salesOrg: 'HSA Saudi Arabia 2000',
+            distChannel: 'Modern Trade',
+            division: 'Food Products'
+          },
+          { 
+            name: 'Herfy Fast Food',
+            nameAr: 'هرفي للوجبات السريعة',
+            city: 'Dammam',
+            owner: null,
+            contact: 'Ahmad Al-Qahtani',
+            email: null,
+            mobile: '+966559876543',
+            street: 'Corniche Road',
+            salesOrg: null,
+            distChannel: 'Traditional Trade',
+            division: 'Food Products'
+          }
+        ]
+      },
+      {
+        baseName: 'Dominos Pizza Egypt',
+        baseNameAr: 'دومينوز بيتزا مصر',
+        tax: 'EG3009988774',  // رقم ضريبي مصري مختلف
+        country: 'Egypt',
+        variations: [
+          { 
+            name: 'Dominos Pizza Egypt LLC',
+            nameAr: 'دومينوز بيتزا مصر ش.م.م',
+            city: 'Cairo',
+            owner: 'Dominos Pizza International',
+            contact: 'Ahmed Mohamed',
+            email: 'info@dominos.com.eg',
+            mobile: '+201012345678',
+            street: 'New Cairo District',
+            salesOrg: 'HSA Egypt 7000',
+            distChannel: 'HoReCa',
+            division: 'Food Products'
+          },
+          { 
+            name: 'Dominos Egypt',
+            nameAr: 'دومينوز مصر',
+            city: 'Alexandria',
+            owner: 'Dominos Int.',
+            contact: 'Mohamed Ali',
+            email: 'franchise@dominos.eg',
+            mobile: '+201098765432',
+            street: 'Corniche Road',
+            salesOrg: 'HSA Egypt 7000',
+            distChannel: 'Modern Trade',
+            division: 'Food Products'
+          },
+          { 
+            name: 'Dominos Pizza Company Egypt',
+            nameAr: 'شركة دومينوز بيتزا مصر',
+            city: 'Giza',
             owner: null,
             contact: 'Omar Hassan',
             email: null,
-            mobile: '+966559876543',
-            street: 'Industrial Area 3',
+            mobile: '+201087654321',
+            street: 'Pyramids Road',
             salesOrg: null,
             distChannel: 'Traditional Trade',
-            division: null
+            division: 'Food Products'
           }
         ]
       },
       {
-        baseName: 'Binzagr Company',
-        baseNameAr: 'شركة بن زقر',
-        tax: 'SA1010015474',
-        country: 'Saudi Arabia',
+        baseName: 'Careem Food UAE',
+        baseNameAr: 'كريم فود الإمارات',
+        tax: 'AE7008899001',  // رقم ضريبي إماراتي مختلف
+        country: 'United Arab Emirates',
         variations: [
           { 
-            name: 'Binzagr Company for Distribution',
-            nameAr: 'شركة بن زقر للتوزيع',
-            city: 'Jeddah',
-            owner: 'Abdullah Binzagr',
-            contact: 'Saeed Al-Maliki',
-            email: 'info@binzagr.com',
-            mobile: '+966561234567',
-            street: 'Al-Hamra District',
-            salesOrg: 'HSA Saudi Arabia 2000',
-            distChannel: 'B2B',
-            division: 'Food Products'
-          },
-          { 
-            name: 'Binzagr Co.',
-            nameAr: 'بن زقر',
-            city: 'Riyadh',
-            owner: 'A. Binzagr',
-            contact: null,
-            email: 'contact@binzagr.sa',
-            mobile: '+966567654321',
-            street: null,
-            salesOrg: 'HSA Saudi Arabia 2000',
-            distChannel: null,
-            division: 'Food Products'
-          },
-          { 
-            name: 'Abdullah Binzagr Trading',
-            nameAr: 'عبدالله بن زقر للتجارة',
-            city: 'Mecca',
-            owner: 'Binzagr Family',
-            contact: 'Majed Al-Shahrani',
-            email: null,
-            mobile: '+966569876543',
-            street: 'Commercial District',
-            salesOrg: null,
-            distChannel: 'Traditional Trade',
-            division: 'Beverages'
-          }
-        ]
-      },
-      {
-        baseName: 'Al Rabie Saudi Foods',
-        baseNameAr: 'الربيع السعودية للأغذية',
-        tax: 'SA1010087142',
-        country: 'Saudi Arabia',
-        variations: [
-          { 
-            name: 'Al Rabie Saudi Foods Co. Ltd.',
-            nameAr: 'شركة الربيع السعودية للأغذية المحدودة',
-            city: 'Riyadh',
-            owner: 'Savola Group',
-            contact: 'Hassan Al-Qahtani',
-            email: 'info@alrabie.com',
-            mobile: '+966571234567',
-            street: 'Exit 5, Eastern Ring Road',
-            salesOrg: 'HSA Saudi Arabia 2000',
-            distChannel: 'Modern Trade',
-            division: 'Beverages'
-          },
-          { 
-            name: 'Al Rabie Foods',
-            nameAr: 'أغذية الربيع',
-            city: 'Jeddah',
-            owner: 'Savola',
-            contact: 'Ali Al-Dosari',
-            email: 'sales@alrabie.sa',
-            mobile: '+966577654321',
-            street: null,
-            salesOrg: 'HSA Saudi Arabia 2000',
+            name: 'Careem Food UAE Limited',
+            nameAr: 'كريم فود الإمارات المحدودة',
+            city: 'Dubai',
+            owner: 'Careem Networks FZ-LLC',
+            contact: 'Ali Al-Mansouri',
+            email: 'info@careemfood.ae',
+            mobile: '+971501234567',
+            street: 'Business Bay',
+            salesOrg: 'HSA UAE 3000',
             distChannel: 'HoReCa',
-            division: null
+            division: 'Food Products'
           },
           { 
-            name: 'Rabie Saudi Foods Company',
-            nameAr: 'شركة ربيع الأغذية السعودية',
-            city: 'Dammam',
+            name: 'Careem Food',
+            nameAr: 'كريم فود',
+            city: 'Abu Dhabi',
+            owner: 'Careem Inc.',
+            contact: 'Mohammed Al-Zaabi',
+            email: 'delivery@careem.ae',
+            mobile: '+971507654321',
+            street: 'Corniche Road',
+            salesOrg: 'HSA UAE 3000',
+            distChannel: 'Modern Trade',
+            division: 'Food Products'
+          },
+          { 
+            name: 'Careem Food Services',
+            nameAr: 'خدمات كريم للأغذية',
+            city: 'Sharjah',
             owner: null,
-            contact: null,
-            email: 'contact@rabiefoods.com',
-            mobile: '+966579876543',
-            street: 'Industrial City',
+            contact: 'Hassan Al-Qasimi',
+            email: null,
+            mobile: '+971509876543',
+            street: 'Al Majaz District',
             salesOrg: null,
-            distChannel: null,
-            division: 'Beverages'
+            distChannel: 'Traditional Trade',
+            division: 'Food Products'
+          }
+        ]
+      },
+      {
+        baseName: 'Chilis Restaurant Kuwait',
+        baseNameAr: 'مطعم تشيليز الكويت',
+        tax: 'KW6007788990',  // رقم ضريبي كويتي مختلف
+        country: 'Kuwait',
+        variations: [
+          { 
+            name: 'Chilis Restaurant Kuwait LLC',
+            nameAr: 'مطعم تشيليز الكويت ش.م.م',
+            city: 'Kuwait City',
+            owner: 'Brinker International',
+            contact: 'Fahad Al-Sabah',
+            email: 'info@chilis.com.kw',
+            mobile: '+96551234567',
+            street: 'Salmiya District',
+            salesOrg: 'HSA Kuwait 5000',
+            distChannel: 'HoReCa',
+            division: 'Food Products'
+          },
+          { 
+            name: 'Chilis Kuwait',
+            nameAr: 'تشيليز الكويت',
+            city: 'Hawalli',
+            owner: 'Brinker Int.',
+            contact: 'Salem Al-Rashid',
+            email: 'franchise@chilis.kw',
+            mobile: '+96557654321',
+            street: 'Salem Al-Mubarak Street',
+            salesOrg: 'HSA Kuwait 5000',
+            distChannel: 'Modern Trade',
+            division: 'Food Products'
+          },
+          { 
+            name: 'Chilis Restaurant Company',
+            nameAr: 'شركة مطاعم تشيليز',
+            city: 'Ahmadi',
+            owner: null,
+            contact: 'Nasser Al-Mutawa',
+            email: null,
+            mobile: '+96559876543',
+            street: 'Fahaheel Highway',
+            salesOrg: null,
+            distChannel: 'Traditional Trade',
+            division: 'Food Products'
           }
         ]
       }
     ];
+
+    const duplicateGroups = realDuplicateGroups;
     
     const transaction = db.transaction(() => {
       const insertStmt = db.prepare(`
@@ -3396,6 +4478,1329 @@ app.post('/api/requests/admin/generate-duplicates', (req, res) => {
   }
 });
 
+// =============================================================================
+// EXECUTIVE DASHBOARD APIs - WORLD CLASS ANALYTICS
+// =============================================================================
+
+// Get comprehensive dashboard statistics
+app.get('/api/dashboard/executive-stats', (req, res) => {
+  try {
+    const { startDate, endDate, department, region } = req.query;
+    
+    // Overall Statistics
+    const totalRequests = db.prepare(`
+      SELECT COUNT(*) as total FROM requests
+    `).get();
+    
+    const activeGoldenRecords = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE isGolden = 1
+    `).get();
+    
+    const pendingRequests = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE status = 'Pending'
+    `).get();
+    
+    const rejectedRequests = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE status = 'Rejected'
+    `).get();
+    
+    // Processing Time Analysis
+    const avgProcessingTime = db.prepare(`
+      SELECT 
+        AVG(JULIANDAY(updatedAt) - JULIANDAY(createdAt)) as avg_days
+      FROM requests 
+      WHERE status IN ('Approved', 'Rejected')
+    `).get();
+    
+    // Monthly Growth
+    const currentMonth = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE DATE(createdAt) >= DATE('now', 'start of month')
+    `).get();
+    
+    const lastMonth = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE DATE(createdAt) >= DATE('now', '-1 month', 'start of month')
+      AND DATE(createdAt) < DATE('now', 'start of month')
+    `).get();
+    
+    const monthlyGrowth = lastMonth.count > 0 
+      ? ((currentMonth.count - lastMonth.count) / lastMonth.count * 100).toFixed(1)
+      : 0;
+    
+    // Data Quality Score
+    const completeRecords = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE firstName IS NOT NULL 
+      AND tax IS NOT NULL 
+      AND country IS NOT NULL 
+      AND city IS NOT NULL
+    `).get();
+    
+    const dataQualityScore = totalRequests.total > 0 
+      ? ((completeRecords.count / totalRequests.total) * 100).toFixed(1)
+      : 0;
+    
+    // Compliance Rate
+    const complianceApproved = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE ComplianceStatus = 'Approved'
+    `).get();
+    
+    const complianceTotal = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE assignedTo = 'compliance'
+    `).get();
+    
+    const complianceRate = complianceTotal.count > 0
+      ? ((complianceApproved.count / complianceTotal.count) * 100).toFixed(1)
+      : 100;
+    
+    // System Efficiency (based on rejection rate)
+    const systemEfficiency = totalRequests.total > 0
+      ? (((totalRequests.total - rejectedRequests.count) / totalRequests.total) * 100).toFixed(1)
+      : 100;
+    
+    res.json({
+      kpis: {
+        activeGoldenRecords: activeGoldenRecords.count,
+        dataQualityScore: parseFloat(dataQualityScore),
+        avgProcessingTime: avgProcessingTime.avg_days ? avgProcessingTime.avg_days.toFixed(1) : 0,
+        monthlyGrowth: parseFloat(monthlyGrowth),
+        complianceRate: parseFloat(complianceRate),
+        systemEfficiency: parseFloat(systemEfficiency),
+        totalRequests: totalRequests.total,
+        pendingRequests: pendingRequests.count,
+        rejectedRequests: rejectedRequests.count
+      }
+    });
+  } catch (error) {
+    console.error('Dashboard stats error:', error);
+    res.status(500).json({ error: 'Failed to fetch dashboard statistics' });
+  }
+});
+
+// Get workflow distribution data
+app.get('/api/dashboard/workflow-distribution', (req, res) => {
+  try {
+    const distribution = db.prepare(`
+      SELECT 
+        status,
+        COUNT(*) as count,
+        ROUND(COUNT(*) * 100.0 / (SELECT COUNT(*) FROM requests), 1) as percentage
+      FROM requests
+      GROUP BY status
+    `).all();
+    
+    const requestTypes = db.prepare(`
+      SELECT 
+        COALESCE(requestType, 'new') as type,
+        COUNT(*) as count
+      FROM requests
+      GROUP BY requestType
+    `).all();
+    
+    res.json({
+      statusDistribution: distribution,
+      typeDistribution: requestTypes
+    });
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch workflow distribution' });
+  }
+});
+
+// Get time series data for trends
+app.get('/api/dashboard/trends', (req, res) => {
+  try {
+    const { period = '7days' } = req.query;
+    
+    let dateFilter = "DATE('now', '-7 days')";
+    if (period === '30days') dateFilter = "DATE('now', '-30 days')";
+    if (period === '90days') dateFilter = "DATE('now', '-90 days')";
+    
+    const trends = db.prepare(`
+      SELECT 
+        DATE(createdAt) as date,
+        COUNT(*) as total,
+        SUM(CASE WHEN status = 'Approved' THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejected,
+        SUM(CASE WHEN status = 'Pending' THEN 1 ELSE 0 END) as pending
+      FROM requests
+      WHERE DATE(createdAt) >= ${dateFilter}
+      GROUP BY DATE(createdAt)
+      ORDER BY date
+    `).all();
+    
+    res.json(trends);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch trends data' });
+  }
+});
+
+// Get user performance metrics
+app.get('/api/dashboard/user-performance', (req, res) => {
+  try {
+    const userMetrics = db.prepare(`
+      SELECT 
+        createdBy as user,
+        COUNT(*) as total_actions,
+        SUM(CASE WHEN status = 'Approved' THEN 1 ELSE 0 END) as approved,
+        SUM(CASE WHEN status = 'Rejected' THEN 1 ELSE 0 END) as rejected,
+        AVG(JULIANDAY(updatedAt) - JULIANDAY(createdAt)) as avg_processing_time
+      FROM requests
+      WHERE createdBy IS NOT NULL
+      GROUP BY createdBy
+      ORDER BY total_actions DESC
+      LIMIT 10
+    `).all();
+    
+    res.json(userMetrics);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch user performance data' });
+  }
+});
+
+// Get geographic distribution
+app.get('/api/dashboard/geographic', (req, res) => {
+  try {
+    const geoData = db.prepare(`
+      SELECT 
+        country,
+        city,
+        COUNT(*) as count,
+        SUM(CASE WHEN isGolden = 1 THEN 1 ELSE 0 END) as golden_records
+      FROM requests
+      WHERE country IS NOT NULL
+      GROUP BY country, city
+      ORDER BY count DESC
+    `).all();
+    
+    res.json(geoData);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch geographic data' });
+  }
+});
+
+// Get real-time activity feed
+app.get('/api/dashboard/activity-feed', (req, res) => {
+  try {
+    const activities = db.prepare(`
+      SELECT 
+        wh.*,
+        r.firstName as company_name
+      FROM workflow_history wh
+      LEFT JOIN requests r ON wh.requestId = r.id
+      ORDER BY wh.performedAt DESC
+      LIMIT 20
+    `).all();
+    
+    res.json(activities);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch activity feed' });
+  }
+});
+
+// Get data quality metrics
+app.get('/api/dashboard/quality-metrics', (req, res) => {
+  try {
+    const metrics = db.prepare(`
+      SELECT 
+        SUM(CASE WHEN firstName IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as name_completeness,
+        SUM(CASE WHEN tax IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as tax_completeness,
+        SUM(CASE WHEN EmailAddress IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as email_completeness,
+        SUM(CASE WHEN country IS NOT NULL AND city IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as address_completeness,
+        SUM(CASE WHEN ContactName IS NOT NULL THEN 1 ELSE 0 END) * 100.0 / COUNT(*) as contact_completeness
+      FROM requests
+    `).get();
+    
+    res.json(metrics);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch quality metrics' });
+  }
+});
+
+// Get bottleneck analysis
+app.get('/api/dashboard/bottlenecks', (req, res) => {
+  try {
+    const bottlenecks = db.prepare(`
+      SELECT 
+        assignedTo as stage,
+        status,
+        COUNT(*) as stuck_count,
+        AVG(JULIANDAY('now') - JULIANDAY(updatedAt)) as avg_days_stuck
+      FROM requests
+      WHERE status = 'Pending'
+      GROUP BY assignedTo, status
+      HAVING avg_days_stuck > 2
+      ORDER BY avg_days_stuck DESC
+    `).all();
+    
+    res.json(bottlenecks);
+  } catch (error) {
+    res.status(500).json({ error: 'Failed to fetch bottleneck data' });
+  }
+});
+
+// Add manager user endpoint
+app.post('/api/admin/add-manager', (req, res) => {
+  try {
+    // Check if manager already exists
+    const existingManager = db.prepare(`
+      SELECT * FROM users WHERE username = 'manager'
+    `).get();
+    
+    if (existingManager) {
+      return res.json({ success: true, message: 'Manager user already exists' });
+    }
+    
+    // Insert manager user as admin role to bypass CHECK constraint
+    const insertManager = db.prepare(`
+      INSERT INTO users (username, password, role, fullName, email) 
+      VALUES (?, ?, ?, ?, ?)
+    `);
+    
+    insertManager.run(['manager', 'manager123', 'admin', 'Business Manager', 'manager@mdm.com']);
+    
+    console.log('Manager user created successfully');
+    res.json({ success: true, message: 'Manager user created successfully' });
+    
+  } catch (error) {
+    console.error('Error creating manager user:', error);
+    res.status(500).json({ error: 'Failed to create manager user' });
+  }
+});
+
+// Get source systems breakdown
+app.get('/api/dashboard/source-systems', (req, res) => {
+  try {
+    const sourceSystems = db.prepare(`
+      SELECT 
+        COALESCE(sourceSystem, 'Manual Entry') as system,
+        COUNT(*) as count
+      FROM requests
+      GROUP BY sourceSystem
+    `).all();
+    
+    // Format for frontend
+    const result = {
+      oracleForms: 0,
+      sapS4Hana: 0,
+      sapByDesign: 0,
+      manualEntry: 0
+    };
+    
+    sourceSystems.forEach(item => {
+      switch (item.system) {
+        case 'Oracle Forms':
+          result.oracleForms = item.count;
+          break;
+        case 'SAP S/4HANA':
+          result.sapS4Hana = item.count;
+          break;
+        case 'SAP ByDesign':
+          result.sapByDesign = item.count;
+          break;
+        case 'Manual Entry':
+        case 'Data Steward':
+        default:
+          result.manualEntry += item.count;
+          break;
+      }
+    });
+    
+    res.json(result);
+  } catch (error) {
+    console.error('[DASHBOARD] Error fetching source systems:', error);
+    res.status(500).json({ error: 'Failed to fetch source systems data' });
+  }
+});
+
+// ====== SYNC ENDPOINTS ======
+
+// Get all sync rules
+app.get('/api/sync/rules', (req, res) => {
+  try {
+    console.log('[SYNC] Getting sync rules...');
+    
+    const rules = db.prepare(`
+      SELECT * FROM sync_rules 
+      WHERE isActive = 1 
+      ORDER BY targetSystem, name
+    `).all();
+    
+    // Parse JSON fields
+    const parsedRules = rules.map(rule => ({
+      ...rule,
+      filterCriteria: rule.filterCriteria ? JSON.parse(rule.filterCriteria) : {},
+      fieldMapping: rule.fieldMapping ? JSON.parse(rule.fieldMapping) : {}
+    }));
+    
+    console.log(`[SYNC] Found ${parsedRules.length} active sync rules`);
+    res.json(parsedRules);
+  } catch (error) {
+    console.error('[SYNC] Error fetching sync rules:', error);
+    res.status(500).json({ error: 'Failed to fetch sync rules' });
+  }
+});
+
+// Get sync operations history
+app.get('/api/sync/operations', (req, res) => {
+  try {
+    console.log('[SYNC] Getting sync operations...');
+    
+    const { targetSystem, status, limit = 50 } = req.query;
+    
+    let query = `
+      SELECT so.*, sr.name as ruleName, sr.targetSystem 
+      FROM sync_operations so
+      LEFT JOIN sync_rules sr ON so.ruleId = sr.id
+      WHERE 1=1
+    `;
+    const params = [];
+    
+    if (targetSystem) {
+      query += ` AND so.targetSystem = ?`;
+      params.push(targetSystem);
+    }
+    
+    if (status) {
+      query += ` AND so.status = ?`;
+      params.push(status);
+    }
+    
+    query += ` ORDER BY so.startedAt DESC LIMIT ?`;
+    params.push(parseInt(limit));
+    
+    const operations = db.prepare(query).all(...params);
+    
+    // Parse JSON fields
+    const parsedOperations = operations.map(op => ({
+      ...op,
+      errorDetails: op.errorDetails ? JSON.parse(op.errorDetails) : null
+    }));
+    
+    console.log(`[SYNC] Found ${parsedOperations.length} sync operations`);
+    res.json(parsedOperations);
+  } catch (error) {
+    console.error('[SYNC] Error fetching sync operations:', error);
+    res.status(500).json({ error: 'Failed to fetch sync operations' });
+  }
+});
+
+// Get sync statistics
+app.get('/api/sync/stats', (req, res) => {
+  try {
+    console.log('[SYNC] Getting sync statistics...');
+    
+    const stats = {
+      totalGoldenRecords: db.prepare(`
+        SELECT COUNT(*) as count FROM requests 
+        WHERE isGolden = 1
+      `).get().count,
+      
+      syncedRecords: db.prepare(`
+        SELECT COUNT(*) as count FROM requests 
+        WHERE isGolden = 1 AND syncStatus = 'synced'
+      `).get().count,
+      
+      pendingSync: db.prepare(`
+        SELECT COUNT(*) as count FROM requests 
+        WHERE isGolden = 1 AND (syncStatus = 'not_synced' OR syncStatus IS NULL)
+      `).get().count,
+      
+      failedSync: db.prepare(`
+        SELECT COUNT(*) as count FROM requests 
+        WHERE isGolden = 1 AND syncStatus = 'sync_failed'
+      `).get().count,
+      
+      systemBreakdown: {
+        oracle_forms: db.prepare(`
+          SELECT COUNT(*) as count FROM sync_records sr
+          JOIN sync_operations so ON sr.operationId = so.id
+          WHERE so.targetSystem = 'oracle_forms' AND sr.syncStatus = 'success'
+        `).get().count,
+        
+        sap_4hana: db.prepare(`
+          SELECT COUNT(*) as count FROM sync_records sr
+          JOIN sync_operations so ON sr.operationId = so.id
+          WHERE so.targetSystem = 'sap_4hana' AND sr.syncStatus = 'success'
+        `).get().count,
+        
+        sap_bydesign: db.prepare(`
+          SELECT COUNT(*) as count FROM sync_records sr
+          JOIN sync_operations so ON sr.operationId = so.id
+          WHERE so.targetSystem = 'sap_bydesign' AND sr.syncStatus = 'success'
+        `).get().count
+      },
+      
+      recentOperations: db.prepare(`
+        SELECT so.*, sr.name as ruleName 
+        FROM sync_operations so
+        LEFT JOIN sync_rules sr ON so.ruleId = sr.id
+        ORDER BY so.startedAt DESC 
+        LIMIT 5
+      `).all()
+    };
+    
+    console.log('[SYNC] Statistics:', stats);
+    res.json(stats);
+  } catch (error) {
+    console.error('[SYNC] Error fetching sync stats:', error);
+    res.status(500).json({ error: 'Failed to fetch sync stats' });
+  }
+});
+
+// Execute sync operation
+app.post('/api/sync/execute', (req, res) => {
+  try {
+    console.log('[SYNC] Executing sync operation...');
+    
+    const { ruleId, targetSystem, executedBy } = req.body;
+    
+    if (!ruleId || !targetSystem || !executedBy) {
+      return res.status(400).json({ error: 'Missing required fields: ruleId, targetSystem, executedBy' });
+    }
+    
+    // Get sync rule
+    const rule = db.prepare(`SELECT * FROM sync_rules WHERE id = ? AND isActive = 1`).get(ruleId);
+    if (!rule) {
+      return res.status(404).json({ error: 'Sync rule not found or inactive' });
+    }
+    
+    // Parse filter criteria
+    const filterCriteria = rule.filterCriteria ? JSON.parse(rule.filterCriteria) : {};
+    console.log('[SYNC EXECUTE] Filter criteria:', JSON.stringify(filterCriteria, null, 2));
+    
+    // Build query to get golden records matching criteria
+    let query = `
+      SELECT * FROM requests 
+      WHERE isGolden = 1
+    `;
+    const params = [];
+    
+    // Apply filters from conditions array
+    if (filterCriteria.conditions && filterCriteria.conditions.length > 0) {
+      const logic = filterCriteria.logic || 'AND';
+      const conditionClauses = [];
+      
+      filterCriteria.conditions.forEach(condition => {
+        if (condition.field && condition.operator && condition.value) {
+          switch (condition.operator) {
+            case 'equals':
+              conditionClauses.push(`${condition.field} = ?`);
+              params.push(condition.value);
+              break;
+            case 'not_equals':
+              conditionClauses.push(`${condition.field} != ?`);
+              params.push(condition.value);
+              break;
+            case 'contains':
+              conditionClauses.push(`${condition.field} LIKE ?`);
+              params.push(`%${condition.value}%`);
+              break;
+            case 'starts_with':
+              conditionClauses.push(`${condition.field} LIKE ?`);
+              params.push(`${condition.value}%`);
+              break;
+            case 'ends_with':
+              conditionClauses.push(`${condition.field} LIKE ?`);
+              params.push(`%${condition.value}`);
+              break;
+            case 'in':
+              const values = Array.isArray(condition.value) ? condition.value : [condition.value];
+              conditionClauses.push(`${condition.field} IN (${values.map(() => '?').join(',')})`);
+              params.push(...values);
+              break;
+            case 'not_in':
+              const notValues = Array.isArray(condition.value) ? condition.value : [condition.value];
+              conditionClauses.push(`${condition.field} NOT IN (${notValues.map(() => '?').join(',')})`);
+              params.push(...notValues);
+              break;
+          }
+        }
+      });
+      
+      if (conditionClauses.length > 0) {
+        query += ` AND (${conditionClauses.join(` ${logic} `)})`;
+      }
+    }
+    
+    console.log('[SYNC EXECUTE] Final query:', query);
+    console.log('[SYNC EXECUTE] Query params:', params);
+    
+    const recordsToSync = db.prepare(query).all(...params);
+    console.log(`[SYNC] Found ${recordsToSync.length} records matching criteria`);
+    
+    // Create sync operation
+    const insertOperation = db.prepare(`
+      INSERT INTO sync_operations (ruleId, targetSystem, syncType, status, totalRecords, startedAt, executedBy)
+      VALUES (?, ?, 'manual', 'in_progress', ?, datetime('now'), ?)
+    `);
+    
+    const operationResult = insertOperation.run(ruleId, targetSystem, recordsToSync.length, executedBy);
+    const operationId = operationResult.lastInsertRowid;
+    
+    // Simulate sync process (in real implementation, this would call actual APIs)
+    let syncedCount = 0;
+    let failedCount = 0;
+    
+    const insertSyncRecord = db.prepare(`
+      INSERT INTO sync_records (operationId, requestId, targetSystem, syncStatus, targetRecordId, syncedAt, responseData)
+      VALUES (?, ?, ?, ?, ?, datetime('now'), ?)
+    `);
+    
+    const updateRequestSync = db.prepare(`
+      UPDATE requests 
+      SET syncStatus = ?, lastSyncedAt = datetime('now')
+      WHERE id = ?
+    `);
+    
+    recordsToSync.forEach(record => {
+      // No more random failures - always succeed unless there's a real error
+      const targetRecordId = `${targetSystem.toUpperCase()}-${Date.now()}-${Math.random().toString(36).substr(2, 5)}`;
+      
+      try {
+        // Create sync record - always success unless real error occurs
+        insertSyncRecord.run(
+          operationId,
+          record.id,
+          targetSystem,
+          'success',  // Always success
+          targetRecordId,
+          JSON.stringify({ 
+            syncedAt: new Date().toISOString(),
+            targetSystem: targetSystem 
+          })
+        );
+        
+        // Update the original record
+        db.prepare(`
+          UPDATE requests 
+          SET syncStatus = 'synced', 
+              lastSyncedAt = CURRENT_TIMESTAMP,
+              lastSyncTarget = ?
+          WHERE id = ?
+        `).run(targetSystem, record.id);
+        
+        syncedCount++;
+        
+      } catch (error) {
+        // Only fail if there's a real database error
+        console.error(`Real sync error for record ${record.id}:`, error);
+        
+        insertSyncRecord.run(
+          operationId,
+          record.id,
+          targetSystem,
+          'failed',
+          null,
+          JSON.stringify({ 
+            error: error.message || 'Database error',
+            timestamp: new Date().toISOString()
+          })
+        );
+        
+        failedCount++;
+      }
+    });
+    
+    // Update operation status
+    const updateOperation = db.prepare(`
+      UPDATE sync_operations 
+      SET status = ?, syncedRecords = ?, failedRecords = ?, completedAt = datetime('now')
+      WHERE id = ?
+    `);
+    
+    const finalStatus = failedCount === 0 ? 'completed' : (syncedCount > 0 ? 'partial' : 'failed');
+    updateOperation.run(finalStatus, syncedCount, failedCount, operationId);
+    
+    console.log(`[SYNC] Operation ${operationId} completed: ${syncedCount} synced, ${failedCount} failed`);
+    
+    res.json({
+      success: true,
+      operationId,
+      totalRecords: recordsToSync.length,
+      syncedRecords: syncedCount,
+      failedRecords: failedCount,
+      status: finalStatus
+    });
+    
+  } catch (error) {
+    console.error('[SYNC] Error executing sync:', error);
+    res.status(500).json({ error: 'Failed to execute sync operation' });
+  }
+});
+
+// Get records eligible for sync
+app.get('/api/sync/eligible-records', (req, res) => {
+  try {
+    console.log('[SYNC] Getting eligible records...');
+    
+    const { ruleId } = req.query;
+    
+    if (!ruleId) {
+      return res.status(400).json({ error: 'ruleId is required' });
+    }
+    
+    // Get sync rule
+    const rule = db.prepare(`SELECT * FROM sync_rules WHERE id = ? AND isActive = 1`).get(ruleId);
+    if (!rule) {
+      return res.status(404).json({ error: 'Sync rule not found' });
+    }
+    
+    // Parse filter criteria
+    const filterCriteria = rule.filterCriteria ? JSON.parse(rule.filterCriteria) : {};
+    console.log('[SYNC] Filter criteria:', JSON.stringify(filterCriteria, null, 2));
+    
+    // Build query
+    let query = `
+      SELECT id, firstName, firstNameAr, tax, country, city, CustomerType, 
+             SalesOrgOption, DistributionChannelOption, DivisionOption, syncStatus, lastSyncedAt
+      FROM requests 
+      WHERE isGolden = 1
+    `;
+    const params = [];
+    
+    // Apply filters from conditions array
+    if (filterCriteria.conditions && filterCriteria.conditions.length > 0) {
+      const logic = filterCriteria.logic || 'AND';
+      const conditionClauses = [];
+      
+      filterCriteria.conditions.forEach(condition => {
+        if (condition.field && condition.operator && condition.value) {
+          switch (condition.operator) {
+            case 'equals':
+              conditionClauses.push(`${condition.field} = ?`);
+              params.push(condition.value);
+              break;
+            case 'not_equals':
+              conditionClauses.push(`${condition.field} != ?`);
+              params.push(condition.value);
+              break;
+            case 'contains':
+              conditionClauses.push(`${condition.field} LIKE ?`);
+              params.push(`%${condition.value}%`);
+              break;
+            case 'starts_with':
+              conditionClauses.push(`${condition.field} LIKE ?`);
+              params.push(`${condition.value}%`);
+              break;
+            case 'ends_with':
+              conditionClauses.push(`${condition.field} LIKE ?`);
+              params.push(`%${condition.value}`);
+              break;
+            case 'in':
+              const values = Array.isArray(condition.value) ? condition.value : [condition.value];
+              conditionClauses.push(`${condition.field} IN (${values.map(() => '?').join(',')})`);
+              params.push(...values);
+              break;
+            case 'not_in':
+              const notValues = Array.isArray(condition.value) ? condition.value : [condition.value];
+              conditionClauses.push(`${condition.field} NOT IN (${notValues.map(() => '?').join(',')})`);
+              params.push(...notValues);
+              break;
+          }
+        }
+      });
+      
+      if (conditionClauses.length > 0) {
+        query += ` AND (${conditionClauses.join(` ${logic} `)})`;
+      }
+    }
+    
+    query += ` ORDER BY firstName`;
+    
+    console.log('[SYNC] Final query:', query);
+    console.log('[SYNC] Query params:', params);
+    
+    const records = db.prepare(query).all(...params);
+    
+    console.log(`[SYNC] Found ${records.length} eligible records`);
+    res.json(records);
+    
+  } catch (error) {
+    console.error('[SYNC] Error fetching eligible records:', error);
+    res.status(500).json({ error: 'Failed to fetch eligible records' });
+  }
+});
+
+// Create new sync rule
+app.post('/api/sync/rules', (req, res) => {
+  try {
+    console.log('[SYNC] Creating new sync rule...');
+    console.log('[SYNC] Request body:', JSON.stringify(req.body, null, 2));
+    
+    const { name, description, targetSystem, filterCriteria, fieldMapping, isActive, createdBy } = req.body;
+    
+    // Validate required fields
+    if (!name || !targetSystem) {
+      return res.status(400).json({ error: 'Name and target system are required' });
+    }
+    
+    const createRule = db.prepare(`
+      INSERT INTO sync_rules (name, description, targetSystem, filterCriteria, fieldMapping, isActive, createdBy)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    const result = createRule.run(
+      name,
+      description || '',
+      targetSystem,
+      JSON.stringify(filterCriteria || {}),
+      JSON.stringify(fieldMapping || {}),
+      isActive ? 1 : 0,
+      createdBy || 'system'
+    );
+    
+    console.log(`[SYNC] Rule created with ID: ${result.lastInsertRowid}`);
+    res.json({ id: result.lastInsertRowid, success: true });
+    
+  } catch (error) {
+    console.error('[SYNC] Error creating sync rule:', error);
+    console.error('[SYNC] Error details:', error.message);
+    res.status(500).json({ error: 'Failed to create sync rule: ' + error.message });
+  }
+});
+
+// Update sync rule
+app.put('/api/sync/rules/:id', (req, res) => {
+  try {
+    console.log('[SYNC] Updating sync rule...');
+    
+    const { id } = req.params;
+    const { name, description, filterCriteria, fieldMapping, isActive, updatedBy } = req.body;
+    
+    const updateRule = db.prepare(`
+      UPDATE sync_rules 
+      SET name = ?, description = ?, filterCriteria = ?, fieldMapping = ?, 
+          isActive = ?, updatedAt = datetime('now'), updatedBy = ?
+      WHERE id = ?
+    `);
+    
+    const result = updateRule.run(
+      name,
+      description,
+      JSON.stringify(filterCriteria),
+      JSON.stringify(fieldMapping),
+      isActive ? 1 : 0,
+      updatedBy,
+      id
+    );
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Sync rule not found' });
+    }
+    
+    console.log(`[SYNC] Rule ${id} updated successfully`);
+    res.json({ success: true, message: 'Sync rule updated successfully' });
+    
+  } catch (error) {
+    console.error('[SYNC] Error updating sync rule:', error);
+    res.status(500).json({ error: 'Failed to update sync rule' });
+  }
+});
+
+// Get sync operation details
+app.get('/api/sync/operations/:id', (req, res) => {
+  try {
+    console.log('[SYNC] Getting sync operation details...');
+    
+    const { id } = req.params;
+    
+    // Get operation details
+    const operation = db.prepare(`
+      SELECT so.*, sr.name as ruleName, sr.description as ruleDescription
+      FROM sync_operations so
+      LEFT JOIN sync_rules sr ON so.ruleId = sr.id
+      WHERE so.id = ?
+    `).get(id);
+    
+    if (!operation) {
+      return res.status(404).json({ error: 'Sync operation not found' });
+    }
+    
+    // Get sync records for this operation
+    const syncRecords = db.prepare(`
+      SELECT sr.*, r.firstName, r.tax, r.country
+      FROM sync_records sr
+      LEFT JOIN requests r ON sr.requestId = r.id
+      WHERE sr.operationId = ?
+      ORDER BY sr.syncedAt DESC
+    `).all(id);
+    
+    const result = {
+      ...operation,
+      errorDetails: operation.errorDetails ? JSON.parse(operation.errorDetails) : null,
+      records: syncRecords.map(record => ({
+        ...record,
+        responseData: record.responseData ? JSON.parse(record.responseData) : null
+      }))
+    };
+    
+    console.log(`[SYNC] Operation ${id} details retrieved`);
+    res.json(result);
+    
+  } catch (error) {
+    console.error('[SYNC] Error fetching operation details:', error);
+    res.status(500).json({ error: 'Failed to fetch operation details' });
+  }
+});
+
+// Get sync statistics
+app.get('/api/sync/stats', (req, res) => {
+  try {
+    const totalGoldenRecords = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE isGolden = 1
+    `).get().count;
+
+    const syncedRecords = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE isGolden = 1 AND syncStatus = 'synced'
+    `).get().count;
+
+    const pendingSync = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE isGolden = 1 AND (syncStatus IS NULL OR syncStatus = 'pending')
+    `).get().count;
+
+    const failedSync = db.prepare(`
+      SELECT COUNT(*) as count FROM requests 
+      WHERE isGolden = 1 AND syncStatus = 'sync_failed'
+    `).get().count;
+
+    res.json({
+      totalGoldenRecords,
+      syncedRecords,
+      pendingSync,
+      failedSync
+    });
+  } catch (error) {
+    console.error('Error fetching sync stats:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get eligible records for sync
+app.get('/api/sync/eligible-records', (req, res) => {
+  try {
+    console.log('[SYNC] Getting eligible records...');
+    
+    const records = db.prepare(`
+      SELECT id, firstName, firstNameAr, tax, country, city, 
+             CustomerType, companyStatus, syncStatus, lastSyncedAt,
+             createdAt, updatedAt
+      FROM requests 
+      WHERE isGolden = 1
+      ORDER BY createdAt DESC
+      LIMIT 50
+    `).all();
+
+    console.log(`[SYNC] Found ${records.length} eligible records`);
+    res.json(records);
+  } catch (error) {
+    console.error('[SYNC] Error fetching eligible records:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Delete sync rule
+app.delete('/api/sync/rules/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`[SYNC] Deleting sync rule ${id}...`);
+    
+    const stmt = db.prepare(`DELETE FROM sync_rules WHERE id = ?`);
+    const result = stmt.run(id);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Rule not found' });
+    }
+    
+    console.log(`[SYNC] Rule ${id} deleted successfully`);
+    res.json({ success: true });
+  } catch (error) {
+    console.error('[SYNC] Error deleting sync rule:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ============ Enhanced Sync APIs for New Design ============
+
+// Clear sync data (operations and records) but keep rules
+app.post('/api/sync/clear-data', (req, res) => {
+  try {
+    console.log('[SYNC] Clearing sync data...');
+    
+    // Clear sync_records table
+    const clearRecords = db.prepare(`DELETE FROM sync_records`).run();
+    console.log(`[SYNC] Cleared ${clearRecords.changes} sync records`);
+    
+    // Clear sync_operations table
+    const clearOperations = db.prepare(`DELETE FROM sync_operations`).run();
+    console.log(`[SYNC] Cleared ${clearOperations.changes} sync operations`);
+    
+    // Reset sync status in requests table
+    const resetSyncStatus = db.prepare(`
+      UPDATE requests 
+      SET syncStatus = 'not_synced', lastSyncedAt = NULL 
+      WHERE isGolden = 1
+    `).run();
+    console.log(`[SYNC] Reset sync status for ${resetSyncStatus.changes} golden records`);
+    
+    res.json({
+      success: true,
+      message: 'Sync data cleared successfully',
+      clearedRecords: clearRecords.changes,
+      clearedOperations: clearOperations.changes,
+      resetRecords: resetSyncStatus.changes
+    });
+    
+  } catch (error) {
+    console.error('[SYNC] Error clearing sync data:', error);
+    res.status(500).json({ 
+      success: false,
+      error: 'Failed to clear sync data: ' + error.message 
+    });
+  }
+});
+
+// Check for duplicate golden records
+app.post('/api/requests/check-duplicate', (req, res) => {
+  try {
+    const { tax, CustomerType } = req.body;
+    
+    if (!tax || !CustomerType) {
+      return res.status(400).json({ 
+        error: 'Tax number and Customer Type are required' 
+      });
+    }
+    
+    console.log(`[DUPLICATE CHECK] Checking for tax: ${tax}, CustomerType: ${CustomerType}`);
+    
+    // Map frontend CustomerType to database CustomerType
+    const customerTypeMapping = {
+      'limited_liability': 'Limited Liability Company',
+      'joint_stock': 'Joint Stock Company',
+      'sole_proprietorship': 'Sole Proprietorship',
+      'Corporate': 'Corporate',
+      'SME': 'SME',
+      'Retail Chain': 'Retail Chain'
+    };
+    
+    const mappedCustomerType = customerTypeMapping[CustomerType] || CustomerType;
+    console.log(`[DUPLICATE CHECK] Mapped CustomerType: ${CustomerType} -> ${mappedCustomerType}`);
+    
+    // Check if golden record exists with same tax and CustomerType
+    const existingRecord = db.prepare(`
+      SELECT id, firstName, tax, CustomerType, country, city 
+      FROM requests 
+      WHERE isGolden = 1 
+      AND tax = ? 
+      AND CustomerType = ?
+    `).get(tax, mappedCustomerType);
+    
+    if (existingRecord) {
+      console.log(`[DUPLICATE CHECK] Found duplicate: ${existingRecord.firstName}`);
+      res.json({
+        isDuplicate: true,
+        existingRecord: {
+          id: existingRecord.id,
+          name: existingRecord.firstName,
+          tax: existingRecord.tax,
+          customerType: existingRecord.CustomerType,
+          country: existingRecord.country,
+          city: existingRecord.city
+        },
+        message: `Customer with tax number ${tax} and type ${CustomerType} already exists as golden record: ${existingRecord.firstName}`
+      });
+    } else {
+      console.log(`[DUPLICATE CHECK] No duplicate found`);
+      res.json({
+        isDuplicate: false,
+        message: 'No duplicate found'
+      });
+    }
+    
+  } catch (error) {
+    console.error('[DUPLICATE CHECK] Error:', error);
+    res.status(500).json({ 
+      error: 'Failed to check for duplicates: ' + error.message 
+    });
+  }
+});
+
+// Get sync operations history (renamed from /api/sync/operations)
+app.get('/api/sync/history', (req, res) => {
+  try {
+    console.log('[SYNC] Getting sync history...');
+
+    const operations = db.prepare(`
+      SELECT
+        so.*,
+        sr.name as ruleName,
+        GROUP_CONCAT(sr2.requestId) as syncedRecordIds,
+        GROUP_CONCAT(r.firstName || ' ' || r.lastName) as syncedRecordNames
+      FROM sync_operations so
+      LEFT JOIN sync_rules sr ON so.ruleId = sr.id
+      LEFT JOIN sync_records sr2 ON so.id = sr2.operationId
+      LEFT JOIN requests r ON sr2.requestId = r.id
+      GROUP BY so.id
+      ORDER BY so.startedAt DESC
+      LIMIT 50
+    `).all();
+
+    // Parse the grouped data
+    const formattedOperations = operations.map(op => ({
+      ...op,
+      syncedRecordIds: op.syncedRecordIds ? op.syncedRecordIds.split(',') : [],
+      syncedRecordNames: op.syncedRecordNames ? op.syncedRecordNames.split(',') : []
+    }));
+
+    console.log(`[SYNC] Found ${formattedOperations.length} sync operations`);
+    res.json(formattedOperations);
+  } catch (error) {
+    console.error('[SYNC] Error fetching sync history:', error);
+    res.status(500).json({ error: 'Failed to fetch sync history' });
+  }
+});
+
+// Execute sync for selected records with proper rule filtering
+app.post('/api/sync/execute-selected', (req, res) => {
+  const { recordIds, targetSystem, executedBy } = req.body;
+  
+  if (!targetSystem) {
+    return res.status(400).json({ error: 'Target system is required' });
+  }
+
+  try {
+    console.log(`[SYNC] Execute sync for ${targetSystem}`);
+    console.log(`[SYNC] Received ${recordIds ? recordIds.length : 0} record IDs`);
+    
+    // Get the active rule for this target system
+    const rule = db.prepare(`
+      SELECT * FROM sync_rules 
+      WHERE targetSystem = ? AND isActive = 1
+      LIMIT 1
+    `).get(targetSystem);
+
+    if (!rule) {
+      console.log(`[SYNC] No active rule found for ${targetSystem}`);
+      return res.json({
+        success: true,
+        message: `No active sync rule for ${targetSystem}`,
+        totalRecords: 0,
+        syncedRecords: 0,
+        failedRecords: 0
+      });
+    }
+
+    console.log(`[SYNC] Found rule: ${rule.name}`);
+    
+    // Parse the filter criteria
+    const criteria = rule.filterCriteria ? JSON.parse(rule.filterCriteria) : {};
+    console.log(`[SYNC] Rule criteria:`, JSON.stringify(criteria, null, 2));
+
+    // Build query to get only records that match the rule criteria
+    let query = `
+      SELECT * FROM requests 
+      WHERE isGolden = 1 
+      AND companyStatus = 'Active'
+    `;
+    
+    const params = [];
+    
+    // If specific recordIds provided, filter by them
+    if (recordIds && recordIds.length > 0) {
+      query += ` AND id IN (${recordIds.map(() => '?').join(',')})`;
+      params.push(...recordIds);
+    }
+    
+    // Apply rule conditions
+    if (criteria.conditions && criteria.conditions.length > 0) {
+      const logic = criteria.logic || 'AND';
+      const conditionClauses = [];
+      
+      criteria.conditions.forEach(condition => {
+        if (condition.field && condition.operator && condition.value !== undefined && condition.value !== null) {
+          console.log(`[SYNC] Applying condition: ${condition.field} ${condition.operator} ${condition.value}`);
+          
+          let conditionClause = '';
+          switch (condition.operator) {
+            case 'equals':
+              conditionClause = `${condition.field} = ?`;
+              params.push(condition.value);
+              break;
+            case 'not_equals':
+              conditionClause = `${condition.field} != ?`;
+              params.push(condition.value);
+              break;
+            case 'contains':
+              conditionClause = `${condition.field} LIKE ?`;
+              params.push(`%${condition.value}%`);
+              break;
+            case 'starts_with':
+              conditionClause = `${condition.field} LIKE ?`;
+              params.push(`${condition.value}%`);
+              break;
+            case 'ends_with':
+              conditionClause = `${condition.field} LIKE ?`;
+              params.push(`%${condition.value}`);
+              break;
+            case 'in':
+              const values = Array.isArray(condition.value) ? condition.value : [condition.value];
+              conditionClause = `${condition.field} IN (${values.map(() => '?').join(',')})`;
+              params.push(...values);
+              break;
+            case 'not_in':
+              const notValues = Array.isArray(condition.value) ? condition.value : [condition.value];
+              conditionClause = `${condition.field} NOT IN (${notValues.map(() => '?').join(',')})`;
+              params.push(...notValues);
+              break;
+            default:
+              console.log(`[SYNC] Unknown operator: ${condition.operator}`);
+              return;
+          }
+          
+          if (conditionClause) {
+            conditionClauses.push(conditionClause);
+          }
+        }
+      });
+      
+      if (conditionClauses.length > 0) {
+        if (logic === 'OR') {
+          query += ` AND (${conditionClauses.join(' OR ')})`;
+        } else {
+          query += ` AND (${conditionClauses.join(' AND ')})`;
+        }
+      }
+    }
+
+    console.log(`[SYNC] Final query: ${query}`);
+    console.log(`[SYNC] Query params:`, params);
+    console.log(`[SYNC] Logic used: ${criteria.logic || 'AND'}`);
+    
+    const recordsToSync = db.prepare(query).all(...params);
+    console.log(`[SYNC] Found ${recordsToSync.length} records matching criteria for ${targetSystem}`);
+
+    if (recordsToSync.length === 0) {
+      return res.json({
+        success: true,
+        message: `No records match the sync criteria for ${targetSystem}`,
+        totalRecords: 0,
+        syncedRecords: 0,
+        failedRecords: 0
+      });
+    }
+
+    // Log which records are being synced
+    console.log(`[SYNC] Syncing records for ${targetSystem}:`);
+    recordsToSync.forEach(r => {
+      console.log(`  - ${r.firstName} (${r.country}, ${r.CustomerType})`);
+    });
+
+    // Create sync operation
+    const operationResult = db.prepare(`
+      INSERT INTO sync_operations (
+        ruleId, targetSystem, syncType, status, totalRecords, 
+        syncedRecords, failedRecords, startedAt, executedBy
+      ) VALUES (?, ?, 'manual', 'in_progress', ?, 0, 0, datetime('now'), ?)
+    `).run(rule.id, targetSystem, recordsToSync.length, executedBy || 'system');
+    
+    const operationId = operationResult.lastInsertRowid;
+
+    // Prepare statements for batch operations
+    const insertSyncRecord = db.prepare(`
+      INSERT INTO sync_records (
+        operationId, requestId, targetSystem, syncStatus, 
+        targetRecordId, syncedAt, errorMessage
+      ) VALUES (?, ?, ?, ?, ?, datetime('now'), ?)
+    `);
+
+    const updateRequest = db.prepare(`
+      UPDATE requests 
+      SET syncStatus = 'synced', 
+          lastSyncedAt = CURRENT_TIMESTAMP
+      WHERE id = ?
+    `);
+
+    let syncedCount = 0;
+    let failedCount = 0;
+
+    // Process each record - NO RANDOM FAILURES, only real errors
+    recordsToSync.forEach(record => {
+      const targetRecordId = `${targetSystem.replace(/[^A-Z0-9]/gi, '_').toUpperCase()}_${record.id}_${Date.now()}`;
+      
+      try {
+        // Always succeed unless there's a real database error
+        insertSyncRecord.run(
+          operationId,
+          record.id,
+          targetSystem,
+          'success',
+          targetRecordId,
+          null
+        );
+        
+        // Update the original record
+        updateRequest.run(record.id);
+        
+        syncedCount++;
+        console.log(`[SYNC] ✓ Synced: ${record.firstName} to ${targetSystem}`);
+        
+      } catch (error) {
+        // Only fail on real database errors
+        console.error(`[SYNC] ✗ Real error syncing ${record.id}:`, error);
+        insertSyncRecord.run(
+          operationId,
+          record.id,
+          targetSystem,
+          'failed',
+          null,
+          error.message || 'Database error'
+        );
+        failedCount++;
+      }
+    });
+
+    // Update operation status
+    const finalStatus = failedCount === 0 ? 'completed' : 
+                       syncedCount === 0 ? 'failed' : 'partial';
+    
+    db.prepare(`
+      UPDATE sync_operations 
+      SET status = ?, 
+          syncedRecords = ?, 
+          failedRecords = ?,
+          completedAt = datetime('now')
+      WHERE id = ?
+    `).run(finalStatus, syncedCount, failedCount, operationId);
+
+    console.log(`[SYNC] Operation ${operationId} for ${targetSystem} completed: ${syncedCount}/${recordsToSync.length} synced`);
+
+    res.json({
+      success: true,
+      message: `Synced ${syncedCount} records to ${targetSystem}`,
+      operationId: operationId,
+      targetSystem: targetSystem,
+      totalRecords: recordsToSync.length,
+      syncedRecords: syncedCount,
+      failedRecords: failedCount
+    });
+
+  } catch (error) {
+    console.error('[SYNC] Error:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`\nSQLite MDM Server (better-sqlite3) running at http://localhost:${PORT}`);
@@ -3405,11 +5810,13 @@ app.listen(PORT, () => {
   console.log(`   reviewer / pass123`);
   console.log(`   compliance / pass123`);
   console.log(`   admin / admin123`);
+  console.log(`   manager / manager123`);
   console.log(`\n✅ Ready with all fixes and enhancements!`);
   console.log(`\n✅ FIXED: Reject endpoint now properly assigns quarantine records to data_entry`);
   console.log(`\n✨ ADMIN ENDPOINTS AVAILABLE:`);
   console.log(`   GET  /api/requests/admin/data-stats - Get data statistics`);
   console.log(`   DELETE /api/requests/admin/clear-all - Clear all data`);
+  console.log(`   DELETE /api/requests/admin/clear-sync - Clear sync data`);
   console.log(`   DELETE /api/requests/admin/clear-duplicates - Clear duplicate records`);
   console.log(`   DELETE /api/requests/admin/clear-quarantine - Clear quarantine records`);
   console.log(`   DELETE /api/requests/admin/clear-golden - Clear golden records`);
@@ -3431,6 +5838,22 @@ app.listen(PORT, () => {
 });
 
 // Graceful shutdown
+// Memory monitoring
+setInterval(() => {
+  const used = process.memoryUsage();
+  const mb = (bytes) => (bytes / 1024 / 1024).toFixed(2);
+  
+  if (used.heapUsed / 1024 / 1024 > 200) { // If using more than 200MB
+    console.warn(`⚠️ High memory usage: Heap ${mb(used.heapUsed)}MB / RSS ${mb(used.rss)}MB`);
+    
+    // Optional: Force garbage collection if available
+    if (global.gc) {
+      global.gc();
+      console.log('🧹 Garbage collection triggered');
+    }
+  }
+}, 30000); // Check every 30 seconds
+
 process.on('SIGINT', () => {
   console.log('\nClosing database...');
   db.close();

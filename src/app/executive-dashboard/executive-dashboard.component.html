@@ -1,0 +1,266 @@
+<div class="executive-dashboard" [class.rtl]="isArabic">
+  <!-- Header Section -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1>
+          <i nz-icon nzType="dashboard" nzTheme="fill"></i>
+          {{ isArabic ? 'لوحة المعلومات التنفيذية' : 'Executive Dashboard' }}
+        </h1>
+        <span class="last-update">
+          <i nz-icon nzType="sync"></i>
+          {{ isArabic ? 'آخر تحديث:' : 'Last updated:' }} {{ lastUpdated | date:'short' }}
+        </span>
+      </div>
+
+      <div class="header-controls">
+        <!-- View Mode Switcher -->
+        <nz-radio-group [(ngModel)]="viewMode" (ngModelChange)="switchView($event)">
+          <label nz-radio-button nzValue="executive">Executive</label>
+          <label nz-radio-button nzValue="operational">Operational</label>
+          <label nz-radio-button nzValue="technical">Technical</label>
+        </nz-radio-group>
+
+        <!-- Period Selector -->
+        <nz-select [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange($event)" style="width: 120px;">
+          <nz-option nzValue="7days" nzLabel="7 Days"></nz-option>
+          <nz-option nzValue="30days" nzLabel="30 Days"></nz-option>
+          <nz-option nzValue="90days" nzLabel="90 Days"></nz-option>
+        </nz-select>
+
+        <!-- Auto Refresh Toggle -->
+        <button nz-button [nzType]="autoRefresh ? 'primary' : 'default'" (click)="toggleAutoRefresh()">
+          <i nz-icon [nzType]="autoRefresh ? 'sync' : 'pause-circle'" [nzSpin]="autoRefresh"></i>
+          {{ autoRefresh ? 'Auto' : 'Manual' }}
+        </button>
+
+        <!-- Actions -->
+        <button nz-button (click)="refreshDashboard()" nzType="default">
+          <i nz-icon nzType="reload"></i>
+        </button>
+        
+        <button nz-button (click)="exportToPDF()" nzType="default">
+          <i nz-icon nzType="file-pdf"></i>
+          PDF
+        </button>
+        
+        <button nz-button (click)="exportToExcel()" nzType="default">
+          <i nz-icon nzType="file-excel"></i>
+          Excel
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Loading Overlay -->
+  <nz-spin *ngIf="isLoading" nzTip="Loading dashboard data..." [nzSpinning]="true" class="loading-overlay">
+    <div style="height: 400px;"></div>
+  </nz-spin>
+
+  <!-- Main Content -->
+  <div class="dashboard-content" *ngIf="!isLoading">
+    <!-- KPI Cards Section -->
+    <div class="kpi-section">
+      <div class="kpi-grid">
+        <div class="kpi-card" *ngFor="let kpi of kpiCards" 
+             [style.border-left-color]="kpi.color"
+             [class.loading]="kpi.loading">
+          <div class="kpi-content">
+            <div class="kpi-header">
+              <span class="kpi-icon" [style.color]="kpi.color">
+                <i nz-icon [nzType]="kpi.icon"></i>
+              </span>
+              <span class="kpi-title">
+                {{ isArabic ? kpi.titleAr : kpi.title }}
+              </span>
+            </div>
+            
+            <div class="kpi-value">
+              <span class="value">{{ kpi.prefix }}{{ kpi.value }}{{ kpi.suffix }}</span>
+              <span class="change" [class.increase]="kpi.changeType === 'increase'" 
+                    [class.decrease]="kpi.changeType === 'decrease'">
+                <i nz-icon [nzType]="kpi.changeType === 'increase' ? 'arrow-up' : 'arrow-down'"></i>
+                {{ kpi.change && kpi.change > 0 ? '+' : '' }}{{ kpi.change || 0 }}%
+              </span>
+            </div>
+            
+            <div class="kpi-footer">
+              <nz-progress [nzPercent]="getProgressPercent(kpi.value)" [nzStrokeColor]="kpi.color" 
+                          [nzShowInfo]="false" nzSize="small"></nz-progress>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 1 -->
+    <div class="charts-row">
+      <!-- Status Distribution -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>{{ isArabic ? 'توزيع الحالة' : 'Status Distribution' }}</h3>
+          <span class="chart-subtitle">{{ totalRequests }} total records</span>
+        </div>
+        <div class="chart-body">
+          <canvas #statusChart></canvas>
+        </div>
+      </div>
+
+      <!-- Workflow Trends -->
+      <div class="chart-card large">
+        <div class="chart-header">
+          <h3>{{ isArabic ? 'اتجاهات سير العمل' : 'Workflow Trends' }}</h3>
+          <div class="chart-legend">
+            <span class="legend-item">
+              <i class="dot" style="background: #1890ff;"></i> Total
+            </span>
+            <span class="legend-item">
+              <i class="dot" style="background: #52c41a;"></i> Approved
+            </span>
+            <span class="legend-item">
+              <i class="dot" style="background: #ff4d4f;"></i> Rejected
+            </span>
+          </div>
+        </div>
+        <div class="chart-body">
+          <canvas #trendsChart></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Charts Row 2 -->
+    <div class="charts-row">
+      <!-- Data Quality Metrics -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>{{ isArabic ? 'مقاييس جودة البيانات' : 'Data Quality Metrics' }}</h3>
+          <span class="chart-subtitle">Completeness by field</span>
+        </div>
+        <div class="chart-body">
+          <canvas #qualityChart></canvas>
+        </div>
+      </div>
+
+      <!-- User Performance -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>{{ isArabic ? 'أداء المستخدم' : 'User Performance' }}</h3>
+          <span class="chart-subtitle">Top 5 users</span>
+        </div>
+        <div class="chart-body">
+          <canvas #performanceChart></canvas>
+        </div>
+      </div>
+
+      <!-- Geographic Distribution -->
+      <div class="chart-card">
+        <div class="chart-header">
+          <h3>{{ isArabic ? 'التوزيع الجغرافي' : 'Geographic Distribution' }}</h3>
+          <span class="chart-subtitle">By country</span>
+        </div>
+        <div class="chart-body">
+          <canvas #geographicChart></canvas>
+        </div>
+      </div>
+    </div>
+
+    <!-- Bottom Section -->
+    <div class="bottom-section">
+      <!-- Activity Feed -->
+      <div class="activity-card">
+        <div class="section-header">
+          <h3>
+            <i nz-icon nzType="history"></i>
+            {{ isArabic ? 'سجل النشاط' : 'Recent Activity' }}
+          </h3>
+          <button nz-button nzSize="small" nzType="text" (click)="refreshDashboard()">
+            <i nz-icon nzType="reload"></i>
+          </button>
+        </div>
+        
+        <div class="activity-list">
+          <div class="activity-item" *ngFor="let activity of activities">
+            <span class="activity-icon" [style.color]="getActivityColor(activity.action)">
+              <i nz-icon [nzType]="getActivityIcon(activity.action)"></i>
+            </span>
+            <div class="activity-content">
+              <div class="activity-main">
+                <strong>{{ activity.performedBy }}</strong>
+                <span class="action">{{ activity.action }}</span>
+                <span class="company" *ngIf="activity.company_name">
+                  "{{ activity.company_name }}"
+                </span>
+              </div>
+              <div class="activity-meta">
+                <span class="time">{{ formatTimeAgo(activity.performedAt) }}</span>
+                <nz-tag *ngIf="activity.toStatus" [nzColor]="activity.toStatus === 'Approved' ? 'green' : 'orange'">
+                  {{ activity.toStatus }}
+                </nz-tag>
+              </div>
+            </div>
+          </div>
+          
+          <nz-empty *ngIf="!activities.length" nzNotFoundContent="No recent activity"></nz-empty>
+        </div>
+      </div>
+
+      <!-- Bottlenecks Analysis -->
+      <div class="bottleneck-card">
+        <div class="section-header">
+          <h3>
+            <i nz-icon nzType="warning" style="color: #faad14;"></i>
+            {{ isArabic ? 'تحليل الاختناقات' : 'Bottleneck Analysis' }}
+          </h3>
+          <nz-tag [nzColor]="'red'" *ngIf="bottlenecks.length">
+            {{ bottlenecks.length }} Issues
+          </nz-tag>
+        </div>
+        
+        <div class="chart-body">
+          <canvas #bottleneckChart></canvas>
+        </div>
+        
+        <div class="bottleneck-list" *ngIf="bottlenecks.length">
+          <div class="bottleneck-item" *ngFor="let bottleneck of bottlenecks">
+            <div class="bottleneck-info">
+              <strong>{{ bottleneck.stage }}</strong>
+              <span class="count">{{ bottleneck.stuck_count }} records</span>
+            </div>
+            <div class="bottleneck-action">
+              <span class="days" [class.critical]="bottleneck.avg_days_stuck > 5">
+                {{ bottleneck.avg_days_stuck.toFixed(1) }} days avg
+              </span>
+              <button nz-button nzSize="small" nzType="link" (click)="resolveBottleneck(bottleneck)">
+                Resolve →
+              </button>
+            </div>
+          </div>
+        </div>
+        
+        <nz-empty *ngIf="!bottlenecks.length" nzNotFoundContent="No bottlenecks detected"></nz-empty>
+      </div>
+    </div>
+  </div>
+
+  <!-- Quick Actions FAB -->
+  <div class="fab-container">
+    <button nz-button nzType="primary" nzShape="circle" nzSize="large" 
+            nz-dropdown [nzDropdownMenu]="fabMenu" nzTrigger="click">
+      <i nz-icon nzType="plus"></i>
+    </button>
+    <nz-dropdown-menu #fabMenu="nzDropdownMenu">
+      <ul nz-menu>
+        <li nz-menu-item (click)="generateSampleData()">
+          <i nz-icon nzType="database"></i> Generate Sample Data
+        </li>
+        <li nz-menu-divider></li>
+        <li nz-menu-item routerLink="/dashboard/new-request">
+          <i nz-icon nzType="plus-circle"></i> New Request
+        </li>
+        <li nz-menu-item routerLink="/dashboard/reports">
+          <i nz-icon nzType="bar-chart"></i> Detailed Reports
+        </li>
+      </ul>
+    </nz-dropdown-menu>
+  </div>
+</div>

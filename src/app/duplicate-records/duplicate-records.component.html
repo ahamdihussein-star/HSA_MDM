@@ -1,35 +1,55 @@
-<div class="titleActionHolder">
-  <h1 class="pageTitle">
-    {{ "DuplicateRecords" | translate }} ({{ duplicateRecords.length }} Groups)
-  </h1>
+  <div class="titleActionHolder">
+    <h1 class="pageTitle">
+      {{ "DuplicateRecords" | translate }} ({{ duplicateRecords.length }} {{ "Groups" | translate }})
+    </h1>
 
   <div class="actionHolderTitleTabs">
     <div class="seachInputHolder">
       <img src="./assets/img/search.svg" alt="" />
-      <input type="text" [placeholder]="'Search' | translate" />
+      <input 
+        type="text" 
+        [placeholder]="'Search' | translate" 
+        [(ngModel)]="searchTerm"
+        (input)="onSearchChange($event)"
+      />
     </div>
-    <img src="./assets/img/filter.svg" alt="" />
+    <div class="filterHolder">
+      <select 
+        [(ngModel)]="filterBySource" 
+        (change)="onFilterChange($event)"
+        class="filter-select"
+      >
+        <option value="">{{ 'All Sources' | translate }}</option>
+        <option *ngFor="let source of getUniqueSourceSystems()" [value]="source">
+          {{ source }}
+        </option>
+      </select>
+      <button 
+        *ngIf="searchTerm || filterBySource" 
+        (click)="clearFilters()" 
+        class="clear-filters-btn"
+        title="Clear filters"
+      >
+        ✕
+      </button>
+    </div>
   </div>
 </div>
 
-<br>
-<br>
-
 <!-- Loading State -->
 <div *ngIf="loading" class="text-center p-4">
-  <div class="loading">Loading duplicate records...</div>
+  <div class="loading">{{ 'Loading duplicate records...' | translate }}</div>
 </div>
 
 <!-- TABLE -->
 <div *ngIf="!loading">
-  <nz-table #customerTable [nzPageSize]="9" [nzData]="duplicateRecords">
+  <nz-table #customerTable [nzPageSize]="9" [nzData]="filteredRecords">
     <thead>
       <tr>
-        <th>{{ 'TaxNumber' | translate }}</th>
-        <th>{{ 'CompanyNames' | translate }}</th>
-        <th>{{ 'SourceSystems' | translate }}</th>
-        <th>{{ 'NumOfDuplicates' | translate }}</th>
-        <th>{{ 'Confidence' | translate }}</th>
+        <th>{{ 'Tax Number' | translate }}</th>
+        <th>{{ 'Company Name' | translate }}</th>
+        <th>{{ 'Source Systems' | translate }}</th>
+        <th>{{ 'Suspected Duplicates' | translate }}</th>
         <th>{{ 'Action' | translate }}</th>
       </tr>
     </thead>
@@ -46,15 +66,12 @@
           </div>
         </td>
         <td>
-          <span class="badge badge-info">{{ formatSourceSystems(data.sourceSystems) }}</span>
+          <ul class="source-systems-list">
+            <li *ngFor="let system of data.sourceSystems">{{ system }}</li>
+          </ul>
         </td>
         <td>
-          <span class="badge badge-primary">{{ data.duplicateCount }} records</span>
-        </td>
-        <td>
-          <span [class]="'badge ' + getConfidenceBadgeClass(data.confidence)">
-            {{ (data.confidence * 100).toFixed(0) }}% - {{ getConfidenceText(data.confidence) }}
-          </span>
+          <span class="duplicate-count">{{ data.duplicateCount }} {{ 'records' | translate }}</span>
         </td>
         <td>
           <a class="primaryColor" 
@@ -70,8 +87,15 @@
 
 <!-- Empty State -->
 <div *ngIf="!loading && duplicateRecords.length === 0" class="empty-state text-center p-5">
-  <h3>No Duplicate Records Found</h3>
-  <p>All records have been processed or there are no duplicates to review.</p>
+  <h3>{{ 'No Duplicate Records Found' | translate }}</h3>
+  <p>{{ 'All records have been processed or there are no duplicates to review' | translate }}</p>
+</div>
+
+<!-- No Search Results -->
+<div *ngIf="!loading && duplicateRecords.length > 0 && filteredRecords.length === 0" class="empty-state text-center p-5">
+  <h3>{{ 'No Results Found' | translate }}</h3>
+  <p>{{ 'No records match your search criteria. Try adjusting your search or filters.' | translate }}</p>
+  <button (click)="clearFilters()" class="btn btn-primary">{{ 'Clear Filters' | translate }}</button>
 </div>
 
 <style>
@@ -128,5 +152,62 @@
   .primaryColor:hover {
     text-decoration: underline !important;
     opacity: 0.8;
+  }
+
+  .filterHolder {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+
+  .filter-select {
+    background-color: white;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: 150px;
+    cursor: pointer;
+  }
+
+  .filter-select:focus {
+    border-color: #1890ff;
+    outline: none;
+  }
+
+  .clear-filters-btn {
+    background: #ff4d4f;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+  }
+
+  .clear-filters-btn:hover {
+    background: #ff7875;
+  }
+
+  .btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+  }
+
+  .btn-primary {
+    background: #1890ff;
+    color: white;
+  }
+
+  .btn-primary:hover {
+    background: #40a9ff;
   }
 </style>

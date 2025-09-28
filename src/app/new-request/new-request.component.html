@@ -1,523 +1,959 @@
 <div class="main reflow-fix">
- <!-- Loading Spinner -->
- <nz-spin *ngIf="isLoading" nzTip="Loading..." [nzSpinning]="true" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;">
- </nz-spin>
+  <!-- Loading Spinner -->
+  <nz-spin *ngIf="isLoading" nzTip="{{ 'Loading...' | translate }}" [nzSpinning]="true" style="position: fixed; top: 50%; left: 50%; transform: translate(-50%, -50%); z-index: 1000;">
+  </nz-spin>
 
- <div class="titleBox">
-   <button (click)="goBack()" class="back-button">
-     <img src="assets/img/leftArrow.svg" alt="Back" *ngIf="!isArabic" />
-     <img src="assets/img/rightArrow.svg" alt="Back" *ngIf="isArabic" />
-   </button>
-   <h2>
-     {{ canEdit ? ("EditRequest" | translate) : canView ? ("ViewRequest" | translate) : ("NewRequest" | translate) }}
-   </h2>
- </div>
+  <!-- Review Mode Banner (Shows only for reviewer/compliance) -->
+  <div class="review-banner" *ngIf="(userType === '2' || userType === '3') && hasRecord">
+    <div class="banner-content">
+      <span class="banner-icon">👁️</span>
+      <div class="banner-text">
+        <h3 *ngIf="userType === '2'">Review Mode - Reviewer</h3>
+        <h3 *ngIf="userType === '3'">Review Mode - Compliance</h3>
+        <p>You are reviewing this request. All fields are read-only.</p>
+      </div>
+      <div class="banner-actions">
+        <nz-tag [nzColor]="'blue'">Status: {{ status }}</nz-tag>
+        <nz-tag [nzColor]="'green'" *ngIf="currentRecordId">ID: {{ currentRecordId }}</nz-tag>
+      </div>
+    </div>
+  </div>
+ 
+  <div class="titleBox">
+    <button type="button" (click)="goBack()" class="back-button">
+      <img src="assets/img/leftArrow.svg" alt="Back" *ngIf="!isArabic" />
+      <img src="assets/img/rightArrow.svg" alt="Back" *ngIf="isArabic" />
+    </button>
+    <h2>
+      {{ canEdit ? ("EditRequest" | translate) : canView ? ("ViewRequest" | translate) : ("NewRequest" | translate) }}
+    </h2>
+    
+    <!-- Keyboard Auto-Fill Helper -->
+    <div *ngIf="isNewRequest && userType === '1'" class="autofill-helper">
+      <div class="helper-content">
+        <span class="helper-icon">⌨️</span>
+        <div class="helper-text">
+          <span class="helper-title">Smart Auto-Fill</span>
+          <span class="helper-subtitle">Double-click Space bar to auto-fill</span>
+        </div>
+        <div class="helper-company" *ngIf="currentDemoCompany">
+          <span class="company-badge">{{ currentDemoCompany.name }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+ 
+ 
+  <!-- Block Reason Modal - Professional Design -->
+  <nz-modal [(nzVisible)]="isBlockModalVisible"
+            [nzTitle]="'Block Company'"
+            [nzFooter]="null"
+            (nzOnCancel)="isBlockModalVisible=false"
+            nzClassName="block-modal"
+            nzWidth="500px">
+    <ng-container *nzModalContent>
+      <div class="block-card">
+        <div class="block-warning-icon">
+          <svg width="64" height="64" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+        </div>
+        
+        <h3 class="block-title">Block Company</h3>
+        <p class="block-description">
+          Please provide a detailed reason for blocking this company. 
+          This action will mark the company as inactive.
+        </p>
+        
+        <div class="block-form">
+          <label class="block-label">Block Reason *</label>
+          <textarea id="comp-block-reason"
+                    [(ngModel)]="blockReason"
+                    placeholder="Enter detailed reason for blocking this company..."
+                    class="block-textarea">
+          </textarea>
+        </div>
+      </div>
 
- <!-- Compliance actions - Updated condition to use both userType and canComplianceAction -->
- <div *ngIf="(hasRecord && userType==='3') || canComplianceAction" class="comp-actions-card">
-   <div class="comp-actions-header">
-     <h3 class="comp-h3">{{ 'Compliance Review' | translate }}</h3>
-     <div class="comp-cta">
-       <button
-         id="comp-approve-golden-btn"
-         class="pill pill-success"
-         nz-button
-         type="button"
-         (click)="onComplianceApprove()"
-         [nzLoading]="isLoading"
-       >
-         <span nz-icon nzType="check-circle"></span>
-         {{ 'Approve as Active' | translate }}
-       </button>
-       <button
-         id="comp-block-submit-btn"
-         class="pill pill-danger"
-         nz-button
-         type="button"
-         (click)="isBlockModalVisible = true"
-         [nzLoading]="isLoading"
-       >
-         <span nz-icon nzType="stop"></span>
-         {{ 'Approve as Blocked' | translate }}
-       </button>
-     </div>
-   </div>
- </div>
+      <div class="block-actions">
+        <button class="block-cancel-btn" (click)="isBlockModalVisible=false">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <line x1="18" y1="6" x2="6" y2="18"></line>
+            <line x1="6" y1="6" x2="18" y2="18"></line>
+          </svg>
+          Cancel
+        </button>
+        <button class="block-submit-btn"
+                [disabled]="!(blockReason || '').trim().length || isLoading"
+                [class.loading]="isLoading"
+                (click)="submitBlock()">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+            <circle cx="12" cy="12" r="10"></circle>
+            <line x1="15" y1="9" x2="9" y2="15"></line>
+            <line x1="9" y1="9" x2="15" y2="15"></line>
+          </svg>
+          <span *ngIf="!isLoading">Block Company</span>
+          <span *ngIf="isLoading">Blocking...</span>
+        </button>
+      </div>
+    </ng-container>
+  </nz-modal>
+ 
+  <!-- Action bar للـ MASTER/Reviewer - REMOVED to avoid confusion (actions available at bottom) -->
+ 
+  <!-- Action bar للـ Data Entry -->
+  <div class="de-action-bar"
+       *ngIf="hasRecord && userType==='1' && (status==='Rejected' || status==='Updated' || status==='Quarantined') && !editPressed">
+    <button class="pill pill-primary" nz-button (click)="editRequest()">
+      <span nz-icon nzType="edit"></span>{{ 'Edit' | translate }}
+    </button>
+  </div>
+ 
+  <!-- Duplicate Warning -->
+  <nz-alert *ngIf="showDuplicateWarning" nzType="warning"
+            [nzMessage]="'⚠️ A customer with name ' + duplicateName + ' and tax number ' + duplicateTax + ' already exists!'"
+            nzShowIcon class="mb-3"></nz-alert>
+ 
+  <!-- Summary Card للـ Data Entry في حالات المراجعة -->
+  <div class="summary-card"
+       *ngIf="hasRecord && userType === '1' && (status==='Rejected' || status==='Updated' || status==='Quarantined')">
+    <div class="summary-card__header">
+      <div class="summary-card__title">
+        <span class="dot"></span>
+        <h2>{{ 'RequestStatus' | translate }}</h2>
+      </div>
+ 
+      <div class="summary-card__meta">
+        <span class="status-chip" [ngClass]="statusClassMap">
+          {{ status | translate }}
+        </span>
+ 
+        <ng-container *ngIf="(stateIssues?.length || 0) > 0">
+          <span class="divider"></span>
+          <span class="meta">
+            {{ stateIssues.length }} {{ stateIssues.length === 1 ? ('Issue'|translate) : ('Issues'|translate) }}
+          </span>
+        </ng-container>
+      </div>
+    </div>
+ 
+    <div class="summary-card__body" *ngIf="showSummary">
+      <div class="summary-block">
+        <div class="block-title">
+          <span nz-icon nzType="alert"></span>
+          <strong>{{ 'IssueSummary' | translate }}</strong>
+        </div>
+ 
+        <ul class="issue-list">
+          <li *ngFor="let issue of stateIssues">
+            <div class="issue-row">
+              <div class="issue-label">{{ 'Issue' | translate }}:</div>
+              <div class="issue-value">{{ issue.description || '—' }}</div>
+            </div>
+            <div class="issue-row">
+              <div class="issue-label">{{ 'ReviewedBy' | translate }}:</div>
+              <div class="issue-value">{{ issue.reviewedBy || 'Reviewer' }}</div>
+            </div>
+            <div class="issue-row">
+              <div class="issue-label">{{ 'Date' | translate }}:</div>
+              <div class="issue-value">{{ (issue.issueDate || issue.date) | date:'MMM d, y' }}</div>
+            </div>
+          </li>
+        </ul>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- FORM - Hide for reviewer/compliance when viewing -->
+  <form
+    nz-form
+    [formGroup]="requestForm"
+    (ngSubmit)="onSubmit()"
+    class="form_holder requestForm"
+    [class.is-readonly]="hasRecord && !editPressed"
+    *ngIf="!(userType === '2' || userType === '3') || !hasRecord">
+ 
+    <!-- General Data -->
+    <div class="generalData">
+      <h3>{{ "GeneralData" | translate }}</h3>
+      <div class="row">
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="firstName" nzRequired>
+            {{ "FirstName" | translate }}<span class="required-asterisk">*</span>
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterFirstName' | translate">
+            <input nz-input id="firstName" formControlName="firstName" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Company Name' | translate }}"/>
+          </nz-form-control>
+        </nz-form-item>
+ 
+        <nz-form-item class="input_holder_full-width">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="firstNameAR" nzRequired>
+            {{ "FirstNameAR" | translate }}<span class="required-asterisk">*</span>
+          </nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'Enter Company Name AR' | translate">
+            <div class="arabic-name-container">
+              <input nz-input id="firstNameAR" formControlName="firstNameAR" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Company Name AR' | translate }}"/>
+              <button 
+                type="button"
+                nz-button 
+                nzType="default" 
+                nzSize="small"
+                class="translate-btn"
+                (click)="translateToArabic()"
+                [disabled]="hasRecord && !editPressed"
+                [title]="'Auto Translate' | translate">
+                <span nz-icon nzType="translation" nzTheme="outline"></span>
+              </button>
+            </div>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+ 
+      <div class="row">
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="CustomerType" nzRequired>{{ "CustomerType" | translate }}<span class="required-asterisk">*</span></nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'SelectCustomerType' | translate">
+            <nz-select id="CustomerType" formControlName="CustomerType" nzPlaceHolder="{{ 'SelectCustomerType' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+              <nz-option *ngFor="let type of CustomerTypeOptions" [nzValue]="type.value" [nzLabel]="type.label | translate"></nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+ 
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="CompanyOwnerFullName" nzRequired>{{ "CompanyOwnerFullName" | translate }}<span class="required-asterisk">*</span></nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCompanyOwner' | translate">
+            <input nz-input id="CompanyOwnerFullName" formControlName="CompanyOwnerFullName" [disabled]="hasRecord && !editPressed" placeholder="{{ 'EnterCompanyOwner' | translate }}" />
+          </nz-form-control>
+        </nz-form-item>
+ 
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="tax" nzRequired>{{ "Tax Number" | translate }}<span class="required-asterisk">*</span></nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterTax' | translate">
+            <input nz-input id="tax" formControlName="tax" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Tax Number' | translate }}" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+ 
+      <div class="row">
+        <nz-form-item class="input_holder_full-width w70">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="buildingNumber">{{ "Building Number" | translate }}</nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input nz-input id="buildingNumber" formControlName="buildingNumber" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Building Number' | translate }}" />
+          </nz-form-control>
+        </nz-form-item>
+ 
+        <nz-form-item class="input_holder_full-width w70">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="street">{{ "Street" | translate }}</nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <input nz-input id="street" formControlName="street" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Street Name' | translate }}" />
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+ 
+      <div class="row">
+        <nz-form-item class="input_holder_full-width w50">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="country" nzRequired>{{ 'Country' | translate }}<span class="required-asterisk">*</span></nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'Select Country' | translate">
+            <nz-select id="country" formControlName="country" nzPlaceHolder="{{ 'Select Country' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+              <nz-option *ngFor="let c of CountryOptions" [nzValue]="c.value" [nzLabel]="c.label"></nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+ 
+        <nz-form-item class="input_holder_full-width w50">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="city" nzRequired>{{ 'City' | translate }}<span class="required-asterisk">*</span></nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'Select City' | translate">
+            <nz-select id="city" formControlName="city" nzPlaceHolder="{{ 'Select City' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+              <nz-option *ngFor="let city of filteredCityOptions" [nzValue]="city.value" [nzLabel]="city.label"></nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+    </div>
+ 
+    <!-- Contacts Section -->
+    <div class="generalData">
+      <div class="flex items-center justify-between" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+        <h3 style="margin: 0;">{{ "Contacts" | translate }}</h3>
+        <button type="button" nz-button nzType="default" (click)="addContact()" [disabled]="hasRecord && !editPressed || userType==='2'">
+          {{ 'Add +' | translate }}
+        </button>
+      </div>
+ 
+      <nz-table [nzData]="contactsFGs" nzSize="middle" class="contacts-table" *ngIf="contactsFGs?.length; else noContacts">
+        <thead>
+          <tr>
+            <th>{{ 'Name' | translate }}</th>
+            <th>{{ 'Job Title' | translate }}</th>
+            <th>{{ 'Email Address' | translate }}</th>
+            <th>{{ 'Mobile Number' | translate }}</th>
+            <th>{{ 'Landline' | translate }}</th>
+            <th>{{ 'Preferred Language' | translate }}</th>
+            <th class="text-right" *ngIf="userType!=='2'">{{ 'Actions' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let cg of contactsFGs; let i = index" [formGroup]="cg">
+            <td><input nz-input formControlName="name" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="{{'Full name'|translate}}"/></td>
+            <td><input nz-input formControlName="jobTitle" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="{{'Job Title'|translate}}"/></td>
+            <td><input nz-input formControlName="email" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="email@example.com"/></td>
+            <td><input nz-input formControlName="mobile" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="+2..."/></td>
+            <td><input nz-input formControlName="landline" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="02..."/></td>
+            <td>
+              <nz-select formControlName="preferredLanguage" [nzDisabled]="(hasRecord && !editPressed) || userType==='2'" nzPlaceHolder="{{'Select'|translate}}" style="width: 100%">
+                <nz-option *ngFor="let l of PrefferedLanguage" [nzValue]="l.value" [nzLabel]="l.label | translate"></nz-option>
+              </nz-select>
+            </td>
+            <td class="text-right" *ngIf="userType!=='2'">
+              <button type="button" nz-button nzType="text" nzDanger (click)="removeContact(i)" [disabled]="hasRecord && !editPressed">
+                <span nz-icon nzType="delete"></span>
+              </button>
+            </td>
+          </tr>
+        </tbody>
+      </nz-table>
+ 
+      <ng-template #noContacts>
+        <nz-empty>
+          <ng-container *nzEmptyDescription>{{ 'No contacts yet.' | translate }}</ng-container>
+        </nz-empty>
+      </ng-template>
+    </div>
+ 
+    <!-- Documents Section - ENHANCED -->
+    <div class="generalData doc-card">
+      <div class="doc-card__header">
+        <h3 class="doc-title">
+          <span nz-icon nzType="paper-clip"></span>
+          {{ 'Documents' | translate }}
+        </h3>
 
- <!-- Block Reason Modal -->
- <nz-modal [(nzVisible)]="isBlockModalVisible"
-           [nzTitle]="'Block Company' | translate"
-           [nzFooter]="null"
-           (nzOnCancel)="isBlockModalVisible=false"
-           nzClassName="block-modal">
-   <ng-container *nzModalContent>
-     <div class="block-card">
-       <div class="block-title">
-         <span nz-icon nzType="stop"></span>
-         {{ 'Block Company' | translate }}
-       </div>
-       <p>{{ 'Please provide a reason for blocking this company' | translate }}</p>
-       <textarea id="comp-block-reason"
-                 [(ngModel)]="blockReason"
-                 placeholder="{{ 'Write the block reason...' | translate }}">
-       </textarea>
-     </div>
+        <div class="doc-meta-inline" *ngIf="getDocumentsCount() > 0">
+          <nz-tag nzColor="processing">
+            {{ getDocumentsCount() }} {{ getDocumentsCount() === 1 ? ('file' | translate) : ('files' | translate) }}
+          </nz-tag>
+        </div>
+      </div>
 
-     <div class="fullWidth btnsHolder" style="margin-top:12px">
-       <button class="cancelBtn" (click)="isBlockModalVisible=false">
-         {{ 'Cancel' | translate }}
-       </button>
-       <button id="comp-block-submit-btn"
-               [disabled]="!(blockReason || '').trim().length || isLoading"
-               [nzLoading]="isLoading"
-               nz-button
-               (click)="submitBlock()">
-         {{ 'Submit' | translate }}
-       </button>
-     </div>
-   </ng-container>
- </nz-modal>
+      <!-- Single Upload Button - FIXED -->
+      <div class="upload-section" *ngIf="userType === '1' && (editPressed || isNewRequest || !hasRecord)">
+        <button 
+          type="button"
+          class="upload-btn"
+          (click)="openUploadModal()">
+          <span nz-icon nzType="upload" nzTheme="outline"></span>
+          {{ 'Upload Document' | translate }}
+        </button>
+      </div>
 
- <!-- Action bar للـ MASTER/Reviewer - Updated condition to use both userType and canApproveReject -->
- <div class="summary-actions"
-      *ngIf="(hasRecord && userType === '2' && (status==='Pending' || status==='Updated' || status==='Quarantined')) || canApproveReject">
-   <button class="pill pill-danger" nz-button (click)="showRejectedModal()" [nzLoading]="isLoading">
-     <span nz-icon nzType="close-circle"></span>{{ 'Reject' | translate }}
-   </button>
-   <button class="pill pill-success" nz-button (click)="showApproveModal()" [nzLoading]="isLoading">
-     <span nz-icon nzType="check-circle"></span>{{ 'Approve' | translate }}
-   </button>
- </div>
+      <!-- Empty State -->
+      <nz-empty *ngIf="getDocumentsCount() === 0" nzClassName="doc-empty">
+        <ng-container *nzEmptyDescription>
+          <div class="empty-text">
+            <ng-container *ngIf="userType === '1' && !hasRecord">
+              {{ 'Upload your customer documents to appear here.' | translate }}
+            </ng-container>
+            <ng-container *ngIf="userType !== '1' || (userType === '1' && hasRecord && !editPressed)">
+              {{ 'No documents uploaded for this request.' | translate }}
+            </ng-container>
+          </div>
+        </ng-container>
+      </nz-empty>
 
- <!-- Action bar للـ Data Entry -->
- <div class="de-action-bar"
-      *ngIf="hasRecord && userType==='1' && (status==='Rejected' || status==='Updated' || status==='Quarantined') && !editPressed">
-   <button class="pill pill-primary" nz-button (click)="editRequest()">
-     <span nz-icon nzType="edit"></span>{{ 'Edit' | translate }}
-   </button>
- </div>
+      <!-- Documents Table - Professional Design -->
+      <div class="documents-table-container" *ngIf="getDocumentsCount() > 0">
+        <table class="documents-table">
+          <thead>
+            <tr>
+              <th class="col-icon">Type</th>
+              <th class="col-name">Document Name</th>
+              <th class="col-category">Category</th>
+              <th class="col-size">Size</th>
+              <th class="col-date">Upload Date</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let doc of getDocumentsList(); let i = index; trackBy: trackByIndex" 
+                class="document-row" 
+                [class.clickable]="canPreview(doc)"
+                (click)="handleDocumentClick(doc); $event.stopPropagation(); $event.preventDefault()">
+              
+              <!-- File Type Icon -->
+              <td class="col-icon">
+                <div class="file-type-icon" [attr.data-type]="isPdf(doc) ? 'pdf' : isImage(doc) ? 'image' : 'other'">
+                  <span *ngIf="isPdf(doc)" class="pdf-icon">📄</span>
+                  <span *ngIf="isImage(doc)" class="image-icon">🖼️</span>
+                  <span *ngIf="!isPdf(doc) && !isImage(doc)" class="file-icon">📎</span>
+                </div>
+              </td>
+              
+              <!-- Document Name -->
+              <td class="col-name">
+                <div class="doc-name-wrapper">
+                  <span class="doc-name" [title]="doc.name">{{ doc.name }}</span>
+                  <div class="doc-description" *ngIf="doc.description">
+                    <small>{{ doc.description }}</small>
+                  </div>
+                </div>
+              </td>
+              
+              <!-- Document Type/Category -->
+              <td class="col-category">
+                <nz-tag [nzColor]="getTypeColor(doc.type)" nzSize="small">
+                  {{ doc.type }}
+                </nz-tag>
+              </td>
+              
+              <!-- File Size -->
+              <td class="col-size">
+                <span class="file-size">{{ formatFileSize(doc.size) }}</span>
+              </td>
+              
+              <!-- Upload Date -->
+              <td class="col-date">
+                <span class="upload-date">{{ doc.uploadedAt | date:'MMM d, y' }}</span>
+              </td>
+              
+              <!-- Actions -->
+              <td class="col-actions">
+                <div class="action-buttons">
+                  <button 
+                          type="button"
+                          nz-button 
+                          nzType="text" 
+                          nzSize="small"
+                          class="action-btn preview-btn"
+                          (click)="previewDocument(doc); $event.stopPropagation(); $event.preventDefault()" 
+                          *ngIf="canPreview(doc)"
+                          [title]="'Preview' | translate">
+                    <span nz-icon nzType="eye" nzTheme="outline"></span>
+                  </button>
+                  <button 
+                          type="button"
+                          nz-button 
+                          nzType="text" 
+                          nzSize="small"
+                          class="action-btn download-btn"
+                          (click)="downloadDocumentDirect(doc); $event.stopPropagation(); $event.preventDefault()"
+                          [title]="'Download' | translate">
+                    <span nz-icon nzType="download" nzTheme="outline"></span>
+                  </button>
+                  <button 
+                          type="button"
+                          nz-button 
+                          nzType="text" 
+                          nzDanger 
+                          nzSize="small"
+                          class="action-btn delete-btn"
+                          (click)="removeDoc(i); $event.stopPropagation(); $event.preventDefault()" 
+                          *ngIf="userType === '1'"
+                          [title]="'Delete' | translate">
+                    <span nz-icon nzType="delete" nzTheme="outline"></span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+ 
+    <!-- Sales Area -->
+    <div class="generalData">
+      <h3>{{ "SalesArea" | translate }}</h3>
+      <div class="row">
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="SalesOrgOption">{{ "SalesORG" | translate }}</nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <nz-select id="SalesOrgOption" formControlName="SalesOrgOption" nzPlaceHolder="{{ 'Select Sales Org' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+              <nz-option *ngFor="let s of SalesOrgOption" [nzValue]="s.value" [nzLabel]="s.label | translate"></nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+ 
+      <div class="row">
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="DistributionChannelOption">{{ "DistributionChannel" | translate }}</nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <nz-select id="DistributionChannelOption" formControlName="DistributionChannelOption" nzPlaceHolder="{{ 'Select Distribution Channel' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+              <nz-option *ngFor="let d of DistributionChannelOption" [nzValue]="d.value" [nzLabel]="d.label | translate"></nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+ 
+        <nz-form-item class="input_holder_full-width w33_33">
+          <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="DivisionOption">{{ "Division" | translate }}</nz-form-label>
+          <nz-form-control [nzSm]="24" [nzXs]="24">
+            <nz-select id="DivisionOption" formControlName="DivisionOption" nzPlaceHolder="{{ 'Select Division' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
+              <nz-option *ngFor="let dv of DivisionOption" [nzValue]="dv.value" [nzLabel]="dv.label | translate"></nz-option>
+            </nz-select>
+          </nz-form-control>
+        </nz-form-item>
+      </div>
+ 
+      <!-- Duplicate Warning -->
+      <div class="duplicate-warning" *ngIf="hasDuplicate">
+        <!-- Debug info -->
+        <div style="background: yellow; padding: 10px; margin: 10px 0; border: 2px solid red;">
+          <strong>DEBUG INFO:</strong><br>
+          hasDuplicate: {{ hasDuplicate }}<br>
+          duplicateRecord: {{ duplicateRecord | json }}<br>
+          duplicateRecord.name: {{ duplicateRecord?.name }}<br>
+        </div>
+        <!-- Custom Duplicate Warning with HTML -->
+        <div class="custom-duplicate-warning">
+          <div [innerHTML]="getDuplicateMessage()"></div>
+          <div *ngIf="duplicateRecord && duplicateRecord.name" class="duplicate-actions">
+            <button type="button" class="duplicate-details-btn" (click)="showDuplicateDetails()">
+              🔍 View Duplicate Details
+            </button>
+          </div>
+        </div>
+      </div>
 
- <!-- Duplicate Warning -->
- <nz-alert *ngIf="showDuplicateWarning" nzType="warning"
-           [nzMessage]="'⚠️ A customer with name ' + duplicateName + ' and tax number ' + duplicateTax + ' already exists!'"
-           nzShowIcon class="mb-3"></nz-alert>
-
- <!-- Summary Card للـ Data Entry في حالات المراجعة -->
- <div class="summary-card"
-      *ngIf="hasRecord && userType === '1' && (status==='Rejected' || status==='Updated' || status==='Quarantined')">
-   <div class="summary-card__header">
-     <div class="summary-card__title">
-       <span class="dot"></span>
-       <h2>{{ 'RequestStatus' | translate }}</h2>
-     </div>
-
-     <div class="summary-card__meta">
-       <span class="status-chip" [ngClass]="statusClassMap">
-         {{ status | translate }}
-       </span>
-
-       <ng-container *ngIf="(stateIssues?.length || 0) > 0">
-         <span class="divider"></span>
-         <span class="meta">
-           {{ stateIssues.length }} {{ stateIssues.length === 1 ? ('Issue'|translate) : ('Issues'|translate) }}
-         </span>
-       </ng-container>
-     </div>
-   </div>
-
-   <div class="summary-card__body" *ngIf="showSummary">
-     <div class="summary-block">
-       <div class="block-title">
-         <span nz-icon nzType="alert"></span>
-         <strong>{{ 'IssueSummary' | translate }}</strong>
-       </div>
-
-       <ul class="issue-list">
-         <li *ngFor="let issue of stateIssues">
-           <div class="issue-row">
-             <div class="issue-label">{{ 'Issue' | translate }}:</div>
-             <div class="issue-value">{{ issue.description || '—' }}</div>
-           </div>
-           <div class="issue-row">
-             <div class="issue-label">{{ 'ReviewedBy' | translate }}:</div>
-             <div class="issue-value">{{ issue.reviewedBy || 'Reviewer' }}</div>
-           </div>
-           <div class="issue-row">
-             <div class="issue-label">{{ 'Date' | translate }}:</div>
-             <div class="issue-value">{{ (issue.issueDate || issue.date) | date:'MMM d, y' }}</div>
-           </div>
-         </li>
-       </ul>
-     </div>
-   </div>
- </div>
-
- <!-- FORM -->
- <form
-   nz-form
-   [formGroup]="requestForm"
-   (ngSubmit)="onSubmit()"
-   class="form_holder requestForm"
-   [class.is-readonly]="hasRecord && !editPressed">
-
-   <!-- General Data -->
-   <div class="generalData">
-     <h3>{{ "GeneralData" | translate }}</h3>
-     <div class="row">
-       <nz-form-item class="input_holder_full-width">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="firstName" nzRequired>
-           {{ "FirstName" | translate }}<span class="required-asterisk">*</span>
-         </nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterFirstName' | translate">
-           <input nz-input id="firstName" formControlName="firstName" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Company Name' | translate }}"/>
-         </nz-form-control>
-       </nz-form-item>
-
-       <nz-form-item class="input_holder_full-width">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="firstNameAR" nzRequired>
-           {{ "FirstNameAR" | translate }}<span class="required-asterisk">*</span>
-         </nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'Enter Company Name AR' | translate">
-           <input nz-input id="firstNameAR" formControlName="firstNameAR" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Company Name AR' | translate }}"/>
-         </nz-form-control>
-       </nz-form-item>
-     </div>
-
-     <div class="row">
-       <nz-form-item class="input_holder_full-width w33_33">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="CustomerType" nzRequired>{{ "CustomerType" | translate }}<span class="required-asterisk">*</span></nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'SelectCustomerType' | translate">
-           <nz-select id="CustomerType" formControlName="CustomerType" nzPlaceHolder="{{ 'SelectCustomerType' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
-             <nz-option *ngFor="let type of CustomerTypeOptions" [nzValue]="type.value" [nzLabel]="type.label | translate"></nz-option>
-           </nz-select>
-         </nz-form-control>
-       </nz-form-item>
-
-       <nz-form-item class="input_holder_full-width w33_33">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="CompanyOwnerFullName" nzRequired>{{ "CompanyOwnerFullName" | translate }}<span class="required-asterisk">*</span></nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterCompanyOwner' | translate">
-           <input nz-input id="CompanyOwnerFullName" formControlName="CompanyOwnerFullName" [disabled]="hasRecord && !editPressed" placeholder="{{ 'EnterCompanyOwner' | translate }}" />
-         </nz-form-control>
-       </nz-form-item>
-
-       <nz-form-item class="input_holder_full-width w33_33">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="tax" nzRequired>{{ "Tax Number" | translate }}<span class="required-asterisk">*</span></nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'EnterTax' | translate">
-           <input nz-input id="tax" formControlName="tax" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Tax Number' | translate }}" />
-         </nz-form-control>
-       </nz-form-item>
-     </div>
-
-     <div class="row">
-       <nz-form-item class="input_holder_full-width w70">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="buildingNumber">{{ "Building Number" | translate }}</nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24">
-           <input nz-input id="buildingNumber" formControlName="buildingNumber" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Building Number' | translate }}" />
-         </nz-form-control>
-       </nz-form-item>
-
-       <nz-form-item class="input_holder_full-width w70">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="street">{{ "Street" | translate }}</nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24">
-           <input nz-input id="street" formControlName="street" [disabled]="hasRecord && !editPressed" placeholder="{{ 'Enter Street Name' | translate }}" />
-         </nz-form-control>
-       </nz-form-item>
-     </div>
-
-     <div class="row">
-       <nz-form-item class="input_holder_full-width w50">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="country" nzRequired>{{ 'Country' | translate }}<span class="required-asterisk">*</span></nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'Select Country' | translate">
-           <nz-select id="country" formControlName="country" nzPlaceHolder="{{ 'Select Country' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
-             <nz-option *ngFor="let c of CountryOptions" [nzValue]="c.value" [nzLabel]="c.label"></nz-option>
-           </nz-select>
-         </nz-form-control>
-       </nz-form-item>
-
-       <nz-form-item class="input_holder_full-width w50">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="city" nzRequired>{{ 'City' | translate }}<span class="required-asterisk">*</span></nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24" [nzErrorTip]="'Select City' | translate">
-           <nz-select id="city" formControlName="city" nzPlaceHolder="{{ 'Select City' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
-             <nz-option *ngFor="let city of filteredCityOptions" [nzValue]="city.value" [nzLabel]="city.label"></nz-option>
-           </nz-select>
-         </nz-form-control>
-       </nz-form-item>
-     </div>
-   </div>
-
-   <!-- Contacts Section -->
-   <div class="generalData">
-     <div class="flex items-center justify-between" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
-       <h3 style="margin: 0;">{{ "Contacts" | translate }}</h3>
-       <button type="button" nz-button nzType="default" (click)="addContact()" [disabled]="hasRecord && !editPressed || userType==='2'">
-         + {{ 'Add' | translate }}
-       </button>
-     </div>
-
-     <nz-table [nzData]="contactsFGs" nzSize="middle" class="contacts-table" *ngIf="contactsFGs?.length; else noContacts">
-       <thead>
-         <tr>
-           <th>{{ 'Name' | translate }}</th>
-           <th>{{ 'Job Title' | translate }}</th>
-           <th>{{ 'Email Address' | translate }}</th>
-           <th>{{ 'Mobile Number' | translate }}</th>
-           <th>{{ 'Landline' | translate }}</th>
-           <th>{{ 'Preferred Language' | translate }}</th>
-           <th class="text-right" *ngIf="userType!=='2'">{{ 'Actions' | translate }}</th>
-         </tr>
-       </thead>
-       <tbody>
-         <tr *ngFor="let cg of contactsFGs; let i = index" [formGroup]="cg">
-           <td><input nz-input formControlName="name" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="{{'Full name'|translate}}"/></td>
-           <td><input nz-input formControlName="jobTitle" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="{{'Job Title'|translate}}"/></td>
-           <td><input nz-input formControlName="email" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="email@example.com"/></td>
-           <td><input nz-input formControlName="mobile" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="+2..."/></td>
-           <td><input nz-input formControlName="landline" [disabled]="(hasRecord && !editPressed) || userType==='2'" placeholder="02..."/></td>
-           <td>
-             <nz-select formControlName="preferredLanguage" [nzDisabled]="(hasRecord && !editPressed) || userType==='2'" nzPlaceHolder="{{'Select'|translate}}" style="width: 100%">
-               <nz-option *ngFor="let l of PrefferedLanguage" [nzValue]="l.value" [nzLabel]="l.label | translate"></nz-option>
-             </nz-select>
-           </td>
-           <td class="text-right" *ngIf="userType!=='2'">
-             <button type="button" nz-button nzType="text" nzDanger (click)="removeContact(i)" [disabled]="hasRecord && !editPressed">
-               <span nz-icon nzType="delete"></span>
-             </button>
-           </td>
-         </tr>
-       </tbody>
-     </nz-table>
-
-     <ng-template #noContacts>
-       <nz-empty>
-         <ng-container *nzEmptyDescription>{{ 'No contacts yet.' | translate }}</ng-container>
-       </nz-empty>
-     </ng-template>
-   </div>
-
-   <!-- Documents Section -->
-   <div class="generalData doc-card">
-     <div class="doc-card__header">
-       <h3 class="doc-title">
-         <span nz-icon nzType="paper-clip"></span>
-         {{ 'Documents' | translate }}
-       </h3>
-
-       <div class="doc-meta-inline" *ngIf="documentsFA.length">
-         <nz-tag nzColor="processing">
-           {{ documentsFA.length }} {{ documentsFA.length === 1 ? ('file' | translate) : ('files' | translate) }}
-         </nz-tag>
-         <span class="dot"></span>
-         <span class="hint">Max {{maxSizeMB}}MB / file</span>
-       </div>
-     </div>
-
-     <nz-upload
-       nzType="drag"
-       class="doc-dropzone glass"
-       [nzMultiple]="true"
-       [nzBeforeUpload]="beforeUploadNz"
-       [nzShowUploadList]="false"
-       [nzDisabled]="(hasRecord && !editPressed) || userType==='2'">
-       <div class="dz-inner">
-         <div class="dz-icon"><span nz-icon nzType="inbox"></span></div>
-         <div class="dz-title">{{ 'Drop files here or click to upload' | translate }}</div>
-         <div class="dz-hint">
-           PDF, JPG, PNG, WEBP, DOC, DOCX, XLS, XLSX, TXT (≤ {{maxSizeMB}}MB)
-         </div>
-       </div>
-     </nz-upload>
-
-     <nz-empty *ngIf="!documentsFA.length" nzClassName="doc-empty">
-       <ng-container *nzEmptyDescription>
-         <div class="empty-text">
-           {{ 'Upload your customer documents to appear here.' | translate }}
-         </div>
-       </ng-container>
-     </nz-empty>
-
-     <div class="doc-table-wrap" *ngIf="documentsFA.length">
-       <nz-table [nzData]="documentsFGs" nzSize="middle" class="doc-table">
-         <thead>
-           <tr>
-             <th class="col-file">{{ 'File' | translate }}</th>
-             <th class="col-type">{{ 'Type' | translate }}</th>
-             <th class="col-desc">{{ 'Description' | translate }}</th>
-             <th class="col-size">{{ 'Size' | translate }}</th>
-             <th class="col-date">{{ 'Uploaded' | translate }}</th>
-             <th class="col-actions text-right">{{ 'Actions' | translate }}</th>
-           </tr>
-         </thead>
-
-         <tbody>
-           <tr *ngFor="let grp of documentsFGs; let i = index" [formGroup]="grp">
-             <td class="col-file">
-               <div class="file-cell">
-                 <ng-container [ngSwitch]="true">
-                   <div class="thumb" *ngSwitchCase="grp.value.mime?.includes('image')">
-                     <img [src]="grp.value.contentBase64" alt="" />
-                   </div>
-                   <div class="icon" *ngSwitchDefault>
-                     <span nz-icon [nzType]="getDocIcon(grp.value.mime)"></span>
-                   </div>
-                 </ng-container>
-                 <span class="file-name" nz-typography nzEllipsis [nzEllipsisRows]="1" [title]="grp.value.name">
-                   {{ grp.value.name }}
-                 </span>
-               </div>
-             </td>
-
-             <td class="col-type">
-               <nz-tag [nzColor]="getTypeColor(grp.value.type)">{{ grp.value.type }}</nz-tag>
-             </td>
-
-             <td class="col-desc">
-               <span class="desc-text" [title]="grp.value.description || '—'">
-                 {{ grp.value.description || '—' }}
-               </span>
-             </td>
-
-             <td class="col-size text-right">
-               {{ (grp.value.size / 1024 / 1024) | number:'1.2-2' }} MB
-             </td>
-
-             <td class="col-date">
-               {{ grp.value.uploadedAt | date:'medium' }}
-             </td>
-
-             <td class="col-actions text-right">
-               <button
-                 type="button"
-                 nz-button
-                 nzType="text"
-                 nzShape="circle"
-                 nz-tooltip
-                 nzTooltipTitle="Download"
-                 (click)="downloadDoc(grp.value)"
-                 aria-label="Download">
-                 <span nz-icon nzType="download"></span>
-               </button>
-
-               <button
-                 type="button"
-                 nz-button
-                 nzType="text"
-                 class="icon-btn"
-                 nzDanger
-                 nz-tooltip
-                 nzTooltipTitle="Remove"
-                 (click)="removeDoc(i)"
-                 aria-label="Remove"
-                 [disabled]="(hasRecord && !editPressed) || userType==='2'">
-                 <span nz-icon nzType="delete"></span>
-               </button>
-             </td>
-           </tr>
-         </tbody>
-       </nz-table>
-     </div>
-   </div>
-
-   <!-- Sales Area -->
-   <div class="generalData">
-     <h3>{{ "SalesArea" | translate }}</h3>
-     <div class="row">
-       <nz-form-item class="input_holder_full-width w33_33">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="SalesOrgOption">{{ "SalesORG" | translate }}</nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24">
-           <nz-select id="SalesOrgOption" formControlName="SalesOrgOption" nzPlaceHolder="{{ 'Select Sales Org' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
-             <nz-option *ngFor="let s of SalesOrgOption" [nzValue]="s.value" [nzLabel]="s.label | translate"></nz-option>
-           </nz-select>
-         </nz-form-control>
-       </nz-form-item>
-     </div>
-
-     <div class="row">
-       <nz-form-item class="input_holder_full-width w33_33">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="DistributionChannelOption">{{ "DistributionChannel" | translate }}</nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24">
-           <nz-select id="DistributionChannelOption" formControlName="DistributionChannelOption" nzPlaceHolder="{{ 'Select Distribution Channel' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
-             <nz-option *ngFor="let d of DistributionChannelOption" [nzValue]="d.value" [nzLabel]="d.label | translate"></nz-option>
-           </nz-select>
-         </nz-form-control>
-       </nz-form-item>
-
-       <nz-form-item class="input_holder_full-width w33_33">
-         <nz-form-label [nzSm]="24" [nzXs]="24" nzFor="DivisionOption">{{ "Division" | translate }}</nz-form-label>
-         <nz-form-control [nzSm]="24" [nzXs]="24">
-           <nz-select id="DivisionOption" formControlName="DivisionOption" nzPlaceHolder="{{ 'Select Division' | translate }}" [nzDisabled]="hasRecord && !editPressed" style="width: 100%">
-             <nz-option *ngFor="let dv of DivisionOption" [nzValue]="dv.value" [nzLabel]="dv.label | translate"></nz-option>
-           </nz-select>
-         </nz-form-control>
-       </nz-form-item>
-     </div>
-
-     <!-- Submit Button for Data Entry -->
-     <div class="btnBox" *ngIf="(editPressed || (!hasRecord)) && userType==='1'">
-       <button class="Primary_fill" nz-button type="submit" [disabled]="requestForm.invalid || isLoading" [nzLoading]="isLoading">
-         {{ "SendRequest" | translate }}
-       </button>
-     </div>
-   </div>
- </form>
-
- <!-- Modals -->
- <!-- Approve Modal -->
- <nz-modal [(nzVisible)]="isApprovedVisible" [nzTitle]="'Request Approved' | translate"
-           [nzFooter]="null" (nzOnCancel)="closeAllModals()">
-   <ng-container *nzModalContent>
-     <img src="./assets/img/approvedIcon.svg" class="popupImg" alt="">
-     <p class="popupText">{{ "You have successfully approved this request. It will now appear in the Golden Records." | translate }}</p>
-     <div class="fullWidth">
-       <button class="Primary_fill submitBtn" nz-button [nzLoading]="isLoading" (click)="submitApprove()">{{ "Submit" | translate }}</button>
-     </div>
-   </ng-container>
- </nz-modal>
-
+      <!-- Submit Button for Data Entry -->
+      <div class="btnBox" *ngIf="(editPressed || (!hasRecord)) && userType==='1'">
+        <button class="Primary_fill" nz-button type="submit" [disabled]="isSubmitDisabled()" [nzLoading]="isLoading">
+          {{ "Submit Request" | translate }}
+        </button>
+      </div>
+    </div>
+  </form>
+ 
+  <!-- Modals -->
+  <!-- Approve Modal -->
+  <nz-modal [(nzVisible)]="isApprovedVisible" [nzTitle]="'Request Approved' | translate"
+            [nzFooter]="null" (nzOnCancel)="closeAllModals()">
+    <ng-container *nzModalContent>
+      <img src="./assets/img/approvedIcon.svg" class="popupImg" alt="">
+      <p class="popupText">{{ "You have successfully approved this request. It will now appear in the Golden Records." | translate }}</p>
+      <div class="fullWidth">
+        <button class="Primary_fill submitBtn" nz-button [nzLoading]="isLoading" (click)="submitApprove()">{{ "Submit" | translate }}</button>
+      </div>
+    </ng-container>
+  </nz-modal>
+ 
  <!-- Reject Modal -->
- <nz-modal [(nzVisible)]="isRejectedVisible" [nzTitle]="'Add a Rejection Note' | translate"
-           [nzFooter]="null" (nzOnCancel)="closeAllModals()">
-   <ng-container *nzModalContent>
-     <p class="popupRejectText">{{ "Enter Rejection Comments" | translate }}</p>
-     <textarea rows="4" nz-input [(ngModel)]="rejectComment"></textarea>
-     <div class="fullWidth btnsHolder">
-       <button class="cancelBtn" (click)="closeAllModals()">{{ "Cancel" | translate }}</button>
-       <button class="Primary_fill submitBtn" nz-button [disabled]="!rejectComment || isLoading" [nzLoading]="isLoading" (click)="submitReject()">{{ "Submit" | translate }}</button>
+ <div class="modal-overlay" *ngIf="isRejectedVisible" (click)="closeAllModals()">
+   <div class="modal-content reject-modal" (click)="stopPropagation($event)">
+     <div class="modal-header">
+       <h2>❌ Reject Request</h2>
+       <button class="close-btn" (click)="closeAllModals()">×</button>
      </div>
-   </ng-container>
- </nz-modal>
-
- <!-- Assign Modal -->
- <nz-modal [(nzVisible)]="isAssignVisible" [nzTitle]="'Assign to' | translate"
-           [nzFooter]="null" (nzOnCancel)="closeAllModals()">
-   <ng-container *nzModalContent>
-     <img src="./assets/img/assignIcon.svg" class="popupImg" alt="">
-     <p class="popupText">{{ "Select the department you want to assign this request to" | translate }}</p>
-     <nz-select [(ngModel)]="selectedDepartment" name="department" nzPlaceHolder="{{'Select Department'|translate}}" style="width: 100%">
-       <nz-option nzValue="sales" nzLabel="{{'Sales'|translate}}"></nz-option>
-       <nz-option nzValue="manufacturing" nzLabel="{{'Manufacturing'|translate}}"></nz-option>
-       <nz-option nzValue="supply" nzLabel="{{'Supply Chain'|translate}}"></nz-option>
-     </nz-select>
-     <div class="fullWidth margintop">
-       <button class="Primary_fill submitBtn" [disabled]="!selectedDepartment" (click)="assignToBtn()">{{ "Submit" | translate }}</button>
+     
+     <div class="modal-body">
+       <div class="warning-message">
+         <span>⚠️</span>
+         <p>This action will return the record to Data Entry for corrections.</p>
+       </div>
+       
+       <div class="form-group">
+         <label>Rejection Reason <span class="required">*</span></label>
+         <textarea 
+           [(ngModel)]="rejectComment"
+           placeholder="Please provide detailed reason for rejection and specific corrections needed..."
+           rows="6"
+           class="rejection-textarea">
+         </textarea>
+         <span class="char-count">{{ rejectComment.length }}/500</span>
+       </div>
      </div>
-   </ng-container>
- </nz-modal>
-
- <!-- Document Meta Modal - UPDATED to use docTypeOptions from component -->
- <nz-modal [(nzVisible)]="isMetaModalOpen" nzTitle="Document details" nzClassName="doc-meta-modal" [nzFooter]="null" (nzOnCancel)="isMetaModalOpen=false">
-   <ng-container *nzModalContent>
-     <form [formGroup]="metaForm" class="grid grid-cols-1 gap-3">
-       <nz-select formControlName="type" nzPlaceHolder="Select document type">
-         <nz-option *ngFor="let t of docTypeOptions" [nzValue]="t.value" [nzLabel]="t.label"></nz-option>
-       </nz-select>
-       <textarea nz-input rows="3" formControlName="description" placeholder="Short description (optional)"></textarea>
-     </form>
-     <div class="fullWidth btnsHolder" style="margin-top:12px">
-       <button nz-button (click)="isMetaModalOpen=false">{{ 'Cancel' | translate }}</button>
-       <button nz-button nzType="primary" [disabled]="!pendingFile || !metaForm.valid" (click)="confirmMeta()">
-         {{ 'Add' | translate }}
+     
+     <div class="modal-footer">
+       <button class="secondary-btn" (click)="closeAllModals()">
+         Cancel
+       </button>
+       <button class="primary-btn danger-btn" 
+               (click)="submitReject()"
+               [disabled]="!rejectComment || rejectComment.length < 10 || isLoading">
+         <span *ngIf="!isLoading">Confirm Rejection</span>
+         <span *ngIf="isLoading">Processing...</span>
        </button>
      </div>
-   </ng-container>
- </nz-modal>
+   </div>
+ </div>
+ 
+  <!-- Assign Modal -->
+  <nz-modal [(nzVisible)]="isAssignVisible" [nzTitle]="'Assign to' | translate"
+            [nzFooter]="null" (nzOnCancel)="closeAllModals()">
+    <ng-container *nzModalContent>
+      <img src="./assets/img/assignIcon.svg" class="popupImg" alt="">
+      <p class="popupText">{{ "Select the department you want to assign this request to" | translate }}</p>
+      <nz-select [(ngModel)]="selectedDepartment" name="department" nzPlaceHolder="{{'Select Department'|translate}}" style="width: 100%">
+        <nz-option nzValue="sales" nzLabel="{{'Sales'|translate}}"></nz-option>
+        <nz-option nzValue="manufacturing" nzLabel="{{'Manufacturing'|translate}}"></nz-option>
+        <nz-option nzValue="supply" nzLabel="{{'Supply Chain'|translate}}"></nz-option>
+      </nz-select>
+      <div class="fullWidth margintop">
+        <button class="Primary_fill submitBtn" [disabled]="!selectedDepartment" (click)="assignToBtn()">{{ "Submit" | translate }}</button>
+      </div>
+    </ng-container>
+  </nz-modal>
+ 
+  <!-- Document Meta Modal - UPDATED to use docTypeOptions from component -->
+  <nz-modal [(nzVisible)]="isMetaModalOpen" [nzTitle]="'Document details' | translate" nzClassName="doc-meta-modal" [nzFooter]="null" (nzOnCancel)="isMetaModalOpen=false">
+    <ng-container *nzModalContent>
+      <form [formGroup]="metaForm" class="grid grid-cols-1 gap-3">
+        <nz-select formControlName="type" nzPlaceHolder="Select document type">
+          <nz-option *ngFor="let t of docTypeOptions" [nzValue]="t.value" [nzLabel]="t.label"></nz-option>
+        </nz-select>
+        <textarea nz-input rows="3" formControlName="description" [placeholder]="'Short description (optional)' | translate"></textarea>
+      </form>
+      <div class="fullWidth btnsHolder" style="margin-top:12px">
+        <button nz-button (click)="isMetaModalOpen=false">{{ 'Cancel' | translate }}</button>
+        <button nz-button nzType="primary" [disabled]="!pendingFile || !metaForm.valid" (click)="confirmMeta()">
+          {{ 'Add' | translate }}
+        </button>
+      </div>
+    </ng-container>
+  </nz-modal>
+ 
+  <!-- Upload Document Modal -->
+  <div class="modal-overlay" *ngIf="showUploadModal" (click)="closeUploadModal()">
+    <div class="modal-content" (click)="stopPropagation($event)">
+      <h2>📤 {{ 'Upload Document' | translate }}</h2>
+      
+      <div class="form-group">
+        <label>{{ 'Select File' | translate }} <span class="required">*</span></label>
+        <input type="file" 
+               (change)="onFileSelected($event)" 
+               accept=".pdf,.doc,.docx,.jpg,.jpeg,.png,.webp,.xls,.xlsx,.txt"
+               #fileInput>
+        <small>{{ 'Supported: PDF, Word, JPG, PNG (Max 10MB)' | translate }}</small>
+      </div>
+      
+      <div class="form-group" *ngIf="newDocument.name">
+        <label>{{ 'File Name' | translate }}</label>
+        <input type="text" 
+               [value]="newDocument.name" 
+               (input)="updateDocumentName($event)"
+               [placeholder]="'Enter file name' | translate">
+      </div>
+      
+      <div class="form-group">
+        <label>{{ 'Document Type' | translate }}</label>
+        <select [value]="newDocument.type" (change)="updateDocumentType($event)">
+          <option value="">{{ 'Select Document Type' | translate }}</option>
+          <option *ngFor="let type of docTypeOptions" [value]="type.value">
+            {{ type.label | translate }}
+          </option>
+        </select>
+      </div>
+      
+      <div class="form-group">
+        <label>{{ 'Description' | translate }}</label>
+        <textarea [value]="newDocument.description" 
+                  (input)="updateDocumentDescription($event)"
+                  [placeholder]="'Add description (optional)' | translate"></textarea>
+      </div>
+      
+      <div class="form-actions">
+        <button type="button" class="secondary-btn" (click)="closeUploadModal()">{{ 'Cancel' | translate }}</button>
+        <button type="button" class="primary-btn" (click)="saveNewDocument()" 
+                [disabled]="!newDocument.file">
+          {{ 'Upload Document' | translate }}
+        </button>
+      </div>
+    </div>
+  </div>
+ 
+  <!-- Document Preview Modal - NEW -->
+  <div class="document-preview-modal" *ngIf="showDocumentPreviewModal" (click)="closeDocumentPreview()">
+    <div class="preview-container" (click)="stopPropagation($event)">
+      <!-- Header -->
+      <div class="preview-header">
+        <div class="preview-title">
+          <span nz-icon [nzType]="getDocIcon(selectedDocument?.mime)" nzTheme="outline"></span>
+          <span>{{ selectedDocument?.name }}</span>
+        </div>
+        <div class="preview-actions">
+          <button type="button" nz-button nzType="text" (click)="downloadDocument(selectedDocument)">
+            <span nz-icon nzType="download" nzTheme="outline"></span>
+            {{ 'Download' | translate }}
+          </button>
+          <button type="button" nz-button nzType="text" (click)="closeDocumentPreview()">
+            <span nz-icon nzType="close" nzTheme="outline"></span>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Content -->
+      <div class="preview-content">
+        <!-- Image Preview -->
+        <div *ngIf="selectedDocument?.mime?.includes('image')" class="image-preview">
+          <img [src]="getPreviewUrl(selectedDocument)" [alt]="selectedDocument?.name" />
+        </div>
+        
+        <!-- PDF Preview - FIXED CONDITION -->
+        <div *ngIf="isPdf(selectedDocument)" class="pdf-preview">
+          <iframe [src]="getSafePreviewUrl(selectedDocument)" 
+                  frameborder="0"
+                  width="100%"
+                  height="100%"
+                  style="min-height: 600px; border: 1px solid #e0e0e0;">
+          </iframe>
+        </div>
+        
+        <!-- Non-previewable file -->
+        <div *ngIf="!canPreview(selectedDocument)" class="no-preview">
+          <div class="no-preview-icon">
+            <span nz-icon [nzType]="getDocIcon(selectedDocument?.mime)" style="font-size: 64px;"></span>
+          </div>
+          <h3>{{ 'Preview not available' | translate }}</h3>
+          <p>{{ selectedDocument?.name }}</p>
+          <p class="file-info">
+            <nz-tag [nzColor]="getTypeColor(selectedDocument?.type)">{{ selectedDocument?.type }}</nz-tag>
+            <span>{{ formatFileSize(selectedDocument?.size) }}</span>
+          </p>
+          <button type="button" nz-button nzType="primary" (click)="downloadDocument(selectedDocument)">
+            <span nz-icon nzType="download" nzTheme="outline"></span>
+            {{ 'Download to view' | translate }}
+          </button>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="preview-footer">
+        <div class="document-info">
+          <span><strong>{{ 'Type:' | translate }}</strong> {{ selectedDocument?.type }}</span>
+          <span><strong>{{ 'Size:' | translate }}</strong> {{ formatFileSize(selectedDocument?.size) }}</span>
+          <span><strong>{{ 'Uploaded:' | translate }}</strong> {{ selectedDocument?.uploadedAt | date:'short' }}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Modern Cards Layout for Reviewer -->
+  <div class="review-cards-container" *ngIf="(userType === '2' || userType === '3') && hasRecord && !isLoading">
+    
+    <!-- Company Information Card -->
+    <div class="info-card">
+      <div class="card-header">
+        <h3>🏢 Company Information</h3>
+      </div>
+      <div class="card-content">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Company Name (English)</label>
+            <div class="info-value">{{ requestForm.get('firstName')?.value || '-' }}</div>
+          </div>
+          <div class="info-item">
+            <label>Company Name (Arabic)</label>
+            <div class="info-value">{{ requestForm.get('firstNameAR')?.value || '-' }}</div>
+          </div>
+          <div class="info-item">
+            <label>Tax Number</label>
+            <div class="info-value highlight">{{ requestForm.get('tax')?.value || '-' }}</div>
+          </div>
+          <div class="info-item">
+            <label>Customer Type</label>
+            <div class="info-value">{{ requestForm.get('CustomerType')?.value || '-' }}</div>
+          </div>
+          <div class="info-item">
+            <label>Company Owner</label>
+            <div class="info-value">{{ requestForm.get('CompanyOwnerFullName')?.value || '-' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Address Information Card -->
+    <div class="info-card">
+      <div class="card-header">
+        <h3>📍 Address Information</h3>
+      </div>
+      <div class="card-content">
+        <div class="info-grid">
+          <div class="info-item">
+            <label>Building Number</label>
+            <div class="info-value">{{ requestForm.get('buildingNumber')?.value || '-' }}</div>
+          </div>
+          <div class="info-item">
+            <label>Street</label>
+            <div class="info-value">{{ requestForm.get('street')?.value || '-' }}</div>
+          </div>
+          <div class="info-item">
+            <label>Country</label>
+            <div class="info-value">{{ requestForm.get('country')?.value || '-' }}</div>
+          </div>
+          <div class="info-item">
+            <label>City</label>
+            <div class="info-value">{{ requestForm.get('city')?.value || '-' }}</div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Contacts Card -->
+    <div class="info-card" *ngIf="contactsFA.length > 0">
+      <div class="card-header">
+        <h3>👥 Contacts ({{ contactsFA.length }})</h3>
+      </div>
+      <div class="card-content">
+        <div class="contacts-list">
+          <div *ngFor="let contact of contactsFA.controls; let i = index" class="contact-item">
+            <div class="contact-header">
+              <span class="contact-number">Contact #{{ i + 1 }}</span>
+            </div>
+            <div class="contact-grid">
+              <div class="contact-info">
+                <label>Name:</label>
+                <span>{{ contact.get('name')?.value || '-' }}</span>
+              </div>
+              <div class="contact-info">
+                <label>Job Title:</label>
+                <span>{{ contact.get('jobTitle')?.value || '-' }}</span>
+              </div>
+              <div class="contact-info">
+                <label>Email:</label>
+                <span>{{ contact.get('email')?.value || '-' }}</span>
+              </div>
+              <div class="contact-info">
+                <label>Mobile:</label>
+                <span>{{ contact.get('mobile')?.value || '-' }}</span>
+              </div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Documents Card - Professional Design -->
+    <div class="info-card documents-showcase" *ngIf="documentsFA.length > 0">
+      <div class="card-header gradient-header">
+        <div class="header-content">
+          <h3>
+            <span class="header-icon">📄</span>
+            Documents
+          </h3>
+          <span class="doc-count">{{ documentsFA.length }}</span>
+        </div>
+      </div>
+      
+      <div class="card-content">
+        <div class="documents-professional-grid">
+          <div *ngFor="let doc of documentsFA.controls; let i = index; trackBy: trackByIndex" class="pro-document-card">
+            <!-- File Type Indicator -->
+            <div class="file-type-indicator" [attr.data-type]="isPdf(doc.value) ? 'pdf' : isWord(doc.value) ? 'word' : 'other'">
+              <div class="file-icon">
+                <i *ngIf="isPdf(doc.value)" class="pdf-icon">PDF</i>
+                <i *ngIf="isWord(doc.value)" class="word-icon">DOC</i>
+                <i *ngIf="!isPdf(doc.value) && !isWord(doc.value)" class="file-icon-generic">📎</i>
+              </div>
+              <div class="file-extension">
+                {{ getFileExtension(doc.value) }}
+              </div>
+            </div>
+            
+            <!-- Document Details -->
+            <div class="document-details">
+              <h4 class="doc-title" [title]="doc.get('name')?.value">
+                {{ doc.get('name')?.value }}
+              </h4>
+              
+              <div class="doc-metadata">
+                <span class="doc-type-badge" [attr.data-type]="doc.get('type')?.value">
+                  {{ doc.get('type')?.value }}
+                </span>
+              </div>
+            </div>
+            
+            <!-- Action Button -->
+            <div class="document-actions-pro">
+              <button class="action-btn preview-btn" 
+                      (click)="viewDocument(doc)"
+                      [title]="'Preview document'">
+                <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor">
+                  <path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"></path>
+                  <circle cx="12" cy="12" r="3"></circle>
+                </svg>
+                <span>View</span>
+              </button>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Action Buttons for Reviewer -->
+    <div class="review-actions" *ngIf="userType === '2' && canApproveReject">
+      <button nz-button nzSize="large" nzDanger (click)="showRejectedModal()">
+        <span nz-icon nzType="close-circle"></span>
+        Reject Request
+      </button>
+      <button nz-button nzSize="large" nzType="primary" (click)="showApproveModal()">
+        <span nz-icon nzType="check-circle"></span>
+        Approve Request
+      </button>
+    </div>
+
+    <!-- Action Buttons for Compliance -->
+    <div class="review-actions" *ngIf="(userType === '3' || canComplianceAction) && hasRecord">
+      <button nz-button nzSize="large" nzDanger (click)="showBlockModal()">
+        <span nz-icon nzType="stop"></span>
+        Block as Inactive
+      </button>
+      <button nz-button nzSize="large" nzType="primary" (click)="approveCompliance()">
+        <span nz-icon nzType="check-circle"></span>
+        Approve as Active
+      </button>
+    </div>
+  </div>
+
+  <!-- Duplicate Record Details Modal -->
+  <nz-modal 
+    [(nzVisible)]="showDuplicateModal" 
+    nzTitle="🔍 Duplicate Customer Details - TEST MODAL" 
+    nzWidth="600px"
+    (nzOnCancel)="closeDuplicateModal()"
+    (nzOnOk)="closeDuplicateModal()">
+    <!-- Debug info in modal -->
+    <div style="background: yellow; padding: 10px; margin: 10px 0; border: 2px solid red;">
+      <strong>MODAL DEBUG INFO:</strong><br>
+      showDuplicateModal: {{ showDuplicateModal }}<br>
+      duplicateRecord: {{ duplicateRecord | json }}<br>
+      duplicateRecord exists: {{ !!duplicateRecord }}<br>
+      duplicateRecord.name: {{ duplicateRecord?.name }}
+    </div>
+    
+    <div *ngIf="duplicateRecord" class="duplicate-details">
+      <div class="detail-section">
+        <h4>Customer Information</h4>
+        <div class="detail-grid">
+          <div class="detail-item">
+            <label>Company Name:</label>
+            <span>{{ duplicateRecord.name }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Tax Number:</label>
+            <span>{{ duplicateRecord.tax }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Customer Type:</label>
+            <span>{{ duplicateRecord.customerType }}</span>
+          </div>
+          <div class="detail-item">
+            <label>Country:</label>
+            <span>{{ duplicateRecord.country }}</span>
+          </div>
+          <div class="detail-item">
+            <label>City:</label>
+            <span>{{ duplicateRecord.city }}</span>
+          </div>
+        </div>
+      </div>
+      
+      <div class="duplicate-warning-text">
+        <nz-alert nzType="warning" 
+                  nzMessage="🚨 This customer already exists in golden records" 
+                  nzDescription="⚠️ TEST MODAL: You cannot create a new request with the same tax number and customer type. Please use different information or contact the administrator if you need to update the existing record. This is a test message to verify modal caching.">
+        </nz-alert>
+      </div>
+    </div>
+  </nz-modal>
+
 </div>

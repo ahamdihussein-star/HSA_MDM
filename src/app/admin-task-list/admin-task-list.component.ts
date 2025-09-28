@@ -53,8 +53,14 @@ export class AdminTaskListComponent implements OnInit {
   
   // ==== data / state ====
   taskList: TaskRow[] = [];
+  filteredTaskList: TaskRow[] = [];
   loading = false;
   error: string | null = null;
+
+  // Search and filter properties
+  searchTerm = '';
+  filterByRecordType = '';
+  uniqueRecordTypes: string[] = [];
 
   // Current user info (from API, not localStorage)
   currentUser: any = null;
@@ -158,6 +164,8 @@ export class AdminTaskListComponent implements OnInit {
         }));
         
       this.refreshCheckedStatus();
+      this.generateUniqueRecordTypes();
+      this.applyFilters();
       console.log('[AdminTaskList] Loaded tasks:', this.taskList.length);
       console.log('[AdminTaskList] Master records:', 
                  this.taskList.filter(t => t.isMaster === 1).length);
@@ -415,8 +423,16 @@ export class AdminTaskListComponent implements OnInit {
 
   // ====== UPDATED navigation logic ======
   viewOrEditRequest(row: TaskRow, isEdit: boolean): void {
+    console.log('[AdminTaskList] viewOrEditRequest called with row:', row);
     const id = this.getRowKey(row);
-    if (!id) return;
+    console.log('[AdminTaskList] Extracted ID:', id);
+    
+    if (!id) {
+      console.error('[AdminTaskList] No ID found in row!');
+      this.message.error('Cannot open request: No ID found');
+      return;
+    }
+    
     
     const requestType = row.requestType;
     const originalType = row.originalRequestType || row.requestType;
@@ -436,6 +452,7 @@ export class AdminTaskListComponent implements OnInit {
       case 'rejected':
         // Navigate to New Request page with approve/reject buttons for reviewer
         console.log('[AdminTaskList] Navigating to new-request for review:', requestType);
+        console.log('[AdminTaskList] Navigation URL will be: /dashboard/new-request/' + id);
         this.router.navigate(['/dashboard/new-request', id], {
           queryParams: { 
             mode: 'review',
@@ -1019,6 +1036,64 @@ export class AdminTaskListComponent implements OnInit {
     }
   }
 
+  // ====== search and filter methods ======
+  onSearchChange(value: string): void {
+    this.searchTerm = value;
+    this.applyFilters();
+  }
+
+  onFilterChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.filterByRecordType = target.value;
+    this.applyFilters();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.filterByRecordType = '';
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.taskList];
+
+    // Apply search filter
+    if (this.searchTerm.trim()) {
+      const query = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(row => {
+        const searchText = [
+          row.firstName || '',
+          row.firstNameAr || '',
+          row.tax || '',
+          row.requestId || row.id || ''
+        ].join(' ').toLowerCase();
+        return searchText.includes(query);
+      });
+    }
+
+    // Apply record type filter
+    if (this.filterByRecordType) {
+      filtered = filtered.filter(row => {
+        const recordType = this.getOriginBadge(row);
+        return recordType === this.filterByRecordType;
+      });
+    }
+
+    this.filteredTaskList = filtered;
+  }
+
+  generateUniqueRecordTypes(): void {
+    const types = new Set<string>();
+    this.taskList.forEach(row => {
+      const recordType = this.getOriginBadge(row);
+      // Exclude Golden Record from filter options
+      if (recordType !== '⭐ Golden') {
+        types.add(recordType);
+      }
+    });
+    this.uniqueRecordTypes = Array.from(types).sort();
+  }
+
   // ====== utility ======
   private cryptoRandomId(): string {
     try {
@@ -1031,4 +1106,5 @@ export class AdminTaskListComponent implements OnInit {
     } catch {}
     return 'm' + Math.random().toString(36).slice(2) + Date.now().toString(36);
   }
+
 }

@@ -7,7 +7,7 @@
 <!-- Loading State -->
 <div *ngIf="loading" class="loading-container">
   <nz-spin nzSize="large"></nz-spin>
-  <p>Loading tasks...</p>
+  <p>{{ 'Loading tasks...' | translate }}</p>
 </div>
 
 <!-- Error State -->
@@ -22,50 +22,70 @@
       <!-- Clean header - only search and filter -->
       <div class="seachInputHolder">
         <img src="./assets/img/search.svg" alt="" />
-        <input type="text" [placeholder]="'Search' | translate" />
+        <input 
+          type="text" 
+          [placeholder]="'Search by name, tax, email...' | translate"
+          [ngModel]="searchTerm"
+          (ngModelChange)="onSearchChange($event)" />
       </div>
-      <img src="./assets/img/filter.svg" alt="" />
+      <select
+        [(ngModel)]="filterByRecordType"
+        (change)="onFilterChange($event)"
+        class="filter-select">
+        <option value="">{{ 'All Record Types' | translate }}</option>
+        <option *ngFor="let type of uniqueRecordTypes" [value]="type">{{ type }}</option>
+      </select>
+      <button (click)="clearFilters()" class="btn btn-primary">{{ 'Clear Filters' | translate }}</button>
     </div>
   </div>
 
-  <!-- Empty State -->
-  <nz-empty *ngIf="taskList.length === 0" 
-            nzNotFoundImage="simple"
-            [nzNotFoundContent]="'No pending requests found' | translate">
-  </nz-empty>
+  <!-- Statistics Summary - Always visible -->
+  <div class="statistics-summary">
+    <nz-statistic 
+      [nzValue]="newRequestsCount"
+      [nzTitle]="'New Requests' | translate"
+      [nzValueStyle]="{ color: '#faad14' }">
+      <span nz-icon nzType="plus" slot="prefix"></span>
+    </nz-statistic>
+    
+    <nz-statistic 
+      [nzValue]="quarantineCount"
+      [nzTitle]="'Quarantine' | translate"
+      [nzValueStyle]="{ color: '#fa8c16' }">
+      <span nz-icon nzType="alert" slot="prefix"></span>
+    </nz-statistic>
+    
+    <nz-statistic 
+      [nzValue]="duplicatesCount"
+      [nzTitle]="'Duplicates' | translate"
+      [nzValueStyle]="{ color: '#1890ff' }">
+      <span nz-icon nzType="copy" slot="prefix"></span>
+    </nz-statistic>
+    
+    <nz-statistic 
+      [nzValue]="totalTasksCount"
+      [nzTitle]="'Total Tasks' | translate"
+      [nzValueStyle]="{ color: '#52c41a' }">
+    </nz-statistic>
+  </div>
+
+  <!-- Empty State - Removed to show table always -->
 
   <!-- Table -->
-  <nz-table #basicTable [nzPageSize]="7" [nzData]="taskList" *ngIf="taskList.length > 0" [nzScroll]="{ x: '1300px' }">
+  <nz-table #basicTable [nzPageSize]="7" [nzData]="filteredTaskList" [nzScroll]="{ x: '1300px' }">
     <thead>
       <tr>
-        <th style="min-width:120px">{{ 'RequestID' | translate }}</th>
-        <th style="min-width:120px">{{ 'Origin' | translate }}</th>
-        <th style="min-width:140px">{{ 'Type' | translate }}</th>
-        <th style="min-width:200px">{{ 'Name' | translate }}</th>
-        <th style="min-width:120px">{{ 'Source' | translate }}</th>
+        <th style="min-width:120px">{{ 'Record Type' | translate }}</th>
+        <th style="min-width:200px">{{ 'Company Name' | translate }}</th>
+        <th style="min-width:140px">{{ 'Company Type' | translate }}</th>
         <th style="min-width:100px">{{ 'Date' | translate }}</th>
-        <th style="min-width:140px">{{ 'Status' | translate }}</th>
         <th style="min-width:120px">{{ 'Action' | translate }}</th>
       </tr>
     </thead>
 
     <tbody>
       <tr *ngFor="let data of basicTable.data; let i = index">
-        <!-- Request ID with request type badge -->
-        <td>
-          <div class="request-id-container">
-            <span>{{ data.requestId || data.id }}</span>
-            <!-- Request Type badge -->
-            <nz-tag *ngIf="data.requestType" 
-                    [nzColor]="getRequestTypeColor(data)" 
-                    class="request-type-badge">
-              <span nz-icon [nzType]="getStatusIcon(data.displayStatus || data.status || 'Unknown')"></span>
-              {{ getRequestTypeLabel(data) }}
-            </nz-tag>
-          </div>
-        </td>
-
-        <!-- Origin Column - NEW -->
+        <!-- Record Type Column -->
         <td>
           <div style="display:flex; flex-direction:column; gap:4px;">
             <nz-tag [nzColor]="getOriginColor(data)">
@@ -74,19 +94,6 @@
             <small style="opacity:.7; font-size:11px">
               {{ getRecordOrigin(data) }}
             </small>
-          </div>
-        </td>
-
-        <!-- Type Column -->
-        <td>
-          <div class="type-container">
-            <span>{{ data['CustomerType'] || 'Customer Request' }}</span>
-            <!-- Confidence score for duplicates -->
-            <nz-tag *ngIf="isDuplicateRecord(data) && data.confidence" 
-                    [nzColor]="getConfidenceColor(data.confidence)"
-                    class="confidence-badge">
-              {{ formatConfidence(data.confidence) }}
-            </nz-tag>
           </div>
         </td>
 
@@ -104,33 +111,21 @@
           </div>
         </td>
 
-        <!-- Source System -->
+        <!-- Company Type Column -->
         <td>
-          <nz-tag [nzColor]="getSourceSystemColor(data.sourceSystem || 'Manual')"
-                  class="source-badge">
-            {{ data.sourceSystem || 'Manual' }}
-          </nz-tag>
+          <div class="type-container">
+            <span>{{ data['CustomerType'] || 'Customer Request' }}</span>
+            <!-- Confidence score for duplicates -->
+            <nz-tag *ngIf="isDuplicateRecord(data) && data.confidence" 
+                    [nzColor]="getConfidenceColor(data.confidence)"
+                    class="confidence-badge">
+              {{ formatConfidence(data.confidence) }}
+            </nz-tag>
+          </div>
         </td>
 
         <!-- Date -->
         <td>{{ data.createdAt | date:'MMM d, y' }}</td>
-
-        <!-- Status - Using displayStatus based on requestType -->
-        <td>
-          <nz-tag [nzColor]="getStatusColor(data.displayStatus || data.status || 'Unknown')"
-                  class="status-badge">
-            <span nz-icon [nzType]="getStatusIcon(data.displayStatus || data.status || 'Unknown')"></span>
-            {{ (data.displayStatus || data.status || 'Unknown') | translate }}
-          </nz-tag>
-          <!-- Show if originally from quarantine -->
-          <div *ngIf="data.originalRequestType === 'quarantine' && data.status === 'Pending'" 
-               style="margin-top:4px">
-            <small style="color:#ff7a45; font-size:11px">
-              <i nz-icon nzType="warning" style="margin-right:2px"></i>
-              From quarantine
-            </small>
-          </div>
-        </td>
 
         <!-- Actions - Unified "View Details" only -->
         <td>
@@ -150,47 +145,5 @@
     </tbody>
   </nz-table>
 
-  <!-- Enhanced Statistics Summary - Show all 5 request types -->
-  <div *ngIf="taskList.length > 0" class="statistics-summary">
-    <nz-statistic 
-      [nzValue]="newRequestsCount"
-      [nzTitle]="'New Requests' | translate"
-      [nzValueStyle]="{ color: '#faad14' }">
-      <span nz-icon nzType="plus" slot="prefix"></span>
-    </nz-statistic>
-    
-    <nz-statistic 
-      [nzValue]="quarantineCount"
-      [nzTitle]="'Quarantine Updated' | translate"
-      [nzValueStyle]="{ color: '#fa8c16' }">
-      <span nz-icon nzType="alert" slot="prefix"></span>
-    </nz-statistic>
-    
-    <nz-statistic 
-      [nzValue]="rejectedCount"
-      [nzTitle]="'Rejected & Resubmitted' | translate"
-      [nzValueStyle]="{ color: '#f5222d' }">
-      <span nz-icon nzType="reload" slot="prefix"></span>
-    </nz-statistic>
-    
-    <nz-statistic 
-      [nzValue]="goldenCount"
-      [nzTitle]="'Golden Record Updates' | translate"
-      [nzValueStyle]="{ color: '#722ed1' }">
-      <span nz-icon nzType="star" slot="prefix"></span>
-    </nz-statistic>
-    
-    <nz-statistic 
-      [nzValue]="duplicatesCount"
-      [nzTitle]="'Duplicates' | translate"
-      [nzValueStyle]="{ color: '#1890ff' }">
-      <span nz-icon nzType="copy" slot="prefix"></span>
-    </nz-statistic>
-    
-    <nz-statistic 
-      [nzValue]="totalTasksCount"
-      [nzTitle]="'Total Tasks' | translate"
-      [nzValueStyle]="{ color: '#52c41a' }">
-    </nz-statistic>
-  </div>
+
 </div>

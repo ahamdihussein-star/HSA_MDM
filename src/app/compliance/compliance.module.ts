@@ -10,6 +10,7 @@ import { NzModalModule } from 'ng-zorro-antd/modal';
 import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzStatisticModule } from 'ng-zorro-antd/statistic';
 
 import { ComplianceRoutingModule } from './compliance-routing.module';
 import { ComplianceTaskListComponent } from './compliance-task-list/compliance-task-list.component';
@@ -31,6 +32,7 @@ import { ApiRepo } from '../Core/api.repo';
     NzInputModule,     // للـ input fields في modals
     NzTagModule,      // للـ tags
     NzIconModule,     // للـ icons
+    NzStatisticModule, // للـ statistics
     ComplianceRoutingModule
   ],
   providers: [

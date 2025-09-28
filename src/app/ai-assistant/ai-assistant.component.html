@@ -33,6 +33,37 @@
           {{ m.text }}
         </div>
       </div>
+      
+      <!-- Dropdown Options - منفصل تحت السؤال -->
+      <div class="dropdown-container" *ngIf="m.from==='bot' && m.isDropdown && m.dropdownOptions && isDropdownOpen">
+        <select 
+          class="dropdown-select"
+          (change)="onDropdownChange($event, m)"
+          [value]="selectedDropdownValue"
+        >
+          <option value="" disabled>اختر من القائمة...</option>
+          <option 
+            *ngFor="let option of m.dropdownOptions" 
+            [value]="option.value"
+          >
+            {{ option.label }}
+          </option>
+        </select>
+      </div>
+
+      <!-- Button Options - منفصل تحت السؤال -->
+      <div class="buttons-container" *ngIf="m.from==='bot' && m.isButtons && m.buttons">
+        <button 
+          *ngFor="let button of m.buttons" 
+          class="action-button"
+          [class.yes-button]="button.type === 'yes'"
+          [class.no-button]="button.type === 'no'"
+          [class.skip-button]="button.type === 'skip'"
+          (click)="onButtonClick(button.value, button.type)">
+          {{ button.text }}
+        </button>
+      </div>
+
 
       <!-- فقاعة مستخدم -->
       <div class="chat-message user-reverse" *ngIf="m.from==='user'">
@@ -43,24 +74,48 @@
 
   <!-- قدم الشات -->
   <div class="chat-footer">
-    <input
-      [(ngModel)]="currentInput"
-      (keydown.enter)="send()"
-      [placeholder]="'WriteSomething' | translate"
-    />
-    <button (click)="send()">
-      <img src="assets/img/send.svg" alt="send" />
-    </button>
-    <!-- زر 📂 احتياطي يُظهر أثناء انتظار ملف -->
-    <button
-      *ngIf="awaitingFile"
-      class="upload-btn"
-      title="Upload"
-      (click)="fileInput.click()"
-    >📂</button>
+    <!-- File Upload Area -->
+    <div class="file-upload-area" 
+         *ngIf="awaitingFile"
+         (dragover)="onDragOver($event)"
+         (dragleave)="onDragLeave($event)"
+         (drop)="onDrop($event)"
+         [class.drag-over]="isDragOver">
+      <div class="upload-content">
+        <div class="upload-icon">📁</div>
+        <p class="upload-text">{{ t('UploadPrompt') }}</p>
+        <p class="upload-hint">{{ t('UploadHint') }}</p>
+        <div class="upload-buttons">
+          <button class="upload-btn" (click)="fileInput.click()">
+            {{ t('SelectFile') }}
+          </button>
+          <button class="cancel-upload-btn" (click)="cancelUpload()">
+            {{ t('Cancel') }}
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Regular Chat Input -->
+    <div class="text-input-area" *ngIf="!awaitingFile">
+      <input
+        [(ngModel)]="currentInput"
+        (keydown.enter)="send()"
+        [placeholder]="'WriteSomething' | translate"
+        [disabled]="isAiProcessing"
+      />
+      <button type="button" (click)="openFilePicker()" [disabled]="isAiProcessing" class="file-picker-btn" title="Upload File">
+        📎
+      </button>
+      <button (click)="send()" [disabled]="isAiProcessing">
+        <img *ngIf="!isAiProcessing" src="assets/img/send.svg" alt="send" />
+        <span *ngIf="isAiProcessing" class="loading-spinner">⏳</span>
+      </button>
+    </div>
   </div>
 </div>
 
 <!-- input خفي لاختيار الملفات -->
 <input #fileInput type="file" style="display:none"
-       (change)="onFileSelected($event)" />
+       (change)="onFileSelected($event)"
+       [accept]="getFileAcceptTypes()" />

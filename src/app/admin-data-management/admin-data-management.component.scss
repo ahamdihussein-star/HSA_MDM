@@ -1,34 +1,273 @@
 .data-management-page {
-  padding: 20px;
-  background: #f0f2f5;
+  padding: 0;
+  background: linear-gradient(135deg, #f0f4f8 0%, #e8f2f7 100%);
   min-height: calc(100vh - 64px);
 
+  // Professional Header
   .page-header {
-    background: white;
-    padding: 20px;
-    margin: -20px -20px 20px;
-    border-bottom: 1px solid #e8e8e8;
+    background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+    padding: 32px;
+    margin: 0;
+    border-bottom: 2px solid #e2e8f0;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
 
     .header-content {
       display: flex;
       align-items: center;
       justify-content: space-between;
-      gap: 20px;
+      max-width: 1400px;
+      margin: 0 auto;
+      gap: 30px;
 
-      h1 {
-        margin: 0;
-        font-size: 24px;
-        font-weight: 500;
-        display: flex;
-        align-items: center;
-        gap: 10px;
-        flex: 1;
+      .header-left {
+        .back-btn {
+          display: flex;
+          align-items: center;
+          gap: 8px;
+          padding: 10px 16px;
+          border-radius: 8px;
+          transition: all 0.3s ease;
+          
+          &:hover {
+            background: #f1f5f9;
+            transform: translateX(-2px);
+          }
+        }
       }
 
-      .back-btn {
+      .header-center {
+        flex: 1;
+        text-align: center;
+
+        .title-section {
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          gap: 20px;
+
+          .title-icon {
+            width: 60px;
+            height: 60px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            color: white;
+            font-size: 28px;
+            box-shadow: 0 8px 24px rgba(102, 126, 234, 0.3);
+          }
+
+          .title-text {
+            h1 {
+              margin: 0;
+              font-size: 32px;
+              font-weight: 700;
+              color: #1a202c;
+              letter-spacing: -0.5px;
+            }
+
+            p {
+              margin: 4px 0 0 0;
+              color: #64748b;
+              font-size: 16px;
+              font-weight: 400;
+            }
+          }
+        }
+      }
+
+      .header-right {
+        .refresh-btn {
+          padding: 12px 20px;
+          height: auto;
+          border-radius: 10px;
+          font-weight: 600;
+          box-shadow: 0 4px 12px rgba(24, 144, 255, 0.2);
+          transition: all 0.3s ease;
+
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 16px rgba(24, 144, 255, 0.3);
+          }
+        }
+      }
+    }
+  }
+
+  // Professional Stats Dashboard
+  .stats-dashboard {
+    padding: 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+
+    .dashboard-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 32px;
+      padding-bottom: 20px;
+      border-bottom: 2px solid #e2e8f0;
+
+      h2 {
+        margin: 0;
+        font-size: 24px;
+        font-weight: 700;
+        color: #1a202c;
         display: flex;
         align-items: center;
-        gap: 5px;
+        gap: 12px;
+
+        .dashboard-icon {
+          font-size: 28px;
+        }
+      }
+
+      .last-updated {
+        color: #64748b;
+        font-size: 14px;
+        font-weight: 500;
+        padding: 8px 16px;
+        background: #f1f5f9;
+        border-radius: 20px;
+      }
+    }
+
+    .stats-grid {
+      .stat-card {
+        background: white;
+        border-radius: 16px;
+        padding: 24px;
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.05);
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        border: 1px solid #e2e8f0;
+        position: relative;
+        overflow: hidden;
+
+        &::before {
+          content: '';
+          position: absolute;
+          top: 0;
+          left: 0;
+          right: 0;
+          height: 4px;
+          transition: all 0.3s ease;
+        }
+
+        &:hover {
+          transform: translateY(-4px);
+          box-shadow: 0 12px 28px rgba(0, 0, 0, 0.12);
+        }
+
+        &.duplicate-card::before { background: linear-gradient(90deg, #3b82f6, #1e40af); }
+        &.quarantine-card::before { background: linear-gradient(90deg, #f59e0b, #d97706); }
+        &.golden-card::before { background: linear-gradient(90deg, #10b981, #059669); }
+        &.requests-card::before { background: linear-gradient(90deg, #8b5cf6, #7c3aed); }
+        &.pending-card::before { background: linear-gradient(90deg, #ef4444, #dc2626); }
+
+        .stat-header {
+          display: flex;
+          justify-content: space-between;
+          align-items: center;
+          margin-bottom: 20px;
+
+          .stat-icon {
+            width: 48px;
+            height: 48px;
+            border-radius: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            color: white;
+
+            &.duplicate-icon { background: linear-gradient(135deg, #3b82f6, #1e40af); }
+            &.quarantine-icon { background: linear-gradient(135deg, #f59e0b, #d97706); }
+            &.golden-icon { background: linear-gradient(135deg, #10b981, #059669); }
+            &.requests-icon { background: linear-gradient(135deg, #8b5cf6, #7c3aed); }
+            &.pending-icon { background: linear-gradient(135deg, #ef4444, #dc2626); }
+          }
+
+          .stat-actions {
+            button {
+              opacity: 0.6;
+              transition: all 0.3s ease;
+
+              &:hover {
+                opacity: 1;
+                transform: scale(1.1);
+              }
+            }
+          }
+
+          .stat-badge {
+            background: #f1f5f9;
+            color: #475569;
+            padding: 4px 12px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 600;
+          }
+        }
+
+        .stat-content {
+          text-align: center;
+          margin-bottom: 20px;
+
+          .stat-number {
+            font-size: 36px;
+            font-weight: 800;
+            color: #1a202c;
+            margin-bottom: 8px;
+            letter-spacing: -1px;
+          }
+
+          .stat-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #475569;
+            margin-bottom: 4px;
+          }
+
+          .stat-description {
+            font-size: 13px;
+            color: #64748b;
+            line-height: 1.4;
+          }
+        }
+
+        .stat-footer {
+          text-align: center;
+
+          .stat-status {
+            font-size: 12px;
+            font-weight: 600;
+            padding: 6px 12px;
+            border-radius: 16px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+
+            &.status-empty {
+              background: #f1f5f9;
+              color: #64748b;
+            }
+
+            &.status-low {
+              background: #dcfce7;
+              color: #166534;
+            }
+
+            &.status-medium {
+              background: #fef3c7;
+              color: #92400e;
+            }
+
+            &.status-high {
+              background: #fee2e2;
+              color: #991b1b;
+            }
+          }
+        }
       }
     }
   }
@@ -53,106 +292,326 @@
     }
   }
 
-  // أضف هذا القسم الجديد
+  // Professional Generate Data Section
   .generate-data-section {
-    margin-bottom: 30px;
+    padding: 0 32px;
+    max-width: 1400px;
+    margin: 0 auto 32px auto;
 
     nz-card {
-      background: white;
-      border: 1px solid #d9d9d9;
+      background: linear-gradient(135deg, #ffffff 0%, #f8fafc 100%);
+      border: 2px solid #e2e8f0;
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(0, 0, 0, 0.08);
+      overflow: hidden;
 
       h2 {
-        color: #1890ff;
-        margin: 0 0 20px;
-        font-size: 20px;
+        color: #1a202c;
+        margin: 0 0 24px;
+        font-size: 24px;
+        font-weight: 700;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+
+        span[nz-icon] {
+          color: #3b82f6;
+          font-size: 28px;
+        }
       }
 
-      button {
-        min-width: 180px;
-        
-        &:hover {
-          transform: translateY(-1px);
-          box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+      nz-alert {
+        border-radius: 12px;
+        border: 1px solid #bfdbfe;
+        background: #eff6ff;
+      }
+
+      div[style*="display: flex"] {
+        display: flex;
+        gap: 20px;
+        flex-wrap: wrap;
+        justify-content: center;
+
+        button {
+          min-width: 220px;
+          height: 48px;
+          font-size: 16px;
+          font-weight: 600;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(59, 130, 246, 0.2);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+          
+          &:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(59, 130, 246, 0.3);
+          }
+
+          span[nz-icon] {
+            font-size: 18px;
+          }
         }
       }
 
       p {
-        margin-top: 15px;
-        color: #8c8c8c;
-        font-size: 13px;
+        margin-top: 20px;
+        color: #64748b;
+        font-size: 14px;
+        text-align: center;
+        font-weight: 500;
         
         span[nz-icon] {
-          margin-right: 5px;
+          margin-right: 8px;
+          color: #3b82f6;
         }
       }
     }
   }
 
+  // Professional Danger Zone
   .danger-zone {
+    padding: 0 32px 32px 32px;
+    max-width: 1400px;
+    margin: 0 auto;
+
     nz-card {
-      border: 2px solid #ffccc7;
-      background: #fff2f0;
+      border: 3px solid #fecaca;
+      background: linear-gradient(135deg, #fef2f2 0%, #fef7f7 100%);
+      border-radius: 16px;
+      box-shadow: 0 8px 24px rgba(239, 68, 68, 0.15);
+      position: relative;
+      overflow: hidden;
+
+      &::before {
+        content: '';
+        position: absolute;
+        top: 0;
+        left: 0;
+        right: 0;
+        height: 6px;
+        background: linear-gradient(90deg, #ef4444, #dc2626);
+      }
 
       h2 {
-        color: #ff4d4f;
-        margin: 0 0 20px;
-        font-size: 20px;
+        color: #dc2626;
+        margin: 0 0 24px;
+        font-size: 24px;
+        font-weight: 700;
         display: flex;
         align-items: center;
-        gap: 10px;
+        gap: 12px;
+
+        span[nz-icon] {
+          font-size: 28px;
+        }
+      }
+
+      nz-alert {
+        border-radius: 12px;
+        border: 1px solid #fecaca;
+        background: #fee2e2;
       }
 
       .danger-actions {
         text-align: center;
-        padding: 20px 0;
+        padding: 24px 0;
 
         button {
-          min-width: 200px;
+          min-width: 240px;
+          height: 52px;
+          font-size: 18px;
+          font-weight: 700;
+          border-radius: 12px;
+          box-shadow: 0 4px 12px rgba(239, 68, 68, 0.3);
+          transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+
+          &:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 8px 20px rgba(239, 68, 68, 0.4);
+          }
+
+          span[nz-icon] {
+            font-size: 20px;
+          }
         }
 
         .danger-note {
-          margin-top: 15px;
-          color: #8c8c8c;
-          font-size: 13px;
+          margin-top: 20px;
+          color: #7f1d1d;
+          font-size: 14px;
+          font-weight: 500;
           line-height: 1.6;
+          padding: 16px;
+          background: rgba(239, 68, 68, 0.1);
+          border-radius: 12px;
+          border: 1px solid #fecaca;
         }
       }
     }
   }
 }
 
-// Responsive
-@media (max-width: 768px) {
+// Professional Responsive Design
+@media (max-width: 1200px) {
   .data-management-page {
-    .page-header {
-      .header-content {
-        flex-direction: column;
-        align-items: stretch;
+    .stats-dashboard {
+      padding: 24px;
 
-        h1 {
-          margin: 10px 0;
-        }
+      .stats-grid {
+        .stat-card {
+          padding: 20px;
 
-        button {
-          width: 100%;
+          .stat-content .stat-number {
+            font-size: 32px;
+          }
         }
       }
     }
 
-    // أضف responsive للقسم الجديد
+    .generate-data-section,
+    .danger-zone {
+      padding: 0 24px;
+    }
+  }
+}
+
+@media (max-width: 768px) {
+  .data-management-page {
+    .page-header {
+      padding: 24px;
+
+      .header-content {
+        flex-direction: column;
+        gap: 20px;
+        text-align: center;
+
+        .header-left,
+        .header-right {
+          order: 2;
+        }
+
+        .header-center {
+          order: 1;
+
+          .title-section {
+            flex-direction: column;
+            gap: 16px;
+
+            .title-icon {
+              width: 50px;
+              height: 50px;
+              font-size: 24px;
+            }
+
+            .title-text h1 {
+              font-size: 28px;
+            }
+          }
+        }
+
+        .back-btn,
+        .refresh-btn {
+          width: 100%;
+          justify-content: center;
+        }
+      }
+    }
+
+    .stats-dashboard {
+      padding: 20px;
+
+      .dashboard-header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+
+        h2 {
+          font-size: 20px;
+        }
+      }
+
+      .stats-grid {
+        .stat-card {
+          padding: 20px;
+
+          .stat-content .stat-number {
+            font-size: 28px;
+          }
+
+          .stat-header .stat-icon {
+            width: 40px;
+            height: 40px;
+            font-size: 20px;
+          }
+        }
+      }
+    }
+
     .generate-data-section {
+      padding: 0 20px;
+
       nz-card {
-        div {
+        h2 {
+          font-size: 20px;
+        }
+
+        div[style*="display: flex"] {
           flex-direction: column;
           
           button {
             width: 100%;
-            margin-bottom: 10px;
+            margin-bottom: 12px;
+
+            &:last-child {
+              margin-bottom: 0;
+            }
           }
         }
+      }
+    }
+
+    .danger-zone {
+      padding: 0 20px 20px 20px;
+
+      nz-card {
+        h2 {
+          font-size: 20px;
+        }
+
+        .danger-actions button {
+          width: 100%;
+          font-size: 16px;
+        }
+      }
+    }
+  }
+}
+
+@media (max-width: 480px) {
+  .data-management-page {
+    .page-header {
+      padding: 16px;
+    }
+
+    .stats-dashboard {
+      padding: 16px;
+
+      .stats-grid {
+        .stat-card {
+          padding: 16px;
+
+          .stat-content .stat-number {
+            font-size: 24px;
+          }
+        }
+      }
+    }
+
+    .generate-data-section,
+    .danger-zone {
+      padding: 0 16px;
+
+      nz-card {
+        padding: 16px;
       }
     }
   }

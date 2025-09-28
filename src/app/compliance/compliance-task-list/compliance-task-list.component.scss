@@ -31,6 +31,108 @@
     align-items: center;
     justify-content: center;
     margin-bottom: 20px;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.filter-select {
+    height: 40px;
+    padding: 0 12px;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    background: #fff;
+    margin: 0 8px;
+    font-size: 14px;
+    min-width: 150px;
+}
+
+.btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    height: 40px;
+    padding: 0 16px;
+    border-radius: 6px;
+    border: 1px solid transparent;
+    font-size: 14px;
+    cursor: pointer;
+    user-select: none;
+    transition: all 0.3s ease;
+}
+
+.btn-primary {
+    background: #1890ff;
+    border-color: #1890ff;
+    color: #fff;
+}
+
+.btn-primary:hover {
+    background: #40a9ff;
+    border-color: #40a9ff;
+}
+
+/* Statistics Summary */
+.statistics-summary {
+    display: flex;
+    gap: 24px;
+    margin: 20px 0;
+    padding: 20px;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    border-radius: 16px;
+    box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+    flex-wrap: wrap;
+    justify-content: center;
+}
+
+.statistics-summary ::ng-deep .ant-statistic {
+    background: rgba(255, 255, 255, 0.95);
+    border-radius: 12px;
+    padding: 16px;
+    backdrop-filter: blur(10px);
+    border: 1px solid rgba(255, 255, 255, 0.2);
+    transition: transform 0.3s ease, box-shadow 0.3s ease;
+    min-width: 120px;
+    text-align: center;
+}
+
+.statistics-summary ::ng-deep .ant-statistic:hover {
+    transform: translateY(-4px);
+    box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+}
+
+.statistics-summary ::ng-deep .ant-statistic-title {
+    font-size: 0.875rem;
+    color: #666;
+    font-weight: 500;
+    margin-bottom: 8px;
+}
+
+.statistics-summary ::ng-deep .ant-statistic-content {
+    font-size: 2rem;
+    font-weight: 700;
+    line-height: 1;
+}
+
+/* Responsive statistics */
+@media (max-width: 768px) {
+    .statistics-summary {
+        margin: 16px 0;
+        padding: 16px;
+        gap: 12px;
+    }
+    
+    .statistics-summary ::ng-deep .ant-statistic {
+        padding: 12px;
+        min-width: 100px;
+    }
+    
+    .statistics-summary ::ng-deep .ant-statistic-content {
+        font-size: 1.5rem;
+    }
+    
+    .statistics-summary ::ng-deep .ant-statistic-title {
+        font-size: 0.75rem;
+    }
 }
 
 .actionHolder {

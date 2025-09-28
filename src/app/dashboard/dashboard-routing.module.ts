@@ -146,6 +146,38 @@ const routes: Routes = [
             .then(m => m.DataLineageModule)
       },
 
+      // === Executive Dashboard ===
+      {
+        path: 'executive',
+        loadChildren: () =>
+          import('../executive-dashboard/executive-dashboard.module')
+            .then(m => m.ExecutiveDashboardModule)
+      },
+
+      // === Technical Dashboard ===
+      {
+        path: 'technical',
+        loadChildren: () =>
+          import('../technical-dashboard/technical-dashboard.module')
+            .then(m => m.TechnicalDashboardModule)
+      },
+
+      // === Business Dashboard ===
+      {
+        path: 'business',
+        loadChildren: () =>
+          import('../business-dashboard/business-dashboard.module')
+            .then(m => m.BusinessDashboardModule)
+      },
+
+      // === Sync Golden Records ===
+      {
+        path: 'sync-golden-records',
+        loadChildren: () =>
+          import('../sync-golden-records/sync-golden-records.module')
+            .then(m => m.SyncGoldenRecordsModule)
+      },
+
       
     ]
   }

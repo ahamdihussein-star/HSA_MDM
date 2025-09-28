@@ -1,0 +1,59 @@
+// System breakdown styling
+.system-breakdown {
+  margin-top: 10px;
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+
+  .breakdown-item {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 3px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+
+    .breakdown-label {
+      font-weight: 500;
+    }
+
+    .breakdown-value {
+      font-weight: 600;
+      padding: 2px 6px;
+      border-radius: 3px;
+      color: white;
+    }
+
+    &.quarantine {
+      background: #fff2e8;
+      border-left: 3px solid #fa8c16;
+
+      .breakdown-label {
+        color: #fa8c16;
+      }
+
+      .breakdown-value {
+        background: #fa8c16;
+      }
+    }
+
+    &.duplicate {
+      background: #f6f0ff;
+      border-left: 3px solid #722ed1;
+
+      .breakdown-label {
+        color: #722ed1;
+      }
+
+      .breakdown-value {
+        background: #722ed1;
+      }
+    }
+  }
+}
+
+// System section title color fix
+.system-section .section-header h2 {
+  color: #000000 !important;
+}
+

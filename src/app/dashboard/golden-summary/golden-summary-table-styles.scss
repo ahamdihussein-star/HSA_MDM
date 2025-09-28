@@ -1,0 +1,134 @@
+/* Full Width Table Layout */
+.full-width-table {
+  grid-column: 1 / -1 !important;
+  width: 100% !important;
+  margin: 16px 0 !important;
+}
+
+/* Make Sales card taller to match contacts table height */
+.gr-card:has(h3:contains("Sales Information")) {
+  min-height: 300px;
+  
+  .kv-grid {
+    min-height: 240px;
+    align-content: start;
+  }
+}
+
+/* Professional Tables for Contacts and Documents */
+.contacts-table-container, .documents-table-container {
+  background: white;
+  border-radius: 8px;
+  overflow: hidden;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.05);
+  margin-top: 16px;
+}
+
+.contacts-table, .documents-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 14px;
+  
+  thead {
+    background: linear-gradient(135deg, #f8f9fa 0%, #e9ecef 100%);
+    
+    th {
+      padding: 12px;
+      text-align: left;
+      font-weight: 600;
+      color: #495057;
+      border-bottom: 2px solid #dee2e6;
+      font-size: 13px;
+    }
+  }
+  
+  tbody {
+    tr {
+      transition: all 0.2s ease;
+      border-bottom: 1px solid #f8f9fa;
+      
+      &:hover {
+        background: #f8f9fa;
+      }
+      
+      td {
+        padding: 12px;
+        vertical-align: middle;
+        color: #495057;
+        
+        &.contact-name, &.col-name .doc-name {
+          font-weight: 500;
+          color: #212529;
+        }
+        
+        &.col-icon {
+          text-align: center;
+          
+          .file-type-icon {
+            width: 24px;
+            height: 24px;
+            border-radius: 4px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin: 0 auto;
+            
+            &[data-type="pdf"] {
+              background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+              color: white;
+            }
+            
+            &[data-type="other"] {
+              background: linear-gradient(135deg, #a29bfe, #d1ccc0);
+              color: white;
+            }
+          }
+        }
+        
+        &.col-category {
+          .doc-type-badge {
+            background: #e6f7ff;
+            color: #1890ff;
+            padding: 4px 8px;
+            border-radius: 4px;
+            font-size: 11px;
+            font-weight: 500;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+          }
+        }
+        
+        &.col-actions {
+          text-align: center;
+          
+          .action-buttons {
+            display: flex;
+            justify-content: center;
+            
+            .action-btn {
+              min-width: 60px;
+              height: 28px;
+              font-size: 12px;
+              
+              &:hover {
+                transform: scale(1.05);
+                box-shadow: 0 2px 8px rgba(24, 144, 255, 0.3);
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .contacts-table, .documents-table {
+    font-size: 12px;
+    
+    thead th, tbody td {
+      padding: 8px 6px;
+    }
+  }
+}

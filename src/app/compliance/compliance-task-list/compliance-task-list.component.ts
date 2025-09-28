@@ -46,9 +46,15 @@ export class ComplianceTaskListComponent implements OnInit {
   // ==== data / state ====
   taskList: TaskRow[] = [];
   filtered: TaskRow[] = [];
+  filteredTaskList: TaskRow[] = [];
   loading = false;
   error: string | null = null;
   search = '';
+
+  // Search and filter properties
+  searchTerm = '';
+  filterByRecordType = '';
+  uniqueRecordTypes: string[] = [];
   
   // Current user info
   currentUser: any = null;
@@ -154,6 +160,8 @@ export class ComplianceTaskListComponent implements OnInit {
       
       // Apply filter
       this.applyFilter();
+      this.generateUniqueRecordTypes();
+      this.applyFilters();
       console.log('[ComplianceTaskList] Loaded tasks:', this.taskList.length);
     } catch (e) {
       console.error('[ComplianceTaskList] load error', e);
@@ -201,11 +209,6 @@ export class ComplianceTaskListComponent implements OnInit {
     this.refreshCheckedStatus();
   }
 
-  // ====== Search functionality ======
-  onSearchChange(searchValue: string): void {
-    this.search = searchValue;
-    this.applyFilter();
-  }
 
   // ====== Origin/Type helpers ======
   getOriginBadge(record: TaskRow): string {
@@ -536,6 +539,64 @@ export class ComplianceTaskListComponent implements OnInit {
     this.blockReason = '';
     this.isBlockModalVisible = true;
   }
+  // ====== search and filter methods ======
+  onSearchChange(value: string): void {
+    this.searchTerm = value;
+    this.applyFilters();
+  }
+
+  onFilterChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.filterByRecordType = target.value;
+    this.applyFilters();
+  }
+
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.filterByRecordType = '';
+    this.applyFilters();
+  }
+
+  applyFilters(): void {
+    let filtered = [...this.filtered];
+
+    // Apply search filter
+    if (this.searchTerm.trim()) {
+      const query = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(row => {
+        const searchText = [
+          row.firstName || '',
+          row.firstNameAr || '',
+          row.tax || '',
+          row.requestId || row.id || ''
+        ].join(' ').toLowerCase();
+        return searchText.includes(query);
+      });
+    }
+
+    // Apply record type filter
+    if (this.filterByRecordType) {
+      filtered = filtered.filter(row => {
+        const recordType = this.getOriginBadge(row);
+        return recordType === this.filterByRecordType;
+      });
+    }
+
+    this.filteredTaskList = filtered;
+  }
+
+  generateUniqueRecordTypes(): void {
+    const types = new Set<string>();
+    this.filtered.forEach(row => {
+      const recordType = this.getOriginBadge(row);
+      // Exclude Golden Record from filter options
+      if (recordType !== '⭐ Golden') {
+        types.add(recordType);
+      }
+    });
+    this.uniqueRecordTypes = Array.from(types).sort();
+  }
+
   // ====== Utility ======
   private cryptoRandomId(): string {
     try {

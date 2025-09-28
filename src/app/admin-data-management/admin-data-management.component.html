@@ -1,113 +1,192 @@
 <div class="data-management-page">
   
-  <!-- Header -->
+  <!-- Professional Header -->
   <div class="page-header">
     <div class="header-content">
-      <button nz-button (click)="goBack()" class="back-btn">
-        <span nz-icon nzType="arrow-left"></span>
-        Back to Dashboard
-      </button>
-      <h1>
-        <span nz-icon nzType="database" nzTheme="outline"></span>
-        Data Management
-      </h1>
-      <button nz-button nzType="primary" (click)="loadStats()" [nzLoading]="loading">
-        <span nz-icon nzType="reload"></span>
-        Refresh
-      </button>
+      <div class="header-left">
+        <button nz-button (click)="goBack()" class="back-btn">
+          <span nz-icon nzType="arrow-left"></span>
+          Back to Dashboard
+        </button>
+      </div>
+      <div class="header-center">
+        <div class="title-section">
+          <div class="title-icon">
+            <span nz-icon nzType="database" nzTheme="outline"></span>
+          </div>
+          <div class="title-text">
+            <h1>Data Management Center</h1>
+            <p>Manage and monitor your master data records</p>
+          </div>
+        </div>
+      </div>
+      <div class="header-right">
+        <button nz-button nzType="primary" (click)="loadStats()" [nzLoading]="loading" class="refresh-btn">
+          <span nz-icon nzType="reload"></span>
+          Refresh Data
+        </button>
+      </div>
     </div>
   </div>
 
   <!-- Loading Spinner -->
-  <nz-spin [nzSpinning]="loading" nzTip="Loading statistics...">
+  <nz-spin [nzSpinning]="loading" nzTip="Loading data statistics...">
     
-    <!-- Statistics Cards -->
-    <div nz-row [nzGutter]="[16, 16]" class="stats-section">
-      
-      <!-- Duplicate Records Card -->
-      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="8" [nzLg]="6">
-        <nz-card nzHoverable>
-          <nz-statistic
-            [nzValue]="stats.duplicateRecords"
-            nzTitle="Duplicate Records"
-            [nzPrefix]="duplicateTemplate">
-          </nz-statistic>
-          <ng-template #duplicateTemplate>
-            <span nz-icon nzType="copy" style="color: #1890ff;"></span>
-          </ng-template>
-          <div class="card-actions">
-            <button nz-button nzType="link" nzDanger 
-                    (click)="clearSpecificData('duplicates')"
-                    [disabled]="stats.duplicateRecords === 0">
-              Clear
-            </button>
-          </div>
-        </nz-card>
+    <!-- Professional Statistics Dashboard -->
+    <div class="stats-dashboard">
+      <div class="dashboard-header">
+        <h2>
+          <span class="dashboard-icon">📊</span>
+          Data Statistics Overview
+        </h2>
+        <div class="last-updated">
+          Last updated: {{ getFormattedTime() }}
+        </div>
       </div>
 
-      <!-- Quarantine Records Card -->
-      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="8" [nzLg]="6">
-        <nz-card nzHoverable>
-          <nz-statistic
-            [nzValue]="stats.quarantineRecords"
-            nzTitle="Quarantine Records"
-            [nzPrefix]="quarantineTemplate">
-          </nz-statistic>
-          <ng-template #quarantineTemplate>
-            <span nz-icon nzType="warning" style="color: #faad14;"></span>
-          </ng-template>
-          <div class="card-actions">
-            <button nz-button nzType="link" nzDanger 
-                    (click)="clearSpecificData('quarantine')"
-                    [disabled]="stats.quarantineRecords === 0">
-              Clear
-            </button>
+      <div nz-row [nzGutter]="[20, 20]" class="stats-grid">
+        
+        <!-- Duplicate Records Card -->
+        <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+          <div class="stat-card duplicate-card">
+            <div class="stat-header">
+              <div class="stat-icon duplicate-icon">
+                <span nz-icon nzType="copy"></span>
+              </div>
+              <div class="stat-actions">
+                <button nz-button nzSize="small" nzType="link" nzDanger 
+                        (click)="clearSpecificData('duplicates')"
+                        [disabled]="stats.duplicateRecords === 0"
+                        [title]="'Clear all duplicate records'">
+                  <span nz-icon nzType="delete"></span>
+                </button>
+              </div>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ formatNumber(stats.duplicateRecords) }}</div>
+              <div class="stat-label">Duplicate Records</div>
+              <div class="stat-description">Records identified as duplicates</div>
+            </div>
+            <div class="stat-footer">
+              <span class="stat-status" [class]="getStatusClass(stats.duplicateRecords)">
+                {{ getStatusText(stats.duplicateRecords, 'duplicates') }}
+              </span>
+            </div>
           </div>
-        </nz-card>
-      </div>
+        </div>
 
-      <!-- Golden Records Card -->
-      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="8" [nzLg]="6">
-        <nz-card nzHoverable>
-          <nz-statistic
-            [nzValue]="stats.goldenRecords"
-            nzTitle="Golden Records"
-            [nzPrefix]="goldenTemplate">
-          </nz-statistic>
-          <ng-template #goldenTemplate>
-            <span nz-icon nzType="star" style="color: #52c41a;"></span>
-          </ng-template>
-          <div class="card-actions">
-            <button nz-button nzType="link" nzDanger 
-                    (click)="clearSpecificData('golden')"
-                    [disabled]="stats.goldenRecords === 0">
-              Clear
-            </button>
+        <!-- Quarantine Records Card -->
+        <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+          <div class="stat-card quarantine-card">
+            <div class="stat-header">
+              <div class="stat-icon quarantine-icon">
+                <span nz-icon nzType="warning"></span>
+              </div>
+              <div class="stat-actions">
+                <button nz-button nzSize="small" nzType="link" nzDanger 
+                        (click)="clearSpecificData('quarantine')"
+                        [disabled]="stats.quarantineRecords === 0"
+                        [title]="'Clear all quarantine records'">
+                  <span nz-icon nzType="delete"></span>
+                </button>
+              </div>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ formatNumber(stats.quarantineRecords) }}</div>
+              <div class="stat-label">Quarantine Records</div>
+              <div class="stat-description">Records requiring review</div>
+            </div>
+            <div class="stat-footer">
+              <span class="stat-status" [class]="getStatusClass(stats.quarantineRecords)">
+                {{ getStatusText(stats.quarantineRecords, 'quarantine') }}
+              </span>
+            </div>
           </div>
-        </nz-card>
-      </div>
+        </div>
 
-      <!-- Total Requests Card -->
-      <div nz-col [nzXs]="24" [nzSm]="12" [nzMd]="8" [nzLg]="6">
-        <nz-card nzHoverable>
-          <nz-statistic
-            [nzValue]="stats.totalRequests"
-            nzTitle="Total Requests"
-            [nzPrefix]="requestsTemplate">
-          </nz-statistic>
-          <ng-template #requestsTemplate>
-            <span nz-icon nzType="file-text" style="color: #722ed1;"></span>
-          </ng-template>
-          <div class="card-actions">
-            <button nz-button nzType="link" nzDanger 
-                    (click)="clearSpecificData('requests')"
-                    [disabled]="stats.totalRequests === 0">
-              Clear
-            </button>
+        <!-- Golden Records Card -->
+        <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+          <div class="stat-card golden-card">
+            <div class="stat-header">
+              <div class="stat-icon golden-icon">
+                <span nz-icon nzType="star"></span>
+              </div>
+              <div class="stat-actions">
+                <button nz-button nzSize="small" nzType="link" nzDanger 
+                        (click)="clearSpecificData('golden')"
+                        [disabled]="stats.goldenRecords === 0"
+                        [title]="'Clear all golden records'">
+                  <span nz-icon nzType="delete"></span>
+                </button>
+              </div>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ formatNumber(stats.goldenRecords) }}</div>
+              <div class="stat-label">Golden Records</div>
+              <div class="stat-description">Master approved records</div>
+            </div>
+            <div class="stat-footer">
+              <span class="stat-status" [class]="getStatusClass(stats.goldenRecords)">
+                {{ getStatusText(stats.goldenRecords, 'golden') }}
+              </span>
+            </div>
           </div>
-        </nz-card>
-      </div>
+        </div>
 
+        <!-- Total Requests Card -->
+        <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+          <div class="stat-card requests-card">
+            <div class="stat-header">
+              <div class="stat-icon requests-icon">
+                <span nz-icon nzType="file-text"></span>
+              </div>
+              <div class="stat-actions">
+                <button nz-button nzSize="small" nzType="link" nzDanger 
+                        (click)="clearSpecificData('requests')"
+                        [disabled]="stats.totalRequests === 0"
+                        [title]="'Clear all requests'">
+                  <span nz-icon nzType="delete"></span>
+                </button>
+              </div>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ formatNumber(stats.totalRequests) }}</div>
+              <div class="stat-label">Total Requests</div>
+              <div class="stat-description">All system requests</div>
+            </div>
+            <div class="stat-footer">
+              <span class="stat-status" [class]="getStatusClass(stats.totalRequests)">
+                {{ getStatusText(stats.totalRequests, 'requests') }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+        <!-- Pending Requests Card (Additional) -->
+        <div nz-col [nzXs]="24" [nzSm]="12" [nzLg]="6">
+          <div class="stat-card pending-card">
+            <div class="stat-header">
+              <div class="stat-icon pending-icon">
+                <span nz-icon nzType="clock-circle"></span>
+              </div>
+              <div class="stat-actions">
+                <span class="stat-badge">{{ getPendingPercentage() }}%</span>
+              </div>
+            </div>
+            <div class="stat-content">
+              <div class="stat-number">{{ formatNumber(stats.pendingRequests) }}</div>
+              <div class="stat-label">Pending Requests</div>
+              <div class="stat-description">Awaiting processing</div>
+            </div>
+            <div class="stat-footer">
+              <span class="stat-status" [class]="getStatusClass(stats.pendingRequests)">
+                {{ getStatusText(stats.pendingRequests, 'pending') }}
+              </span>
+            </div>
+          </div>
+        </div>
+
+      </div>
     </div>
 
     <!-- Generate Test Data Section -->

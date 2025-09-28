@@ -1,6 +1,7 @@
 import { CommonModule } from '@angular/common';
 import { NgModule } from '@angular/core';
-import { HttpClientModule } from '@angular/common/http';  // أضف هذا
+import { HttpClientModule } from '@angular/common/http';
+import { FormsModule } from '@angular/forms';
 
 import { DuplicateRecordsRoutingModule } from './duplicate-records-routing.module';
 import { DuplicateRecordsComponent } from './duplicate-records.component';
@@ -15,7 +16,8 @@ import { NzTabsModule } from 'ng-zorro-antd/tabs';
   ],
   imports: [
     CommonModule,
-    HttpClientModule,  // أضف هذا - مهم جداً للـ API calls
+    HttpClientModule,
+    FormsModule,
     DuplicateRecordsRoutingModule,
     TranslateModule,
     NzTableModule,

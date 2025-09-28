@@ -3,6 +3,7 @@ import { Component, OnInit } from '@angular/core';
 import { Location } from '@angular/common';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
+import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
@@ -28,7 +29,7 @@ interface LineageRow {
   updatedBy: string;
   updatedDate: string;
   source: SourceSys;
-  changeType?: 'Create' | 'Update' | 'Delete' | 'Merge';
+  changeType?: 'Create' | 'Update' | 'Delete' | 'Merge' | 'Current' | 'Extracted';
   approvedBy?: string | null;
   approvedDate?: string | null;
   requestId?: string;
@@ -88,6 +89,16 @@ interface DocumentItem {
   source?: string;
 }
 
+// Document Preview Interface
+interface DocumentPreviewItem {
+  name: string;
+  type: string;
+  mime?: string;
+  url?: string;
+  size?: number;
+  description?: string;
+}
+
 @Component({
   selector: 'app-data-lineage',
   templateUrl: './data-lineage.component.html',
@@ -112,8 +123,12 @@ export class DataLineageComponent implements OnInit {
 
   showHistory = false;
   historyField = '';
+
+  // Document Preview
+  showDocumentPreviewModal = false;
+  selectedDocument: any = null;
   historyKind: 'scalar' | 'contact' | 'document' = 'scalar';
-  historyItems: Array<{ when: string; from: any; to: any; by: string; source: string; action: string; changes?: any[] }> = [];
+  historyItems: Array<{ when: string; from: any; to: any; by: string; source: string; action: string; changes?: any[]; value?: any }> = [];
 
   contactsView: { items: ContactItem[]; stats: { changed: number; added: number; removed: number } } =
     { items: [], stats: { changed: 0, added: 0, removed: 0 } };
@@ -129,7 +144,12 @@ export class DataLineageComponent implements OnInit {
   private processedUpdateFields: Set<string> = new Set();
   private workflowHistory: WorkflowHistoryEntry[] = [];
 
-  constructor(private location: Location, private http: HttpClient, public router: Router) {}
+  constructor(
+    private location: Location, 
+    private http: HttpClient, 
+    public router: Router,
+    private sanitizer: DomSanitizer
+  ) {}
   
   goBack(): void { this.location.back(); }
 
@@ -153,6 +173,7 @@ export class DataLineageComponent implements OnInit {
     const mapping: Record<string, string> = {
       'system_import': 'Extracted Data',
       'data_entry': 'Data Entry User',
+      'data_entry_user': 'Data Entry User',
       'reviewer': 'Reviewer User',
       'compliance': 'Compliance User',
       'system': 'System',
@@ -502,7 +523,14 @@ export class DataLineageComponent implements OnInit {
         const data = entry.payload.data;
         const selectedSources = entry.payload.selectedFieldSources;
         
+        // Filter out unwanted fields
+        const excludedFields = ['assignedTo', 'confidence', 'createdBy', 'isMaster', 'originalRequestType', 'requestType', 'sourceSystem', 'status'];
+        
         Object.keys(data).forEach(fieldKey => {
+          if (excludedFields.includes(fieldKey)) {
+            return; // Skip excluded fields
+          }
+          
           if (data[fieldKey] !== null && data[fieldKey] !== undefined && data[fieldKey] !== '') {
             const fieldName = this.prettyFieldName(fieldKey);
             
@@ -535,12 +563,12 @@ export class DataLineageComponent implements OnInit {
             this.lineageFields.push({
               section: this.fieldSection(fieldKey),
               field: fieldName,
-              oldValue: this.format(data[fieldKey]),
+              oldValue: null,
               newValue: this.format(data[fieldKey]),
               updatedBy: fieldUser,
               updatedDate: when,
               source: fieldSource,
-              changeType: undefined,
+              changeType: fieldUser === 'Extracted Data' ? 'Extracted' : 'Create',
               requestId: entry.requestId,
               step: 'Master Record Built',
               isOriginal: true
@@ -553,7 +581,7 @@ export class DataLineageComponent implements OnInit {
       return;
     }
     
-    // Handle import/duplicate detection
+    // Handle import/duplicate detection - تعديل مهم هنا
     if (entry.action === 'IMPORTED_TO_QUARANTINE' || entry.action === 'DUPLICATE_DETECTED') {
       if (this.currentRecord) {
         const fieldsToTrack = [
@@ -578,12 +606,12 @@ export class DataLineageComponent implements OnInit {
             this.lineageFields.push({
               section: this.fieldSection(fieldKey),
               field: fieldName,
-              oldValue: this.format(value),
+              oldValue: null,
               newValue: this.format(value),
               updatedBy: 'Extracted Data',
               updatedDate: when,
               source: this.normalizeSource(entry.payload?.sourceSystem || originalSource),
-              changeType: undefined,
+              changeType: 'Extracted', // ✅ تم التغيير من 'Create' إلى 'Extracted'
               requestId: entry.requestId,
               step: entry.action === 'IMPORTED_TO_QUARANTINE' ? 'Imported to Quarantine' : 'Duplicate Detected',
               isOriginal: true
@@ -596,13 +624,21 @@ export class DataLineageComponent implements OnInit {
       return;
     }
     
-    // Handle regular CREATE
+    // Handle regular CREATE - تعديل مهم هنا
     if (entry.payload?.data) {
       const data = entry.payload.data;
       
+      // Filter out unwanted fields
+      const excludedFields = ['assignedTo', 'confidence', 'createdBy', 'isMaster', 'originalRequestType', 'requestType', 'sourceSystem', 'status'];
+      
       Object.keys(data).forEach(fieldKey => {
+        if (excludedFields.includes(fieldKey)) {
+          return; // Skip excluded fields
+        }
+        
         if (data[fieldKey] !== null && data[fieldKey] !== undefined && data[fieldKey] !== '') {
           const fieldName = this.prettyFieldName(fieldKey);
+          console.log(`🔧 CREATE: Processing field ${fieldName} = ${data[fieldKey]}`);
           
           let actualSource = source;
           if (isFromQuarantine || isFromDuplicate) {
@@ -619,12 +655,12 @@ export class DataLineageComponent implements OnInit {
           this.lineageFields.push({
             section: this.fieldSection(fieldKey),
             field: fieldName,
-            oldValue: this.format(data[fieldKey]),
+            oldValue: null,  // ✅ تم التغيير من this.format(data[fieldKey]) إلى null
             newValue: this.format(data[fieldKey]),
             updatedBy: displayUser,
             updatedDate: when,
             source: actualSource,
-            changeType: undefined,
+            changeType: 'Create',  // ✅ تم إضافة changeType صراحة
             requestId: entry.requestId,
             step: isFromQuarantine ? 'From Quarantine' : 
                   isFromDuplicate ? 'From Duplicate' : 
@@ -755,17 +791,22 @@ export class DataLineageComponent implements OnInit {
             // Handle regular fields
             const fieldName = this.prettyFieldName(change.field);
             
+            // Determine if this is a Create or Update based on oldValue
+            const oldVal = change.oldValue || change.from;
+            const newVal = change.newValue || change.to;
+            const isCreate = (!oldVal || oldVal === '') && newVal && newVal !== '';
+            
             this.lineageFields.push({
               section: this.fieldSection(change.field),
               field: fieldName,
-              oldValue: this.format(change.oldValue || change.from),
-              newValue: this.format(change.newValue || change.to),
+              oldValue: this.format(oldVal),
+              newValue: this.format(newVal),
               updatedBy: displayUser,
               updatedDate: when,
               source: source,
-              changeType: 'Update',
+              changeType: isCreate ? 'Create' : 'Update',
               requestId: entry.requestId,
-              step: 'Field Update'
+              step: isCreate ? 'Field Creation' : 'Field Update'
             });
           }
           
@@ -775,7 +816,14 @@ export class DataLineageComponent implements OnInit {
       } 
       // If changes is an object (old structure)
       else if (typeof entry.payload.changes === 'object') {
+        // Filter out unwanted fields
+        const excludedFields = ['assignedTo', 'confidence', 'createdBy', 'isMaster', 'originalRequestType', 'requestType', 'sourceSystem', 'status'];
+        
         Object.keys(entry.payload.changes).forEach(fieldKey => {
+          if (excludedFields.includes(fieldKey)) {
+            return; // Skip excluded fields
+          }
+          
           const change = entry.payload.changes[fieldKey];
           const fieldName = change.fieldName || this.prettyFieldName(fieldKey);
           
@@ -932,7 +980,13 @@ export class DataLineageComponent implements OnInit {
   }
 
   private buildAllFieldsFromCurrentState(record: any): void {
-    console.log('Building all fields from current state (fallback)');
+    console.log('🔧 Building all fields from current state (fallback) - FIXED VERSION');
+    
+    // Only build current state if we don't have workflow history
+    if (this.lineageFields.length > 0) {
+      console.log('🔧 Skipping buildAllFieldsFromCurrentState - workflow history exists');
+      return;
+    }
     
     const flatNow: Record<string, any> = {
       firstName: record?.firstName || record?.name,
@@ -965,15 +1019,16 @@ export class DataLineageComponent implements OnInit {
       if (current || ['firstName', 'tax', 'CustomerType', 'country', 'city'].includes(key)) {
         const originalSource = record?.sourceSystem || 'Data Steward';
         
+        console.log(`🔧 Adding current state for field: ${field}, value: ${current}`);
         this.addRow({
           section,
           field,
-          oldValue: current,
+          oldValue: null,
           newValue: current,
           updatedBy: this.getUserDisplayName(record?.createdBy || 'system'),
           updatedDate: this.formatDate(record?.updatedAt || record?.createdAt || new Date().toISOString()),
           source: this.normalizeSource(originalSource),
-          changeType: undefined
+          changeType: 'Create'
         });
       }
     });
@@ -1070,7 +1125,7 @@ export class DataLineageComponent implements OnInit {
             delta: changes.length > 0 ? 'changed' : (index === 0 ? 'added' : 'added'),
             when: this.formatDate(contact.addedWhen || currentRecord.createdAt || new Date().toISOString()),
             by: contactBy,
-            source: contact.source || 'Data Steward',
+            source: 'Data Steward', 
             histKey: contactKey,
             changes: changes
           };
@@ -1099,29 +1154,158 @@ export class DataLineageComponent implements OnInit {
   private buildDocumentsViewFromHistory(history: WorkflowHistoryEntry[], currentRecord: any): void {
     const items: DocumentItem[] = [];
     const stats = { changed: 0, added: 0, removed: 0 };
+    const processedDocuments = new Map<string, DocumentItem>();
+    const documentHistory = new Map<string, any[]>();
 
-    const currentDocuments = currentRecord?.documents || [];
-    
-    currentDocuments.forEach((doc: any) => {
-      items.push({
-        type: doc.type,
-        name: doc.name,
-        description: doc.description,
-        mime: doc.mime,
-        size: doc.size,
-        uploadedAt: doc.uploadedAt,
-        title: [doc.type, doc.name].filter(Boolean).join(' · '),
-        now: doc.name,
-        delta: 'added',
-        when: this.formatDate(doc.uploadedAt || new Date().toISOString()),
-        by: this.getUserDisplayName(doc.uploadedBy || 'data_entry'),
-        source: 'Data Steward',
-        url: doc.contentBase64 ? `data:${doc.mime};base64,${doc.contentBase64}` : undefined
-      });
-      stats.added++;
+    // Process history entries to track document changes
+    history.forEach(entry => {
+      if (entry.payload?.changes && Array.isArray(entry.payload.changes)) {
+        entry.payload.changes.forEach((change: any) => {
+          if (change.field && change.field.startsWith('Document:')) {
+            const docName = change.field.replace('Document:', '').trim();
+            
+            if (!documentHistory.has(docName)) {
+              documentHistory.set(docName, []);
+            }
+            
+            documentHistory.get(docName)!.push({
+              oldValue: change.oldValue,
+              newValue: change.newValue,
+              changeType: change.changeType,
+              when: entry.performedAt,
+              by: entry.performedBy,
+              action: entry.action,
+              documentId: change.documentId,
+              oldDescription: change.oldDescription,
+              newDescription: change.newDescription,
+              oldSize: change.oldSize,
+              newSize: change.newSize
+            });
+          }
+        });
+      }
     });
 
-    this.documentsView = { items, stats };
+    // Get current documents from database
+    if (this.currentRequestId) {
+      firstValueFrom(
+        this.http.get<any>(`${this.apiBase}/requests/${this.currentRequestId}`)
+      ).then(response => {
+        const currentDocuments = response?.documents || [];
+        
+        // Process each current document
+        currentDocuments.forEach((doc: any) => {
+          const docKey = `${doc.name}_${doc.type}`;
+          const docBy = this.getUserDisplayName(doc.uploadedBy || 'data_entry');
+          
+          // Check if this document has history
+          const historyEntries = documentHistory.get(doc.name) || [];
+          let delta: DeltaKind = 'added';
+          let when = this.formatDate(doc.uploadedAt || currentRecord.createdAt || new Date().toISOString());
+          let by = docBy;
+          
+          // Process history to determine document status
+          if (historyEntries.length > 0) {
+            const latestEntry = historyEntries[historyEntries.length - 1];
+            
+            if (latestEntry.changeType === 'Create') {
+              delta = 'added';
+              when = this.formatDate(latestEntry.when);
+              by = this.getUserDisplayName(latestEntry.by);
+            } else if (latestEntry.changeType === 'Update') {
+              delta = 'changed';
+              when = this.formatDate(latestEntry.when);
+              by = this.getUserDisplayName(latestEntry.by);
+            } else if (latestEntry.changeType === 'Delete') {
+              // Document was deleted, but we still show it as removed
+              delta = 'removed';
+              when = this.formatDate(latestEntry.when);
+              by = this.getUserDisplayName(latestEntry.by);
+            }
+          }
+          
+          // Fix the URL construction
+          const item: DocumentItem = {
+            type: doc.type,
+            name: doc.name,
+            description: doc.description,
+            mime: doc.mime,
+            size: doc.size,
+            uploadedAt: doc.uploadedAt,
+            title: [doc.type, doc.name].filter(Boolean).join(' · '),
+            now: doc.name,
+            delta: delta,
+            when: when,
+            by: by,
+            source: doc.source || 'Data Steward',
+            histKey: docKey,
+            url: doc.contentBase64 ? this.createProperDataUrl(doc) : undefined
+          };
+          
+          processedDocuments.set(docKey, item);
+        });
+        
+        // Add removed documents from history
+        documentHistory.forEach((historyEntries, docName) => {
+          const latestEntry = historyEntries[historyEntries.length - 1];
+          if (latestEntry.changeType === 'Delete') {
+            const docKey = `${docName}_deleted`;
+            const item: DocumentItem = {
+              type: 'Unknown',
+              name: docName,
+              description: 'Document was removed',
+              title: `Removed: ${docName}`,
+              now: docName,
+              delta: 'removed',
+              when: this.formatDate(latestEntry.when),
+              by: this.getUserDisplayName(latestEntry.by),
+              source: 'Data Steward',
+              histKey: docKey
+            };
+            processedDocuments.set(docKey, item);
+          }
+        });
+        
+        // Convert to array and update stats
+        items.push(...Array.from(processedDocuments.values()));
+        
+        // Count final stats
+        items.forEach(item => {
+          if (item.delta === 'added') stats.added++;
+          if (item.delta === 'changed') stats.changed++;
+          if (item.delta === 'removed') stats.removed++;
+        });
+        
+        this.documentsView = { items, stats };
+      }).catch(error => {
+        console.error('Error fetching documents:', error);
+        this.documentsView = { items, stats };
+      });
+    } else {
+      // Fallback for when no request ID is available
+      const currentDocuments = currentRecord?.documents || [];
+      
+      currentDocuments.forEach((doc: any) => {
+        items.push({
+          type: doc.type,
+          name: doc.name,
+          description: doc.description,
+          mime: doc.mime,
+          size: doc.size,
+          uploadedAt: doc.uploadedAt,
+          title: [doc.type, doc.name].filter(Boolean).join(' · '),
+          now: doc.name,
+          delta: 'added',
+          when: this.formatDate(doc.uploadedAt || new Date().toISOString()),
+          by: this.getUserDisplayName(doc.uploadedBy || 'data_entry'),
+          source: 'Data Steward',
+          url: doc.contentBase64 ? `data:${doc.mime};base64,${doc.contentBase64}` : undefined
+        });
+        stats.added++;
+      });
+
+      this.documentsView = { items, stats };
+    }
   }
 
   private buildIssuesFromRecord(record: any): void {
@@ -1141,7 +1325,18 @@ export class DataLineageComponent implements OnInit {
   }
 
   async ngOnInit(): Promise<void> {
+    console.log('🚀 Data lineage component initialized - CLEARING OLD DATA');
     this.isLoading = true;
+
+    // Clear any existing data to prevent duplicates
+    this.lineageFields = [];
+    this.workflowHistory = [];
+    this.contactsView = { items: [], stats: { changed: 0, added: 0, removed: 0 } };
+    this.documentsView = { items: [], stats: { changed: 0, added: 0, removed: 0 } };
+    
+    // Clear cache
+    this._cachedGrouped = null;
+    this._lastLineageFieldsLength = 0;
 
     try {
       const state = (window as any).history?.state;
@@ -1217,10 +1412,59 @@ export class DataLineageComponent implements OnInit {
   }
 
   isChanged = (r: LineageRow): boolean => {
-    if (r.changeType === 'Create' || r.changeType === 'Update' || r.changeType === 'Delete') {
+    // Don't consider "Current" state as a change
+    if (r.changeType === 'Current') {
+      return false;
+    }
+    
+    // Consider "Create" as a change (even though oldValue might be null)
+    if (r.changeType === 'Create') {
       return true;
     }
+    
+    // Only consider it changed if the values are actually different
     return (r.oldValue ?? '') !== (r.newValue ?? '');
+  };
+
+  // تعديل مهم في getActionType
+  getActionType = (ev: any): string => {
+    // Check for Extracted type first
+    if (ev.changeType === 'Extracted') {
+      return 'Extracted';
+    }
+    
+    // If explicitly marked as Create, keep it as Create  
+    if (ev.changeType === 'Create') {
+      return 'Created';
+    }
+    
+    // If explicitly marked as Update
+    if (ev.changeType === 'Update') {
+      return 'Updated';
+    }
+    
+    // If explicitly marked as Current state
+    if (ev.changeType === 'Current') {
+      return 'Current State';
+    }
+    
+    // If oldValue is null/empty and newValue exists, it's a Create
+    if ((!ev.oldValue || ev.oldValue === '') && ev.newValue && ev.newValue !== '') {
+      return 'Created';
+    }
+    
+    // If oldValue exists and newValue is null/empty, it's a Delete
+    if (ev.oldValue && ev.oldValue !== '' && (!ev.newValue || ev.newValue === '')) {
+      return 'Deleted';
+    }
+    
+    // If both values exist and are different, it's an Update
+    if (this.isChanged(ev)) {
+      return ev.changeType || 'Updated';
+    }
+    
+    // If values are the same, it's Current State
+    return 'Current State';
   };
 
   countChanged(rows: LineageRow[]) { 
@@ -1232,24 +1476,42 @@ export class DataLineageComponent implements OnInit {
 
   trackBySection = (_: number, g: { section: string; rows: LineageRow[]; _open?: boolean }) => g.section;
 
+  // تعديل مهم في changeBadgeClass
   changeBadgeClass(r: LineageRow) {
     const base = 'dl-badge';
-    if (!this.isChanged(r)) return { [base]: true, [base + '--same']: true };
-    const type = r.changeType || 'Update';
+    const actionType = this.getActionType(r);
+    
+    if (actionType === 'Current State') {
+      return { [base]: true, [base + '--same']: true };
+    }
+    
     return {
       [base]: true,
-      [base + '--update']: type === 'Update',
-      [base + '--create']: type === 'Create',
-      [base + '--delete']: type === 'Delete',
-      [base + '--merge']: type === 'Merge'
+      [base + '--update']: actionType === 'Updated',
+      [base + '--create']: actionType === 'Created',
+      [base + '--extracted']: actionType === 'Extracted', // ✅ أضف class للـ extracted
+      [base + '--delete']: actionType === 'Deleted',
+      [base + '--merge']: actionType === 'Merge',
+      [base + '--current']: actionType === 'Current State'
     };
   }
   
   changeTypeLabel(r: LineageRow) {
-    return this.isChanged(r) ? (r.changeType || 'Update') : 'No change';
+    return this.getActionType(r);
   }
 
+  private _cachedGrouped: any[] | null = null;
+  private _lastLineageFieldsLength = 0;
+  private _lastOnlyChanges = false;
+
   get grouped() {
+    // Use cache if data hasn't changed
+    if (this._cachedGrouped && 
+        this._lastLineageFieldsLength === this.lineageFields.length && 
+        this._lastOnlyChanges === this.onlyChanges) {
+      return this._cachedGrouped;
+    }
+    
     const allRows = this.onlyChanges 
       ? this.lineageFields.filter(r => this.isChanged(r))
       : this.lineageFields;
@@ -1262,11 +1524,32 @@ export class DataLineageComponent implements OnInit {
       if (!existing) {
         lastPerField.set(row.field, row);
       } else {
-        if (this.isChanged(row) && !this.isChanged(existing)) {
+        // Priority Rules - FIXED ORDER:
+        
+        // 1. Always prefer UPDATE over EXTRACTED or CREATE if it's more recent
+        if (row.changeType === 'Update' && existing.changeType !== 'Update') {
           lastPerField.set(row.field, row);
         }
-        else if (this.isChanged(row) === this.isChanged(existing)) {
+        // 2. If both are updates, take the most recent one
+        else if (row.changeType === 'Update' && existing.changeType === 'Update') {
           if (new Date(row.updatedDate) > new Date(existing.updatedDate)) {
+            lastPerField.set(row.field, row);
+          }
+        }
+        // 3. For non-updates, prefer the one with actual changes
+        else if (row.changeType !== 'Update') {
+          // If the new row has changes and existing doesn't, take the new one
+          if (this.isChanged(row) && !this.isChanged(existing)) {
+            lastPerField.set(row.field, row);
+          }
+          // If both have same change status, take the most recent
+          else if (this.isChanged(row) === this.isChanged(existing)) {
+            if (new Date(row.updatedDate) > new Date(existing.updatedDate)) {
+              lastPerField.set(row.field, row);
+            }
+          }
+          // Special case: CREATE has priority over EXTRACTED for initial data
+          else if (row.changeType === 'Create' && existing.changeType === 'Extracted') {
             lastPerField.set(row.field, row);
           }
         }
@@ -1285,7 +1568,14 @@ export class DataLineageComponent implements OnInit {
     groups.forEach(g => g.rows.sort((a, b) => a.field.localeCompare(b.field)));
     
     // عرض كل الأقسام ما عدا Contact و Documents (لأنهم ليهم sections خاصة)
-    return groups.filter(g => g.section !== 'Contact' && g.section !== 'Documents');
+    const result = groups.filter(g => g.section !== 'Contact' && g.section !== 'Documents');
+    
+    // Cache the result
+    this._cachedGrouped = result;
+    this._lastLineageFieldsLength = this.lineageFields.length;
+    this._lastOnlyChanges = this.onlyChanges;
+    
+    return result;
   }
 
   openHistory(fieldName: string, kind: 'scalar'|'contact'|'document' = 'scalar') {
@@ -1330,36 +1620,206 @@ export class DataLineageComponent implements OnInit {
         }
       });
       
+      // If no changes found, create a fallback entry showing current state
+      if (contactChanges.length === 0) {
+        const currentContact = this.contactsView?.items?.find(c => c.name === contactName);
+        if (currentContact) {
+          contactChanges.push({
+            when: 'Current State',
+            from: null,
+            to: `${currentContact.name} | ${currentContact.jobTitle || ''} | ${currentContact.email || ''} | ${currentContact.mobile || ''} | ${currentContact.landline || ''} | ${currentContact.preferredLanguage || ''}`,
+            by: 'data_entry',
+            source: 'Data Steward',
+            action: 'Current',
+            changes: {
+              'Name': { oldValue: null, newValue: currentContact.name },
+              'Job Title': { oldValue: null, newValue: currentContact.jobTitle },
+              'Email': { oldValue: null, newValue: currentContact.email },
+              'Mobile': { oldValue: null, newValue: currentContact.mobile },
+              'Landline': { oldValue: null, newValue: currentContact.landline },
+              'Preferred Language': { oldValue: null, newValue: currentContact.preferredLanguage }
+            }
+          });
+        }
+      }
+      
       this.historyItems = contactChanges;
       this.showHistory = true;
       return;
     }
 
     if (kind === 'document') {
-      this.historyItems = this.documentsView.items.map(d => ({
-        when: d.when || this.formatDate(new Date().toISOString()),
-        from: d.old || null,
-        to: d.now || null,
-        by: d.by || this.getUserDisplayName('data_entry'),
-        source: d.source || 'Data Steward',
-        action: (d.delta === 'added') ? 'Create' : (d.delta === 'removed') ? 'Delete' : (d.delta === 'changed') ? 'Update' : 'No change'
-      }));
+      const docName = fieldName.includes(':') ? fieldName.split(':')[1].trim() : fieldName;
+      
+      // Build history for document
+      const documentChanges: any[] = [];
+      
+      // Find all changes for this document in workflow history
+      this.workflowHistory.forEach(entry => {
+        if (entry.payload?.changes && Array.isArray(entry.payload.changes)) {
+          entry.payload.changes.forEach((change: any) => {
+            if (change.field === `Document: ${docName}`) {
+              const changes: any = {};
+              
+              // Add detailed change information
+              if (change.oldDescription !== undefined && change.newDescription !== undefined) {
+                changes['Description'] = {
+                  oldValue: change.oldDescription,
+                  newValue: change.newDescription
+                };
+              }
+              
+              if (change.oldSize !== undefined && change.newSize !== undefined) {
+                changes['Size'] = {
+                  oldValue: change.oldSize ? `${change.oldSize} bytes` : null,
+                  newValue: change.newSize ? `${change.newSize} bytes` : null
+                };
+              }
+              
+              documentChanges.push({
+                when: this.formatDate(entry.performedAt),
+                from: change.oldValue,
+                to: change.newValue,
+                by: this.getUserDisplayName(entry.performedBy),
+                source: 'Data Steward',
+                action: change.changeType || (!change.oldValue ? 'Create' : 'Update'),
+                changes: changes,
+                documentId: change.documentId
+              });
+            }
+          });
+        }
+      });
+      
+      // If no history found, show current document info
+      if (documentChanges.length === 0) {
+        const currentDoc = this.documentsView.items.find(d => d.name === docName);
+        if (currentDoc) {
+          documentChanges.push({
+            when: 'Current State',
+            from: null,
+            to: `${currentDoc.name} (${currentDoc.type || 'Document'})`,
+            by: 'data_entry',
+            source: 'Data Steward',
+            action: 'Current',
+            changes: {
+              'Document Name': { oldValue: null, newValue: currentDoc.name },
+              'Document Type': { oldValue: null, newValue: currentDoc.type },
+              'File Size': { oldValue: null, newValue: currentDoc.size ? this.formatFileSize(currentDoc.size) : 'Unknown' }
+            }
+          });
+        } else {
+          // If document not found, create basic entry
+          documentChanges.push({
+            when: 'Current State',
+            from: null,
+            to: docName,
+            by: 'data_entry',
+            source: 'Data Steward',
+            action: 'Current',
+            changes: {
+              'Document Name': { oldValue: null, newValue: docName }
+            }
+          });
+        }
+      }
+      
+      this.historyItems = documentChanges;
       this.showHistory = true;
       return;
     }
 
-    const sameFieldEvents = this.lineageFields
-      .filter(r => r.field === fieldName)
-      .sort((a,b) => new Date(a.updatedDate).getTime() - new Date(b.updatedDate).getTime());
-
-    this.historyItems = sameFieldEvents.map(ev => ({
-      when: ev.updatedDate,
-      from: ev.oldValue ?? null,
-      to: ev.newValue ?? null,
-      by: ev.updatedBy,
-      source: String(ev.source || 'MDM'),
-      action: this.isChanged(ev) ? (ev.changeType || 'Update') : 'No change'
-    }));
+    // Build history from workflow entries for accuracy
+    const historyEntries: any[] = [];
+    const fieldKey = this.getFieldKeyFromPrettyName(fieldName);
+    
+    // Track the original extracted value
+    let originalExtractedValue: string | null = null;
+    
+    this.workflowHistory.forEach(entry => {
+      // Check for IMPORTED_TO_QUARANTINE or DUPLICATE_DETECTED (these are EXTRACTED)
+      if (entry.action === 'IMPORTED_TO_QUARANTINE' || entry.action === 'DUPLICATE_DETECTED') {
+        // Find the original value from the first CREATE or from payload
+        const firstCreateEntry = this.workflowHistory.find(e => e.action === 'CREATE');
+        
+        if (firstCreateEntry && firstCreateEntry.payload?.data && firstCreateEntry.payload.data[fieldKey]) {
+          originalExtractedValue = this.format(firstCreateEntry.payload.data[fieldKey]);
+          
+          historyEntries.push({
+            when: this.formatDate(entry.performedAt),
+            from: null,
+            to: null,
+            value: originalExtractedValue, // This will be "Doha"
+            by: 'Extracted Data',
+            source: this.normalizeSource(entry.payload?.sourceSystem || 'Oracle Forms'),
+            action: 'Extracted'
+          });
+        }
+      }
+      
+      // Check for CREATE action (only if not extracted)
+      if (entry.action === 'CREATE' && entry.payload?.data) {
+        if (entry.payload.data[fieldKey] && !originalExtractedValue) {
+          const initialValue = this.format(entry.payload.data[fieldKey]);
+          
+          historyEntries.push({
+            when: this.formatDate(entry.performedAt),
+            from: null,
+            to: null,
+            value: initialValue,
+            by: this.getUserDisplayName(entry.performedBy),
+            source: 'Data Steward',
+            action: 'Created'
+          });
+        }
+      }
+      
+      // Check for UPDATE actions
+      if ((entry.action === 'UPDATE' || entry.action === 'FIELD_UPDATE' || 
+           entry.action === 'RESUBMIT' || entry.action === 'MASTER_RESUBMITTED') && 
+          entry.payload?.changes) {
+        
+        if (Array.isArray(entry.payload.changes)) {
+          entry.payload.changes.forEach((change: any) => {
+            // Check if this change is for our field
+            if (change.field === fieldKey || this.prettyFieldName(change.field) === fieldName) {
+              historyEntries.push({
+                when: this.formatDate(entry.performedAt),
+                from: this.format(change.oldValue || change.from),
+                to: this.format(change.newValue || change.to),
+                value: null,
+                by: this.getUserDisplayName(entry.performedBy),
+                source: 'Data Steward',
+                action: 'Updated'
+              });
+            }
+          });
+        } else if (typeof entry.payload.changes === 'object') {
+          // Handle object-based changes
+          Object.keys(entry.payload.changes).forEach(changeFieldKey => {
+            if (changeFieldKey === fieldKey || this.prettyFieldName(changeFieldKey) === fieldName) {
+              const change = entry.payload.changes[changeFieldKey];
+              historyEntries.push({
+                when: this.formatDate(entry.performedAt),
+                from: this.format(change.from || change.oldValue),
+                to: this.format(change.to || change.newValue),
+                value: null,
+                by: this.getUserDisplayName(entry.performedBy),
+                source: 'Data Steward',
+                action: 'Updated'
+              });
+            }
+          });
+        }
+      }
+    });
+    
+    // Sort by date
+    historyEntries.sort((a, b) => 
+      new Date(a.when).getTime() - new Date(b.when).getTime()
+    );
+    
+    this.historyItems = historyEntries;
 
     this.showHistory = true;
   }
@@ -1368,6 +1828,32 @@ export class DataLineageComponent implements OnInit {
     this.showHistory = false; 
     this.historyField = ''; 
     this.historyItems = []; 
+  }
+
+  // Helper method to get field key from pretty name
+  private getFieldKeyFromPrettyName(prettyName: string): string {
+    const reverseMapping: { [key: string]: string } = {
+      'Company Name (English)': 'firstName',
+      'Company Name (Arabic)': 'firstNameAr',
+      'Tax Number': 'tax',
+      'Customer Type': 'CustomerType',
+      'Company Owner': 'CompanyOwner',
+      'Building Number': 'buildingNumber',
+      'Street': 'street',
+      'Country': 'country',
+      'City': 'city',
+      'Contact Name': 'ContactName',
+      'Email Address': 'EmailAddress',
+      'Mobile Number': 'MobileNumber',
+      'Job Title': 'JobTitle',
+      'Landline': 'Landline',
+      'Preferred Language': 'PrefferedLanguage',
+      'Sales Organization': 'SalesOrgOption',
+      'Distribution Channel': 'DistributionChannelOption',
+      'Division': 'DivisionOption'
+    };
+    
+    return reverseMapping[prettyName] || prettyName;
   }
 
   isItemChanged(h: { from?: any; to?: any; action?: string }): boolean {
@@ -1412,6 +1898,9 @@ export class DataLineageComponent implements OnInit {
       approvedDate: p.approvedDate ?? null,
       ...p
     } as LineageRow);
+    
+    // Clear cache when data changes
+    this._cachedGrouped = null;
   }
 
   // Template helper methods
@@ -1489,6 +1978,246 @@ export class DataLineageComponent implements OnInit {
   confirmReject(): void { this.isRejectedVisible = false; }
   onAllChecked(_ev?: any): void {}
   onItemChecked(id: string, checkedOrEvent: any, status?: string): void {}
+
+  /**
+   * Opens document preview modal
+   */
+  previewDocument(doc: any): void {
+    console.log('Preview document:', doc);
+    
+    if (!doc.url && !doc.mime) {
+      console.error('No document content available');
+      return;
+    }
+    
+    // Create document object compatible with viewer
+    this.selectedDocument = {
+      name: doc.name,
+      type: doc.type,
+      mime: doc.mime || this.getMimeFromUrl(doc.url),
+      contentBase64: this.extractBase64FromUrl(doc.url),
+      size: doc.size,
+      description: doc.description
+    };
+    
+    this.showDocumentPreviewModal = true;
+  }
+
+  /**
+   * Closes document preview modal
+   */
+  closeDocumentPreview(): void {
+    this.showDocumentPreviewModal = false;
+    this.selectedDocument = null;
+  }
+
+  /**
+   * Create proper data URL from document
+   */
+  private createProperDataUrl(doc: any): string {
+    if (!doc.contentBase64) return '';
+    
+    // Check if it's already a proper data URL
+    if (doc.contentBase64.startsWith('data:')) {
+      // Fix malformed URLs
+      if (doc.contentBase64.includes('base64,data:')) {
+        const parts = doc.contentBase64.split('base64,');
+        if (parts.length > 1) {
+          const base64Part = parts[1];
+          const cleanBase64 = base64Part.replace(/^data:application\/pdf;base64,/, '');
+          return `data:${doc.mime || 'application/pdf'};base64,${cleanBase64}`;
+        }
+      }
+      return doc.contentBase64;
+    }
+    
+    // Create new data URL
+    return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+  }
+
+  /**
+   * Downloads document (Fixed)
+   */
+  downloadDocument(doc: any): void {
+    try {
+      let url = '';
+      
+      if (doc.url) {
+        url = this.getPreviewUrl(doc);
+      } else if (doc.contentBase64) {
+        url = this.createProperDataUrl(doc);
+      }
+      
+      if (!url) {
+        console.error('No document content available');
+        return;
+      }
+      
+      // If it's a data URL, extract and download
+      if (url.startsWith('data:')) {
+        const parts = url.split(',');
+        if (parts.length === 2) {
+          const base64 = parts[1];
+          const byteCharacters = atob(base64);
+          const byteNumbers = new Array(byteCharacters.length);
+          for (let i = 0; i < byteCharacters.length; i++) {
+            byteNumbers[i] = byteCharacters.charCodeAt(i);
+          }
+          const byteArray = new Uint8Array(byteNumbers);
+          const blob = new Blob([byteArray], { type: doc.mime || 'application/octet-stream' });
+          
+          const downloadUrl = window.URL.createObjectURL(blob);
+          const link = document.createElement('a');
+          link.href = downloadUrl;
+          link.download = doc.name || 'document';
+          document.body.appendChild(link);
+          link.click();
+          document.body.removeChild(link);
+          window.URL.revokeObjectURL(downloadUrl);
+        }
+      } else {
+        // Direct URL download
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = doc.name || 'document';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+      }
+      
+      console.log('Document downloaded successfully');
+    } catch (error) {
+      console.error('Error downloading document:', error);
+    }
+  }
+
+  /**
+   * Extract MIME type from data URL
+   */
+  private getMimeFromUrl(url: string | undefined): string {
+    if (!url) return 'application/octet-stream';
+    const match = url.match(/data:([^;]+);/);
+    return match ? match[1] : 'application/octet-stream';
+  }
+
+  /**
+   * Extract base64 content from URL (Fixed)
+   */
+  private extractBase64FromUrl(url: string | undefined): string {
+    if (!url) return '';
+    
+    // Fix malformed URLs
+    if (url.includes('base64,data:')) {
+      const parts = url.split('base64,');
+      if (parts.length > 1) {
+        const base64Part = parts[1];
+        // Remove duplicate "data:application/pdf;" if exists
+        const cleanBase64 = base64Part.replace(/^data:application\/pdf;base64,/, '');
+        return cleanBase64;
+      }
+    }
+    
+    // If it's a proper data URL, return as is
+    if (url.startsWith('data:')) {
+      return url;
+    }
+    
+    return '';
+  }
+
+  /**
+   * Check if document can be previewed
+   */
+  canPreview(doc: any): boolean {
+    if (!doc.url && !doc.mime) return false;
+    
+    const mime = doc.mime || this.getMimeFromUrl(doc.url);
+    const name = doc.name || '';
+    
+    return mime.includes('pdf') || 
+           mime.includes('image') ||
+           name.toLowerCase().endsWith('.pdf') ||
+           !!(name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp)$/));
+  }
+
+  /**
+   * Check if document is PDF
+   */
+  isPdf(doc: any): boolean {
+    const mime = doc.mime || this.getMimeFromUrl(doc.url);
+    const name = doc.name || '';
+    
+    return mime.includes('pdf') || 
+           mime === 'application/pdf' ||
+           name.toLowerCase().endsWith('.pdf');
+  }
+
+  /**
+   * Check if document is image
+   */
+  isImage(doc: any): boolean {
+    const mime = doc.mime || this.getMimeFromUrl(doc.url);
+    const name = doc.name || '';
+    
+    return mime.includes('image') || 
+           name.toLowerCase().match(/\.(jpg|jpeg|png|gif|webp|bmp)$/);
+  }
+
+  /**
+   * Get safe preview URL for iframe (bypasses security)
+   */
+  getSafePreviewUrl(doc: any): SafeResourceUrl {
+    const url = this.getPreviewUrl(doc);
+    return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+  }
+
+  /**
+   * Get preview URL for document
+   */
+  getPreviewUrl(doc: any): string {
+    if (!doc) return '';
+    
+    // If we have contentBase64, use it
+    if (doc.contentBase64) {
+      // Check if it's already a data URL
+      if (doc.contentBase64.startsWith('data:')) {
+        return doc.contentBase64;
+      }
+      // Create data URL
+      return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+    }
+    
+    // If we have url, clean it
+    if (doc.url) {
+      // Fix malformed URLs
+      if (doc.url.includes('base64,data:')) {
+        // Extract the actual base64 content
+        const parts = doc.url.split('base64,');
+        if (parts.length > 1) {
+          const base64Part = parts[1];
+          // Remove duplicate "data:application/pdf;" if exists
+          const cleanBase64 = base64Part.replace(/^data:application\/pdf;base64,/, '');
+          return `data:${doc.mime || 'application/pdf'};base64,${cleanBase64}`;
+        }
+      }
+      return doc.url;
+    }
+    
+    return '';
+  }
+
+  /**
+   * Format file size for display
+   */
+  formatFileSize(bytes: number | string): string {
+    if (!bytes) return '0 Bytes';
+    const size = typeof bytes === 'string' ? parseInt(bytes) : bytes;
+    const k = 1024;
+    const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(size) / Math.log(k));
+    return Math.round(size / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
 
   private getRowId(row: any): string {
     return ((row?.requestId ?? row?.id ?? row?.key ?? row?.RequestId ?? '') + '');

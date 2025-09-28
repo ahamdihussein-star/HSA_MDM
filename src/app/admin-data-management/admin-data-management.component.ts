@@ -20,7 +20,7 @@ interface DataStats {
 })
 export class AdminDataManagementComponent implements OnInit {
   
-  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3001/api';
   
   stats: DataStats = {
     duplicateRecords: 0,
@@ -225,5 +225,47 @@ export class AdminDataManagementComponent implements OnInit {
   
   goBack(): void {
     this.router.navigate(['/dashboard']);
+  }
+
+  // Helper methods for professional display
+  formatNumber(num: number): string {
+    if (num === 0) return '0';
+    return num.toLocaleString();
+  }
+
+  getFormattedTime(): string {
+    return new Date().toLocaleString('en-US', {
+      year: 'numeric',
+      month: 'short',
+      day: 'numeric',
+      hour: '2-digit',
+      minute: '2-digit'
+    });
+  }
+
+  getStatusClass(count: number): string {
+    if (count === 0) return 'status-empty';
+    if (count < 10) return 'status-low';
+    if (count < 50) return 'status-medium';
+    return 'status-high';
+  }
+
+  getStatusText(count: number, type: string): string {
+    if (count === 0) return 'No records';
+    
+    const statusMap: { [key: string]: string } = {
+      'duplicates': count === 1 ? '1 duplicate found' : `${count} duplicates found`,
+      'quarantine': count === 1 ? '1 record in quarantine' : `${count} records in quarantine`,
+      'golden': count === 1 ? '1 golden record' : `${count} golden records`,
+      'requests': count === 1 ? '1 request total' : `${count} requests total`,
+      'pending': count === 1 ? '1 request pending' : `${count} requests pending`
+    };
+    
+    return statusMap[type] || `${count} records`;
+  }
+
+  getPendingPercentage(): number {
+    if (this.stats.totalRequests === 0) return 0;
+    return Math.round((this.stats.pendingRequests / this.stats.totalRequests) * 100);
   }
 }

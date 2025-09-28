@@ -1,0 +1,690 @@
+<div class="sync-container">
+  <!-- Modern Header with Gradient -->
+  <div class="sync-header">
+    <div class="header-content">
+      <div class="header-left">
+        <h1 class="main-title">
+          <span class="icon-wrapper">
+            <i nz-icon nzType="cloud-sync" nzTheme="outline"></i>
+          </span>
+          Sync Center
+        </h1>
+        <p class="subtitle">Synchronize golden records with your enterprise systems</p>
+      </div>
+      
+      <div class="header-right">
+        <div class="sync-status-indicator">
+          <span class="status-dot" [class.active]="!isSyncing" [class.syncing]="isSyncing"></span>
+          <span class="status-text">{{ isSyncing ? 'Syncing...' : 'Ready' }}</span>
+        </div>
+        
+        <button nz-button nzType="primary" nzSize="large" class="sync-all-btn"
+                [disabled]="isSyncing || stats.totalGoldenRecords === 0"
+                (click)="syncAllRecords()">
+          <i nz-icon nzType="sync" nzTheme="outline"></i>
+          Sync All Records
+        </button>
+        
+        <button nz-button nzType="default" nzSize="large" class="select-all-systems-btn"
+                [disabled]="isSyncing"
+                (click)="selectAllSystems()">
+          <i nz-icon nzType="check-square" nzTheme="outline"></i>
+          Select All Systems
+        </button>
+        
+        <button nz-button nzType="default" nzSize="large" class="clear-sync-data-btn"
+                [disabled]="isSyncing"
+                (click)="clearSyncData()">
+          <i nz-icon nzType="delete" nzTheme="outline"></i>
+          Clear Sync Data
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Overview Cards -->
+  <div class="overview-section">
+    <div class="overview-grid">
+      <div class="overview-card golden-card">
+        <div class="card-icon">
+          <i nz-icon nzType="crown" nzTheme="fill"></i>
+        </div>
+        <div class="card-content">
+          <h3 class="card-value">{{ stats.totalGoldenRecords }}</h3>
+          <p class="card-label">Golden Records</p>
+          <div class="card-trend">
+            <span class="trend-value">Active & Ready</span>
+          </div>
+        </div>
+      </div>
+
+      <div class="overview-card synced-card">
+        <div class="card-icon">
+          <i nz-icon nzType="check-circle" nzTheme="fill"></i>
+        </div>
+        <div class="card-content">
+          <h3 class="card-value">{{ stats.syncedRecords }}</h3>
+          <p class="card-label">Synced Today</p>
+          <div class="card-progress">
+            <nz-progress [nzPercent]="stats.successRate" nzStatus="success" nzSize="small" [nzShowInfo]="false"></nz-progress>
+          </div>
+        </div>
+      </div>
+
+      <div class="overview-card pending-card">
+        <div class="card-icon">
+          <i nz-icon nzType="clock-circle" nzTheme="fill"></i>
+        </div>
+        <div class="card-content">
+          <h3 class="card-value">{{ stats.pendingSync }}</h3>
+          <p class="card-label">Pending Sync</p>
+          <div class="card-action">
+            <a (click)="filterPendingRecords()">View Records →</a>
+          </div>
+        </div>
+      </div>
+
+      <div class="overview-card systems-card">
+        <div class="card-icon">
+          <i nz-icon nzType="api" nzTheme="fill"></i>
+        </div>
+        <div class="card-content">
+          <h3 class="card-value">{{ selectedSystems.length }}</h3>
+          <p class="card-label">Selected Systems</p>
+          <div class="card-systems">
+            <span class="system-badge" *ngFor="let sys of selectedSystems">{{ getSystemName(sys) }}</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content Area -->
+  <div class="main-content">
+    <!-- Left Side: Target Systems -->
+    <div class="systems-panel">
+      <div class="panel-header">
+        <h2>Target Systems</h2>
+        <button nz-button nzType="text" nzSize="small" (click)="updateSystemStatuses()">
+          <i nz-icon nzType="reload" [nzSpin]="isSyncing"></i>
+        </button>
+      </div>
+      
+      <div class="systems-list">
+        <div class="system-card" *ngFor="let system of systemTargets"
+             [class.selected]="isSystemSelected(system.id)"
+             [class.connected]="system.isConnected"
+             (click)="toggleSystemSelection(system.id)">
+          
+          <div class="system-header">
+            <div class="system-logo" [style.background]="system.color">
+              <i nz-icon [nzType]="system.icon"></i>
+            </div>
+            <div class="system-info">
+              <h3>{{ system.name }}</h3>
+              <p class="system-type">{{ system.description }}</p>
+            </div>
+            <div class="system-status">
+              <span class="status-indicator" [class.online]="system.isConnected"></span>
+            </div>
+          </div>
+          
+          <div class="system-stats">
+            <div class="stat-item">
+              <span class="stat-label">Records to Sync</span>
+              <span class="stat-value">{{ system.recordsToSync || 0 }}</span>
+            </div>
+            <div class="stat-item">
+              <span class="stat-label">Last Sync</span>
+              <span class="stat-value">{{ formatDate(system.lastSyncTime) }}</span>
+            </div>
+          </div>
+          
+          <div class="system-actions" *ngIf="isSystemSelected(system.id)">
+            <button nz-button nzType="primary" nzSize="small" nzBlock
+                    [disabled]="!system.isConnected"
+                    (click)="syncAllRecords()">
+              <i nz-icon nzType="sync"></i>
+              Sync Now
+            </button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Right Side: Records & Rules -->
+    <div class="content-panel">
+      <!-- Tab Navigation -->
+      <nz-tabset [(nzSelectedIndex)]="selectedTabIndex" nzType="card">
+        
+        <!-- Tab 1: Records Preview -->
+        <nz-tab nzTitle="Records to Sync">
+          <div class="records-section">
+            <!-- Filter Bar -->
+            <div class="filter-bar">
+              <nz-input-group nzSearch [nzAddOnAfter]="searchButton" class="search-input">
+                <input type="text" nz-input placeholder="Search records..." [(ngModel)]="searchText" />
+              </nz-input-group>
+              <ng-template #searchButton>
+                <button nz-button nzType="primary" nzSearch (click)="searchRecords()">
+                  <i nz-icon nzType="search"></i>
+                </button>
+              </ng-template>
+              
+              <nz-select [(ngModel)]="filterCountry" nzPlaceHolder="All Countries" class="filter-select"
+                         (ngModelChange)="applyFilters()">
+                <nz-option nzValue="" nzLabel="All Countries"></nz-option>
+                <nz-option nzValue="Egypt" nzLabel="Egypt"></nz-option>
+                <nz-option nzValue="Saudi Arabia" nzLabel="Saudi Arabia"></nz-option>
+                <nz-option nzValue="United Arab Emirates" nzLabel="UAE"></nz-option>
+              </nz-select>
+              
+              <nz-select [(ngModel)]="filterStatus" nzPlaceHolder="Sync Status" class="filter-select"
+                         (ngModelChange)="applyFilters()">
+                <nz-option nzValue="" nzLabel="All Status"></nz-option>
+                <nz-option nzValue="not_synced" nzLabel="Not Synced"></nz-option>
+                <nz-option nzValue="synced" nzLabel="Synced"></nz-option>
+                <nz-option nzValue="sync_failed" nzLabel="Failed"></nz-option>
+              </nz-select>
+            </div>
+
+            <!-- Records Summary -->
+            <div class="records-summary">
+              <div class="summary-card">
+                <div class="summary-icon">
+                  <i nz-icon nzType="database" nzTheme="outline"></i>
+                </div>
+                <div class="summary-content">
+                  <h3>{{ stats.totalGoldenRecords }} Golden Records</h3>
+                  <p>Ready for synchronization</p>
+                </div>
+              </div>
+              
+              <div class="summary-card">
+                <div class="summary-icon">
+                  <i nz-icon nzType="check-circle" nzTheme="outline"></i>
+                </div>
+                <div class="summary-content">
+                  <h3>{{ stats.syncedRecords }} Synced</h3>
+                  <p>Successfully synchronized</p>
+                </div>
+              </div>
+              
+              <div class="summary-card">
+                <div class="summary-icon">
+                  <i nz-icon nzType="clock-circle" nzTheme="outline"></i>
+                </div>
+                <div class="summary-content">
+                  <h3>{{ stats.pendingSync }} Pending</h3>
+                  <p>Awaiting synchronization</p>
+                </div>
+              </div>
+            </div>
+
+            <!-- Info Message -->
+            <div class="info-message">
+              <i nz-icon nzType="info-circle" nzTheme="outline"></i>
+              <p>All golden records will be synchronized automatically when you click "Sync All Records"</p>
+            </div>
+
+            <!-- Loading State -->
+            <div class="loading-container" *ngIf="isLoadingRecords">
+              <nz-spin nzSimple [nzSize]="'large'"></nz-spin>
+              <p>Loading golden records...</p>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="!isLoadingRecords && displayedRecords.length === 0">
+              <i nz-icon nzType="inbox" class="empty-icon"></i>
+              <p>No records found</p>
+              <button nz-button nzType="primary" (click)="resetFilters()">Reset Filters</button>
+            </div>
+
+          </div>
+        </nz-tab>
+
+        <!-- Tab 2: Sync Rules -->
+        <nz-tab nzTitle="Sync Rules">
+          <div class="rules-section">
+            <div class="rules-header">
+              <h3>Active Sync Rules</h3>
+              <button nz-button nzType="primary" (click)="openRuleModal()">
+                <i nz-icon nzType="plus"></i>
+                Create Rule
+              </button>
+            </div>
+
+            <div class="rules-list">
+              <div class="rule-card" *ngFor="let rule of rules"
+                   [class.active]="rule.isActive">
+                
+                <div class="rule-header">
+                  <div class="rule-info">
+                    <h4>{{ rule.name }}</h4>
+                    <p>{{ rule.description }}</p>
+                  </div>
+                  <nz-switch [(ngModel)]="rule.isActive" 
+                            (ngModelChange)="toggleRuleStatus(rule)"></nz-switch>
+                </div>
+                
+                <div class="rule-body">
+                  <div class="rule-target">
+                    <span class="label">Target:</span>
+                    <span class="value">{{ getSystemName(rule.targetSystem) }}</span>
+                  </div>
+                  
+                  <div class="rule-criteria">
+                    <span class="label">Criteria:</span>
+                    <div class="criteria-tags">
+                      <nz-tag *ngFor="let condition of rule.filterCriteria?.conditions || []">
+                        {{ condition.field }} {{ condition.operator }} {{ condition.value }}
+                      </nz-tag>
+                    </div>
+                  </div>
+                  
+                  <div class="rule-stats">
+                    <span class="stat">
+                      <i nz-icon nzType="database"></i>
+                      {{ getMatchingRecords(rule) }} records
+                    </span>
+                    <span class="stat">
+                      <i nz-icon nzType="clock-circle"></i>
+                      {{ formatDate(rule.lastSyncAt) }}
+                    </span>
+                  </div>
+                </div>
+                
+                <div class="rule-actions">
+                  <button nz-button nzSize="small" (click)="openRuleModal(rule)">
+                    <i nz-icon nzType="edit"></i>
+                  </button>
+                  <button nz-button nzSize="small" (click)="previewRecords(rule)">
+                    <i nz-icon nzType="experiment"></i>
+                  </button>
+                  <button nz-button nzSize="small" nzDanger (click)="deleteRule(rule)">
+                    <i nz-icon nzType="delete"></i>
+                  </button>
+                </div>
+              </div>
+            </div>
+          </div>
+        </nz-tab>
+
+        <!-- Tab 3: Sync History -->
+        <nz-tab nzTitle="History">
+          <div class="history-section">
+            <!-- History Header with Stats -->
+            <div class="history-header">
+              <h3>Synchronization History</h3>
+              <div class="history-stats">
+                <span class="stat-badge">
+                  <i nz-icon nzType="history"></i>
+                  {{ operations.length }} Operations
+                </span>
+                <span class="stat-badge success">
+                  <i nz-icon nzType="check-circle"></i>
+                  {{ getTotalSyncedCount() }} Synced
+                </span>
+                <span class="stat-badge warning" *ngIf="getTotalFailedCount() > 0">
+                  <i nz-icon nzType="warning"></i>
+                  {{ getTotalFailedCount() }} Failed
+                </span>
+              </div>
+            </div>
+
+            <!-- Operations List -->
+            <div class="operations-list">
+              <nz-collapse nzAccordion>
+                <nz-collapse-panel *ngFor="let operation of operations; let i = index"
+                                  [nzHeader]="operationHeaderTpl"
+                                  [nzActive]="i === 0"
+                                  [nzExtra]="operationExtraTpl">
+                  
+                  <ng-template #operationHeaderTpl>
+                    <div class="operation-header-content">
+                      <span class="operation-icon" [style.color]="getSystemColor(operation.targetSystem)">
+                        <i nz-icon [nzType]="getSystemIcon(operation.targetSystem)"></i>
+                      </span>
+                      <span class="operation-title">
+                        <strong>{{ getSystemName(operation.targetSystem) }}</strong>
+                        <span class="operation-date">{{ formatDateTime(operation.startedAt) }}</span>
+                      </span>
+                    </div>
+                  </ng-template>
+
+                  <ng-template #operationExtraTpl>
+                    <div class="operation-summary">
+                      <nz-tag [nzColor]="getOperationStatusColor(operation.status)">
+                        {{ operation.status | uppercase }}
+                      </nz-tag>
+                      <span class="summary-stats">
+                        <span class="stat-item success">
+                          <i nz-icon nzType="check"></i> {{ operation.syncedRecords || 0 }}
+                        </span>
+                        <span class="stat-item danger" *ngIf="operation.failedRecords > 0">
+                          <i nz-icon nzType="close"></i> {{ operation.failedRecords }}
+                        </span>
+                      </span>
+                    </div>
+                  </ng-template>
+
+                  <!-- Operation Details Content -->
+                  <div class="operation-details">
+                    <!-- Operation Info -->
+                    <div class="operation-info">
+                      <div class="info-row">
+                        <span class="info-label">Operation ID:</span>
+                        <span class="info-value">{{ operation.id || 'N/A' }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Executed By:</span>
+                        <span class="info-value">{{ operation.executedBy || 'System' }}</span>
+                      </div>
+                      <div class="info-row">
+                        <span class="info-label">Duration:</span>
+                        <span class="info-value">{{ calculateDuration(operation.startedAt, operation.completedAt) }}</span>
+                      </div>
+                      <div class="info-row" *ngIf="operation.ruleName">
+                        <span class="info-label">Rule Used:</span>
+                        <span class="info-value">{{ operation.ruleName }}</span>
+                      </div>
+                    </div>
+
+                    <!-- Records Table -->
+                    <div class="records-table-container">
+                      <h4>Synchronized Records ({{ getOperationRecords(operation).length }})</h4>
+                      
+                      <!-- Loading State -->
+                      <div class="loading-state" *ngIf="isLoadingOperationDetails(operation.id)">
+                        <nz-spin nzSimple></nz-spin>
+                        <span>Loading records...</span>
+                      </div>
+
+                      <!-- Records Table -->
+                      <nz-table #recordsTable 
+                               [nzData]="getOperationRecords(operation)"
+                               [nzSize]="'small'"
+                               [nzShowPagination]="getOperationRecords(operation).length > 5"
+                               [nzPageSize]="5"
+                               [nzLoading]="isLoadingOperationDetails(operation.id)"
+                               *ngIf="!isLoadingOperationDetails(operation.id)">
+                        <thead>
+                          <tr>
+                            <th>Company Name</th>
+                            <th>Tax Number</th>
+                            <th>Country</th>
+                            <th>City</th>
+                            <th>Sync Status</th>
+                            <th>Target Record ID</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          <tr *ngFor="let record of recordsTable.data">
+                            <td>
+                              <span class="company-name">{{ record.firstName || 'N/A' }}</span>
+                              <span class="company-name-ar" *ngIf="record.firstNameAr">
+                                {{ record.firstNameAr }}
+                              </span>
+                            </td>
+                            <td>{{ record.tax || 'N/A' }}</td>
+                            <td>{{ record.country || 'N/A' }}</td>
+                            <td>{{ record.city || 'N/A' }}</td>
+                            <td>
+                              <nz-tag [nzColor]="record.syncStatus === 'success' ? 'success' : 'error'">
+                                {{ record.syncStatus | uppercase }}
+                              </nz-tag>
+                            </td>
+                            <td>
+                              <span class="target-id" *ngIf="record.targetRecordId">
+                                {{ record.targetRecordId }}
+                              </span>
+                              <span *ngIf="!record.targetRecordId" class="no-id">-</span>
+                            </td>
+                          </tr>
+                        </tbody>
+                      </nz-table>
+
+                      <!-- Empty State -->
+                      <div class="empty-state" *ngIf="getOperationRecords(operation).length === 0 && !isLoadingOperationDetails(operation.id)">
+                        <i nz-icon nzType="inbox"></i>
+                        <p>No records found for this operation</p>
+                      </div>
+                    </div>
+
+                    <!-- Error Details (if any) -->
+                    <nz-alert *ngIf="operation.errorDetails"
+                             nzType="error"
+                             nzShowIcon
+                             [nzMessage]="'Sync Errors'"
+                             [nzDescription]="operation.errorDetails">
+                    </nz-alert>
+                  </div>
+                </nz-collapse-panel>
+              </nz-collapse>
+            </div>
+
+            <!-- Empty State -->
+            <div class="empty-state" *ngIf="operations.length === 0">
+              <i nz-icon nzType="history" class="empty-icon"></i>
+              <h3>No Sync History</h3>
+              <p>No synchronization operations have been performed yet</p>
+            </div>
+          </div>
+        </nz-tab>
+      </nz-tabset>
+    </div>
+  </div>
+
+  <!-- Sync Progress Modal -->
+  <nz-modal [(nzVisible)]="isSyncing" 
+            nzTitle="Synchronization in Progress"
+            [nzFooter]="null"
+            [nzClosable]="false"
+            nzWidth="600px">
+    <ng-container *nzModalContent>
+      <div class="sync-progress-modal">
+        <div class="progress-header">
+          <div class="progress-icon">
+            <i nz-icon nzType="sync" nzSpin></i>
+          </div>
+          <h3>{{ currentSyncMessage }}</h3>
+        </div>
+        
+        <div class="progress-details">
+          <div class="progress-stat">
+            <span class="label">Target System:</span>
+            <span class="value">{{ getSystemName(selectedSystems[0]) }}</span>
+          </div>
+          <div class="progress-stat">
+            <span class="label">Progress:</span>
+            <span class="value">{{ realTimeProgress }}%</span>
+          </div>
+        </div>
+        
+        <nz-progress [nzPercent]="realTimeProgress" 
+                     [nzStatus]="realTimeProgress === 100 ? 'success' : 'active'"
+                     nzStrokeLinecap="round"></nz-progress>
+        
+        <div class="progress-log">
+          <div class="log-entry" *ngFor="let step of syncSteps">
+            <i nz-icon [nzType]="step.icon" 
+               [nzSpin]="step.status === 'process'"
+               [style.color]="step.status === 'finish' ? '#52c41a' : step.status === 'process' ? '#1890ff' : '#d9d9d9'"></i>
+            <span>{{ step.name }}</span>
+            <span class="step-status" *ngIf="step.status === 'finish'">✓</span>
+            <span class="step-status" *ngIf="step.status === 'process'">⟳</span>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+  </nz-modal>
+
+<!-- Rule Creation/Edit Modal -->
+<nz-modal [(nzVisible)]="isRuleModalVisible"
+          [nzTitle]="selectedRule ? 'Edit Sync Rule' : 'Create Sync Rule'"
+          [nzFooter]="ruleModalFooter"
+          nzWidth="700px">
+  <ng-container *nzModalContent>
+    <form nz-form [formGroup]="ruleForm" nzLayout="vertical">
+      
+      <nz-form-item>
+        <nz-form-label nzRequired>Rule Name</nz-form-label>
+        <nz-form-control>
+          <input nz-input formControlName="name" placeholder="e.g., Daily Egypt Sync" />
+        </nz-form-control>
+      </nz-form-item>
+      
+      <nz-form-item>
+        <nz-form-label>Description</nz-form-label>
+        <nz-form-control>
+          <textarea nz-input formControlName="description" rows="2"
+                    placeholder="Describe what this rule does..."></textarea>
+        </nz-form-control>
+      </nz-form-item>
+      
+      <nz-form-item>
+        <nz-form-label nzRequired>Target System</nz-form-label>
+        <nz-form-control>
+          <nz-select formControlName="targetSystem" nzPlaceHolder="Select target system">
+            <nz-option *ngFor="let system of systemTargets" 
+                      [nzValue]="system.id" 
+                      [nzLabel]="system.name"></nz-option>
+          </nz-select>
+        </nz-form-control>
+      </nz-form-item>
+      
+      <nz-divider nzText="Filter Criteria"></nz-divider>
+      
+      <div class="criteria-builder" formArrayName="conditions">
+        <div class="conditions-list">
+          <div *ngFor="let condition of conditions.controls; let i = index" 
+               [formGroupName]="i"
+               class="condition-row">
+            
+            <!-- Field Select -->
+            <nz-select formControlName="field" nzPlaceHolder="Select Field" 
+                      style="width: 30%; margin-right: 8px"
+                      (ngModelChange)="onFieldChange(i)">
+              <nz-option nzValue="country" nzLabel="Country"></nz-option>
+              <nz-option nzValue="city" nzLabel="City"></nz-option>
+              <nz-option nzValue="CustomerType" nzLabel="Customer Type"></nz-option>
+              <nz-option nzValue="companyStatus" nzLabel="Status"></nz-option>
+            </nz-select>
+            
+            <!-- Operator Select -->
+            <nz-select formControlName="operator" nzPlaceHolder="Operator" 
+                      style="width: 20%; margin-right: 8px">
+              <nz-option nzValue="equals" nzLabel="Equals"></nz-option>
+              <nz-option nzValue="not_equals" nzLabel="Not Equals"></nz-option>
+              <nz-option nzValue="contains" nzLabel="Contains"></nz-option>
+            </nz-select>
+            
+            <!-- Value Input/Select -->
+            <ng-container [ngSwitch]="getConditionField(i)">
+              
+              <!-- Country Dropdown -->
+              <nz-select *ngSwitchCase="'country'" 
+                        formControlName="value" 
+                        nzPlaceHolder="Select Country" 
+                        style="width: 35%; margin-right: 8px"
+                        (ngModelChange)="onCountryChange(i)">
+                <nz-option *ngFor="let country of countryOptions" 
+                          [nzValue]="country.value" 
+                          [nzLabel]="country.label"></nz-option>
+              </nz-select>
+              
+              <!-- City Dropdown -->
+              <nz-select *ngSwitchCase="'city'" 
+                        formControlName="value" 
+                        nzPlaceHolder="Select City" 
+                        style="width: 35%; margin-right: 8px">
+                <nz-option *ngFor="let city of getCityOptionsForIndex(i)" 
+                          [nzValue]="city.value" 
+                          [nzLabel]="city.label"></nz-option>
+              </nz-select>
+              
+              <!-- Customer Type Dropdown -->
+              <nz-select *ngSwitchCase="'CustomerType'" 
+                        formControlName="value" 
+                        nzPlaceHolder="Select Type" 
+                        style="width: 35%; margin-right: 8px">
+                <nz-option *ngFor="let type of customerTypeOptions" 
+                          [nzValue]="type.value" 
+                          [nzLabel]="type.label"></nz-option>
+              </nz-select>
+              
+              <!-- Status Dropdown -->
+              <nz-select *ngSwitchCase="'companyStatus'" 
+                        formControlName="value" 
+                        nzPlaceHolder="Select Status" 
+                        style="width: 35%; margin-right: 8px">
+                <nz-option nzValue="Active" nzLabel="Active"></nz-option>
+                <nz-option nzValue="Blocked" nzLabel="Blocked"></nz-option>
+              </nz-select>
+              
+              <!-- Default Text Input -->
+              <input *ngSwitchDefault 
+                     nz-input 
+                     formControlName="value" 
+                     placeholder="Enter value" 
+                     style="width: 35%; margin-right: 8px" />
+            </ng-container>
+            
+            <!-- Delete Button -->
+            <button nz-button nzType="text" nzDanger nzSize="small" 
+                    (click)="removeCondition(i)"
+                    [disabled]="conditions.length <= 1"
+                    style="width: 10%">
+              <i nz-icon nzType="delete"></i>
+            </button>
+          </div>
+        </div>
+        
+        <button nz-button nzType="dashed" (click)="addCondition()" 
+                style="width: 100%; margin-top: 12px">
+          <i nz-icon nzType="plus"></i> Add Condition
+        </button>
+      </div>
+      
+    </form>
+  </ng-container>
+  
+  <ng-template #ruleModalFooter>
+    <button nz-button nzType="default" (click)="isRuleModalVisible = false">Cancel</button>
+    <button nz-button nzType="primary" (click)="saveRule()" [nzLoading]="isSavingRule">
+      {{ selectedRule ? 'Update' : 'Create' }}
+    </button>
+  </ng-template>
+</nz-modal>
+
+  <!-- Sync History Modal -->
+  <nz-modal [(nzVisible)]="isSyncHistoryVisible"
+            nzTitle="Sync History"
+            [nzFooter]="null"
+            nzWidth="800px">
+    <ng-container *nzModalContent>
+      <div class="sync-history-modal">
+        <h3>{{ selectedSystemHistory?.systemName }} - Sync History</h3>
+        
+        <nz-table [nzData]="selectedSystemHistory?.history || []" nzSize="small">
+          <thead>
+            <tr>
+              <th>Date</th>
+              <th>Records</th>
+              <th>Status</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let entry of selectedSystemHistory?.history || []">
+              <td>{{ formatDate(entry.date) }}</td>
+              <td>{{ entry.records?.length || 0 }}</td>
+              <td>
+                <nz-tag nzColor="success">Completed</nz-tag>
+              </td>
+            </tr>
+          </tbody>
+        </nz-table>
+      </div>
+    </ng-container>
+  </nz-modal>
+</div>

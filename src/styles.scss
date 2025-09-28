@@ -1,4 +1,16 @@
 /* You can add global styles to this file, and also import other style files */
+
+// Simple fix for sync page - ng-container approach
+.bulk-sync-container {
+  ng-container {
+    display: contents !important;
+  }
+}
+
+// Hide empty CDK containers
+.cdk-overlay-container:empty {
+  display: none !important;
+}
 body.rtl {
   direction: rtl;
   [nz-form] {

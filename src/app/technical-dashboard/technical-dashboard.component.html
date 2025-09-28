@@ -1,0 +1,230 @@
+<div class="technical-dashboard" [class.rtl]="isArabic">
+  <!-- Header Section -->
+  <div class="dashboard-header">
+    <div class="header-content">
+      <div class="title-section">
+        <h1>
+          <i nz-icon nzType="code"></i>
+          {{ 'Technical Dashboard' | translate }}
+        </h1>
+        <div class="subtitle">
+          <span>{{ 'System Statistics & Data Extraction Monitoring' | translate }}</span>
+          <nz-tag nzColor="blue">
+            <i nz-icon nzType="sync" [nzSpin]="autoRefresh"></i>
+            Last updated: {{ lastUpdated | date:'short' }}
+          </nz-tag>
+        </div>
+      </div>
+
+      <div class="header-actions">
+        <!-- Empty for clean header -->
+      </div>
+    </div>
+  </div>
+
+  <!-- Main Content -->
+  <div class="dashboard-content">
+    <!-- Loading State -->
+    <nz-spin *ngIf="isLoading" nzTip="Loading statistics..." [nzSpinning]="true" class="loading-spinner">
+      <div style="height: 400px;"></div>
+    </nz-spin>
+
+    <!-- Data Statistics Section -->
+    <div class="section-container" *ngIf="!isLoading">
+      <div class="section-header">
+        <h2>
+          <i nz-icon nzType="database"></i>
+          {{ 'Data Statistics' | translate }}
+        </h2>
+        <span class="section-subtitle">{{ 'Records and processing status' | translate }}</span>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card" *ngFor="let card of dataStatCards"
+             [class.clickable]="card.canDrillDown"
+             (click)="drillDown(card)">
+          
+          <div class="card-header">
+            <div class="icon-wrapper" [style.background-color]="card.color + '20'">
+              <i nz-icon [nzType]="card.icon" [style.color]="card.color"></i>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="stat-value">{{ card.value }}</div>
+            <div class="stat-title">
+              {{ isArabic ? card.titleAr : card.title }}
+            </div>
+            <div class="stat-description" *ngIf="card.description">
+              {{ card.description }}
+            </div>
+          </div>
+
+          <div class="card-footer" *ngIf="card.canDrillDown">
+            <span class="drill-down-hint">
+              <i nz-icon nzType="eye"></i>
+              {{ 'Click to view details' | translate }}
+              <i nz-icon nzType="right"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Task Lists Section -->
+    <div class="section-container task-section" *ngIf="!isLoading">
+      <div class="section-header">
+        <h2>
+          <i nz-icon nzType="unordered-list"></i>
+          {{ 'Task Lists' | translate }}
+        </h2>
+        <span class="section-subtitle">{{ 'Pending actions by role' | translate }}</span>
+      </div>
+
+      <div class="stats-grid">
+        <div class="stat-card task-card" *ngFor="let card of taskListCards"
+             [class.clickable]="card.canDrillDown"
+             (click)="drillDown(card)">
+          
+          <div class="card-header">
+            <div class="icon-wrapper" [style.background-color]="card.color + '20'">
+              <i nz-icon [nzType]="card.icon" [style.color]="card.color"></i>
+            </div>
+          </div>
+
+          <div class="card-body">
+            <div class="stat-value">{{ card.value }}</div>
+            <div class="stat-title">
+              {{ isArabic ? card.titleAr : card.title }}
+            </div>
+            <div class="stat-description" *ngIf="card.description">
+              {{ card.description }}
+            </div>
+          </div>
+
+          <div class="card-footer" *ngIf="card.canDrillDown">
+            <span class="drill-down-hint">
+              <i nz-icon nzType="arrow-right"></i>
+              {{ 'Go to task list' | translate }}
+              <i nz-icon nzType="right"></i>
+            </span>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- System Sources Section -->
+    <div class="section-container system-section" *ngIf="!isLoading">
+      <div class="section-header">
+        <h2>
+          <i nz-icon nzType="api"></i>
+          {{ 'Data Extracted from Systems' | translate }}
+        </h2>
+      </div>
+
+      <div class="system-grid">
+        <div class="system-card" *ngFor="let system of systemSources"
+             (click)="drillDownBySystem(system)">
+          
+          <div class="system-icon" [style.background-color]="system.color + '20'">
+            <i nz-icon [nzType]="system.icon" [style.color]="system.color"></i>
+          </div>
+
+          <div class="system-info">
+            <div class="system-name">{{ system.displayName || system.system }}</div>
+            <div class="system-count">
+              <span class="count-value">{{ system.count }}</span>
+              <span class="count-label">{{ 'total records' | translate }}</span>
+            </div>
+            
+            <!-- Breakdown -->
+            <div class="system-breakdown">
+              <div class="breakdown-item quarantine">
+                <span class="breakdown-label">{{ 'Quarantine' | translate }}:</span>
+                <span class="breakdown-value">{{ system.quarantine }}</span>
+              </div>
+              <div class="breakdown-item duplicate">
+                <span class="breakdown-label">{{ 'Duplicate' | translate }}:</span>
+                <span class="breakdown-value">{{ system.duplicate }}</span>
+              </div>
+            </div>
+          </div>
+
+          <div class="system-action">
+            <button nz-button nzType="link" nzSize="small">
+              {{ 'View Records' | translate }}
+              <i nz-icon nzType="arrow-right"></i>
+            </button>
+          </div>
+
+          <nz-progress 
+            [nzPercent]="getTotalSystemRecords() > 0 ? (system.count / getTotalSystemRecords()) * 100 : 0" 
+            [nzStrokeColor]="system.color"
+            [nzShowInfo]="false"
+            nzSize="small">
+          </nz-progress>
+        </div>
+      </div>
+    </div>
+
+  </div>
+
+  <!-- Drill-Down Modal -->
+  <nz-modal
+    [(nzVisible)]="isModalVisible"
+    [nzTitle]="modalTitle"
+    [nzWidth]="1200"
+    [nzFooter]="null"
+    (nzOnCancel)="closeModal()"
+    [nzBodyStyle]="{ direction: isArabic ? 'rtl' : 'ltr' }">
+    
+    <ng-container *nzModalContent>
+      <nz-table
+        #basicTable
+        [nzData]="modalData"
+        [nzLoading]="modalLoading"
+        [nzPageSize]="pageSize"
+        [nzPageIndex]="pageIndex"
+        [nzTotal]="total"
+        [nzShowSizeChanger]="true"
+        [nzPageSizeOptions]="[10, 20, 50, 100]"
+        (nzQueryParams)="onQueryParamsChange($event)">
+        
+        <thead>
+          <tr>
+            <th>{{ 'Company Name' | translate }}</th>
+            <th nzWidth="100px">{{ 'Status' | translate }}</th>
+            <th nzWidth="140px">{{ 'Created Date' | translate }}</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr *ngFor="let record of basicTable.data">
+            <td>
+              <div class="company-cell">
+                <strong>{{ record.firstName }}</strong>
+                <span class="arabic" *ngIf="record.firstNameAr">{{ record.firstNameAr }}</span>
+              </div>
+            </td>
+            <td>
+              <nz-tag [nzColor]="getStatusColor(record.status)">
+                {{ record.status }}
+              </nz-tag>
+            </td>
+            <td>{{ record.createdAt | date:'short' }}</td>
+          </tr>
+        </tbody>
+      </nz-table>
+      
+      <!-- Modal Footer -->
+      <div class="modal-footer" [class.rtl]="isArabic" style="margin-top: 16px; text-align: right;">
+        <button nz-button nzType="default" (click)="closeModal()" style="margin-right: 8px;">
+          {{ 'Close' | translate }}
+        </button>
+        <button nz-button nzType="primary" (click)="exportData()">
+          <i nz-icon nzType="download"></i>
+          {{ 'Export List' | translate }}
+        </button>
+      </div>
+    </ng-container>
+  </nz-modal>
+</div>

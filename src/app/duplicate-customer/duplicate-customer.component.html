@@ -5,8 +5,8 @@
   <div class="review-banner" *ngIf="isReviewMode && isReviewer">
     <div class="banner-content">
       <span class="banner-icon">👁️</span>
-      <span class="banner-text">Review Mode - Master Record Analysis</span>
-      <span class="banner-badge">Pending Review</span>
+      <span class="banner-text">{{ 'Review Mode - Master Record Analysis' | translate }}</span>
+      <span class="banner-badge">{{ 'Pending Review' | translate }}</span>
     </div>
   </div>
 
@@ -14,8 +14,8 @@
   <div class="compliance-banner" *ngIf="isComplianceMode && isCompliance">
     <div class="banner-content">
       <span class="banner-icon">⚖️</span>
-      <span class="banner-text">Compliance Review - Golden Record Decision</span>
-      <span class="banner-badge">Pending Compliance</span>
+      <span class="banner-text">{{ 'Compliance Review - Golden Record Decision' | translate }}</span>
+      <span class="banner-badge">{{ 'Pending Compliance' | translate }}</span>
     </div>
   </div>
 
@@ -26,7 +26,7 @@
       <!-- Navigation -->
       <div class="nav-section">
         <button class="nav-btn" (click)="goBack()">
-          <span>←</span> Back to Records
+          <span>←</span> {{ 'Back to Records' | translate }}
         </button>
       </div>
 
@@ -34,27 +34,16 @@
       <div class="context-section">
         <div class="context-badge">
           <span class="badge-icon">🏢</span>
-          <span>{{ currentGroupName || 'Unknown Company' }}</span>
+          <span>{{ currentGroupName || ('Unknown Company' | translate) }}</span>
         </div>
         <div class="tax-badge">
           <span class="badge-icon">📋</span>
-          <span>Tax: {{ currentTaxNumber || 'N/A' }}</span>
+          <span>{{ 'Tax: N/A' | translate }}: {{ currentTaxNumber || 'N/A' }}</span>
         </div>
-        <div class="status-badge" [class.active]="currentStep === 2">
-          <span class="badge-icon">✨</span>
-          <span>Golden Record</span>
-        </div>
+        <!-- Golden Record badge removed -->
       </div>
 
-      <!-- Actions -->
-      <div class="actions-section">
-        <button class="action-icon" (click)="saveDraft()" title="Save Draft">
-          💾
-        </button>
-        <button class="action-icon" (click)="showHelp = !showHelp" [class.active]="showHelp" title="Help">
-          ❓
-        </button>
-      </div>
+      <!-- Actions section removed -->
     </div>
 
     <!-- Progress Timeline - SIMPLIFIED -->
@@ -103,16 +92,8 @@
           </div>
           <div class="record-details">
             <div class="detail-row">
-              <span class="detail-label">ID:</span>
-              <span class="detail-value">{{ record.id }}</span>
-            </div>
-            <div class="detail-row">
               <span class="detail-label">Source:</span>
               <span class="detail-value">{{ record.sourceSystem || 'Unknown' }}</span>
-            </div>
-            <div class="detail-row">
-              <span class="detail-label">Tax:</span>
-              <span class="detail-value">{{ record.tax }}</span>
             </div>
             <div class="detail-row" *ngIf="record.country">
               <span class="detail-label">Country:</span>
@@ -172,20 +153,62 @@
       </div>
     </div>
 
-    <!-- Documents Section -->
+    <!-- Documents Section - Professional Table -->
     <div class="review-section" *ngIf="masterDocuments.length > 0">
       <h3 class="section-title">📄 Documents ({{ masterDocuments.length }})</h3>
-      <div class="documents-grid">
-        <div class="document-card" *ngFor="let doc of masterDocuments">
-          <div class="doc-icon">📎</div>
-          <div class="doc-info">
-            <div class="doc-name">{{ doc.name }}</div>
-            <div class="doc-type">{{ doc.type }}</div>
-          </div>
-          <button class="view-btn" (click)="viewDocument(doc)">
-            Download
-          </button>
-        </div>
+      
+      <div class="documents-table-container">
+        <table class="documents-table">
+          <thead>
+            <tr>
+              <th class="col-icon">Type</th>
+              <th class="col-name">Document Name</th>
+              <th class="col-category">Category</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let doc of masterDocuments; let i = index" class="document-row">
+              
+              <!-- File Type Icon -->
+              <td class="col-icon">
+                <div class="file-type-icon" [attr.data-type]="doc.mime?.includes('pdf') ? 'pdf' : 'other'">
+                  <span *ngIf="doc.mime?.includes('pdf')" class="pdf-icon">📄</span>
+                  <span *ngIf="!doc.mime?.includes('pdf')" class="file-icon">📎</span>
+                </div>
+              </td>
+              
+              <!-- Document Name -->
+              <td class="col-name">
+                <div class="doc-name-wrapper">
+                  <span class="doc-name" [title]="doc.name">{{ doc.name }}</span>
+                </div>
+              </td>
+              
+              <!-- Document Type/Category -->
+              <td class="col-category">
+                <nz-tag [nzColor]="'blue'" nzSize="small">
+                  {{ doc.type }}
+                </nz-tag>
+              </td>
+              
+              <!-- Actions -->
+              <td class="col-actions">
+                <div class="action-buttons">
+                  <button 
+                          nz-button 
+                          nzType="primary" 
+                          nzSize="small"
+                          class="action-btn view-btn"
+                          (click)="viewDocument(doc)">
+                    <span nz-icon nzType="eye" nzTheme="outline"></span>
+                    View
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -243,16 +266,16 @@
           </div>
           <div class="record-details">
             <div class="detail-row">
-              <span class="detail-label">ID:</span>
-              <span class="detail-value">{{ record.id }}</span>
-            </div>
-            <div class="detail-row">
               <span class="detail-label">Source:</span>
               <span class="detail-value">{{ record.sourceSystem || 'Unknown' }}</span>
             </div>
-            <div class="detail-row">
-              <span class="detail-label">Tax:</span>
-              <span class="detail-value">{{ record.tax }}</span>
+            <div class="detail-row" *ngIf="record.country">
+              <span class="detail-label">Country:</span>
+              <span class="detail-value">{{ record.country }}</span>
+            </div>
+            <div class="detail-row" *ngIf="record.city">
+              <span class="detail-label">City:</span>
+              <span class="detail-value">{{ record.city }}</span>
             </div>
           </div>
         </div>
@@ -300,20 +323,62 @@
       </div>
     </div>
 
-    <!-- Documents Section -->
+    <!-- Documents Section - Professional Table -->
     <div class="review-section" *ngIf="masterDocuments.length > 0">
       <h3 class="section-title">📄 Documents ({{ masterDocuments.length }})</h3>
-      <div class="documents-grid">
-        <div class="document-card" *ngFor="let doc of masterDocuments">
-          <div class="doc-icon">📎</div>
-          <div class="doc-info">
-            <div class="doc-name">{{ doc.name }}</div>
-            <div class="doc-type">{{ doc.type }}</div>
-          </div>
-          <button class="view-btn" (click)="viewDocument(doc)">
-            Download
-          </button>
-        </div>
+      
+      <div class="documents-table-container">
+        <table class="documents-table">
+          <thead>
+            <tr>
+              <th class="col-icon">Type</th>
+              <th class="col-name">Document Name</th>
+              <th class="col-category">Category</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let doc of masterDocuments; let i = index" class="document-row">
+              
+              <!-- File Type Icon -->
+              <td class="col-icon">
+                <div class="file-type-icon" [attr.data-type]="doc.mime?.includes('pdf') ? 'pdf' : 'other'">
+                  <span *ngIf="doc.mime?.includes('pdf')" class="pdf-icon">📄</span>
+                  <span *ngIf="!doc.mime?.includes('pdf')" class="file-icon">📎</span>
+                </div>
+              </td>
+              
+              <!-- Document Name -->
+              <td class="col-name">
+                <div class="doc-name-wrapper">
+                  <span class="doc-name" [title]="doc.name">{{ doc.name }}</span>
+                </div>
+              </td>
+              
+              <!-- Document Type/Category -->
+              <td class="col-category">
+                <nz-tag [nzColor]="'blue'" nzSize="small">
+                  {{ doc.type }}
+                </nz-tag>
+              </td>
+              
+              <!-- Actions -->
+              <td class="col-actions">
+                <div class="action-buttons">
+                  <button 
+                          nz-button 
+                          nzType="primary" 
+                          nzSize="small"
+                          class="action-btn view-btn"
+                          (click)="viewDocument(doc)">
+                    <span nz-icon nzType="eye" nzTheme="outline"></span>
+                    View
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
       </div>
     </div>
 
@@ -667,7 +732,7 @@
         <button class="primary-btn submit" 
                 (click)="submitToReviewer()"
                 [disabled]="building || !canProceedToSubmit()">
-          Send for Master Data Review
+          Submit Request
           <span>🚀</span>
         </button>
       </div>
@@ -949,15 +1014,66 @@
     </div>
   </div>
 
-  <!-- Success Modal -->
-  <div class="modal-overlay" *ngIf="showSuccessModal" (click)="closeSuccessModal()">
-    <div class="modal-content success-modal" (click)="stopPropagation($event)">
-      <span class="modal-icon">🎉</span>
-      <h2>Success!</h2>
-      <p>{{ successMessage }}</p>
-      <button class="primary-btn" (click)="navigateToList()">
-        View Task List
-      </button>
+  <!-- Document Preview Modal - ENHANCED -->
+  <div class="document-preview-overlay" *ngIf="showDocumentPreviewModal" (click)="closeDocumentPreview()">
+    <div class="document-preview-container" (click)="stopPropagation($event)">
+      <!-- Header -->
+      <div class="preview-header">
+        <div class="preview-title">
+          <span class="doc-type-icon">📄</span>
+          <span>{{ selectedDocument?.name }}</span>
+        </div>
+        <div class="preview-actions">
+          <button type="button" class="action-btn download-btn" (click)="downloadDocument(selectedDocument)">
+            <span>⬇</span>
+            Download
+          </button>
+          <button type="button" class="action-btn close-btn" (click)="closeDocumentPreview()">
+            ✕
+          </button>
+        </div>
+      </div>
+      
+      <!-- Content -->
+      <div class="preview-content">
+        <!-- Image Preview -->
+        <div *ngIf="selectedDocument?.mime?.includes('image')" class="image-preview">
+          <img [src]="getPreviewUrl(selectedDocument)" [alt]="selectedDocument?.name" />
+        </div>
+        
+        <!-- PDF Preview -->
+        <div *ngIf="selectedDocument?.mime?.includes('pdf')" class="pdf-preview">
+          <iframe [src]="getSafePreviewUrl(selectedDocument)" 
+                  frameborder="0"
+                  width="100%"
+                  height="100%"></iframe>
+        </div>
+        
+        <!-- Non-previewable file -->
+        <div *ngIf="!canPreview(selectedDocument)" class="no-preview">
+          <div class="no-preview-icon">
+            <span>📎</span>
+          </div>
+          <h3>Preview not available</h3>
+          <p>{{ selectedDocument?.name }}</p>
+          <p class="file-info">
+            <span class="file-type">{{ selectedDocument?.type }}</span>
+            <span class="file-size">{{ formatFileSize(selectedDocument?.size) }}</span>
+          </p>
+          <button type="button" class="download-large-btn" (click)="downloadDocument(selectedDocument)">
+            <span>⬇</span>
+            Download to view
+          </button>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="preview-footer">
+        <div class="document-info">
+          <span><strong>Type:</strong> {{ selectedDocument?.type }}</span>
+          <span><strong>Size:</strong> {{ formatFileSize(selectedDocument?.size) }}</span>
+        </div>
+      </div>
     </div>
   </div>
 

@@ -25,23 +25,10 @@ export class AppComponent {
     }
   }
   ngOnInit(): void {
-    
      if (isPlatformBrowser(this.platformId)) {
-      const lang = localStorage.getItem("lang") || "en";
-      console.log(lang , "||||lang")
-      if (lang == "ar") {
-        document.body.classList.add("rtl");
-        document.body.classList.remove("ltr");
-        
-        this.translate.use('ar');
-        // console.log(lang , "||||lang in arabic")
-      } else {
-        document.body.classList.add("ltr");
-        document.body.classList.remove("rtl");
-        
-        this.translate.use('en');
-        // console.log(lang , "||||lang in english")
-      }
+      // Start with English as default
+      document.body.classList.add("ltr");
+      document.body.classList.remove("rtl");
     }
   }
 

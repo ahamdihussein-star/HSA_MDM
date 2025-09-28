@@ -5,7 +5,7 @@
       <svg width="20" height="20" viewBox="0 0 24 24" fill="none">
         <path d="M19 12H5M5 12L12 19M5 12L12 5" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>
       </svg>
-      <span>Back</span>
+      <span>{{ 'Back' | translate }}</span>
     </button>
 
     <div class="customer-info">
@@ -32,7 +32,7 @@
           <path d="M10 18h4v-2h-4v2zM3 6v2h18V6H3zm3 7h12v-2H6v2z"/>
         </svg>
       </span>
-      <span class="toggle-label">{{ onlyChanges ? 'All Fields' : 'Changes Only' }}</span>
+      <span class="toggle-label">{{ onlyChanges ? ('All Fields' | translate) : ('Changes Only' | translate) }}</span>
     </button>
   </div>
 
@@ -43,22 +43,22 @@
       <div class="section-header">
         <div class="section-title">
           <span class="section-icon">{{ getSectionIcon(g.section) }}</span>
-          <h2>{{ g.section }}</h2>
+          <h2>{{ g.section | translate }}</h2>
         </div>
         <span class="change-count" *ngIf="countChanged(g.rows) > 0">
-          {{ countChanged(g.rows) }} change{{ countChanged(g.rows) > 1 ? 's' : '' }}
+          {{ countChanged(g.rows) }} {{ countChanged(g.rows) > 1 ? ('changes' | translate) : ('change' | translate) }}
         </span>
       </div>
 
       <div class="data-table">
         <div class="table-header">
-          <div class="th-field">Field</div>
-          <div class="th-old">Previous Value</div>
-          <div class="th-new">Current Value</div>
-          <div class="th-change">Status</div>
-          <div class="th-source">Source</div>
-          <div class="th-user">Modified By</div>
-          <div class="th-date">Date</div>
+          <div class="th-field">{{ 'FIELD' | translate }}</div>
+          <div class="th-old">{{ 'PREVIOUS VALUE' | translate }}</div>
+          <div class="th-new">{{ 'CURRENT VALUE' | translate }}</div>
+          <div class="th-change">{{ 'STATUS' | translate }}</div>
+          <div class="th-source">{{ 'SOURCE' | translate }}</div>
+          <div class="th-user">{{ 'MODIFIED BY' | translate }}</div>
+          <div class="th-date">{{ 'DATE' | translate }}</div>
           <div class="th-action"></div>
         </div>
 
@@ -66,7 +66,7 @@
           <div class="table-row" *ngFor="let row of g.rows; trackBy: trackByField"
                [class.changed]="isChanged(row)">
             <div class="td-field">
-              <span class="field-name">{{ row.field }}</span>
+              <span class="field-name">{{ row.field | translate }}</span>
             </div>
             <div class="td-old">
               <span class="value-text" [class.empty]="!row.oldValue">
@@ -80,7 +80,7 @@
             </div>
             <div class="td-change">
               <span class="change-badge" [ngClass]="changeBadgeClass(row)">
-                {{ changeTypeLabel(row) }}
+                {{ changeTypeLabel(row) | translate }}
               </span>
             </div>
             <div class="td-source">
@@ -89,7 +89,7 @@
             <div class="td-user">{{ row.updatedBy }}</div>
             <div class="td-date">{{ row.updatedDate }}</div>
             <div class="td-action">
-              <button class="btn-history" (click)="openHistory(row.field)" title="View History">
+              <button class="btn-history" (click)="openHistory(row.field)" [title]="'History' | translate">
                 <svg width="16" height="16" viewBox="0 0 24 24" fill="currentColor">
                   <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
                 </svg>
@@ -109,10 +109,10 @@
         </div>
         <div class="stats-pills">
           <span class="stat-pill added" *ngIf="contactsView.stats.added > 0">
-            +{{ contactsView.stats.added }} added
+            +{{ contactsView.stats.added }} {{ 'added' | translate }}
           </span>
           <span class="stat-pill changed" *ngIf="contactsView.stats.changed > 0">
-            {{ contactsView.stats.changed }} changed
+            {{ contactsView.stats.changed }} {{ 'changed' | translate }}
           </span>
           <span class="stat-pill removed" *ngIf="contactsView.stats.removed > 0">
             -{{ contactsView.stats.removed }} removed
@@ -130,9 +130,9 @@
            <span class="contact-status" [ngClass]="pillClass(contact.delta)">
               <ng-container [ngSwitch]="contact.delta">
                 <span *ngSwitchCase="'added'">
-                  {{ contactsView.items.indexOf(contact) === 0 ? 'Original' : 'New' }}
+                  {{ contactsView.items.indexOf(contact) === 0 ? 'Original' : ('NEW' | translate) }}
                 </span>
-                <span *ngSwitchCase="'changed'">Modified</span>
+                <span *ngSwitchCase="'changed'">{{ 'MODIFIED' | translate }}</span>
                 <span *ngSwitchCase="'removed'">Deleted</span>
               </ng-container>
             </span>
@@ -141,34 +141,34 @@
 
           <div class="contact-body">
             <div class="contact-field" *ngIf="contact.name">
-              <span class="field-label">Name:</span>
+              <span class="field-label">{{ 'Name' | translate }}:</span>
               <span class="field-value" [class.changed]="contact.delta === 'changed'">
                 {{ contact.name }}
               </span>
             </div>
             
             <div class="contact-field" *ngIf="contact.jobTitle">
-              <span class="field-label">Title:</span>
+              <span class="field-label">{{ 'Title' | translate }}:</span>
               <span class="field-value">{{ contact.jobTitle }}</span>
             </div>
             
             <div class="contact-field" *ngIf="contact.email">
-              <span class="field-label">Email:</span>
+              <span class="field-label">{{ 'Email' | translate }}:</span>
               <span class="field-value">{{ contact.email }}</span>
             </div>
             
             <div class="contact-field" *ngIf="contact.mobile">
-              <span class="field-label">Mobile:</span>
+              <span class="field-label">{{ 'Mobile' | translate }}:</span>
               <span class="field-value">{{ contact.mobile }}</span>
             </div>
             
             <div class="contact-field" *ngIf="contact.landline">
-              <span class="field-label">Landline:</span>
+              <span class="field-label">{{ 'Landline' | translate }}:</span>
               <span class="field-value">{{ contact.landline }}</span>
             </div>
             
             <div class="contact-field" *ngIf="contact.preferredLanguage">
-              <span class="field-label">Language:</span>
+              <span class="field-label">{{ 'Language' | translate }}:</span>
               <span class="field-value">{{ contact.preferredLanguage }}</span>
             </div>
             
@@ -187,14 +187,14 @@
             <span class="by-user">{{ contact.by }}</span>
             <span class="source">{{ contact.source }}</span>
             <button class="btn-history-sm" (click)="openHistory('Contact: ' + contact.name, 'contact')">
-              History
+              {{ 'History' | translate }}
             </button>
           </div>
         </div>
       </div>
     </div>
 
-    <!-- Enhanced Documents Section -->
+    <!-- Enhanced Documents Section - Professional Design -->
     <div class="section-card">
       <div class="section-header">
         <div class="section-title">
@@ -211,45 +211,92 @@
         </div>
       </div>
 
-      <div class="documents-list">
-        <div class="document-item" *ngFor="let doc of documentsView.items"
-             [class.added]="doc.delta === 'added'"
-             [class.removed]="doc.delta === 'removed'">
-          
-          <div class="doc-icon">
-            {{ getDocIcon(doc.type) }}
-          </div>
-          
-          <div class="doc-info">
-            <div class="doc-name">
-              <a *ngIf="doc.url" [href]="doc.url" target="_blank" rel="noopener">
+      <div class="documents-professional">
+        <!-- Table Header -->
+        <div class="docs-table-header">
+          <div class="col-name">Document Name</div>
+          <div class="col-type">Type</div>
+          <div class="col-size">Size</div>
+          <div class="col-status">Status</div>
+          <div class="col-user">Modified By</div>
+          <div class="col-date">Date</div>
+          <div class="col-actions">Actions</div>
+        </div>
+
+        <!-- Table Body -->
+        <div class="docs-table-body">
+          <div class="doc-row" *ngFor="let doc of documentsView.items"
+               [class.doc-added]="doc.delta === 'added'"
+               [class.doc-removed]="doc.delta === 'removed'">
+            
+            <!-- Document Name & Icon -->
+            <div class="col-name">
+              <span class="doc-mini-icon">{{ getDocIcon(doc.type) }}</span>
+              <span class="doc-name-text" [title]="doc.name">
                 {{ doc.name || 'Untitled Document' }}
-              </a>
-              <span *ngIf="!doc.url">{{ doc.name || 'Untitled Document' }}</span>
+              </span>
             </div>
-            <div class="doc-meta">
-              <span class="doc-type">{{ doc.type }}</span>
-              <span class="doc-desc" *ngIf="doc.description">{{ doc.description }}</span>
+
+            <!-- Document Type -->
+            <div class="col-type">
+              <span class="type-badge">{{ doc.type || 'Document' }}</span>
+            </div>
+
+            <!-- Size -->
+            <div class="col-size">
+              <span class="size-text">{{ doc.size ? formatFileSize(doc.size) : '—' }}</span>
+            </div>
+
+            <!-- Status -->
+            <div class="col-status">
+              <span class="status-indicator" [ngClass]="{
+                'status-added': doc.delta === 'added',
+                'status-removed': doc.delta === 'removed'
+              }">
+                <span class="status-dot"></span>
+                {{ doc.delta === 'added' ? 'Added' : 'Removed' }}
+              </span>
+            </div>
+
+            <!-- Modified By -->
+            <div class="col-user">
+              <span class="user-text">{{ doc.by || '—' }}</span>
+            </div>
+
+            <!-- Date -->
+            <div class="col-date">
+              <span class="date-text">{{ doc.when || '—' }}</span>
+            </div>
+
+            <!-- Actions -->
+            <div class="col-actions">
+              <div class="action-buttons">
+                <button class="btn-action preview" 
+                        *ngIf="canPreview(doc)"
+                        (click)="previewDocument(doc)"
+                        [title]="'Preview'">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M12 4.5C7 4.5 2.73 7.61 1 12c1.73 4.39 6 7.5 11 7.5s9.27-3.11 11-7.5c-1.73-4.39-6-7.5-11-7.5zM12 17c-2.76 0-5-2.24-5-5s2.24-5 5-5 5 2.24 5 5-2.24 5-5 5zm0-8c-1.66 0-3 1.34-3 3s1.34 3 3 3 3-1.34 3-3-1.34-3-3-3z"/>
+                  </svg>
+                </button>
+                
+
+                <button class="btn-action history"
+                        (click)="openHistory('Document: ' + doc.name, 'document')"
+                        [title]="'History'">
+                  <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
+                    <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
+                  </svg>
+                </button>
+              </div>
             </div>
           </div>
-          
-          <div class="doc-status">
-            <span class="status-badge" [ngClass]="pillClass(doc.delta)">
-              {{ doc.delta }}
-            </span>
-          </div>
-          
-          <div class="doc-details">
-            <span class="detail-item">{{ doc.by }}</span>
-            <span class="detail-item">{{ doc.when }}</span>
-            <span class="detail-item">{{ doc.source }}</span>
-          </div>
-          
-          <button class="btn-history-sm" (click)="openHistory('Document: ' + doc.name, 'document')">
-            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor">
-              <path d="M13 3a9 9 0 0 0-9 9H1l3.89 3.89.07.14L9 12H6c0-3.87 3.13-7 7-7s7 3.13 7 7-3.13 7-7 7c-1.93 0-3.68-.79-4.94-2.06l-1.42 1.42A8.954 8.954 0 0 0 13 21a9 9 0 0 0 0-18zm-1 5v5l4.28 2.54.72-1.21-3.5-2.08V8H12z"/>
-            </svg>
-          </button>
+        </div>
+
+        <!-- Empty State -->
+        <div class="docs-empty-state" *ngIf="documentsView.items.length === 0">
+          <span class="empty-icon">📄</span>
+          <p>No document changes recorded</p>
         </div>
       </div>
     </div>
@@ -291,11 +338,18 @@
             </div>
             
             <div class="timeline-values" *ngIf="historyKind === 'scalar'">
-              <div class="value-row" *ngIf="item.from">
+              <!-- For EXTRACTED/CREATED entries that only have initial value -->
+              <div class="value-row" *ngIf="item.value !== null && item.value !== undefined">
+                <span class="value-label">Value:</span>
+                <span class="value-text new">{{ item.value }}</span>
+              </div>
+              
+              <!-- For UPDATE entries that have from/to -->
+              <div class="value-row" *ngIf="item.from !== null && item.from !== undefined && !item.value">
                 <span class="value-label">From:</span>
                 <span class="value-text old">{{ item.from }}</span>
               </div>
-              <div class="value-row" *ngIf="item.to">
+              <div class="value-row" *ngIf="item.to !== null && item.to !== undefined && !item.value">
                 <span class="value-label">To:</span>
                 <span class="value-text new">{{ item.to }}</span>
               </div>
@@ -385,6 +439,74 @@
               </span>
             </div>
           </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Document Preview Modal -->
+  <div class="document-preview-modal" *ngIf="showDocumentPreviewModal" (click)="closeDocumentPreview()">
+    <div class="preview-container" (click)="$event.stopPropagation()">
+      <!-- Header -->
+      <div class="preview-header">
+        <div class="preview-title">
+          <span class="doc-icon">{{ getDocIcon(selectedDocument?.type) }}</span>
+          <span>{{ selectedDocument?.name }}</span>
+        </div>
+        <div class="preview-actions">
+          <button class="btn-download-modal" (click)="downloadDocument(selectedDocument)">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            Download
+          </button>
+          <button class="btn-close-modal" (click)="closeDocumentPreview()">
+            <svg width="20" height="20" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 6.41L17.59 5 12 10.59 6.41 5 5 6.41 10.59 12 5 17.59 6.41 19 12 13.41 17.59 19 19 17.59 13.41 12z"/>
+            </svg>
+          </button>
+        </div>
+      </div>
+      
+      <!-- Content -->
+      <div class="preview-content">
+        <!-- Image Preview -->
+        <div *ngIf="isImage(selectedDocument)" class="image-preview">
+          <img [src]="getSafePreviewUrl(selectedDocument)" [alt]="selectedDocument?.name" />
+        </div>
+        
+        <!-- PDF Preview -->
+        <div *ngIf="isPdf(selectedDocument)" class="pdf-preview">
+          <iframe [src]="getSafePreviewUrl(selectedDocument)" 
+                  frameborder="0"
+                  width="100%"
+                  height="100%">
+          </iframe>
+        </div>
+        
+        <!-- Non-previewable file -->
+        <div *ngIf="!canPreview(selectedDocument)" class="no-preview">
+          <div class="no-preview-icon">
+            <span>{{ getDocIcon(selectedDocument?.type) }}</span>
+          </div>
+          <h3>Preview not available</h3>
+          <p>{{ selectedDocument?.name }}</p>
+          <button class="btn-download-large" (click)="downloadDocument(selectedDocument)">
+            <svg width="24" height="24" viewBox="0 0 24 24" fill="currentColor">
+              <path d="M19 9h-4V3H9v6H5l7 7 7-7zM5 18v2h14v-2H5z"/>
+            </svg>
+            Download to view
+          </button>
+        </div>
+      </div>
+      
+      <!-- Footer -->
+      <div class="preview-footer">
+        <div class="document-info">
+          <span><strong>Type:</strong> {{ selectedDocument?.type || 'Unknown' }}</span>
+          <span *ngIf="selectedDocument?.size">
+            <strong>Size:</strong> {{ formatFileSize(selectedDocument.size) }}
+          </span>
         </div>
       </div>
     </div>

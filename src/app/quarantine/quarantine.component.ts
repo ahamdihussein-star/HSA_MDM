@@ -52,6 +52,10 @@ export class QuarantineComponent implements OnInit {
   filtered: Row[] = [];
   loading = false;
   q = '';
+  
+  // Filter properties
+  filterBySource = '';
+  uniqueSourceSystems: string[] = [];
 
   // ==== Pagination ====
   page = 1;
@@ -252,6 +256,11 @@ async load(): Promise<void> {
     this.filtered = [...this.rows];
     this.page = 1; // reset pager
     
+    // Generate unique source systems for filter
+    this.uniqueSourceSystems = [...new Set(
+      this.rows.map(r => this.getSourceBadgeText(r.sourceSystem))
+    )].filter(Boolean);
+    
     console.log('Quarantine data loaded successfully. Total rows:', this.rows.length);
     console.log('Active quarantine records (not submitted):', this.filtered.length);
 
@@ -339,20 +348,35 @@ async load(): Promise<void> {
     return this.rows.filter(r => r.originalRequestType === 'quarantine' || !r.originalRequestType).length;
   }
 
-  // -------- search ----------
+  // -------- search and filters ----------
   onSearch(term: string) {
     this.q = (term || '').toLowerCase().trim();
-    if (!this.q) {
-      this.filtered = [...this.rows];
-      this.page = 1;
-      return;
-    }
-    this.filtered = this.rows.filter(r => {
-      const hay = [
-        r.id,
-        r.firstName,
-        r.firstNameAr,
-        r.country,
+    this.applyFilters();
+  }
+
+  onFilterChange(event: Event) {
+    const target = event.target as HTMLSelectElement;
+    this.filterBySource = target.value;
+    this.applyFilters();
+  }
+
+  clearFilters() {
+    this.q = '';
+    this.filterBySource = '';
+    this.applyFilters();
+  }
+
+  applyFilters() {
+    let result = [...this.rows];
+
+    // Apply search filter
+    if (this.q.trim()) {
+      result = result.filter(r => {
+        const hay = [
+          r.id,
+          r.firstName,
+          r.firstNameAr,
+          r.country,
         r.city,
         r.recordType,
         r.sourceSystem,
@@ -361,7 +385,17 @@ async load(): Promise<void> {
         r.tax
       ].join(' ').toLowerCase();
       return hay.includes(this.q);
-    });
+      });
+    }
+
+    // Apply source system filter
+    if (this.filterBySource) {
+      result = result.filter(r => 
+        this.getSourceBadgeText(r.sourceSystem) === this.filterBySource
+      );
+    }
+
+    this.filtered = result;
     this.page = 1; // start from first page after a search
   }
 
@@ -406,7 +440,10 @@ completeRecord(r: Row) {
     queryParams: { 
       mode: 'edit',
       fromQuarantine: 'true',
-      originalRequestType: r.originalRequestType || 'quarantine'
+      originalRequestType: r.originalRequestType || 'quarantine',
+      userRole: 'data_entry',  // أضف السطر ده
+      edit: true,               // وده كمان
+      from: 'quarantine'        // وده للتأكيد
     }
   });
   

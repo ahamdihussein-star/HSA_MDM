@@ -2,7 +2,7 @@
     display: flex;
     align-items: center;
     justify-content: center;
-    margin-bottom: -70px;
+    margin-bottom: 20px;
     z-index: 99;
 }
 
@@ -24,4 +24,184 @@
     border-radius: 100px;
     margin: 0 12px;
     padding: 12px 18px;
+}
+
+/* Table responsive design - prevent column headers from wrapping */
+nz-table {
+    width: 100%;
+}
+
+nz-table thead th {
+    white-space: nowrap !important;
+    text-overflow: ellipsis;
+    overflow: hidden;
+    min-width: 120px;
+    padding: 8px 12px !important;
+    font-size: 14px;
+    font-weight: 600;
+    background-color: #fafafa;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Specific column widths for better layout */
+nz-table thead th:nth-child(1) { /* Tax Number */
+    min-width: 140px;
+    max-width: 140px;
+}
+
+nz-table thead th:nth-child(2) { /* Company Name */
+    min-width: 250px;
+    max-width: 300px;
+}
+
+nz-table thead th:nth-child(3) { /* Source Systems */
+    min-width: 180px;
+    max-width: 200px;
+}
+
+nz-table thead th:nth-child(4) { /* Suspected Duplicates */
+    min-width: 150px;
+    max-width: 150px;
+}
+
+nz-table thead th:nth-child(5) { /* Action */
+    min-width: 100px;
+    max-width: 100px;
+}
+
+/* Table body cells */
+nz-table tbody td {
+    padding: 8px 12px !important;
+    vertical-align: top;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+/* Company name cell - allow wrapping for content but not header */
+nz-table tbody td:nth-child(2) {
+    word-wrap: break-word;
+    max-width: 300px;
+}
+
+/* Source systems and duplicates - keep compact */
+nz-table tbody td:nth-child(3),
+nz-table tbody td:nth-child(4) {
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+/* Ensure table doesn't break layout */
+nz-table .ant-table {
+    table-layout: fixed;
+}
+
+/* Responsive adjustments for smaller screens */
+@media (max-width: 1200px) {
+    nz-table thead th:nth-child(2) { /* Company Name */
+        min-width: 200px;
+        max-width: 250px;
+    }
+    
+    nz-table thead th:nth-child(3) { /* Source Systems */
+        min-width: 150px;
+        max-width: 180px;
+    }
+}
+
+@media (max-width: 992px) {
+    nz-table thead th:nth-child(2) { /* Company Name */
+        min-width: 180px;
+        max-width: 200px;
+    }
+    
+    nz-table thead th:nth-child(3) { /* Source Systems */
+        min-width: 120px;
+        max-width: 150px;
+    }
+}
+
+/* Filter holder styling */
+.filterHolder {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.filter-select {
+    background-color: white;
+    border: 1px solid #d9d9d9;
+    border-radius: 6px;
+    padding: 8px 12px;
+    font-size: 14px;
+    min-width: 150px;
+    cursor: pointer;
+}
+
+.filter-select:focus {
+    border-color: #1890ff;
+    outline: none;
+}
+
+.clear-filters-btn {
+    background: #ff4d4f;
+    color: white;
+    border: none;
+    border-radius: 50%;
+    width: 24px;
+    height: 24px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    cursor: pointer;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.clear-filters-btn:hover {
+    background: #ff7875;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 14px;
+}
+
+.btn-primary {
+    background: #1890ff;
+    color: white;
+}
+
+.btn-primary:hover {
+    background: #40a9ff;
+}
+
+/* Source Systems List Styling - No bullets */
+.source-systems-list {
+    margin: 0;
+    padding: 0;
+    list-style: none;
+}
+
+.source-systems-list li {
+    padding: 2px 0;
+    font-size: 13px;
+    color: #666;
+}
+
+/* Remove any existing badge styling for source systems */
+.source-systems-list .badge {
+    background: none !important;
+    color: inherit !important;
+    padding: 0 !important;
+    border: none !important;
+}
+
+/* Duplicate Count Styling */
+.duplicate-count {
+    font-size: 14px;
+    color: #333;
+    font-weight: 500;
 }

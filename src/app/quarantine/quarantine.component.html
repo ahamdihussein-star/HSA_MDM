@@ -10,34 +10,68 @@
         [value]="q"
         (input)="onSearch($any($event.target).value)" />
     </div>
-    <button nz-button nzType="default" (click)="refresh()">
-      <i nz-icon nzType="reload"></i>
-      {{ "Refresh" | translate }}
-    </button>
+    <select 
+      [(ngModel)]="filterBySource" 
+      (change)="onFilterChange($event)"
+      class="filter-select">
+      <option value="">{{ 'All Sources' | translate }}</option>
+      <option *ngFor="let source of uniqueSourceSystems" [value]="source">{{ source }}</option>
+    </select>
+    <button (click)="clearFilters()" class="btn btn-primary">{{ 'Clear Filters' | translate }}</button>
+  </div>
+</div>
+
+<!-- Summary Statistics - Beautiful Design -->
+<div *ngIf="!loading && rows.length > 0" class="stats-container">
+  <div class="stats-grid">
+    <div class="stat-card total">
+      <div class="stat-number">{{ total }}</div>
+      <div class="stat-label">{{ 'Total Records' | translate }}</div>
+    </div>
+    
+    <div class="stat-card quarantine">
+      <div class="stat-number">{{ fromQuarantineCount }}</div>
+      <div class="stat-label">{{ 'Original Quarantine' | translate }}</div>
+    </div>
+    
+    <div class="stat-card duplicates">
+      <div class="stat-number">{{ fromDuplicateCount }}</div>
+      <div class="stat-label">{{ 'From Duplicates' | translate }}</div>
+    </div>
+    
+    <div class="stat-card sap-s4">
+      <div class="stat-number">{{ sapS4HanaCount }}</div>
+      <div class="stat-label">{{ 'SAP S/4HANA' | translate }}</div>
+    </div>
+    
+    <div class="stat-card sap-byd">
+      <div class="stat-number">{{ sapByDCount }}</div>
+      <div class="stat-label">{{ 'SAP ByD' | translate }}</div>
+    </div>
+    
+    <div class="stat-card oracle">
+      <div class="stat-number">{{ oracleFormsCount }}</div>
+      <div class="stat-label">{{ 'Oracle Forms' | translate }}</div>
+    </div>
   </div>
 </div>
 
 <!-- Table using nz-table for consistency -->
-<nz-table #basicTable [nzPageSize]="10" [nzData]="filtered" [nzLoading]="loading" [nzScroll]="{ x: '1400px' }">
+<nz-table #basicTable [nzData]="filtered" [nzLoading]="loading" [nzScroll]="{ x: '100%', y: 'calc(100vh - 400px)' }" [nzPageSize]="50" nzTableLayout="fixed">
   <thead>
     <tr>
-      <th style="min-width:120px">{{ "Request ID" | translate }}</th>
-      <th style="min-width:120px">{{ "Origin" | translate }}</th>
       <th style="min-width:200px">{{ "Company Name" | translate }}</th>
-      <th style="min-width:100px">{{ "Type" | translate }}</th>
-      <th style="min-width:120px">{{ "Country/City" | translate }}</th>
+      <th style="min-width:100px">{{ "Company Type" | translate }}</th>
       <th style="min-width:140px">{{ "Source System" | translate }}</th>
       <th style="min-width:200px">{{ "Missing Fields" | translate }}</th>
-      <th style="min-width:80px">{{ "Docs" | translate }}</th>
-      <th style="min-width:80px">{{ "Contacts" | translate }}</th>
-      <th style="min-width:160px">{{ "Actions" | translate }}</th>
+      <th style="min-width:120px">{{ "Actions" | translate }}</th>
     </tr>
   </thead>
 
   <tbody>
     <!-- Empty state row -->
     <tr *ngIf="!loading && (!filtered || filtered.length === 0)">
-      <td colspan="10" style="text-align: center; padding: 40px;">
+      <td colspan="5" style="text-align: center; padding: 40px;">
         <nz-empty [nzNotFoundContent]="'No quarantine records found' | translate"></nz-empty>
       </td>
     </tr>
@@ -45,27 +79,11 @@
     <!-- Data rows -->
     <tr *ngFor="let r of basicTable.data; trackBy: trackById">
       <td>
-        <span style="font-family:monospace">#{{ r.requestId || r.id }}</span>
-      </td>
-
-      <!-- Origin Column - NEW -->
-      <td>
-        <div style="display:flex; flex-direction:column; gap:4px;">
-          <nz-tag [nzColor]="getOriginColor(r)">
-            {{ getOriginBadge(r) }}
-          </nz-tag>
-          <small style="opacity:.7; font-size:11px">
-            {{ getRecordOrigin(r) }}
-          </small>
-        </div>
-      </td>
-
-      <td>
         <div style="display:flex; flex-direction:column;">
           <strong>{{ r.firstName || '—' }}</strong>
           <small *ngIf="r.firstNameAr" style="opacity:.7">{{ r.firstNameAr }}</small>
           <small *ngIf="r.tax" style="opacity:.7; margin-top:2px">
-            <i nz-icon nzType="number" style="margin-right:2px"></i>
+            <i nz-icon nzType="number" nzTheme="outline" style="margin-right:2px"></i>
             Tax: {{ r.tax }}
           </small>
         </div>
@@ -73,13 +91,6 @@
 
       <td>
         <nz-tag>{{ r.CustomerType || 'Unknown' }}</nz-tag>
-      </td>
-      
-      <td>
-        <div style="display:flex; flex-direction:column;">
-          <span>{{ r.country || '—' }}</span>
-          <small *ngIf="r.city" style="opacity:.7">{{ r.city }}</small>
-        </div>
       </td>
 
       <td>
@@ -93,7 +104,7 @@
       <td>
         <div [title]="r.missingFields?.join(', ')">
           <nz-tag nzColor="warning">
-            {{ getMissingFieldsCount(r) }} missing
+            {{ getMissingFieldsCount(r) }} {{ 'missing' | translate }}
           </nz-tag>
           <div style="font-size:11px; margin-top:4px; opacity:.7">
             {{ getMissingFieldsDisplay(r) }}
@@ -102,63 +113,11 @@
       </td>
 
       <td>
-        <nz-tag>{{ getDocsCount(r) }}</nz-tag>
-      </td>
-      
-      <td>
-        <nz-tag>{{ getContactsCount(r) }}</nz-tag>
-      </td>
-
-      <td>
-        <div style="display:flex; gap:4px;">
-          <button nz-button nzType="primary" nzSize="small" (click)="completeRecord(r)">
-            <i nz-icon nzType="edit"></i>
-            {{ "Complete" | translate }}
-          </button>
-          <button nz-button nzType="default" nzSize="small" (click)="viewDataLineage(r)">
-            <i nz-icon nzType="branches"></i>
-            {{ "Lineage" | translate }}
-          </button>
-        </div>
+        <button nz-button nzType="primary" nzSize="small" (click)="completeRecord(r)">
+          <i nz-icon nzType="edit"></i>
+          {{ "Fix" | translate }}
+        </button>
       </td>
     </tr>
   </tbody>
 </nz-table>
-
-<!-- Summary Statistics -->
-<div *ngIf="!loading && rows.length > 0" style="margin-top:24px; padding:16px; background:#f5f5f5; border-radius:4px; display:flex; gap:24px;">
-  <nz-statistic 
-    [nzValue]="total"
-    [nzTitle]="'Total Records' | translate">
-  </nz-statistic>
-  
-  <nz-statistic 
-    [nzValue]="fromQuarantineCount"
-    [nzTitle]="'Original Quarantine' | translate"
-    [nzValueStyle]="{ color: '#fa8c16' }">
-  </nz-statistic>
-  
-  <nz-statistic 
-    [nzValue]="fromDuplicateCount"
-    [nzTitle]="'From Duplicates' | translate"
-    [nzValueStyle]="{ color: '#1890ff' }">
-  </nz-statistic>
-  
-  <nz-statistic 
-    [nzValue]="sapS4HanaCount"
-    [nzTitle]="'SAP S/4HANA' | translate"
-    [nzValueStyle]="{ color: '#1890ff' }">
-  </nz-statistic>
-  
-  <nz-statistic 
-    [nzValue]="sapByDCount"
-    [nzTitle]="'SAP ByD' | translate"
-    [nzValueStyle]="{ color: '#13c2c2' }">
-  </nz-statistic>
-  
-  <nz-statistic 
-    [nzValue]="oracleFormsCount"
-    [nzTitle]="'Oracle Forms' | translate"
-    [nzValueStyle]="{ color: '#f5222d' }">
-  </nz-statistic>
-</div>

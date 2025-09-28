@@ -25,8 +25,11 @@ export class DuplicateRecordsComponent implements OnInit {
   user: string = '';
   userRole: string = '';
   duplicateRecords: DupGroup[] = [];
+  filteredRecords: DupGroup[] = [];
   loading = false;
   selectedRecord: DupGroup | null = null;
+  searchTerm: string = '';
+  filterBySource: string = '';
 
   constructor(
     public router: Router,
@@ -117,6 +120,9 @@ export class DuplicateRecordsComponent implements OnInit {
         
         // Sort by duplicate count (highest first)
         this.duplicateRecords.sort((a, b) => b.duplicateCount - a.duplicateCount);
+        
+        // Initialize filtered records
+        this.filteredRecords = [...this.duplicateRecords];
         
         console.log('Active duplicate groups loaded:', this.duplicateRecords.length);
         console.log('Groups:', this.duplicateRecords.map(g => ({
@@ -245,5 +251,56 @@ export class DuplicateRecordsComponent implements OnInit {
         (this as any).onItemCheckedCore(id, checked, status);
       }
     } catch {}
+  }
+
+  // Search functionality
+  onSearchChange(event: Event): void {
+    const target = event.target as HTMLInputElement;
+    this.searchTerm = target.value;
+    this.applyFilters();
+  }
+
+  // Filter functionality
+  onFilterChange(event: Event): void {
+    const target = event.target as HTMLSelectElement;
+    this.filterBySource = target.value;
+    this.applyFilters();
+  }
+
+  // Apply both search and filter
+  public applyFilters(): void {
+    let filtered = [...this.duplicateRecords];
+
+    // Apply search filter
+    if (this.searchTerm.trim()) {
+      const searchLower = this.searchTerm.toLowerCase();
+      filtered = filtered.filter(group => 
+        group.tax.toLowerCase().includes(searchLower) ||
+        group.companyNames.some(name => name.toLowerCase().includes(searchLower)) ||
+        group.sourceSystems.some(system => system.toLowerCase().includes(searchLower))
+      );
+    }
+
+    // Apply source system filter
+    if (this.filterBySource) {
+      filtered = filtered.filter(group => 
+        group.sourceSystems.includes(this.filterBySource)
+      );
+    }
+
+    this.filteredRecords = filtered;
+  }
+
+  // Get unique source systems for filter dropdown
+  getUniqueSourceSystems(): string[] {
+    const allSystems = this.duplicateRecords.flatMap(group => group.sourceSystems);
+    return [...new Set(allSystems)].sort();
+  }
+
+  // Clear all filters
+  clearFilters(): void {
+    this.searchTerm = '';
+    this.filterBySource = '';
+    this.filteredRecords = [...this.duplicateRecords];
   }
 }

@@ -1,6 +1,6 @@
 <!-- Loading Spinner while fetching user data from API -->
 <div *ngIf="isLoading" class="loading-overlay" style="position: fixed; top: 0; left: 0; right: 0; bottom: 0; background: rgba(255,255,255,0.9); z-index: 9999; display: flex; align-items: center; justify-content: center;">
- <nz-spin nzTip="Loading user data..." [nzSpinning]="true" nzSize="large"></nz-spin>
+ <nz-spin nzTip="{{ 'Loading user data...' | translate }}" [nzSpinning]="true" nzSize="large"></nz-spin>
 </div>
 
 <!-- Main Content - Shows after loading -->
@@ -31,7 +31,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" alt="Quarantine Icon" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" alt="Quarantine Icon" class="navIcon" />
-         Quarantine
+         {{ "Quarantine" | translate }}
        </p>
 
        <p class="navTab"
@@ -60,14 +60,6 @@
          <img *ngIf="router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenYellow.svg" alt="Home Icon" class="navIcon" />
          {{ "GoldenRecords" | translate }}
        </p>
-
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'home']"
-          [ngClass]="[router.url.startsWith('/dashboard/home') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/home')" src="assets/img/dashboardGray.svg" alt="Home Icon" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/home')" src="assets/img/dashboardYellow.svg" alt="Home Icon" class="navIcon" />
-         {{ "Dashboard" | translate }}
-       </p>
      </div>
 
      <!-- ==== user3 (Compliance) ==== -->
@@ -92,11 +84,43 @@
      <!-- ==== user4 (System Admin) ==== -->
      <div *ngIf="user == '4' || isAdmin">
        <p class="navTab"
+          [routerLink]="['/dashboard', 'executive']"
+          [ngClass]="[router.url.startsWith('/dashboard/executive') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardGray.svg" alt="Executive Dashboard" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardYellow.svg" alt="Executive Dashboard" class="navIcon" />
+         {{ "Executive Dashboard" | translate }}
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'technical']"
+          [ngClass]="[router.url.startsWith('/dashboard/technical') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardGray.svg" alt="Technical Dashboard" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardYellow.svg" alt="Technical Dashboard" class="navIcon" />
+         {{ "Technical Dashboard" | translate }}
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'business']"
+          [ngClass]="[router.url.startsWith('/dashboard/business') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/business')" src="assets/img/dashboardGray.svg" alt="Business Dashboard" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/business')" src="assets/img/dashboardYellow.svg" alt="Business Dashboard" class="navIcon" />
+         {{ "Business Dashboard" | translate }}
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'sync-golden-records']"
+          [ngClass]="[router.url.startsWith('/dashboard/sync-golden-records') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/sync-golden-records')" src="assets/img/goldenGrey.svg" alt="Sync Golden Records" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/sync-golden-records')" src="assets/img/goldenYellow.svg" alt="Sync Golden Records" class="navIcon" />
+         {{ "Sync Golden Records" | translate }}
+       </p>
+
+       <p class="navTab"
           [routerLink]="['/dashboard', 'data-management']"
           [ngClass]="[router.url.startsWith('/dashboard/data-management') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardGray.svg" alt="Data Management" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardYellow.svg" alt="Data Management" class="navIcon" />
-         Data Management
+         {{ "Data Management" | translate }}
        </p>
 
        <p class="navTab"
@@ -104,7 +128,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/golden-requests') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenGrey.svg" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenYellow.svg" class="navIcon" />
-         Golden Records
+         {{ "Golden Records" | translate }}
        </p>
 
        <p class="navTab"
@@ -112,7 +136,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateGrey.svg" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateYellow.svg" class="navIcon" />
-         All Duplicates
+         {{ "All Duplicates" | translate }}
        </p>
 
        <p class="navTab"
@@ -120,7 +144,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" class="navIcon" />
-         All Quarantine
+         {{ "All Quarantine" | translate }}
        </p>
 
        <p class="navTab"
@@ -128,7 +152,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/admin-task-list') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeGrey.svg" alt="Task List Icon" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeYellow.svg" alt="Task List Icon" class="navIcon" />
-         Reviewer Tasks
+         {{ "Reviewer Tasks" | translate }}
        </p>
 
        <p class="navTab"
@@ -136,7 +160,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/compliance-task-list') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeGrey.svg" alt="Compliance Icon" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeYellow.svg" alt="Compliance Icon" class="navIcon" />
-         Compliance Tasks
+         {{ "Compliance Tasks" | translate }}
        </p>
      </div>
 
@@ -147,7 +171,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/demo-admin') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/demo-admin')" src="assets/img/dashboardGray.svg" alt="Demo Admin" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/demo-admin')" src="assets/img/dashboardYellow.svg" alt="Demo Admin" class="navIcon" />
-         Demo Admin
+         {{ "Demo Admin" | translate }}
        </p>
 
        <p class="navTab"
@@ -155,7 +179,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/data-management') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardGray.svg" alt="Data Management" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardYellow.svg" alt="Data Management" class="navIcon" />
-         Data Management
+         {{ "Data Management" | translate }}
        </p>
 
        <p class="navTab"
@@ -179,7 +203,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/golden-requests') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenGrey.svg" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenYellow.svg" class="navIcon" />
-         Golden Records
+         {{ "Golden Records" | translate }}
        </p>
 
        <p class="navTab"
@@ -187,7 +211,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/duplicate-requests') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/duplicate-requests')" src="assets/img/duplicateGrey.svg" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/duplicate-requests')" src="assets/img/duplicateYellow.svg" class="navIcon" />
-         Duplicate Records
+         {{ "Duplicate Records" | translate }}
        </p>
 
        <p class="navTab"
@@ -195,7 +219,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" class="navIcon" />
-         Quarantine
+         {{ "Quarantine" | translate }}
        </p>
 
        <p class="navTab"
@@ -210,13 +234,32 @@
      <!-- User Info Section -->
      <div class="user-info-section" style="margin-top: auto; padding: 20px; border-top: 1px solid #e8e8e8;">
        <div class="user-role">
-         <span style="color: #8c8c8c; font-size: 12px;">Logged in as:</span>
+         <span style="color: #8c8c8c; font-size: 12px;">{{ "Logged in as" | translate }}:</span>
          <div style="font-weight: 600; margin-top: 4px;">{{ getUserRoleName() }}</div>
        </div>
        <button nz-button nzType="text" nzDanger (click)="logout()" style="margin-top: 10px; width: 100%;">
-         <span nz-icon nzType="logout"></span>
+         <span nz-icon nzType="logout" nzTheme="outline"></span>
          {{ "Logout" | translate }}
        </button>
+     </div>
+
+     <!-- ==== user5 (Manager) - Only Business & Technical Dashboards ==== -->
+     <div *ngIf="user == '5' || (isManager && !isAdmin)">
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'business']"
+          [ngClass]="[router.url.startsWith('/dashboard/business') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/business')" src="assets/img/dashboardGray.svg" alt="Business Dashboard" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/business')" src="assets/img/dashboardYellow.svg" alt="Business Dashboard" class="navIcon" />
+         {{ "Business Dashboard" | translate }}
+       </p>
+
+       <p class="navTab"
+          [routerLink]="['/dashboard', 'technical']"
+          [ngClass]="[router.url.startsWith('/dashboard/technical') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardGray.svg" alt="Technical Dashboard" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardYellow.svg" alt="Technical Dashboard" class="navIcon" />
+         {{ "Technical Dashboard" | translate }}
+       </p>
      </div>
    </div>
 
@@ -225,4 +268,7 @@
      <router-outlet></router-outlet>
    </div>
  </div>
+ 
+ <!-- AI Assistant Chatbot - Always visible -->
+ <app-ai-assistant></app-ai-assistant>
 </div>

@@ -27,6 +27,9 @@ interface HistoryEvent {
 export class GoldenRequestsComponent implements OnInit {
   user: string = "2";
   loading: boolean = false;
+  rows: any[] = [];
+  filteredRows: any[] = [];
+  searchTerm: string = '';
 
   private approvers = ['Ahmed Ali', 'Nour Samir', 'Layla Hassan', 'Omar Khaled', 'Compliance Owner', 'MDM Steward'];
   private updaters  = ['Merolla Safwat', 'Sales Ops', 'Integration Job', 'Data Steward', 'Compliance Bot'];
@@ -198,8 +201,6 @@ export class GoldenRequestsComponent implements OnInit {
     return events.sort((a,b) => (a.updatedDate > b.updatedDate ? -1 : 1));
   }
 
-  // جدول الصفحة
-  rows: any[] = [];
 
   constructor(public router: Router, private apiRepo: ApiRepo) {}
 
@@ -223,8 +224,9 @@ export class GoldenRequestsComponent implements OnInit {
         // ENHANCED Filter: Golden Records that are approved and active/blocked
         const goldenRecords = records.filter((r: any) => {
           const isGolden = r.isGolden === 1;
-          const hasValidStatus = r.companyStatus === 'Active' || r.companyStatus === 'Blocked';
-          const isApproved = !r.ComplianceStatus || r.ComplianceStatus === 'Approved';
+          // Fix: Handle null companyStatus - treat as 'Active' by default
+          const hasValidStatus = !r.companyStatus || r.companyStatus === 'Active' || r.companyStatus === 'Blocked';
+          const isApproved = !r.ComplianceStatus || r.ComplianceStatus === 'Approved' || r.ComplianceStatus === 'Under Review';
           
           const shouldInclude = isGolden && hasValidStatus && isApproved;
           
@@ -250,6 +252,9 @@ export class GoldenRequestsComponent implements OnInit {
         
         // Add history to each record
         this.rows = this.rows.map((r: any) => ({ ...r, history: this.buildHistory(r) }));
+        
+        // Initialize filtered rows
+        this.filteredRows = [...this.rows];
         
         console.log('Final rows for display:', this.rows.length);
         this.loading = false;
@@ -582,6 +587,39 @@ export class GoldenRequestsComponent implements OnInit {
       "status-active": s === "Active",
       "status-blocked": s === "Blocked"
     };
+  }
+
+  // Search functionality
+  onSearch(event: any): void {
+    const searchValue = event.target.value.toLowerCase().trim();
+    this.searchTerm = searchValue;
+    this.filterData();
+  }
+
+  private filterData(): void {
+    if (!this.searchTerm) {
+      this.filteredRows = [...this.rows];
+    } else {
+      this.filteredRows = this.rows.filter(row => {
+        const searchFields = [
+          row.name,
+          row.goldenCode,
+          row.country,
+          row.recordType,
+          row.status
+        ];
+        
+        return searchFields.some(field => 
+          field && field.toString().toLowerCase().includes(this.searchTerm)
+        );
+      });
+    }
+  }
+
+  // ====== NAVIGATION ======
+  
+  goToSyncPage(): void {
+    this.router.navigate(['/dashboard/sync-golden-records']);
   }
 
   /** ====== AUTO-ADDED NAV HELPERS ====== */
