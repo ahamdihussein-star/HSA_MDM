@@ -1445,10 +1445,21 @@ export class NewRequestComponent implements OnInit, OnDestroy {
   // Show duplicate record details
   showDuplicateDetails(): void {
     console.log('🔍 Opening duplicate details for:', this.duplicateRecord);
-    if (this.duplicateRecord) {
-      this.showDuplicateModal = true;
-    } else {
+    
+    if (!this.duplicateRecord) {
       console.log('❌ No duplicate record found');
+      // Try to fetch the duplicate details if we have an ID
+      if (this.hasDuplicate) {
+        this.fetchDuplicateDetails();
+      }
+      return;
+    }
+    
+    // Ensure we have complete data
+    if (!this.duplicateRecord.name && this.duplicateRecord.id) {
+      this.fetchDuplicateDetails();
+    } else {
+      this.showDuplicateModal = true;
     }
   }
 
@@ -1457,14 +1468,79 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     this.showDuplicateModal = false;
   }
 
+  // Fetch duplicate details from API
+  async fetchDuplicateDetails(): Promise<void> {
+    try {
+      const tax = this.requestForm.get('tax')?.value;
+      const customerType = this.requestForm.get('CustomerType')?.value;
+      
+      if (!tax || !customerType) {
+        this.msg.error('Cannot fetch duplicate details without tax and customer type');
+        return;
+      }
+      
+      const response = await firstValueFrom(
+        this.http.get<any>(`${this.apiBase}/golden-records`, {
+          params: {
+            tax: tax,
+            customerType: customerType
+          }
+        })
+      );
+      
+      if (response && response.length > 0) {
+        this.duplicateRecord = response[0];
+        console.log('✅ Duplicate details fetched:', this.duplicateRecord);
+        this.showDuplicateModal = true;
+      } else {
+        this.msg.error('Could not fetch duplicate record details');
+      }
+    } catch (error) {
+      console.error('Error fetching duplicate details:', error);
+      this.msg.error('Failed to load duplicate record details');
+    }
+  }
+
   // Get duplicate message with company name
   getDuplicateMessage(): any {
-    if (!this.duplicateRecord?.name) {
-      return this.sanitizer.bypassSecurityTrustHtml('⚠️ WARNING: A customer with the same tax number and company type already exists in golden records. Please check the details and use a different tax number or company type. This is a test message to check if caching is working properly.');
+    if (!this.duplicateRecord) {
+      const warningHtml = `
+        <div style="padding: 10px; background: #fff2f0; border-left: 4px solid #ff4d4f;">
+          <strong style="color: #ff4d4f;">⚠️ WARNING:</strong><br>
+          A customer with the same tax number and company type already exists in golden records.<br>
+          <a href="javascript:void(0)" onclick="document.querySelector('.duplicate-details-btn')?.click()" 
+             style="color: #1890ff; text-decoration: underline; font-weight: bold; cursor: pointer;">
+            Click here to view details
+          </a>
+        </div>
+      `;
+      return this.sanitizer.bypassSecurityTrustHtml(warningHtml);
     }
     
-    const htmlContent = `⚠️ WARNING: A customer with the same tax number and company type already exists in golden records. Please check the details and use a different tax number or company type. This is a test message to check if caching is working properly.<br><br><strong>Duplicate company: ${this.duplicateRecord.name}</strong>`;
+    const htmlContent = `
+      <div style="padding: 10px; background: #fff2f0; border-left: 4px solid #ff4d4f;">
+        <strong style="color: #ff4d4f;">⚠️ DUPLICATE FOUND:</strong><br>
+        <div style="margin: 10px 0;">
+          <strong>Existing Customer:</strong> ${this.duplicateRecord.name || this.duplicateRecord.firstName || 'Unknown'}<br>
+          <strong>Tax Number:</strong> ${this.duplicateRecord.tax || this.duplicateRecord.taxNumber || 'N/A'}<br>
+          <strong>Type:</strong> ${this.duplicateRecord.customerType || this.duplicateRecord.CustomerType || 'N/A'}
+        </div>
+        <a href="javascript:void(0)" onclick="document.querySelector('.duplicate-details-btn')?.click()" 
+           style="color: #1890ff; text-decoration: underline; font-weight: bold; cursor: pointer;">
+          📋 View Full Details
+        </a>
+      </div>
+    `;
     return this.sanitizer.bypassSecurityTrustHtml(htmlContent);
+  }
+
+  // Navigate to duplicate record in Golden Records
+  navigateToDuplicateRecord(): void {
+    if (this.duplicateRecord?.id) {
+      const url = `/dashboard/golden-requests?highlight=${this.duplicateRecord.id}`;
+      window.open(url, '_blank');
+    }
+    this.closeDuplicateModal();
   }
 
   // FIXED: Submit form - handle quarantine records properly with UPDATE
