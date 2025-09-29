@@ -115,6 +115,23 @@
   <nz-alert *ngIf="showDuplicateWarning" nzType="warning"
             [nzMessage]="'⚠️ A customer with name ' + duplicateName + ' and tax number ' + duplicateTax + ' already exists!'"
             nzShowIcon class="mb-3"></nz-alert>
+
+  <!-- Duplicate Warning Section - MOVED TO TOP -->
+  <div class="duplicate-warning" *ngIf="hasDuplicate" style="margin-bottom: 20px;">
+    <!-- Custom Duplicate Warning with HTML -->
+    <div class="custom-duplicate-warning">
+      <div [innerHTML]="getDuplicateMessage()"></div>
+      <div class="duplicate-actions" style="margin-top: 12px; text-align: center;">
+        <button type="button" class="duplicate-details-btn btn btn-primary" 
+                style="background: #1890ff; color: white; border: none; padding: 8px 20px; 
+                       border-radius: 6px; cursor: pointer; font-weight: 500;"
+                (click)="showDuplicateDetails()">
+          <span style="margin-right: 5px;">🔍</span>
+          View Duplicate Details
+        </button>
+      </div>
+    </div>
+  </div>
  
   <!-- Summary Card للـ Data Entry في حالات المراجعة -->
   <div class="summary-card"
@@ -495,22 +512,6 @@
         </nz-form-item>
       </div>
  
-      <!-- Duplicate Warning Section -->
-      <div class="duplicate-warning" *ngIf="hasDuplicate && duplicateRecord">
-        <!-- Custom Duplicate Warning with HTML -->
-        <div class="custom-duplicate-warning">
-          <div [innerHTML]="getDuplicateMessage()"></div>
-          <div class="duplicate-actions" style="margin-top: 12px; text-align: center;">
-            <button type="button" class="duplicate-details-btn btn btn-primary" 
-                    style="background: #1890ff; color: white; border: none; padding: 8px 20px; 
-                           border-radius: 6px; cursor: pointer; font-weight: 500;"
-                    (click)="showDuplicateDetails()">
-              <span style="margin-right: 5px;">🔍</span>
-              View Duplicate Details
-            </button>
-          </div>
-        </div>
-      </div>
 
       <!-- Submit Button for Data Entry -->
       <div class="btnBox" *ngIf="(editPressed || (!hasRecord)) && userType==='1'">
@@ -901,131 +902,82 @@
     </div>
   </div>
 
-  <!-- Duplicate Record Details Modal -->
+  <!-- Duplicate Warning Modal with iframe support -->
   <nz-modal 
     [(nzVisible)]="showDuplicateModal" 
-    nzTitle="🔍 Duplicate Customer Details" 
-    nzWidth="700px"
-    [nzBodyStyle]="{'max-height': '70vh', 'overflow-y': 'auto'}"
-    (nzOnCancel)="closeDuplicateModal()"
-    [nzFooter]="duplicateModalFooter">
+    [nzTitle]="showGoldenSummaryInModal ? '📄 Golden Record Full Details' : '🔍 Duplicate Customer Details'"
+    [nzWidth]="showGoldenSummaryInModal ? '95%' : '600px'"
+    [nzBodyStyle]="showGoldenSummaryInModal ? {'height': '80vh', 'padding': '0'} : {}"
+    [nzFooter]="null"
+    (nzOnCancel)="closeDuplicateModal()">
     
     <ng-container *nzModalContent>
-      <div *ngIf="duplicateRecord" class="duplicate-details">
-        <!-- Alert Section -->
-        <nz-alert nzType="error" nzShowIcon
-                  nzMessage="Duplicate Record Found"
-                  [nzDescription]="'This customer already exists in the golden records database.'"
-                  style="margin-bottom: 20px;">
+      <!-- Basic duplicate info view -->
+      <div *ngIf="!showGoldenSummaryInModal">
+        <!-- Alert -->
+        <nz-alert
+          nzType="error"
+          nzMessage="Duplicate Record Found"
+          nzDescription="This customer already exists in the golden records database."
+          nzShowIcon
+          class="mb-4">
         </nz-alert>
-        
-        <!-- Customer Information Section -->
-        <div class="detail-section" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <h4 style="color: #262626; margin-bottom: 16px; border-bottom: 2px solid #1890ff; padding-bottom: 8px;">
-            📋 Customer Information
-          </h4>
-          <div class="detail-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-            <div class="detail-item">
-              <label style="font-weight: 600; color: #595959; display: block; margin-bottom: 4px;">Company Name:</label>
-              <span style="color: #262626; font-size: 15px; background: white; padding: 8px; border-radius: 4px; display: block;">
-                {{ duplicateRecord.name || duplicateRecord.firstName || 'N/A' }}
-              </span>
-            </div>
-            <div class="detail-item">
-              <label style="font-weight: 600; color: #595959; display: block; margin-bottom: 4px;">Tax Number:</label>
-              <span style="color: #262626; font-size: 15px; background: white; padding: 8px; border-radius: 4px; display: block;">
-                {{ duplicateRecord.tax || duplicateRecord.taxNumber || 'N/A' }}
-              </span>
-            </div>
-            <div class="detail-item">
-              <label style="font-weight: 600; color: #595959; display: block; margin-bottom: 4px;">Customer Type:</label>
-              <span style="color: #262626; font-size: 15px; background: white; padding: 8px; border-radius: 4px; display: block;">
-                {{ duplicateRecord.customerType || duplicateRecord.CustomerType || 'N/A' }}
-              </span>
-            </div>
-            <div class="detail-item">
-              <label style="font-weight: 600; color: #595959; display: block; margin-bottom: 4px;">Status:</label>
-              <span style="color: #262626; font-size: 15px; background: white; padding: 8px; border-radius: 4px; display: block;">
-                <nz-tag [nzColor]="duplicateRecord.status === 'Active' ? 'success' : 'default'">
-                  {{ duplicateRecord.status || 'Active' }}
-                </nz-tag>
-              </span>
-            </div>
+
+        <!-- Simple Info Display -->
+        <div class="duplicate-info">
+          <div class="info-row">
+            <strong>Company Name:</strong>
+            <span>{{ duplicateRecord?.firstName || duplicateRecord?.name || 'N/A' }}</span>
+          </div>
+          
+          <div class="info-row">
+            <strong>Tax Number:</strong>
+            <span>{{ duplicateRecord?.tax || duplicateRecord?.taxNumber || 'N/A' }}</span>
+          </div>
+          
+          <div class="info-row">
+            <strong>Customer Type:</strong>
+            <span>{{ duplicateRecord?.CustomerType || duplicateRecord?.customerType || 'N/A' }}</span>
+          </div>
+          
+          <div class="info-row">
+            <strong>Country:</strong>
+            <span>{{ duplicateRecord?.country || 'N/A' }}</span>
+          </div>
+          
+          <div class="info-row">
+            <strong>Status:</strong>
+            <nz-tag [nzColor]="duplicateRecord?.status === 'Active' ? 'success' : 'default'">
+              {{ duplicateRecord?.status || 'Active' }}
+            </nz-tag>
           </div>
         </div>
-        
-        <!-- Address Information -->
-        <div class="detail-section" style="background: #f8f9fa; padding: 20px; border-radius: 8px; margin-bottom: 20px;">
-          <h4 style="color: #262626; margin-bottom: 16px; border-bottom: 2px solid #1890ff; padding-bottom: 8px;">
-            📍 Address Information
-          </h4>
-          <div class="detail-grid" style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-            <div class="detail-item">
-              <label style="font-weight: 600; color: #595959; display: block; margin-bottom: 4px;">Country:</label>
-              <span style="color: #262626; font-size: 15px; background: white; padding: 8px; border-radius: 4px; display: block;">
-                {{ duplicateRecord.country || 'N/A' }}
-              </span>
-            </div>
-            <div class="detail-item">
-              <label style="font-weight: 600; color: #595959; display: block; margin-bottom: 4px;">City:</label>
-              <span style="color: #262626; font-size: 15px; background: white; padding: 8px; border-radius: 4px; display: block;">
-                {{ duplicateRecord.city || 'N/A' }}
-              </span>
-            </div>
-            <div class="detail-item" *ngIf="duplicateRecord.street">
-              <label style="font-weight: 600; color: #595959; display: block; margin-bottom: 4px;">Street:</label>
-              <span style="color: #262626; font-size: 15px; background: white; padding: 8px; border-radius: 4px; display: block;">
-                {{ duplicateRecord.street }}
-              </span>
-            </div>
-            <div class="detail-item" *ngIf="duplicateRecord.buildingNumber">
-              <label style="font-weight: 600; color: #595959; display: block; margin-bottom: 4px;">Building:</label>
-              <span style="color: #262626; font-size: 15px; background: white; padding: 8px; border-radius: 4px; display: block;">
-                {{ duplicateRecord.buildingNumber }}
-              </span>
-            </div>
-          </div>
-        </div>
-        
-        <!-- Additional Information if available -->
-        <div class="detail-section" *ngIf="duplicateRecord.id || duplicateRecord.goldenCode" 
-             style="background: #fff7e6; padding: 20px; border-radius: 8px; border: 1px solid #ffd591;">
-          <h4 style="color: #262626; margin-bottom: 16px;">
-            ℹ️ Record Information
-          </h4>
-          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px;">
-            <div *ngIf="duplicateRecord.id">
-              <label style="font-weight: 600; color: #595959;">Record ID:</label>
-              <span style="color: #1890ff; font-weight: bold;">{{ duplicateRecord.id }}</span>
-            </div>
-            <div *ngIf="duplicateRecord.goldenCode">
-              <label style="font-weight: 600; color: #595959;">Golden Code:</label>
-              <span style="color: #fa8c16; font-weight: bold;">{{ duplicateRecord.goldenCode }}</span>
-            </div>
-          </div>
+
+        <!-- Actions -->
+        <div class="modal-actions">
+          <button nz-button (click)="closeDuplicateModal()">Close</button>
+          <button nz-button nzType="primary" (click)="loadGoldenSummaryInModal()">
+            <i nz-icon nzType="eye"></i> View Full Details
+          </button>
         </div>
       </div>
-      
-      <!-- If no duplicate record data -->
-      <div *ngIf="!duplicateRecord" class="no-data" style="text-align: center; padding: 40px;">
-        <span nz-icon nzType="warning" style="font-size: 48px; color: #faad14;"></span>
-        <p style="margin-top: 16px; color: #595959;">Unable to load duplicate record details.</p>
-        <button nz-button nzType="primary" (click)="fetchDuplicateDetails()">
-          Retry Loading
-        </button>
+
+      <!-- iframe view -->
+      <div *ngIf="showGoldenSummaryInModal" class="iframe-wrapper">
+        <div class="iframe-header">
+          <button nz-button nzSize="small" (click)="backToDuplicateInfo()">
+            <i nz-icon nzType="arrow-left"></i> Back
+          </button>
+          <button nz-button nzSize="small" nzType="link" (click)="closeDuplicateModal()" class="close-btn">
+            <i nz-icon nzType="close"></i> Close
+          </button>
+        </div>
+        <iframe 
+          [src]="goldenSummaryUrl"
+          class="golden-summary-iframe">
+        </iframe>
       </div>
     </ng-container>
-    
-    <ng-template #duplicateModalFooter>
-      <button nz-button nzType="default" (click)="closeDuplicateModal()">
-        Close
-      </button>
-      <button nz-button nzType="primary" *ngIf="duplicateRecord?.id"
-              (click)="navigateToDuplicateRecord()">
-        <span nz-icon nzType="eye"></span>
-        View in Golden Records
-      </button>
-    </ng-template>
   </nz-modal>
 
 </div>

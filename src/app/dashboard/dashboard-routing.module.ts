@@ -15,6 +15,7 @@ const routes: Routes = [
 
       // Golden Summary (standalone داخل نفس الموديول)
       { path: 'golden-summary', component: GoldenSummaryComponent },
+      { path: 'golden-summary/:id', component: GoldenSummaryComponent },
 
       // === Data Management (للـ Admin) ===
       {

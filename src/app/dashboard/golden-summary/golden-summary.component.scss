@@ -1,3 +1,19 @@
+/* ===== Embedded Mode ===== */
+:host-context(.embedded-mode) {
+  // Hide sidebar and header when embedded
+  .sidebar,
+  .top-header,
+  .navigation-buttons {
+    display: none !important;
+  }
+  
+  // Adjust padding
+  .main-content {
+    padding: 20px !important;
+    margin: 0 !important;
+  }
+}
+
 /* ===== Hero ===== */
 .gr-hero{ display:flex; align-items:flex-start; justify-content:space-between; background:linear-gradient(180deg,#fffef6 0%, #fff 100%); border:1px solid #f7e6a3; border-radius:16px; padding:18px 20px; margin-bottom:20px }
 .gr-hero__title{ font-weight:800; color:#3c3c3c; font-size:18px }

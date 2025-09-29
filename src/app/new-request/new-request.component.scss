@@ -3234,3 +3234,113 @@ body, .main, .requestForm, .doc-card, .summary-card, .doc-table {
     margin-top: 20px;
   }
 }
+
+// Duplicate Modal Styles
+.info-section {
+  h4 {
+    color: #1890ff;
+    margin-bottom: 12px;
+    font-size: 16px;
+    
+    i {
+      margin-right: 8px;
+    }
+  }
+}
+
+.info-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 16px;
+  margin-bottom: 16px;
+}
+
+.info-item {
+  display: flex;
+  flex-direction: column;
+  
+  label {
+    font-weight: 600;
+    color: #595959;
+    margin-bottom: 4px;
+    font-size: 14px;
+  }
+  
+  span {
+    color: #262626;
+    font-size: 15px;
+    background: #f8f9fa;
+    padding: 8px 12px;
+    border-radius: 4px;
+    border: 1px solid #e8e8e8;
+  }
+}
+
+.duplicate-info {
+  padding: 16px 0;
+  
+  .info-row {
+    display: flex;
+    justify-content: space-between;
+    padding: 8px 0;
+    border-bottom: 1px solid #f0f0f0;
+    
+    strong {
+      color: #595959;
+      min-width: 140px;
+    }
+    
+    span {
+      color: #262626;
+      flex: 1;
+      text-align: right;
+    }
+    
+    &:last-child {
+      border-bottom: none;
+    }
+  }
+}
+
+.modal-actions {
+  margin-top: 24px;
+  text-align: right;
+  
+  button {
+    margin-left: 8px;
+  }
+}
+
+.iframe-wrapper {
+  height: 80vh;
+  display: flex;
+  flex-direction: column;
+  
+  .iframe-header {
+    padding: 10px 15px;
+    border-bottom: 1px solid #e8e8e8;
+    display: flex;
+    justify-content: space-between;
+    background: #fafafa;
+    
+    .close-btn {
+      color: #8c8c8c;
+      
+      &:hover {
+        color: #1890ff;
+      }
+    }
+  }
+  
+  .golden-summary-iframe {
+    flex: 1;
+    width: 100%;
+    border: none;
+    height: calc(100% - 50px);
+  }
+}
+
+::ng-deep .ant-modal-content {
+  max-height: 80vh;
+  overflow-y: auto;
+}

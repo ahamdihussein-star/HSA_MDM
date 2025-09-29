@@ -145,6 +145,9 @@ export class NewRequestComponent implements OnInit, OnDestroy {
   hasDuplicate = false;
   duplicateRecord: any = null;
   showDuplicateModal = false;
+  loadingDuplicateDetails = false;
+  showGoldenSummaryInModal = false;
+  goldenSummaryUrl: SafeResourceUrl | null = null;
   private validationTimer: any = null;
 
   // Quarantine mode flag
@@ -959,33 +962,64 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     console.log('Setting up duplicate validation');
     
     // Watch for changes in tax and CustomerType
-    this.requestForm.get('tax')?.valueChanges.subscribe(() => {
-      this.validateForDuplicate();
+    this.requestForm.get('tax')?.valueChanges.subscribe(taxValue => {
+      // Add a small delay to ensure the form value is updated
+      setTimeout(() => {
+        const customerType = this.requestForm.get('CustomerType')?.value;
+        if (taxValue && customerType) {
+          console.log('Tax changed, validating:', { tax: taxValue, customerType });
+          this.validateForDuplicateImmediate();
+        }
+      }, 100);
     });
     
-    this.requestForm.get('CustomerType')?.valueChanges.subscribe(() => {
-      this.validateForDuplicate();
+    this.requestForm.get('CustomerType')?.valueChanges.subscribe(customerTypeValue => {
+      // Add a small delay to ensure the form value is updated
+      setTimeout(() => {
+        const tax = this.requestForm.get('tax')?.value;
+        if (tax && customerTypeValue) {
+          console.log('CustomerType changed, validating:', { tax, customerType: customerTypeValue });
+          this.validateForDuplicateImmediate();
+        }
+      }, 100);
     });
     
-    // Also validate on initial load if fields are already filled
+    // Initial validation after a delay
     setTimeout(() => {
       const tax = this.requestForm.get('tax')?.value;
       const customerType = this.requestForm.get('CustomerType')?.value;
       
       if (tax && customerType && !this.currentRecordId && !this.isGoldenEditMode) {
         console.log('Initial duplicate validation for:', tax, customerType);
-        this.validateForDuplicate();
+        this.validateForDuplicateImmediate();
       }
-    }, 500);
+    }, 500); // Increased delay for initial check
   }
   
+  // Immediate validation without any delay
+  private async validateForDuplicateImmediate(): Promise<void> {
+    const tax = this.requestForm.get('tax')?.value;
+    const customerType = this.requestForm.get('CustomerType')?.value;
+    
+    if (tax && customerType) {
+      console.log('Immediate duplicate validation for:', tax, customerType);
+      await this.checkForDuplicate();
+      this.cdr.detectChanges(); // Force change detection
+    } else {
+      // Clear duplicate state if fields are empty
+      this.hasDuplicate = false;
+      this.duplicateRecord = null;
+      this.cdr.markForCheck(); // Force change detection
+    }
+  }
+
   private validateForDuplicate(): void {
     // Clear previous timer if exists
     if (this.validationTimer) {
       clearTimeout(this.validationTimer);
     }
     
-    // Set new timer to validate after 1 second of no changes
+    // Set new timer to validate after 100ms of no changes (immediate response)
     this.validationTimer = setTimeout(async () => {
       const tax = this.requestForm.get('tax')?.value;
       const customerType = this.requestForm.get('CustomerType')?.value;
@@ -1383,16 +1417,18 @@ export class NewRequestComponent implements OnInit, OnDestroy {
 
   // Check for duplicate golden records
   async checkForDuplicate(): Promise<boolean> {
-    const formData = this.requestForm.value;
-    const tax = formData.tax;
-    const customerType = formData.CustomerType;
+    // Get values directly from form controls
+    const tax = this.requestForm.get('tax')?.value;
+    const customerType = this.requestForm.get('CustomerType')?.value;
     
     console.log('🔍 Checking for duplicate:', { tax, customerType });
+    console.log('🔍 Form values:', this.requestForm.value); // Debug line
     
     if (!tax || !customerType) {
       console.log('❌ Missing tax or customerType, resetting hasDuplicate');
       this.hasDuplicate = false; // Reset if fields are empty
       this.duplicateRecord = null;
+      this.cdr.markForCheck(); // Force change detection
       return false; // No validation needed if required fields are missing
     }
     
@@ -1409,30 +1445,35 @@ export class NewRequestComponent implements OnInit, OnDestroy {
       
       if (response.isDuplicate) {
         console.log('🚨 DUPLICATE FOUND! Setting hasDuplicate = true');
-        console.log('🔍 UI Visibility Check:', {
-          hasDuplicate: true,
-          editPressed: this.editPressed,
-          hasRecord: this.hasRecord,
-          userType: this.userType
-        });
         this.hasDuplicate = true;
         this.duplicateRecord = response.existingRecord;
-        console.log('🔍 Duplicate record saved:', this.duplicateRecord);
+        
+        // Force Angular to detect changes
+        this.cdr.detectChanges();
+        
+        // Also try manual update
+        setTimeout(() => {
+          this.cdr.detectChanges();
+        }, 0);
+        
         console.log('🔍 hasDuplicate after setting:', this.hasDuplicate);
         console.log('🔍 duplicateRecord after setting:', this.duplicateRecord);
+        
         this.msg.error(`Duplicate found: ${response.message}`);
-        return true; // Duplicate found
+        return true;
       }
       
       console.log('✅ No duplicate found, setting hasDuplicate = false');
       this.hasDuplicate = false;
       this.duplicateRecord = null;
+      this.cdr.markForCheck(); // Force change detection
       console.log('🔍 Duplicate record cleared:', this.duplicateRecord);
       return false; // No duplicate
     } catch (error) {
       console.error('❌ Error checking for duplicate:', error);
       this.hasDuplicate = false; // Assume no duplicate if API call fails
       this.duplicateRecord = null;
+      this.cdr.markForCheck(); // Force change detection
       return false; // Allow submission if check fails
     }
   }
@@ -1444,28 +1485,39 @@ export class NewRequestComponent implements OnInit, OnDestroy {
 
   // Show duplicate record details
   showDuplicateDetails(): void {
-    console.log('🔍 Opening duplicate details for:', this.duplicateRecord);
-    
-    if (!this.duplicateRecord) {
-      console.log('❌ No duplicate record found');
-      // Try to fetch the duplicate details if we have an ID
-      if (this.hasDuplicate) {
-        this.fetchDuplicateDetails();
-      }
-      return;
-    }
-    
-    // Ensure we have complete data
-    if (!this.duplicateRecord.name && this.duplicateRecord.id) {
-      this.fetchDuplicateDetails();
-    } else {
+    if (this.duplicateRecord) {
       this.showDuplicateModal = true;
+      this.showGoldenSummaryInModal = false;
+      this.goldenSummaryUrl = null;
     }
   }
 
   // Close duplicate modal
   closeDuplicateModal(): void {
     this.showDuplicateModal = false;
+    this.showGoldenSummaryInModal = false;
+    this.goldenSummaryUrl = null;
+  }
+
+  // Load Golden Summary in iframe
+  loadGoldenSummaryInModal(): void {
+    if (this.duplicateRecord?.id) {
+      const url = `/dashboard/golden-summary/${this.duplicateRecord.id}?embedded=true`;
+      this.goldenSummaryUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+      this.showGoldenSummaryInModal = true;
+    }
+  }
+
+  // Back to basic view
+  backToBasicView(): void {
+    this.showGoldenSummaryInModal = false;
+    this.goldenSummaryUrl = null;
+  }
+
+  // Back to duplicate info
+  backToDuplicateInfo(): void {
+    this.showGoldenSummaryInModal = false;
+    this.goldenSummaryUrl = null;
   }
 
   // Fetch duplicate details from API
@@ -1507,11 +1559,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
       const warningHtml = `
         <div style="padding: 10px; background: #fff2f0; border-left: 4px solid #ff4d4f;">
           <strong style="color: #ff4d4f;">⚠️ WARNING:</strong><br>
-          A customer with the same tax number and company type already exists in golden records.<br>
-          <a href="javascript:void(0)" onclick="document.querySelector('.duplicate-details-btn')?.click()" 
-             style="color: #1890ff; text-decoration: underline; font-weight: bold; cursor: pointer;">
-            Click here to view details
-          </a>
+          A customer with the same tax number and company type already exists in golden records.
         </div>
       `;
       return this.sanitizer.bypassSecurityTrustHtml(warningHtml);
@@ -1525,22 +1573,26 @@ export class NewRequestComponent implements OnInit, OnDestroy {
           <strong>Tax Number:</strong> ${this.duplicateRecord.tax || this.duplicateRecord.taxNumber || 'N/A'}<br>
           <strong>Type:</strong> ${this.duplicateRecord.customerType || this.duplicateRecord.CustomerType || 'N/A'}
         </div>
-        <a href="javascript:void(0)" onclick="document.querySelector('.duplicate-details-btn')?.click()" 
-           style="color: #1890ff; text-decoration: underline; font-weight: bold; cursor: pointer;">
-          📋 View Full Details
-        </a>
       </div>
     `;
     return this.sanitizer.bypassSecurityTrustHtml(htmlContent);
   }
 
-  // Navigate to duplicate record in Golden Records
+  // Navigate to duplicate record in Golden Summary
   navigateToDuplicateRecord(): void {
     if (this.duplicateRecord?.id) {
-      const url = `/dashboard/golden-requests?highlight=${this.duplicateRecord.id}`;
-      window.open(url, '_blank');
+      console.log('Navigating to golden summary for duplicate record:', this.duplicateRecord.id);
+      
+      // Close modal first
+      this.closeDuplicateModal();
+      
+      // Navigate to golden-summary with the record ID as route param
+      this.router.navigate(['/dashboard/golden-summary', this.duplicateRecord.id]);
+    } else {
+      console.error('No duplicate record ID found');
+      this.msg.error('Cannot navigate - record ID missing');
+      this.closeDuplicateModal();
     }
-    this.closeDuplicateModal();
   }
 
   // FIXED: Submit form - handle quarantine records properly with UPDATE

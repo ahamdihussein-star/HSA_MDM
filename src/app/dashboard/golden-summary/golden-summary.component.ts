@@ -120,6 +120,14 @@ export class GoldenSummaryComponent implements OnInit {
   ) {}
 
   async ngOnInit(): Promise<void> {
+    // Check if embedded in iframe
+    const isEmbedded = this.route.snapshot.queryParams['embedded'] === 'true';
+    
+    if (isEmbedded) {
+      // Hide navigation elements when embedded
+      document.body.classList.add('embedded-mode');
+    }
+    
     // Get current user from API first
     await this.getCurrentUser();
     
