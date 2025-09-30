@@ -1471,35 +1471,714 @@ export function getCitiesByCountry(country: string): any[] {
 ### Services & Utilities
 
 #### 5. **Demo Data Generator Service** (`src/app/services/demo-data-generator.service.ts`)
+
+**Complete Implementation Details:**
+
+##### **Interfaces:**
 ```typescript
 export interface DemoCompany {
-  name: string;
-  nameAr: string;
-  customerType: string;
-  ownerName: string;
-  taxNumber: string;
-  buildingNumber: string;
-  street: string;
-  country: string;
-  city: string;
-  contacts: DemoContact[];
-  salesOrg: string;
-  distributionChannel: string;
-  division: string;
+  name: string;                    // Company name in English
+  nameAr: string;                  // Company name in Arabic
+  customerType: string;            // Type: Public Company, Private Company, etc.
+  ownerName: string;               // Company owner name
+  taxNumber: string;               // Tax identification number
+  buildingNumber: string;          // Building number
+  street: string;                  // Street address
+  country: string;                 // Country name
+  city: string;                    // City name
+  contacts: DemoContact[];         // Array of contact persons
+  salesOrg: string;                // Sales organization code
+  distributionChannel: string;     // Distribution channel code
+  division: string;                // Division code
 }
 
 export interface DemoContact {
-  name: string;
-  jobTitle: string;
-  email: string;
-  mobile: string;
-  landline: string;
-  preferredLanguage: string;
+  name: string;                    // Contact person name
+  jobTitle: string;                // Job title/position
+  email: string;                   // Email address
+  mobile: string;                  // Mobile phone number
+  landline: string;                // Landline phone number
+  preferredLanguage: string;        // Preferred language (Arabic/English)
 }
 ```
-- **Purpose**: Generate demo data for testing
-- **Usage**: Test data generation for development
-- **Data**: 50+ demo companies with complete information
+
+##### **Service Implementation:**
+```typescript
+@Injectable({
+  providedIn: 'root'
+})
+export class DemoDataGeneratorService {
+  
+  // Private properties
+  private companies: DemoCompany[] = [];  // Array of 50+ demo companies
+  private usedCompanies: Set<number> = new Set();  // Track used companies
+  private lastUsedIndex: number = -1;     // Last used company index
+
+  constructor() {
+    this.shuffleCompanies();  // Initialize with randomness
+  }
+}
+```
+
+##### **Core Methods:**
+
+**1. `generateDemoData(): DemoCompany`**
+```typescript
+generateDemoData(): DemoCompany {
+  let selectedIndex: number;
+  
+  // If all companies have been used, reset and shuffle
+  if (this.usedCompanies.size >= this.companies.length) {
+    this.usedCompanies.clear();
+    this.shuffleCompanies();
+  }
+
+  // Find next unused company
+  do {
+    selectedIndex = Math.floor(Math.random() * this.companies.length);
+  } while (this.usedCompanies.has(selectedIndex) && this.usedCompanies.size < this.companies.length);
+
+  // Mark as used
+  this.usedCompanies.add(selectedIndex);
+  this.lastUsedIndex = selectedIndex;
+
+  // Return a deep copy to avoid mutations
+  return this.deepClone(this.companies[selectedIndex]);
+}
+```
+- **Purpose**: Generates unique demo company data
+- **Logic**: Ensures no company is used twice until all are exhausted
+- **Returns**: Deep copy of selected company data
+
+**2. `getLastUsedCompany(): DemoCompany | null`**
+```typescript
+getLastUsedCompany(): DemoCompany | null {
+  if (this.lastUsedIndex >= 0) {
+    return this.deepClone(this.companies[this.lastUsedIndex]);
+  }
+  return null;
+}
+```
+- **Purpose**: Gets the last used company for reference
+- **Returns**: Deep copy of last used company or null
+
+**3. `getRemainingCompaniesCount(): number`**
+```typescript
+getRemainingCompaniesCount(): number {
+  return this.companies.length - this.usedCompanies.size;
+}
+```
+- **Purpose**: Shows how many companies are still available
+- **Returns**: Number of unused companies
+
+**4. `resetGenerator(): void`**
+```typescript
+resetGenerator(): void {
+  this.usedCompanies.clear();
+  this.lastUsedIndex = -1;
+  this.shuffleCompanies();
+}
+```
+- **Purpose**: Resets the generator to start over
+- **Effect**: Clears used companies and reshuffles
+
+**5. `generateAdditionalContacts(count: number = 1): DemoContact[]`**
+```typescript
+generateAdditionalContacts(count: number = 1): DemoContact[] {
+  const jobTitles = [
+    "Procurement Manager", "Operations Director", "Quality Control Manager",
+    "Food Safety Manager", "Supply Chain Director", "Production Manager",
+    "Logistics Manager", "Sales Manager", "Marketing Manager",
+    "Retail Operations Manager", "Store Manager", "Distribution Manager",
+    "Warehouse Manager", "Customer Service Manager", "Business Development Manager"
+  ];
+
+  const firstNames = [
+    "Ahmed", "Mohammed", "Omar", "Khalid", "Saud", "Fahad", "Abdullah", "Yousef",
+    "Fatima", "Noura", "Layla", "Reem", "Sarah", "Aisha", "Hala", "Mona"
+  ];
+
+  const lastNames = [
+    "Al-Rashid", "Al-Shehri", "Al-Mansouri", "Al-Zahrani", "Al-Dosari", 
+    "Al-Mutairi", "Al-Harbi", "Al-Ghamdi", "Al-Sheikh", "Al-Malki",
+    "Al-Otaibi", "Al-Qahtani", "Al-Sulaimani", "Al-Balawi", "Al-Shammari"
+  ];
+
+  const domains = [
+    "company.com", "corp.sa", "group.com", "holdings.sa", "enterprise.com"
+  ];
+
+  const contacts: DemoContact[] = [];
+
+  for (let i = 0; i < count; i++) {
+    const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
+    const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
+    const jobTitle = jobTitles[Math.floor(Math.random() * jobTitles.length)];
+    const domain = domains[Math.floor(Math.random() * domains.length)];
+    
+    contacts.push({
+      name: `${firstName} ${lastName}`,
+      jobTitle: jobTitle,
+      email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace('al-', '')}@${domain}`,
+      mobile: `+96650${Math.floor(Math.random() * 9000000) + 1000000}`,
+      landline: `+96611${Math.floor(Math.random() * 9000000) + 1000000}`,
+      preferredLanguage: Math.random() > 0.5 ? "Arabic" : "English"
+    });
+  }
+
+  return contacts;
+}
+```
+- **Purpose**: Generates random additional contacts
+- **Parameters**: `count` - number of contacts to generate
+- **Returns**: Array of randomly generated contacts
+
+**6. `generateDemoDocuments(): any[]`**
+```typescript
+generateDemoDocuments(): any[] {
+  const documents = [
+    {
+      name: 'السجل التجاري - شركة المراعي.pdf',
+      type: 'Commercial Registration',
+      description: 'السجل التجاري الرسمي للشركة',
+      mime: 'application/pdf',
+      size: 245760, // ~240KB
+      contentBase64: this.generatePdfBase64('السجل التجاري - شركة المراعي'),
+      uploadedAt: new Date().toISOString()
+    },
+    {
+      name: 'الشهادة الضريبية - شركة المراعي.pdf', 
+      type: 'Tax Certificate',
+      description: 'الشهادة الضريبية الصادرة من الهيئة العامة للزكاة والدخل',
+      mime: 'application/pdf',
+      size: 189440, // ~185KB
+      contentBase64: this.generatePdfBase64('الشهادة الضريبية - شركة المراعي'),
+      uploadedAt: new Date().toISOString()
+    },
+    // ... more documents
+  ];
+
+  // Return 2-3 random documents
+  const numDocs = Math.floor(Math.random() * 2) + 2; // 2-3 documents
+  return documents.slice(0, numDocs);
+}
+```
+- **Purpose**: Generates demo documents for testing
+- **Returns**: Array of 2-3 random documents with base64 content
+
+##### **Demo Companies Data:**
+The service includes **50+ real companies** from different countries:
+
+**Saudi Arabia Companies:**
+- Almarai (المراعي) - Public Company
+- Saudia Dairy & Foodstuff Company - Public Company
+- Al Safi Danone (الصافي دانون) - Private Company
+- Nadec (نادك) - Public Company
+- Al Rabie Saudi Foods - Private Company
+- Panda Retail Company - Private Company
+
+**Egypt Companies:**
+- Juhayna Food Industries (جهينة للصناعات الغذائية) - Public Company
+- Domty (دمتي) - Public Company
+- Carrefour Egypt (كارفور مصر) - Private Company
+- Spinneys (سبينيس) - Private Company
+
+**UAE Companies:**
+- Emirates Food Industries (الإمارات للصناعات الغذائية) - Private Company
+- Al Ain Dairy (ألبان العين) - Private Company
+
+**Other Countries:**
+- Kuwait Food Company (شركة الكويت للأغذية) - Public Company
+- Yemen Food Industries (اليمن للصناعات الغذائية) - Private Company
+- Qatar Food Industries (قطر للصناعات الغذائية) - Private Company
+
+##### **Usage in Components:**
+
+**1. In New Request Component:**
+```typescript
+// Inject the service
+constructor(private demoDataGenerator: DemoDataGeneratorService) {}
+
+// Use in form
+fillWithDemoData(): void {
+  const demoData = this.demoDataGenerator.generateDemoData();
+  
+  // Fill form with demo data
+  this.requestForm.patchValue({
+    firstName: demoData.name,
+    firstNameAr: demoData.nameAr,
+    customerType: demoData.customerType,
+    ownerName: demoData.ownerName,
+    taxNumber: demoData.taxNumber,
+    buildingNumber: demoData.buildingNumber,
+    street: demoData.street,
+    country: demoData.country,
+    city: demoData.city,
+    salesOrg: demoData.salesOrg,
+    distributionChannel: demoData.distributionChannel,
+    division: demoData.division
+  });
+  
+  // Fill contacts
+  if (demoData.contacts && demoData.contacts.length > 0) {
+    const contact = demoData.contacts[0];
+    this.requestForm.patchValue({
+      contactName: contact.name,
+      jobTitle: contact.jobTitle,
+      emailAddress: contact.email,
+      mobileNumber: contact.mobile,
+      landline: contact.landline,
+      preferredLanguage: contact.preferredLanguage
+    });
+  }
+}
+```
+
+**2. In UI Template:**
+```html
+<!-- Demo Fill Button -->
+<button nz-button nzType="dashed" (click)="fillWithDemoData()">
+  <i nz-icon nzType="experiment"></i>
+  Demo Fill
+</button>
+
+<!-- Remaining Companies Counter -->
+<div class="demo-info">
+  <span>{{ demoDataGenerator.getRemainingCompaniesCount() }} companies remaining</span>
+</div>
+```
+
+##### **Smart Auto-Fill Features:**
+
+**1. Unique Data Generation:**
+- Ensures no company is used twice until all are exhausted
+- Tracks used companies to prevent duplicates
+- Automatically resets when all companies are used
+
+**2. Realistic Data:**
+- Real company names in English and Arabic
+- Valid tax numbers for each country
+- Realistic addresses and contact information
+- Proper job titles and email formats
+
+**3. Multi-Language Support:**
+- Company names in both English and Arabic
+- Contact information in both languages
+- Proper RTL support for Arabic text
+
+**4. Document Generation:**
+- Generates demo PDF documents
+- Creates realistic file names
+- Includes proper MIME types and file sizes
+- Base64 encoded content for testing
+
+**5. Contact Generation:**
+- Random job titles from realistic list
+- Arabic and English names
+- Proper email format generation
+- Realistic phone numbers with country codes
+
+##### **Business Logic:**
+- **Purpose**: Accelerate development and testing
+- **Usage**: Fill forms with realistic data quickly
+- **Benefits**: Reduces manual data entry time
+- **Testing**: Provides consistent test data
+- **Demo**: Shows realistic examples to stakeholders
+
+### Advanced Duplicate Detection System
+
+#### **Complete Duplicate Detection Implementation**
+
+##### **1. Duplicate Detection Architecture:**
+
+**Core Components:**
+- **Real-time Validation**: Checks for duplicates as user types
+- **API Integration**: Server-side duplicate checking
+- **Smart Caching**: Prevents unnecessary API calls
+- **User Experience**: Immediate feedback with detailed information
+
+##### **2. Implementation Details:**
+
+**A. Form Validation Setup:**
+```typescript
+private setupDuplicateValidation(): void {
+  console.log('Setting up duplicate validation');
+  
+  // Watch for changes in tax and CustomerType
+  this.requestForm.get('tax')?.valueChanges.subscribe(taxValue => {
+    // Add a small delay to ensure the form value is updated
+    setTimeout(() => {
+      const customerType = this.requestForm.get('CustomerType')?.value;
+      if (taxValue && customerType) {
+        console.log('Tax changed, validating:', { tax: taxValue, customerType });
+        this.validateForDuplicateImmediate();
+      }
+    }, 100);
+  });
+  
+  this.requestForm.get('CustomerType')?.valueChanges.subscribe(customerTypeValue => {
+    // Add a small delay to ensure the form value is updated
+    setTimeout(() => {
+      const tax = this.requestForm.get('tax')?.value;
+      if (tax && customerTypeValue) {
+        console.log('CustomerType changed, validating:', { tax, customerType: customerTypeValue });
+        this.validateForDuplicateImmediate();
+      }
+    }, 100);
+  });
+  
+  // Initial validation after a delay
+  setTimeout(() => {
+    const tax = this.requestForm.get('tax')?.value;
+    const customerType = this.requestForm.get('CustomerType')?.value;
+    
+    if (tax && customerType && !this.currentRecordId && !this.isGoldenEditMode) {
+      console.log('Initial duplicate validation for:', tax, customerType);
+      this.validateForDuplicateImmediate();
+    }
+  }, 500); // Increased delay for initial check
+}
+```
+
+**B. Immediate Validation:**
+```typescript
+private async validateForDuplicateImmediate(): Promise<void> {
+  const tax = this.requestForm.get('tax')?.value;
+  const customerType = this.requestForm.get('CustomerType')?.value;
+  
+  if (tax && customerType) {
+    console.log('Immediate duplicate validation for:', tax, customerType);
+    await this.checkForDuplicate();
+    this.cdr.detectChanges(); // Force change detection
+  } else {
+    // Clear duplicate state if fields are empty
+    this.hasDuplicate = false;
+    this.duplicateRecord = null;
+    this.cdr.markForCheck(); // Force change detection
+  }
+}
+```
+
+**C. Core Duplicate Check Method:**
+```typescript
+async checkForDuplicate(): Promise<boolean> {
+  // Get values directly from form controls
+  const tax = this.requestForm.get('tax')?.value;
+  const customerType = this.requestForm.get('CustomerType')?.value;
+  
+  console.log('🔍 Checking for duplicate:', { tax, customerType });
+  console.log('🔍 Form values:', this.requestForm.value);
+  
+  if (!tax || !customerType) {
+    console.log('❌ Missing tax or customerType, resetting hasDuplicate');
+    this.hasDuplicate = false;
+    this.duplicateRecord = null;
+    this.cdr.markForCheck();
+    return false;
+  }
+
+  try {
+    console.log('📡 Making API call to check duplicate...');
+    const response = await firstValueFrom(
+      this.http.post<any>(`${this.apiBase}/requests/check-duplicate`, {
+        tax: tax,
+        CustomerType: customerType
+      })
+    );
+    
+    console.log('📡 API Response:', response);
+    
+    if (response.isDuplicate) {
+      console.log('🚨 DUPLICATE FOUND! Setting hasDuplicate = true');
+      this.hasDuplicate = true;
+      this.duplicateRecord = response.existingRecord;
+      
+      // Force change detection
+      this.cdr.detectChanges();
+      
+      // Also try manual update
+      setTimeout(() => {
+        this.cdr.detectChanges();
+      }, 0);
+      
+      console.log('🔍 hasDuplicate after setting:', this.hasDuplicate);
+      console.log('🔍 duplicateRecord after setting:', this.duplicateRecord);
+      
+      this.msg.error(`Duplicate found: ${response.message}`);
+      return true;
+    }
+    
+    console.log('✅ No duplicate found, setting hasDuplicate = false');
+    this.hasDuplicate = false;
+    this.duplicateRecord = null;
+    this.cdr.markForCheck();
+    return false;
+    
+  } catch (error) {
+    console.error('❌ Error checking for duplicate:', error);
+    this.hasDuplicate = false;
+    this.duplicateRecord = null;
+    this.cdr.markForCheck();
+    return false;
+  }
+}
+```
+
+##### **3. Duplicate Detection Features:**
+
+**A. Real-time Detection:**
+- **Trigger**: Tax number + Customer Type changes
+- **Delay**: 100ms debounce to prevent excessive API calls
+- **Validation**: Immediate response for better UX
+
+**B. Smart Caching:**
+- **Prevention**: Avoids duplicate API calls for same data
+- **Efficiency**: Only checks when both fields are filled
+- **Performance**: Optimized for real-time validation
+
+**C. User Experience:**
+- **Immediate Feedback**: Shows warning as soon as duplicate is detected
+- **Detailed Information**: Displays complete duplicate record details
+- **Modal Integration**: Allows viewing full duplicate details
+- **Navigation**: Can navigate to existing record
+
+##### **4. Duplicate Warning UI:**
+
+**A. Warning Message:**
+```html
+<!-- Duplicate Warning Section -->
+<div class="duplicate-warning" *ngIf="hasDuplicate" style="margin-bottom: 20px;">
+  <!-- Custom Duplicate Warning with HTML -->
+  <div class="custom-duplicate-warning">
+    <div [innerHTML]="getDuplicateMessage()"></div>
+    <div class="duplicate-actions" style="margin-top: 12px; text-align: center;">
+      <button type="button" class="duplicate-details-btn btn btn-primary" 
+              style="background: #1890ff; color: white; border: none; padding: 8px 20px; 
+                     border-radius: 6px; cursor: pointer; font-weight: 500;"
+              (click)="showDuplicateDetails()">
+        <span style="margin-right: 5px;">🔍</span>
+        View Duplicate Details
+      </button>
+    </div>
+  </div>
+</div>
+```
+
+**B. Dynamic Message Generation:**
+```typescript
+getDuplicateMessage(): any {
+  if (!this.duplicateRecord) {
+    const warningHtml = `
+      <div style="padding: 10px; background: #fff2f0; border-left: 4px solid #ff4d4f;">
+        <strong style="color: #ff4d4f;">⚠️ WARNING:</strong><br>
+        A customer with the same tax number and company type already exists in golden records.<br>
+        <a href="javascript:void(0)" onclick="document.querySelector('.duplicate-details-btn')?.click()" 
+           style="color: #1890ff; text-decoration: underline; font-weight: bold; cursor: pointer;">
+          Click here to view details
+        </a>
+      </div>
+    `;
+    return this.sanitizer.bypassSecurityTrustHtml(warningHtml);
+  }
+
+  const htmlContent = `
+    <div style="padding: 10px; background: #fff2f0; border-left: 4px solid #ff4d4f;">
+      <strong style="color: #ff4d4f;">⚠️ DUPLICATE FOUND:</strong><br>
+      <div style="margin: 10px 0;">
+        <strong>Existing Customer:</strong> ${this.duplicateRecord.name || this.duplicateRecord.firstName || 'Unknown'}<br>
+        <strong>Tax Number:</strong> ${this.duplicateRecord.tax || this.duplicateRecord.taxNumber || 'N/A'}<br>
+        <strong>Type:</strong> ${this.duplicateRecord.customerType || this.duplicateRecord.CustomerType || 'N/A'}
+      </div>
+      <a href="javascript:void(0)" onclick="document.querySelector('.duplicate-details-btn')?.click()" 
+         style="color: #1890ff; text-decoration: underline; font-weight: bold; cursor: pointer;">
+        📋 View Full Details
+      </a>
+    </div>
+  `;
+  return this.sanitizer.bypassSecurityTrustHtml(htmlContent);
+}
+```
+
+##### **5. Duplicate Details Modal:**
+
+**A. Modal Implementation:**
+```typescript
+showDuplicateDetails(): void {
+  if (this.duplicateRecord) {
+    this.showDuplicateModal = true;
+    this.showGoldenSummaryInModal = false;
+    this.goldenSummaryUrl = null;
+  }
+}
+
+closeDuplicateModal(): void {
+  this.showDuplicateModal = false;
+  this.showGoldenSummaryInModal = false;
+  this.goldenSummaryUrl = null;
+}
+
+loadGoldenSummaryInModal(): void {
+  if (this.duplicateRecord?.id) {
+    const url = `/dashboard/golden-summary/${this.duplicateRecord.id}?embedded=true`;
+    this.goldenSummaryUrl = this.sanitizer.bypassSecurityTrustResourceUrl(url);
+    this.showGoldenSummaryInModal = true;
+  }
+}
+
+backToDuplicateInfo(): void {
+  this.showGoldenSummaryInModal = false;
+  this.goldenSummaryUrl = null;
+}
+```
+
+**B. Modal HTML Structure:**
+```html
+<!-- Duplicate Warning Modal with iframe support -->
+<nz-modal 
+  [(nzVisible)]="showDuplicateModal" 
+  [nzTitle]="showGoldenSummaryInModal ? '📄 Golden Record Full Details' : '🔍 Duplicate Customer Details'"
+  [nzWidth]="showGoldenSummaryInModal ? '95%' : '600px'"
+  [nzBodyStyle]="showGoldenSummaryInModal ? {'height': '80vh', 'padding': '0'} : {}"
+  [nzFooter]="null"
+  (nzOnCancel)="closeDuplicateModal()">
+  
+  <ng-container *nzModalContent>
+    <!-- Basic duplicate info view -->
+    <div *ngIf="!showGoldenSummaryInModal">
+      <!-- Alert -->
+      <nz-alert
+        nzType="error"
+        nzMessage="Duplicate Record Found"
+        nzDescription="This customer already exists in the golden records database."
+        nzShowIcon
+        class="mb-4">
+      </nz-alert>
+
+      <!-- Simple Info Display -->
+      <div class="duplicate-info">
+        <div class="info-row">
+          <strong>Company Name:</strong>
+          <span>{{ duplicateRecord?.firstName || duplicateRecord?.name || 'N/A' }}</span>
+        </div>
+        
+        <div class="info-row">
+          <strong>Tax Number:</strong>
+          <span>{{ duplicateRecord?.tax || duplicateRecord?.taxNumber || 'N/A' }}</span>
+        </div>
+        
+        <div class="info-row">
+          <strong>Customer Type:</strong>
+          <span>{{ duplicateRecord?.CustomerType || duplicateRecord?.customerType || 'N/A' }}</span>
+        </div>
+        
+        <div class="info-row">
+          <strong>Country:</strong>
+          <span>{{ duplicateRecord?.country || 'N/A' }}</span>
+        </div>
+        
+        <div class="info-row">
+          <strong>Status:</strong>
+          <nz-tag [nzColor]="duplicateRecord?.status === 'Active' ? 'success' : 'default'">
+            {{ duplicateRecord?.status || 'Active' }}
+          </nz-tag>
+        </div>
+      </div>
+
+      <!-- Actions -->
+      <div class="modal-actions">
+        <button nz-button (click)="closeDuplicateModal()">Close</button>
+        <button nz-button nzType="primary" (click)="loadGoldenSummaryInModal()">
+          <i nz-icon nzType="eye"></i> View Full Details
+        </button>
+      </div>
+    </div>
+
+    <!-- iframe view -->
+    <div *ngIf="showGoldenSummaryInModal" class="iframe-wrapper">
+      <div class="iframe-header">
+        <button nz-button nzSize="small" (click)="backToDuplicateInfo()">
+          <i nz-icon nzType="arrow-left"></i> Back
+        </button>
+        <button nz-button nzSize="small" nzType="link" (click)="closeDuplicateModal()" class="close-btn">
+          <i nz-icon nzType="close"></i> Close
+        </button>
+      </div>
+      <iframe 
+        [src]="goldenSummaryUrl"
+        class="golden-summary-iframe">
+      </iframe>
+    </div>
+  </ng-container>
+</nz-modal>
+```
+
+##### **6. API Integration:**
+
+**A. Check Duplicate API:**
+```typescript
+// API Endpoint: POST /api/requests/check-duplicate
+// Request Body: { tax: string, CustomerType: string }
+// Response: { isDuplicate: boolean, existingRecord: any, message: string }
+```
+
+**B. API Response Handling:**
+- **Success**: Returns duplicate information if found
+- **Error**: Graceful error handling with user feedback
+- **Timeout**: Prevents hanging requests
+- **Caching**: Avoids redundant API calls
+
+##### **7. Performance Optimizations:**
+
+**A. Debouncing:**
+- **Tax Field**: 100ms delay after typing stops
+- **Customer Type**: 100ms delay after selection
+- **Prevention**: Avoids excessive API calls
+
+**B. Change Detection:**
+- **Manual Trigger**: `this.cdr.detectChanges()`
+- **Mark for Check**: `this.cdr.markForCheck()`
+- **Immediate Update**: Ensures UI reflects changes
+
+**C. Memory Management:**
+- **Cleanup**: Proper subscription management
+- **Reset**: Clear duplicate state when fields are empty
+- **Prevention**: Avoid memory leaks
+
+##### **8. Business Logic:**
+
+**A. Duplicate Criteria:**
+- **Tax Number**: Must match exactly
+- **Customer Type**: Must match exactly
+- **Combination**: Both must match for duplicate detection
+
+**B. User Experience:**
+- **Immediate Feedback**: Shows warning as soon as duplicate is detected
+- **Detailed Information**: Displays complete duplicate record
+- **Navigation**: Can view full details in modal
+- **Prevention**: Prevents submission of duplicate records
+
+**C. Error Handling:**
+- **Network Errors**: Graceful fallback
+- **API Errors**: User-friendly messages
+- **Validation Errors**: Clear error indicators
+- **Timeout**: Prevents hanging requests
+
+##### **9. Integration Points:**
+
+**A. Form Integration:**
+- **Reactive Forms**: Integrates with Angular reactive forms
+- **Validation**: Part of form validation process
+- **Submission**: Prevents duplicate submission
+
+**B. UI Integration:**
+- **Warning Display**: Shows in form area
+- **Modal Integration**: Detailed view in modal
+- **Navigation**: Links to existing records
+
+**C. API Integration:**
+- **Backend API**: Server-side duplicate checking
+- **Real-time**: Immediate validation
+- **Caching**: Optimized performance
 
 #### 6. **AI Services** (`src/app/services/`)
 - **ai.service.ts** - AI integration service
