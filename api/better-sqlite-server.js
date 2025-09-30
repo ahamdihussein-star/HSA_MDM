@@ -347,6 +347,37 @@ function initializeDatabase() {
     CREATE INDEX IF NOT EXISTS idx_sync_records_operation ON sync_records(operationId);
     CREATE INDEX IF NOT EXISTS idx_sync_records_request ON sync_records(requestId);
   `);
+  // 7. Notifications Table
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS notifications (
+      id TEXT PRIMARY KEY,
+      userId TEXT NOT NULL,
+      companyName TEXT NOT NULL,
+      status TEXT NOT NULL CHECK(status IN ('rejected', 'approved', 'pending', 'quarantine')),
+      message TEXT NOT NULL,
+      timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+      isRead INTEGER DEFAULT 0,
+      taskId TEXT NOT NULL,
+      userRole TEXT NOT NULL CHECK(userRole IN ('data-entry', 'reviewer', 'compliance')),
+      requestType TEXT NOT NULL CHECK(requestType IN ('new', 'review', 'compliance')),
+      fromUser TEXT,
+      toUser TEXT,
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+    )
+  `);
+  console.log('Notifications table ready');
+
+  // Create indexes for notifications
+  db.exec(`
+    CREATE INDEX IF NOT EXISTS idx_notifications_userId ON notifications(userId);
+    CREATE INDEX IF NOT EXISTS idx_notifications_isRead ON notifications(isRead);
+    CREATE INDEX IF NOT EXISTS idx_notifications_taskId ON notifications(taskId);
+    CREATE INDEX IF NOT EXISTS idx_notifications_userRole ON notifications(userRole);
+    CREATE INDEX IF NOT EXISTS idx_notifications_timestamp ON notifications(timestamp);
+  `);
+  console.log('Notification indexes created');
+
   console.log('Indexes created for optimal performance');
 
   // Insert default users
@@ -5835,6 +5866,205 @@ app.listen(PORT, () => {
   console.log(`   POST /api/duplicates/build-master - Build master with quarantine logic`);
   console.log(`   POST /api/duplicates/resubmit-master - Resubmit rejected master`);
   console.log(`   POST /api/duplicates/recommend-fields - Get smart field recommendations`);
+  console.log(`\n🔔 NOTIFICATION ENDPOINTS AVAILABLE:`);
+  console.log(`   GET  /api/notifications - Get user notifications`);
+  console.log(`   POST /api/notifications - Create notification`);
+  console.log(`   PUT  /api/notifications/:id/read - Mark notification as read`);
+  console.log(`   PUT  /api/notifications/read-all - Mark all notifications as read`);
+  console.log(`   DELETE /api/notifications/:id - Delete notification`);
+  console.log(`   GET  /api/notifications/unread-count - Get unread count`);
+});
+
+// ====== NOTIFICATION ENDPOINTS ======
+
+// Get user notifications
+app.get('/api/notifications', (req, res) => {
+  try {
+    const userId = req.query.userId || '1';
+    const notifications = db.prepare(`
+      SELECT * FROM notifications 
+      WHERE userId = ? 
+      ORDER BY timestamp DESC
+    `).all(userId);
+    
+    res.json(notifications);
+  } catch (error) {
+    console.error('Error fetching notifications:', error);
+    res.status(500).json({ error: 'Failed to fetch notifications' });
+  }
+});
+
+// Create notification
+app.post('/api/notifications', (req, res) => {
+  try {
+    const { 
+      userId, companyName, status, message, taskId, 
+      userRole, requestType, fromUser, toUser 
+    } = req.body;
+    
+    const id = `notification_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    
+    const stmt = db.prepare(`
+      INSERT INTO notifications (
+        id, userId, companyName, status, message, taskId,
+        userRole, requestType, fromUser, toUser
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    stmt.run(id, userId, companyName, status, message, taskId, 
+             userRole, requestType, fromUser, toUser);
+    
+    res.json({ id, message: 'Notification created successfully' });
+  } catch (error) {
+    console.error('Error creating notification:', error);
+    res.status(500).json({ error: 'Failed to create notification' });
+  }
+});
+
+// Mark notification as read
+app.put('/api/notifications/:id/read', (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const stmt = db.prepare(`
+      UPDATE notifications 
+      SET isRead = 1, updatedAt = CURRENT_TIMESTAMP 
+      WHERE id = ?
+    `);
+    
+    const result = stmt.run(id);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+    
+    res.json({ message: 'Notification marked as read' });
+  } catch (error) {
+    console.error('Error marking notification as read:', error);
+    res.status(500).json({ error: 'Failed to mark notification as read' });
+  }
+});
+
+// Mark all notifications as read
+app.put('/api/notifications/read-all', (req, res) => {
+  try {
+    const userId = req.body.userId || '1';
+    
+    const stmt = db.prepare(`
+      UPDATE notifications 
+      SET isRead = 1, updatedAt = CURRENT_TIMESTAMP 
+      WHERE userId = ? AND isRead = 0
+    `);
+    
+    const result = stmt.run(userId);
+    
+    res.json({ 
+      message: 'All notifications marked as read',
+      updatedCount: result.changes 
+    });
+  } catch (error) {
+    console.error('Error marking all notifications as read:', error);
+    res.status(500).json({ error: 'Failed to mark all notifications as read' });
+  }
+});
+
+// Delete notification
+app.delete('/api/notifications/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    
+    const stmt = db.prepare('DELETE FROM notifications WHERE id = ?');
+    const result = stmt.run(id);
+    
+    if (result.changes === 0) {
+      return res.status(404).json({ error: 'Notification not found' });
+    }
+    
+    res.json({ message: 'Notification deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting notification:', error);
+    res.status(500).json({ error: 'Failed to delete notification' });
+  }
+});
+
+// Get unread count
+app.get('/api/notifications/unread-count', (req, res) => {
+  try {
+    const userId = req.query.userId || '1';
+    
+    const result = db.prepare(`
+      SELECT COUNT(*) as count FROM notifications 
+      WHERE userId = ? AND isRead = 0
+    `).get(userId);
+    
+    res.json({ unreadCount: result.count });
+  } catch (error) {
+    console.error('Error getting unread count:', error);
+    res.status(500).json({ error: 'Failed to get unread count' });
+  }
+});
+
+// Sync notifications with task list
+app.post('/api/notifications/sync', (req, res) => {
+  try {
+    const { userId, tasks } = req.body;
+    
+    // Delete existing notifications for this user
+    db.prepare('DELETE FROM notifications WHERE userId = ?').run(userId);
+    
+    // Create new notifications from tasks
+    const stmt = db.prepare(`
+      INSERT INTO notifications (
+        id, userId, companyName, status, message, taskId,
+        userRole, requestType, fromUser, toUser
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    tasks.forEach((task, index) => {
+      const id = `notification_${Date.now()}_${index}`;
+      const taskId = task.id || task.taskId || task.requestId || `task_${index}`;
+      const companyName = task.name || task.firstName || task.companyName || 'Unknown Company';
+      const status = task.status || 'pending';
+      
+      // Map status to notification status
+      let notificationStatus = 'pending';
+      if (status.toLowerCase().includes('rejected')) notificationStatus = 'rejected';
+      else if (status.toLowerCase().includes('approved')) notificationStatus = 'approved';
+      else if (status.toLowerCase().includes('quarantine')) notificationStatus = 'quarantine';
+      
+      // Get user role
+      let userRole = 'data-entry';
+      if (userId === '2') userRole = 'reviewer';
+      else if (userId === '3') userRole = 'compliance';
+      
+      // Get request type
+      let requestType = 'new';
+      if (status.includes('approved')) requestType = 'compliance';
+      else if (status.includes('rejected')) requestType = 'new';
+      else requestType = 'review';
+      
+      // Get message
+      let message = `Task for ${companyName} needs your attention`;
+      if (userId === '1' && status.includes('rejected')) {
+        message = `Your request for ${companyName} has been rejected`;
+      } else if (userId === '2') {
+        message = `New request for ${companyName} needs your review`;
+      } else if (userId === '3') {
+        message = `Approved request for ${companyName} needs compliance review`;
+      }
+      
+      stmt.run(id, userId, companyName, notificationStatus, message, taskId,
+               userRole, requestType, 'System', 'User');
+    });
+    
+    res.json({ 
+      message: 'Notifications synced successfully',
+      createdCount: tasks.length 
+    });
+  } catch (error) {
+    console.error('Error syncing notifications:', error);
+    res.status(500).json({ error: 'Failed to sync notifications' });
+  }
 });
 
 // Graceful shutdown

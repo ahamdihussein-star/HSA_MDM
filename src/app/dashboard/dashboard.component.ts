@@ -27,6 +27,9 @@ export class DashboardComponent implements OnInit {
   
   // Dashboards section state
   dashboardsExpanded: boolean = false;
+  
+  // Historical Extracted Data section state
+  historicalDataExpanded: boolean = false;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
@@ -413,5 +416,9 @@ export class DashboardComponent implements OnInit {
   // Toggle dashboards section
   toggleDashboardsSection(): void {
     this.dashboardsExpanded = !this.dashboardsExpanded;
+  }
+
+  toggleHistoricalDataSection(): void {
+    this.historicalDataExpanded = !this.historicalDataExpanded;
   }
 }

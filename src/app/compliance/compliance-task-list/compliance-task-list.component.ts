@@ -6,6 +6,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { DATA_REPO, IDataRepo } from '../../Core/data-repo';
 import { environment } from '../../../environments/environment';
+import { NotificationService } from '../../services/notification.service';
 
 type TaskRow = {
   id?: string;
@@ -89,12 +90,24 @@ export class ComplianceTaskListComponent implements OnInit {
     private router: Router,
     private message: NzMessageService,
     private notification: NzNotificationService,
-    private http: HttpClient
+    private http: HttpClient,
+    private notificationService: NotificationService
   ) {}
 
   async ngOnInit(): Promise<void> {
     await this.getCurrentUser();
     await this.load();
+    
+    // Reload notifications for current user
+    this.notificationService.reloadNotifications();
+  }
+
+  // Method to sync notifications with current tasks
+  syncNotificationsWithTasks(): void {
+    // Get current task list - use filtered list for compliance
+    const currentTasks = this.filtered || this.taskList || [];
+    console.log('🔔 Syncing notifications for compliance tasks:', currentTasks.length);
+    this.notificationService.createNotificationsFromTaskList(currentTasks);
   }
 
   // ====== Get current user from API ======
@@ -173,6 +186,9 @@ export class ComplianceTaskListComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+    
+    // Sync notifications after loading
+    this.syncNotificationsWithTasks();
   }
 
   // ====== Filter methods ======
@@ -207,6 +223,9 @@ export class ComplianceTaskListComponent implements OnInit {
     }
     
     this.refreshCheckedStatus();
+    
+    // Sync notifications after filtering
+    this.syncNotificationsWithTasks();
   }
 
 

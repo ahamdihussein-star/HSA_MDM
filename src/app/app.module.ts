@@ -21,6 +21,7 @@ import en from '@angular/common/locales/en';
 // Repository imports - Updated to use ApiRepo
 import { DATA_REPO } from './Core/data-repo';
 import { ApiRepo } from './Core/api.repo';
+import { NotificationService } from './services/notification.service';
 registerLocaleData(en);
 
 
@@ -48,7 +49,8 @@ export function HttpLoaderFactory(http: HttpClient) {
     provideClientHydration(),
     ApiRepo,
     { provide: DATA_REPO, useExisting: ApiRepo },
-    { provide: NZ_I18N, useValue: en_US }
+    { provide: NZ_I18N, useValue: en_US },
+    NotificationService
   ],
   bootstrap: [AppComponent]
 })

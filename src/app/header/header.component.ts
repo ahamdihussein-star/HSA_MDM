@@ -2,19 +2,28 @@
 
 import { TranslateService } from "@ngx-translate/core";
 import { Router } from '@angular/router';
-import { Inject, PLATFORM_ID, Component } from '@angular/core';
+import { Inject, PLATFORM_ID, Component, OnInit, OnDestroy } from '@angular/core';
 import { isPlatformBrowser } from "@angular/common";
+import { NotificationService } from '../services/notification.service';
+import { Observable, Subscription } from 'rxjs';
 
 @Component({
   selector: "app-header",
   templateUrl: "./header.component.html",
   styleUrl: "./header.component.scss",
 })
-export class HeaderComponent {
+export class HeaderComponent implements OnInit, OnDestroy {
   lang: string = "";
-  user:string = "";
+  user: string = "";
+  unreadCount: number = 0;
+  private subscriptions: Subscription[] = [];
 
-  constructor(private translate: TranslateService, @Inject(PLATFORM_ID) private platformId: Object, private router: Router ) {}
+  constructor(
+    private translate: TranslateService, 
+    @Inject(PLATFORM_ID) private platformId: Object, 
+    private router: Router,
+    private notificationService: NotificationService
+  ) {}
 
   switchLang(lang: string) {
     if (lang == "en") {
@@ -59,7 +68,21 @@ export class HeaderComponent {
       // Save default to sessionStorage
       sessionStorage.setItem("language", "en");
     }
-    this.user = localStorage.getItem("user")  || "2"; 
+    
+    // Reload notifications for current user
+    this.notificationService.reloadNotifications();
+    this.user = localStorage.getItem("user") || "2";
+
+    // Subscribe to notification count
+    this.subscriptions.push(
+      this.notificationService.getUnreadCount().subscribe(count => {
+        this.unreadCount = count;
+      })
+    );
+  }
+
+  ngOnDestroy(): void {
+    this.subscriptions.forEach(sub => sub.unsubscribe());
   }
 
 

@@ -8,6 +8,7 @@ import { HeaderComponent } from './header.component';
 import { TranslateModule } from "@ngx-translate/core";
 import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
 import { Router } from "@angular/router";
+import { SharedModule } from '../shared/shared.module';
 
 @NgModule({
   declarations: [
@@ -17,7 +18,8 @@ import { Router } from "@angular/router";
     CommonModule,
     HeaderRoutingModule,
     TranslateModule,
-    NzDropDownModule
+    NzDropDownModule,
+    SharedModule
   ],
   exports: [HeaderComponent],
 })

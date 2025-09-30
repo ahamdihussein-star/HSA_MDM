@@ -1,0 +1,89 @@
+<div class="notification-dropdown">
+  <!-- Header -->
+  <div class="notification-header">
+    <h4>Notifications</h4>
+    <div class="header-actions">
+      <button 
+        nz-button 
+        nzType="text" 
+        nzSize="small"
+        (click)="markAllAsRead()"
+        class="mark-all-read-btn">
+        Mark all as read
+      </button>
+      <button 
+        nz-button 
+        nzType="text" 
+        nzSize="small"
+        (click)="simulateNewNotification()"
+        class="simulate-btn">
+        <i nz-icon nzType="plus-circle"></i>
+      </button>
+    </div>
+  </div>
+
+  <!-- Notifications List -->
+  <div class="notifications-list">
+    <div *ngIf="(notifications$ | async)?.length === 0" class="empty-state">
+      <i nz-icon nzType="bell"></i>
+      <p>No notifications</p>
+    </div>
+
+    <div 
+      *ngFor="let notification of notifications$ | async" 
+      class="notification-item"
+      [class.unread]="!notification.isRead"
+      (click)="markAsRead(notification.id)">
+      
+      <div class="notification-icon">
+        <i 
+          nz-icon 
+          [nzType]="getStatusIcon(notification.status)"
+          [style.color]="getStatusColor(notification.status)">
+        </i>
+      </div>
+      
+      <div class="notification-content">
+        <div class="notification-title">
+          <strong>{{ notification.companyName }}</strong>
+          <span class="notification-time">{{ formatTimestamp(notification.timestamp) }}</span>
+        </div>
+        <div class="notification-message">{{ notification.message }}</div>
+        <div class="notification-details">
+          <div class="notification-status">
+            <nz-tag 
+              [nzColor]="getStatusColor(notification.status)"
+              nzSize="small">
+              {{ notification.status | titlecase }}
+            </nz-tag>
+          </div>
+          <div class="notification-source" *ngIf="notification.fromUser">
+            <small class="source-text">
+              <i nz-icon nzType="user"></i>
+              From: {{ notification.fromUser }}
+            </small>
+          </div>
+        </div>
+      </div>
+      
+      <div class="notification-actions">
+        <button 
+          nz-button 
+          nzType="text" 
+          nzSize="small"
+          nzShape="circle"
+          (click)="removeNotification(notification.id); $event.stopPropagation()"
+          class="remove-btn">
+          <i nz-icon nzType="close-circle"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+
+  <!-- Footer -->
+  <div class="notification-footer">
+    <button nz-button nzType="link" nzSize="small">
+      View all notifications
+    </button>
+  </div>
+</div>

@@ -2216,6 +2216,8 @@ export class NewRequestComponent implements OnInit, OnDestroy {
    */
   fillWithDemoData(): void {
     try {
+      // Get current country from form to generate appropriate data
+      const currentCountry = this.requestForm.get('country')?.value || 'Saudi Arabia';
       const demoCompany = this.demoDataGenerator.generateDemoData();
       
       // Show loading animation
@@ -2253,7 +2255,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
       });
 
       // Add some additional random contacts for variety
-      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(2);
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(2, this.currentDemoCompany.country);
       additionalContacts.forEach(contact => {
         this.addContact();
         const lastIndex = this.contactsFA.length - 1;
@@ -3071,7 +3073,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     // Generate additional contacts if needed
     const allContacts = [...this.currentDemoCompany.contacts];
     if (allContacts.length < 3) {
-      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(3 - allContacts.length);
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(3 - allContacts.length, this.currentDemoCompany.country);
       allContacts.push(...additionalContacts);
     }
 
@@ -3131,7 +3133,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     // Generate additional contacts if needed
     const allContacts = [...this.currentDemoCompany.contacts];
     if (allContacts.length <= contactIndex) {
-      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(contactIndex + 1 - allContacts.length);
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(contactIndex + 1 - allContacts.length, this.currentDemoCompany.country);
       allContacts.push(...additionalContacts);
     }
     
@@ -3253,7 +3255,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     // Generate enough contacts
     const allContacts = [...this.currentDemoCompany.contacts];
     while (allContacts.length <= contactIndex) {
-      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(1);
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(1, this.currentDemoCompany.country);
       allContacts.push(...additionalContacts);
     }
     

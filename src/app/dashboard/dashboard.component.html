@@ -26,21 +26,32 @@
          {{ "GoldenRequests" | translate }}
        </p>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'quarantine']"
-          [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" alt="Quarantine Icon" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" alt="Quarantine Icon" class="navIcon" />
-         {{ "Quarantine" | translate }}
-       </p>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'duplicate-records']"
-          [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') || router.url.startsWith('/dashboard/duplicate-customer') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/duplicate-records') && !router.url.startsWith('/dashboard/duplicate-customer')" src="assets/img/duplicateGrey.svg" alt="Duplicate Icon" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/duplicate-records') || router.url.startsWith('/dashboard/duplicate-customer')" src="assets/img/duplicateYellow.svg" alt="Duplicate Icon" class="navIcon" />
-         {{ "DuplicateRecords" | translate }}
-       </p>
+       <!-- Historical Extracted Data Section for Data Entry User -->
+       <div class="navSection">
+         <p class="navSectionHeader" (click)="toggleHistoricalDataSection()">
+           <i class="fas fa-chevron-right" [ngClass]="{'rotated': historicalDataExpanded}"></i>
+           <img src="assets/img/duplicateGrey.svg" alt="Historical Data" class="navIcon" />
+           {{ "Historical Extracted Data" | translate }}
+         </p>
+         <div class="navSubItems" [ngClass]="{'expanded': historicalDataExpanded}">
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'duplicate-records']"
+              [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') ? 'activeSubTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+             {{ "All Duplicates" | translate }}
+           </p>
+
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'quarantine']"
+              [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeSubTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+             {{ "All Quarantine" | translate }}
+           </p>
+         </div>
+       </div>
 
        <!-- Dashboards Section for Data Entry User -->
        <div class="navSection">
@@ -124,6 +135,7 @@
            </p>
          </div>
        </div>
+
      </div>
 
      <!-- ==== user3 (Compliance) ==== -->
@@ -195,21 +207,31 @@
          {{ "Golden Records" | translate }}
        </p>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'duplicate-records']"
-          [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateGrey.svg" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateYellow.svg" class="navIcon" />
-         {{ "All Duplicates" | translate }}
-       </p>
+       <!-- Historical Extracted Data Section -->
+       <div class="navSection">
+         <div class="navSectionHeader" (click)="toggleHistoricalDataSection()">
+           <span class="section-title">{{ "Historical Extracted Data" | translate }}</span>
+           <i nz-icon [nzType]="historicalDataExpanded ? 'down' : 'right'" class="chevron-icon"></i>
+         </div>
+         
+         <div class="navSubItems" *ngIf="historicalDataExpanded">
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'duplicate-records']"
+              [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+             {{ "All Duplicates" | translate }}
+           </p>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'quarantine']"
-          [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" class="navIcon" />
-         {{ "All Quarantine" | translate }}
-       </p>
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'quarantine']"
+              [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+             {{ "All Quarantine" | translate }}
+           </p>
+         </div>
+       </div>
 
        <p class="navTab"
           [routerLink]="['/dashboard', 'admin-task-list']"
@@ -302,7 +324,7 @@
          <div style="font-weight: 600; margin-top: 4px;">{{ getUserRoleName() }}</div>
        </div>
        <button nz-button nzType="text" nzDanger (click)="logout()" style="margin-top: 10px; width: 100%;">
-         <span nz-icon nzType="logout" nzTheme="outline"></span>
+         <span nz-icon nzType="logout"></span>
          {{ "Logout" | translate }}
        </button>
      </div>

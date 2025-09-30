@@ -23,17 +23,6 @@
             <img src="./assets/img/profile-add.svg" alt=""> {{ "New Customer Request" | translate }}
           </a>
         </li>
-        <li nz-menu-item>
-          <a class="iconTextHolder" [routerLink]="'/dashboard/new-request'">
-            <img src="./assets/img/box-add.svg" alt=""> {{ "New Product Request" | translate }}
-          </a>
-        </li>
-        <li nz-menu-item>
-          <a class="iconTextHolder" [routerLink]="'/dashboard/new-request'">
-            <img src="./assets/img/truck-remove.svg" alt="">{{ "New Supplier Request" | translate }}
-          </a>
-        </li>
-
       </ul>
     </nz-dropdown-menu>
 
@@ -42,7 +31,18 @@
       <button class="" *ngIf="lang== 'en'" (click)="switchLang('ar')">Ar</button>
     </div>
     <img src="assets/img/search.png" alt="searchIicon" class="searchIicon">
-    <img src="assets/img/notification.png" alt="notificationIcon" class="notificationIcon">
+    
+    <!-- Notification Icon with Badge -->
+    <div class="notification-wrapper" nz-dropdown nzTrigger="click" [nzDropdownMenu]="notificationMenu">
+      <div class="notification-icon-container">
+        <img src="assets/img/notification.png" alt="notificationIcon" class="notificationIcon">
+        <span *ngIf="unreadCount > 0" class="notification-badge">{{ unreadCount > 99 ? '99+' : unreadCount }}</span>
+      </div>
+    </div>
+    <nz-dropdown-menu #notificationMenu="nzDropdownMenu">
+      <app-notification-dropdown></app-notification-dropdown>
+    </nz-dropdown-menu>
+    
     <img src="assets/img/user.png" alt="userIcon" class="userIcon" nz-dropdown nzTrigger="click"
       [nzDropdownMenu]="menu1">
     <nz-dropdown-menu #menu1="nzDropdownMenu">

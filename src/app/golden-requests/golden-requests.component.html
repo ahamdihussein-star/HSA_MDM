@@ -15,7 +15,7 @@
     
     <!-- Sync Button -->
     <button nz-button nzType="primary" class="sync-btn" (click)="goToSyncPage()">
-      <i nz-icon nzType="sync" nzTheme="outline"></i>
+      <i nz-icon nzType="sync"></i>
       {{ 'Sync Records' | translate }}
     </button>
   </div>
@@ -55,18 +55,18 @@
         </td>
         <td>
           <button nz-button nz-dropdown [nzDropdownMenu]="actionMenu" nzTrigger="click" nzPlacement="bottomRight" class="actions-dropdown">
-            <i nz-icon nzType="more" nzTheme="outline"></i>
+            <i nz-icon nzType="more"></i>
             {{ 'Actions' | translate }}
             <i nz-icon nzType="down"></i>
           </button>
           <nz-dropdown-menu #actionMenu="nzDropdownMenu">
             <ul nz-menu>
               <li nz-menu-item (click)="viewDetails(r)">
-                <i nz-icon nzType="eye" nzTheme="outline"></i>
+                <i nz-icon nzType="eye"></i>
                 {{ 'ViewDetails' | translate }}
               </li>
               <li nz-menu-item (click)="goDataLineage(r)">
-                <i nz-icon nzType="apartment" nzTheme="outline"></i>
+                <i nz-icon nzType="apartment"></i>
                 {{ 'DataLineage' | translate }}
               </li>
             </ul>

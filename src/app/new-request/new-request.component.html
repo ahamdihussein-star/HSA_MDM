@@ -28,19 +28,6 @@
       {{ canEdit ? ("EditRequest" | translate) : canView ? ("ViewRequest" | translate) : ("NewRequest" | translate) }}
     </h2>
     
-    <!-- Keyboard Auto-Fill Helper -->
-    <div *ngIf="isNewRequest && userType === '1'" class="autofill-helper">
-      <div class="helper-content">
-        <span class="helper-icon">⌨️</span>
-        <div class="helper-text">
-          <span class="helper-title">Smart Auto-Fill</span>
-          <span class="helper-subtitle">Double-click Space bar to auto-fill</span>
-        </div>
-        <div class="helper-company" *ngIf="currentDemoCompany">
-          <span class="company-badge">{{ currentDemoCompany.name }}</span>
-        </div>
-      </div>
-    </div>
   </div>
  
  
@@ -221,7 +208,7 @@
                 (click)="translateToArabic()"
                 [disabled]="hasRecord && !editPressed"
                 [title]="'Auto Translate' | translate">
-                <span nz-icon nzType="translation" nzTheme="outline"></span>
+                <span nz-icon nzType="translation"></span>
               </button>
             </div>
           </nz-form-control>
@@ -360,7 +347,7 @@
           type="button"
           class="upload-btn"
           (click)="openUploadModal()">
-          <span nz-icon nzType="upload" nzTheme="outline"></span>
+          <span nz-icon nzType="upload"></span>
           {{ 'Upload Document' | translate }}
         </button>
       </div>
@@ -446,7 +433,7 @@
                           (click)="previewDocument(doc); $event.stopPropagation(); $event.preventDefault()" 
                           *ngIf="canPreview(doc)"
                           [title]="'Preview' | translate">
-                    <span nz-icon nzType="eye" nzTheme="outline"></span>
+                    <span nz-icon nzType="eye"></span>
                   </button>
                   <button 
                           type="button"
@@ -456,7 +443,7 @@
                           class="action-btn download-btn"
                           (click)="downloadDocumentDirect(doc); $event.stopPropagation(); $event.preventDefault()"
                           [title]="'Download' | translate">
-                    <span nz-icon nzType="download" nzTheme="outline"></span>
+                    <span nz-icon nzType="download"></span>
                   </button>
                   <button 
                           type="button"
@@ -468,7 +455,7 @@
                           (click)="removeDoc(i); $event.stopPropagation(); $event.preventDefault()" 
                           *ngIf="userType === '1'"
                           [title]="'Delete' | translate">
-                    <span nz-icon nzType="delete" nzTheme="outline"></span>
+                    <span nz-icon nzType="delete"></span>
                   </button>
                 </div>
               </td>
@@ -665,16 +652,16 @@
       <!-- Header -->
       <div class="preview-header">
         <div class="preview-title">
-          <span nz-icon [nzType]="getDocIcon(selectedDocument?.mime)" nzTheme="outline"></span>
+          <span nz-icon [nzType]="getDocIcon(selectedDocument?.mime)"></span>
           <span>{{ selectedDocument?.name }}</span>
         </div>
         <div class="preview-actions">
           <button type="button" nz-button nzType="text" (click)="downloadDocument(selectedDocument)">
-            <span nz-icon nzType="download" nzTheme="outline"></span>
+            <span nz-icon nzType="download"></span>
             {{ 'Download' | translate }}
           </button>
           <button type="button" nz-button nzType="text" (click)="closeDocumentPreview()">
-            <span nz-icon nzType="close" nzTheme="outline"></span>
+            <span nz-icon nzType="close"></span>
           </button>
         </div>
       </div>
@@ -708,7 +695,7 @@
             <span>{{ formatFileSize(selectedDocument?.size) }}</span>
           </p>
           <button type="button" nz-button nzType="primary" (click)="downloadDocument(selectedDocument)">
-            <span nz-icon nzType="download" nzTheme="outline"></span>
+            <span nz-icon nzType="download"></span>
             {{ 'Download to view' | translate }}
           </button>
         </div>

@@ -6,6 +6,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { DATA_REPO, IDataRepo, RequestType } from '../Core/data-repo';
 import { environment } from '../../environments/environment';
+import { NotificationService } from '../services/notification.service';
 
 type TaskRow = {
   id?: string;
@@ -88,7 +89,8 @@ export class AdminTaskListComponent implements OnInit {
     private router: Router,
     private message: NzMessageService,
     private notification: NzNotificationService,
-    private http: HttpClient
+    private http: HttpClient,
+    private notificationService: NotificationService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -96,6 +98,17 @@ export class AdminTaskListComponent implements OnInit {
     await this.getCurrentUser();
     // Then load tasks
     await this.load();
+    
+    // Reload notifications for current user
+    this.notificationService.reloadNotifications();
+  }
+
+  // Method to sync notifications with current tasks
+  syncNotificationsWithTasks(): void {
+    // Get current task list and create notifications from it
+    const currentTasks = this.taskList || [];
+    console.log('🔔 Syncing notifications for admin tasks:', currentTasks.length);
+    this.notificationService.createNotificationsFromTaskList(currentTasks);
   }
 
   // ====== Get current user from API ======
@@ -180,6 +193,9 @@ export class AdminTaskListComponent implements OnInit {
     } finally {
       this.loading = false;
     }
+    
+    // Sync notifications after loading
+    this.syncNotificationsWithTasks();
   }
 
   // NEW: Get origin badge for display

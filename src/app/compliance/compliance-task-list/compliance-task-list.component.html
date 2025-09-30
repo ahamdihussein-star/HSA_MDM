@@ -64,15 +64,15 @@
   [nzPageSize]="7" 
   [nzData]="filteredTaskList || []" 
   [nzLoading]="loading" 
-  [nzScroll]="{ x: '1400px' }">
+  class="smart-table">
   
   <thead>
     <tr>
-      <th style="min-width:120px">{{ 'Record Type' | translate }}</th>
-      <th style="min-width:200px">{{ 'Company Name' | translate }}</th>
-      <th style="min-width:140px">{{ 'Company Type' | translate }}</th>
-      <th style="min-width:100px">{{ 'Date' | translate }}</th>
-      <th style="min-width:120px">{{ 'Action' | translate }}</th>
+      <th class="record-type-header">{{ 'Record Type' | translate }}</th>
+      <th class="company-name-header">{{ 'Company Name' | translate }}</th>
+      <th class="company-type-header">{{ 'Company Type' | translate }}</th>
+      <th class="date-header">{{ 'Date' | translate }}</th>
+      <th class="action-header">{{ 'Action' | translate }}</th>
     </tr>
   </thead>
 
@@ -85,49 +85,55 @@
     </tr>
     
     <!-- Data rows -->
-    <tr *ngFor="let row of basicTable.data">
+    <tr *ngFor="let row of basicTable.data" class="table-row">
       <!-- Record Type Column -->
-      <td>
-        <div style="display:flex; flex-direction:column; gap:4px;">
-          <nz-tag [nzColor]="getOriginColor(row)">
+      <td class="record-type-cell">
+        <div class="record-type-info">
+          <nz-tag [nzColor]="getOriginColor(row)" class="record-type-tag">
             {{ getOriginBadge(row) }}
           </nz-tag>
-          <small style="opacity:.7; font-size:11px">
+          <small class="record-type-detail">
             {{ getRequestTypeLabel(row) }}
           </small>
         </div>
       </td>
       
       <!-- Company Name -->
-      <td>
-        <div style="display:flex; flex-direction:column;">
-          <strong>{{ row.firstName || 'غير محدد' }}</strong>
-          <small *ngIf="row.firstNameAr" style="opacity:.7">{{ row.firstNameAr }}</small>
-          <small *ngIf="row.tax" style="opacity:.7; margin-top:2px">
-            <i nz-icon nzType="number" style="margin-right:2px"></i>
-            Tax: {{ row.tax }}
-          </small>
+      <td class="company-name-cell">
+        <div class="company-info">
+          <div class="company-name">
+            <strong>{{ row.firstName || 'غير محدد' }}</strong>
+            <div *ngIf="row.firstNameAr" class="company-name-ar">{{ row.firstNameAr }}</div>
+          </div>
+          <div *ngIf="row.tax" class="company-details">
+            <span class="tax-number">
+              <i nz-icon nzType="number"></i>
+              Tax: {{ row.tax }}
+            </span>
+          </div>
         </div>
       </td>
       
       <!-- Company Type Column -->
-      <td>
-        <nz-tag [nzColor]="'default'">
-          {{ getCustomerTypeLabel(row.customerType || '') }}
-        </nz-tag>
+      <td class="company-type-cell">
+        <div class="company-type-info">
+          <nz-tag [nzColor]="'default'" class="company-type-tag">
+            {{ getCustomerTypeLabel(row.customerType || '') }}
+          </nz-tag>
+        </div>
       </td>
       
       <!-- Date -->
-      <td>{{ formatDate(row.submittedAt) }}</td>
+      <td class="date-cell">
+        <span class="date-value">{{ formatDate(row.submittedAt) }}</span>
+      </td>
       
       <!-- Actions - Only Review button -->
-      <td>
-        <div style="display: flex; gap: 8px;">
-          <button nz-button nzType="primary" nzSize="small" (click)="viewDetails(row)">
-            <i nz-icon nzType="eye"></i>
-            {{ "View Details" | translate }}
-          </button>
-        </div>
+      <td class="action-cell">
+        <button nz-button nzType="primary" nzSize="small" (click)="viewDetails(row)" class="action-button">
+          <i nz-icon nzType="eye"></i>
+          {{ "View Details" | translate }}
+        </button>
       </td>
     </tr>
   </tbody>

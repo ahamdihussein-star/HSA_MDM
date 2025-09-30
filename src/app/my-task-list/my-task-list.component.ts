@@ -1,6 +1,7 @@
 import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiRepo } from '../Core/api.repo';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: "app-my-task-list",
@@ -67,7 +68,8 @@ export class MyTaskListComponent implements OnInit {
 
   constructor(
     public router: Router,
-    private apiRepo: ApiRepo
+    private apiRepo: ApiRepo,
+    private notificationService: NotificationService
   ) {
     console.log('MyTaskListComponent initialized');
   }
@@ -76,12 +78,24 @@ export class MyTaskListComponent implements OnInit {
     console.log('MyTaskList: Loading data entry rejected requests');
     this.loadMyRequests();
     
+    // Reload notifications for current user
+    this.notificationService.reloadNotifications();
+    
     // Initialize with default statuses
     this.uniqueStatuses = [
       { value: 'rejected_new_request', label: 'Rejected New Request' },
       { value: 'rejected_duplicate', label: 'Rejected Duplicate' },
       { value: 'rejected_quarantine', label: 'Rejected Quarantine' }
     ];
+  }
+
+  // Method to sync notifications with current tasks
+  syncNotificationsWithTasks(): void {
+    // Get current task list and create notifications from it
+    const currentTasks = this.rows || [];
+    console.log('🔔 Syncing notifications for tasks:', currentTasks.length);
+    console.log('🔔 Current tasks data:', currentTasks);
+    this.notificationService.createNotificationsFromTaskList(currentTasks);
   }
 
   // في my-task-list.component.ts - تعديل دالة loadMyRequests()
@@ -136,6 +150,9 @@ async loadMyRequests(): Promise<void> {
       this.updateAllRequests();
       this.updateRows();
       this.updateCounters();
+      
+      // Sync notifications after loading data
+      this.syncNotificationsWithTasks();
       
       // Generate unique statuses for filter
       this.generateUniqueStatuses();
@@ -364,6 +381,9 @@ async loadMyRequests(): Promise<void> {
     }
     
     this.rows = filtered;
+    
+    // Sync notifications after filtering
+    this.syncNotificationsWithTasks();
   }
 
   getStatusValue(row: any): string {

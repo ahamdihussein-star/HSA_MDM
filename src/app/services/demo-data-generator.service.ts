@@ -445,8 +445,20 @@ export class DemoDataGeneratorService {
     this.usedCompanies.add(selectedIndex);
     this.lastUsedIndex = selectedIndex;
 
-    // Return a deep copy to avoid mutations
-    return this.deepClone(this.companies[selectedIndex]);
+    // Get the company and enhance it with country-specific data
+    const company = this.deepClone(this.companies[selectedIndex]);
+    
+    // Generate additional contacts with country-specific data
+    const additionalContacts = this.generateAdditionalContacts(2, company.country);
+    company.contacts = [...company.contacts, ...additionalContacts];
+    
+    // Update owner name to be country-specific
+    const countryData = this.getCountryData(company.country);
+    const ownerFirstName = countryData.firstNames[Math.floor(Math.random() * countryData.firstNames.length)];
+    const ownerLastName = countryData.lastNames[Math.floor(Math.random() * countryData.lastNames.length)];
+    company.ownerName = `${ownerFirstName} ${ownerLastName}`;
+
+    return company;
   }
 
   /**
@@ -495,7 +507,7 @@ export class DemoDataGeneratorService {
   /**
    * Generates random additional contacts for variety
    */
-  generateAdditionalContacts(count: number = 1): DemoContact[] {
+  generateAdditionalContacts(count: number = 1, country?: string): DemoContact[] {
     const jobTitles = [
       "Procurement Manager",
       "Operations Director", 
@@ -514,20 +526,12 @@ export class DemoDataGeneratorService {
       "Business Development Manager"
     ];
 
-    const firstNames = [
-      "Ahmed", "Mohammed", "Omar", "Khalid", "Saud", "Fahad", "Abdullah", "Yousef",
-      "Fatima", "Noura", "Layla", "Reem", "Sarah", "Aisha", "Hala", "Mona"
-    ];
-
-    const lastNames = [
-      "Al-Rashid", "Al-Shehri", "Al-Mansouri", "Al-Zahrani", "Al-Dosari", 
-      "Al-Mutairi", "Al-Harbi", "Al-Ghamdi", "Al-Sheikh", "Al-Malki",
-      "Al-Otaibi", "Al-Qahtani", "Al-Sulaimani", "Al-Balawi", "Al-Shammari"
-    ];
-
-    const domains = [
-      "company.com", "corp.sa", "group.com", "holdings.sa", "enterprise.com"
-    ];
+    // Get country-specific names and phone formats
+    const countryData = this.getCountryData(country || 'Saudi Arabia');
+    const firstNames = countryData.firstNames;
+    const lastNames = countryData.lastNames;
+    const phoneFormat = countryData.phoneFormat;
+    const domains = countryData.domains;
 
     const contacts: DemoContact[] = [];
 
@@ -537,17 +541,114 @@ export class DemoDataGeneratorService {
       const jobTitle = jobTitles[Math.floor(Math.random() * jobTitles.length)];
       const domain = domains[Math.floor(Math.random() * domains.length)];
       
+      // Generate country-specific phone numbers
+      const mobile = this.generatePhoneNumber(phoneFormat.mobile);
+      const landline = this.generatePhoneNumber(phoneFormat.landline);
+      
       contacts.push({
         name: `${firstName} ${lastName}`,
         jobTitle: jobTitle,
         email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace('al-', '')}@${domain}`,
-        mobile: `+96650${Math.floor(Math.random() * 9000000) + 1000000}`,
-        landline: `+96611${Math.floor(Math.random() * 9000000) + 1000000}`,
+        mobile: mobile,
+        landline: landline,
         preferredLanguage: Math.random() > 0.5 ? "Arabic" : "English"
       });
     }
 
     return contacts;
+  }
+
+  /**
+   * Get country-specific data (names, phone formats, domains)
+   */
+  private getCountryData(country: string): any {
+    const countryData: { [key: string]: any } = {
+      'Saudi Arabia': {
+        firstNames: [
+          "Ahmed", "Mohammed", "Omar", "Khalid", "Saud", "Fahad", "Abdullah", "Yousef",
+          "Fatima", "Noura", "Layla", "Reem", "Sarah", "Aisha", "Hala", "Mona"
+        ],
+        lastNames: [
+          "Al-Rashid", "Al-Shehri", "Al-Mansouri", "Al-Zahrani", "Al-Dosari", 
+          "Al-Mutairi", "Al-Harbi", "Al-Ghamdi", "Al-Sheikh", "Al-Malki",
+          "Al-Otaibi", "Al-Qahtani", "Al-Sulaimani", "Al-Balawi", "Al-Shammari"
+        ],
+        phoneFormat: {
+          mobile: "+9665XXXXXXXX",
+          landline: "+9661XXXXXXXX"
+        },
+        domains: ["company.com", "corp.sa", "group.com", "holdings.sa", "enterprise.com"]
+      },
+      'Egypt': {
+        firstNames: [
+          "Ahmed", "Mohammed", "Omar", "Khalid", "Hassan", "Mahmoud", "Ali", "Youssef",
+          "Fatima", "Aisha", "Mona", "Nour", "Dina", "Hala", "Rania", "Yasmin"
+        ],
+        lastNames: [
+          "Hassan", "Mahmoud", "Ali", "Ahmed", "Ibrahim", "Omar", "Khalil", "Youssef",
+          "Farouk", "Nasser", "Saad", "Taha", "Zaki", "Rashad", "Fouad"
+        ],
+        phoneFormat: {
+          mobile: "+201XXXXXXXXX",
+          landline: "+202XXXXXXXXX"
+        },
+        domains: ["company.com.eg", "corp.eg", "group.com.eg", "holdings.eg", "enterprise.com.eg"]
+      },
+      'UAE': {
+        firstNames: [
+          "Ahmed", "Mohammed", "Omar", "Khalid", "Saeed", "Rashid", "Hamdan", "Zayed",
+          "Fatima", "Aisha", "Mona", "Nour", "Dina", "Hala", "Rania", "Yasmin"
+        ],
+        lastNames: [
+          "Al-Rashid", "Al-Maktoum", "Al-Nahyan", "Al-Qasimi", "Al-Shamsi", 
+          "Al-Zaabi", "Al-Suwaidi", "Al-Mansouri", "Al-Dhaheri", "Al-Kaabi"
+        ],
+        phoneFormat: {
+          mobile: "+9715XXXXXXXX",
+          landline: "+9714XXXXXXXX"
+        },
+        domains: ["company.ae", "corp.ae", "group.ae", "holdings.ae", "enterprise.ae"]
+      },
+      'Kuwait': {
+        firstNames: [
+          "Ahmed", "Mohammed", "Omar", "Khalid", "Saud", "Fahad", "Abdullah", "Yousef",
+          "Fatima", "Noura", "Layla", "Reem", "Sarah", "Aisha", "Hala", "Mona"
+        ],
+        lastNames: [
+          "Al-Sabah", "Al-Kandari", "Al-Mutairi", "Al-Rashid", "Al-Dosari", 
+          "Al-Mutairi", "Al-Harbi", "Al-Ghamdi", "Al-Sheikh", "Al-Malki"
+        ],
+        phoneFormat: {
+          mobile: "+9656XXXXXXXX",
+          landline: "+9652XXXXXXXX"
+        },
+        domains: ["company.kw", "corp.kw", "group.kw", "holdings.kw", "enterprise.kw"]
+      },
+      'Qatar': {
+        firstNames: [
+          "Ahmed", "Mohammed", "Omar", "Khalid", "Saud", "Fahad", "Abdullah", "Yousef",
+          "Fatima", "Noura", "Layla", "Reem", "Sarah", "Aisha", "Hala", "Mona"
+        ],
+        lastNames: [
+          "Al-Thani", "Al-Mahmoud", "Al-Kuwari", "Al-Suwaidi", "Al-Dosari", 
+          "Al-Mutairi", "Al-Harbi", "Al-Ghamdi", "Al-Sheikh", "Al-Malki"
+        ],
+        phoneFormat: {
+          mobile: "+9743XXXXXXXX",
+          landline: "+9744XXXXXXXX"
+        },
+        domains: ["company.qa", "corp.qa", "group.qa", "holdings.qa", "enterprise.qa"]
+      }
+    };
+
+    return countryData[country] || countryData['Saudi Arabia'];
+  }
+
+  /**
+   * Generate phone number based on format
+   */
+  private generatePhoneNumber(format: string): string {
+    return format.replace(/X/g, () => Math.floor(Math.random() * 10).toString());
   }
 
   /**
