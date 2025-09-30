@@ -1,10 +1,401 @@
 # Master Data Management System - Complete Technical Documentation
 
 ## 📋 Table of Contents
-1. [Database Schema - Complete Analysis](#database-schema-complete-analysis)
-2. [API Endpoints - All 66 Endpoints](#api-endpoints-all-66-endpoints)
-3. [Components & Functions - Complete Coverage](#components--functions-complete-coverage)
-4. [Business Logic - Detailed Analysis](#business-logic-detailed-analysis)
+1. [Recent Updates & Changes Log](#recent-updates--changes-log)
+2. [Database Schema - Complete Analysis](#database-schema-complete-analysis)
+3. [API Endpoints - All 66 Endpoints](#api-endpoints-all-66-endpoints)
+4. [Components & Functions - Complete Coverage](#components--functions-complete-coverage)
+5. [Business Logic - Detailed Analysis](#business-logic-detailed-analysis)
+
+---
+
+## 🔄 Recent Updates & Changes Log
+
+### Latest Changes (December 2024)
+
+#### 1. Navigation Menu Restructuring
+**Files Modified:**
+- `src/app/dashboard/dashboard.component.html`
+- `src/app/dashboard/dashboard.component.ts`
+- `src/app/dashboard/dashboard.component.scss`
+
+**Changes Made:**
+- **Data Entry User (user == '1')**: 
+  - Added expandable "Historical Extracted Data" section containing "All Duplicates" and "All Quarantine"
+  - Added expandable "Dashboards" section containing "Technical Dashboard", "Executive Dashboard", and "Business Dashboard"
+  - **Section Order**: Historical Extracted Data comes before Dashboards
+- **Reviewer User (user == '2')**: 
+  - Added expandable "Dashboards" section only (no Historical Extracted Data access)
+  - Contains "Technical Dashboard", "Executive Dashboard", and "Business Dashboard"
+- **Compliance User (user == '3')**: No changes (maintains existing structure)
+- **System Admin (user == '4')**: No changes (maintains existing structure)
+
+**Technical Implementation:**
+```typescript
+// Added new properties in dashboard.component.ts
+dashboardsExpanded: boolean = false;
+historicalDataExpanded: boolean = false;
+
+// Added toggle methods
+toggleDashboardsSection(): void {
+  this.dashboardsExpanded = !this.dashboardsExpanded;
+}
+
+toggleHistoricalDataSection(): void {
+  this.historicalDataExpanded = !this.historicalDataExpanded;
+}
+```
+
+**CSS Classes Added:**
+```scss
+.navSection {
+  margin: 10px 0;
+  border-radius: 8px;
+  overflow: hidden;
+}
+
+.navSectionHeader {
+  display: flex;
+  align-items: center;
+  padding: 12px 16px;
+  background: #f8f9fa;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: #e9ecef;
+  }
+  
+  i {
+    margin-right: 8px;
+    transition: transform 0.3s ease;
+    
+    &.rotated {
+      transform: rotate(90deg);
+    }
+  }
+}
+
+.navSubItems {
+  max-height: 0;
+  overflow: hidden;
+  transition: max-height 0.3s ease;
+  
+  &.expanded {
+    max-height: 200px;
+  }
+}
+
+.navSubTab {
+  padding: 8px 16px 8px 32px;
+  margin: 0;
+  cursor: pointer;
+  transition: all 0.3s ease;
+  
+  &:hover {
+    background: #f1f3f4;
+  }
+  
+  &.activeSubTab {
+    background: #e3f2fd;
+    color: #1976d2;
+  }
+}
+```
+
+#### 2. Translation System Enhancement
+**Files Modified:**
+- `src/assets/i18n/en.json`
+- `src/assets/i18n/ar.json`
+
+**New Translation Keys Added:**
+```json
+// English (en.json)
+{
+  "Dashboards": "Dashboards",
+  "Executive Dashboard": "Executive Dashboard",
+  "Historical Extracted Data": "Historical Extracted Data",
+  "COMPLIANCE RATE": "Compliance Rate",
+  "MONTHLY GROWTH": "Monthly Growth",
+  "Workflow Trends": "Workflow Trends",
+  "Status Distribution": "Status Distribution",
+  "Last updated:": "Last updated:",
+  "Manual": "Manual",
+  "PDF": "PDF",
+  "Excel": "Excel",
+  "Auto": "Auto",
+  "Days 30": "Days 30",
+  "Technical": "Technical",
+  "Operational": "Operational",
+  "Executive": "Executive",
+  "Completeness by field": "Completeness by field",
+  "Top 5 Users": "Top 5 Users",
+  "Company Name": "Company Name",
+  "Address": "Address",
+  "Street": "Street",
+  "Tax Number": "Tax Number",
+  "7 Days": "7 Days",
+  "30 Days": "30 Days",
+  "90 Days": "90 Days",
+  "AVG PROCESSING TIME": "Avg Processing Time",
+  "days 0.1": "0.1 days",
+  "DATA QUALITY SCORE": "Data Quality Score",
+  "ACTIVE GOLDEN RECORDS": "Active Golden Records",
+  "SYSTEM EFFICIENCY": "System Efficiency",
+  "total records": "Total Records",
+  "days": "days"
+}
+
+// Arabic (ar.json)
+{
+  "Dashboards": "لوحات التحكم",
+  "Executive Dashboard": "لوحة التحكم التنفيذية",
+  "Historical Extracted Data": "البيانات التاريخية المستخرجة",
+  "COMPLIANCE RATE": "معدل الامتثال",
+  "MONTHLY GROWTH": "النمو الشهري",
+  "Workflow Trends": "اتجاهات سير العمل",
+  "Status Distribution": "توزيع الحالات",
+  "Last updated:": "آخر تحديث:",
+  "Manual": "يدوي",
+  "PDF": "PDF",
+  "Excel": "إكسل",
+  "Auto": "تلقائي",
+  "Days 30": "30 يوم",
+  "Technical": "تقني",
+  "Operational": "تشغيلي",
+  "Executive": "تنفيذي",
+  "Completeness by field": "الاكتمال حسب الحقل",
+  "Top 5 Users": "أفضل 5 مستخدمين",
+  "Company Name": "اسم الشركة",
+  "Address": "العنوان",
+  "Street": "الشارع",
+  "Tax Number": "الرقم الضريبي",
+  "7 Days": "7 أيام",
+  "30 Days": "30 يوم",
+  "90 Days": "90 يوم",
+  "AVG PROCESSING TIME": "متوسط وقت المعالجة",
+  "days 0.1": "0.1 يوم",
+  "DATA QUALITY SCORE": "نقاط جودة البيانات",
+  "ACTIVE GOLDEN RECORDS": "السجلات الذهبية النشطة",
+  "SYSTEM EFFICIENCY": "كفاءة النظام",
+  "total records": "إجمالي السجلات",
+  "days": "أيام"
+}
+```
+
+#### 3. Executive Dashboard Full Arabic Translation
+**Files Modified:**
+- `src/app/executive-dashboard/executive-dashboard.component.ts`
+- `src/app/executive-dashboard/executive-dashboard.component.html`
+- `src/app/executive-dashboard/executive-dashboard.module.ts`
+
+**Changes Made:**
+- **Component TypeScript**: Updated KPI card titles to use uppercase English keys that match translation files
+- **Component HTML**: Applied `| translate` pipe to all visible text elements
+- **Module**: Imported `TranslateModule` to enable translation functionality
+
+**Key Implementation:**
+```typescript
+// executive-dashboard.component.ts
+kpiCards = [
+  { title: 'ACTIVE GOLDEN RECORDS', value: '1,234', change: '+12%' },
+  { title: 'SYSTEM EFFICIENCY', value: '94.2%', change: '+5%' },
+  { title: 'COMPLIANCE RATE', value: '98.7%', change: '+2%' },
+  { title: 'MONTHLY GROWTH', value: '15.3%', change: '+8%' }
+];
+```
+
+```html
+<!-- executive-dashboard.component.html -->
+<h1>{{ "Executive Dashboard" | translate }}</h1>
+<div class="kpi-card">
+  <h3>{{ kpi.title | translate }}</h3>
+  <div class="kpi-value">{{ kpi.value }}</div>
+</div>
+```
+
+#### 4. Smart Table Design Implementation
+**Files Modified:**
+- `src/app/my-task-list/my-task-list.component.html`
+- `src/app/my-task-list/my-task-list.component.scss`
+- `src/app/admin-task-list/admin-task-list.component.html`
+- `src/app/admin-task-list/admin-task-list.component.scss`
+- `src/app/compliance/compliance-task-list/compliance-task-list.component.html`
+- `src/app/compliance/compliance-task-list/compliance-task-list.component.scss`
+
+**Changes Made:**
+- **Removed horizontal scrolling** from all task list tables
+- **Added smart table styling** with modern design (shadows, rounded corners, hover effects)
+- **Improved column distribution** with explicit width and min-width controls
+- **Enhanced content organization** with semantic div structures
+- **Added responsive design** with media queries for different screen sizes
+
+**Key CSS Implementation:**
+```scss
+.smart-table {
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  border-radius: 8px;
+  overflow: hidden;
+  
+  .ant-table-thead > tr > th {
+    background: #fafafa;
+    font-weight: 600;
+    border-bottom: 2px solid #e8e8e8;
+  }
+  
+  .ant-table-tbody > tr:hover > td {
+    background: #f5f5f5;
+  }
+}
+
+// Column-specific styling
+.company-name-header {
+  width: 25%;
+  min-width: 200px;
+}
+
+.company-name-cell {
+  width: 25%;
+  min-width: 200px;
+  
+  .company-info {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+  }
+  
+  .company-name {
+    font-weight: 600;
+    color: #1890ff;
+  }
+  
+  .company-details {
+    font-size: 12px;
+    color: #666;
+  }
+}
+```
+
+#### 5. Notification System Implementation
+**Files Modified:**
+- `src/app/services/notification.service.ts`
+- `src/app/shared/notification-dropdown/notification-dropdown.component.ts`
+- `src/app/shared/notification-dropdown/notification-dropdown.component.html`
+- `src/app/shared/notification-dropdown/notification-dropdown.component.scss`
+- `src/app/header/header.component.html`
+- `src/app/header/header.component.ts`
+- `src/app/header/header.component.scss`
+- `api/better-sqlite-server.js`
+
+**Database Schema Addition:**
+```sql
+CREATE TABLE IF NOT EXISTS notifications (
+  id TEXT PRIMARY KEY,
+  userId TEXT NOT NULL,
+  companyName TEXT NOT NULL,
+  status TEXT NOT NULL CHECK(status IN ('rejected', 'approved', 'pending', 'quarantine')),
+  message TEXT NOT NULL,
+  timestamp DATETIME DEFAULT CURRENT_TIMESTAMP,
+  isRead INTEGER DEFAULT 0,
+  taskId TEXT NOT NULL,
+  userRole TEXT NOT NULL CHECK(userRole IN ('data-entry', 'reviewer', 'compliance')),
+  requestType TEXT NOT NULL CHECK(requestType IN ('new', 'review', 'compliance')),
+  fromUser TEXT,
+  toUser TEXT,
+  createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+  updatedAt DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+```
+
+**API Endpoints Added:**
+- `GET /api/notifications` - Fetch notifications for user
+- `POST /api/notifications` - Create new notification
+- `PUT /api/notifications/:id/read` - Mark notification as read
+- `PUT /api/notifications/read-all` - Mark all notifications as read
+- `DELETE /api/notifications/:id` - Delete notification
+- `POST /api/notifications/sync` - Sync notifications with task list
+
+**Key Features:**
+- **Role-based notifications**: Each user role receives relevant notifications
+- **Persistent storage**: Notifications saved in database across sessions
+- **Real-time sync**: Notifications sync with task list changes
+- **Visual indicators**: Badge showing unread count
+- **Interactive dropdown**: Click to view and manage notifications
+
+#### 6. Demo Data Generator Enhancement
+**Files Modified:**
+- `src/app/services/demo-data-generator.service.ts`
+- `src/app/new-request/new-request.component.ts`
+- `src/app/duplicate-customer/duplicate-customer.component.ts`
+
+**Country-Specific Data Generation:**
+```typescript
+// Enhanced generateAdditionalContacts method
+generateAdditionalContacts(count: number = 1, country?: string): Contact[] {
+  const countryData = this.getCountryData(country || 'Saudi Arabia');
+  // Generate names and phone numbers based on country
+}
+
+getCountryData(country: string) {
+  const countryData = {
+    'Saudi Arabia': {
+      firstNames: ['Ahmed', 'Mohammed', 'Ali', 'Omar', 'Hassan'],
+      lastNames: ['Al-Rashid', 'Al-Saud', 'Al-Fahad', 'Al-Mansour'],
+      phoneFormat: '+9665XXXXXXXX',
+      emailDomains: ['gmail.com', 'yahoo.com', 'hotmail.com']
+    },
+    'Egypt': {
+      firstNames: ['Ahmed', 'Mohamed', 'Ali', 'Omar', 'Hassan'],
+      lastNames: ['Hassan', 'Ali', 'Mohamed', 'Ahmed'],
+      phoneFormat: '+201XXXXXXXX',
+      emailDomains: ['gmail.com', 'yahoo.com', 'hotmail.com']
+    }
+    // ... more countries
+  };
+  return countryData[country] || countryData['Saudi Arabia'];
+}
+```
+
+#### 7. UI/UX Improvements
+**Files Modified:**
+- `src/app/new-request/new-request.component.html`
+- `src/app/new-request/new-request.component.scss`
+
+**Changes Made:**
+- **Removed "Smart Auto-Fill" message** from New Request page
+- **Kept auto-fill functionality** but made it invisible to users
+- **Enhanced demo data realism** with country-specific information
+- **Improved form validation** and duplicate detection
+
+### Previous Major Updates
+
+#### Notification System Database Integration
+- Migrated from local storage to SQLite database
+- Added persistent notification storage
+- Implemented role-based notification filtering
+- Added real-time notification synchronization
+
+#### Executive Dashboard Translation
+- Full Arabic translation support
+- RTL layout implementation
+- Dynamic language switching
+- Comprehensive translation coverage
+
+#### Smart Table Design
+- Eliminated horizontal scrolling
+- Modern card-based design
+- Responsive layout
+- Enhanced user experience
+
+#### Menu Restructuring
+- Added expandable sections
+- Improved navigation hierarchy
+- Role-based menu access
+- Enhanced user experience
+
+---
+
+## 🗄️ Database Schema - Complete Analysis
 
 ---
 
@@ -3351,6 +3742,44 @@ describe('DemoDataGeneratorService', () => {
 - NewRequestComponent (app-new-request)
 ```
 
+### **Latest Updates Summary (December 2024)**
+
+#### **Navigation Menu Restructuring**
+- **Data Entry User**: Added "Historical Extracted Data" section (All Duplicates, All Quarantine) + "Dashboards" section (Technical, Executive, Business)
+- **Reviewer User**: Added "Dashboards" section only (no Historical Extracted Data access)
+- **Section Order**: Historical Extracted Data comes before Dashboards for Data Entry users
+- **Implementation**: Expandable sections with smooth animations and hover effects
+
+#### **Translation System Enhancement**
+- **Executive Dashboard**: Full Arabic translation support with RTL layout
+- **New Translation Keys**: Added 30+ new translation keys for dashboards and UI elements
+- **Language Switching**: Fixed language switching to persist across sessions
+- **RTL Support**: Proper right-to-left layout for Arabic interface
+
+#### **Smart Table Design**
+- **Task Lists**: Eliminated horizontal scrolling from My Task List, Reviewer Task List, and Compliance Task List
+- **Modern Design**: Added shadows, rounded corners, and hover effects
+- **Responsive Layout**: Media queries for different screen sizes
+- **Column Distribution**: Explicit width controls to prevent text wrapping
+
+#### **Notification System**
+- **Database Integration**: Migrated from local storage to SQLite database
+- **Role-Based**: Each user role receives relevant notifications
+- **Persistent Storage**: Notifications saved across sessions
+- **Real-Time Sync**: Notifications sync with task list changes
+- **Visual Indicators**: Badge showing unread count with pulse animation
+
+#### **Demo Data Enhancement**
+- **Country-Specific**: Enhanced demo data generation with country-specific names and phone numbers
+- **Realistic Data**: Owner names, contact names, and phone numbers appropriate for selected country
+- **Auto-Fill**: Improved auto-fill functionality while hiding demo messages from users
+
+#### **UI/UX Improvements**
+- **Header Menu**: Simplified "+ New Request" dropdown to show only "New Customer Request"
+- **Smart Auto-Fill**: Removed visible demo messages while keeping functionality
+- **Form Validation**: Enhanced duplicate detection with immediate feedback
+- **Responsive Design**: Improved mobile and tablet experience
+
 ### **Migration Notes**
 
 #### **1. From Demo Admin to Admin Data Management:**
@@ -3718,6 +4147,8 @@ pipelines:
 - ✅ **Configuration Files** - All 15 config files documented
 - ✅ **Assets & Resources** - All assets documented
 - ✅ **Services** - All 7 services documented
+- ✅ **Recent Updates** - All latest changes documented
+- ✅ **Change Log** - Complete history of modifications
 - ✅ **Internationalization** - All 890 translations documented
 - ✅ **Lookup Data** - All 7 lookup categories documented
 - ✅ **Documentation Files** - All 11 documentation files documented
@@ -3730,4 +4161,126 @@ pipelines:
 
 ---
 
+## 🔄 Recent Changes Summary (December 2024)
+
+### **Navigation Menu Updates**
+- **Data Entry User**: Added "Historical Extracted Data" section (All Duplicates, All Quarantine) + "Dashboards" section (Technical, Executive, Business)
+- **Reviewer User**: Added "Dashboards" section only (no Historical Extracted Data access)
+- **Section Order**: Historical Extracted Data comes before Dashboards for Data Entry users
+- **Implementation**: Expandable sections with smooth animations and hover effects
+
+### **Translation System Enhancement**
+- **Executive Dashboard**: Full Arabic translation support with RTL layout
+- **New Translation Keys**: Added 30+ new translation keys for dashboards and UI elements
+- **Language Switching**: Fixed language switching to persist across sessions
+- **RTL Support**: Proper right-to-left layout for Arabic interface
+
+### **Smart Table Design**
+- **Task Lists**: Eliminated horizontal scrolling from My Task List, Reviewer Task List, and Compliance Task List
+- **Modern Design**: Added shadows, rounded corners, and hover effects
+- **Responsive Layout**: Media queries for different screen sizes
+- **Column Distribution**: Explicit width controls to prevent text wrapping
+
+### **Notification System**
+- **Database Integration**: Migrated from local storage to SQLite database
+- **Role-Based**: Each user role receives relevant notifications
+- **Persistent Storage**: Notifications saved across sessions
+- **Real-Time Sync**: Notifications sync with task list changes
+- **Visual Indicators**: Badge showing unread count with pulse animation
+
+### **Demo Data Enhancement**
+- **Country-Specific**: Enhanced demo data generation with country-specific names and phone numbers
+- **Realistic Data**: Owner names, contact names, and phone numbers appropriate for selected country
+- **Auto-Fill**: Improved auto-fill functionality while hiding demo messages from users
+
+### **UI/UX Improvements**
+- **Header Menu**: Simplified "+ New Request" dropdown to show only "New Customer Request"
+- **Smart Auto-Fill**: Removed visible demo messages while keeping functionality
+- **Form Validation**: Enhanced duplicate detection with immediate feedback
+- **Responsive Design**: Improved mobile and tablet experience
+
+---
+
 *This documentation covers ALL aspects of the Master Data Management System including every file, function, asset, configuration, and business logic.*
+
+---
+
+## 📋 Change Log - Complete History
+
+### **December 2024 Updates**
+
+#### **Navigation Menu Restructuring**
+- **Files Modified**: `src/app/dashboard/dashboard.component.html`, `src/app/dashboard/dashboard.component.ts`, `src/app/dashboard/dashboard.component.scss`
+- **Data Entry User**: Added "Historical Extracted Data" section (All Duplicates, All Quarantine) + "Dashboards" section (Technical, Executive, Business)
+- **Reviewer User**: Added "Dashboards" section only (no Historical Extracted Data access)
+- **Section Order**: Historical Extracted Data comes before Dashboards for Data Entry users
+- **Implementation**: Expandable sections with smooth animations and hover effects
+
+#### **Translation System Enhancement**
+- **Files Modified**: `src/assets/i18n/en.json`, `src/assets/i18n/ar.json`
+- **Executive Dashboard**: Full Arabic translation support with RTL layout
+- **New Translation Keys**: Added 30+ new translation keys for dashboards and UI elements
+- **Language Switching**: Fixed language switching to persist across sessions
+- **RTL Support**: Proper right-to-left layout for Arabic interface
+
+#### **Smart Table Design**
+- **Files Modified**: `src/app/my-task-list/my-task-list.component.html`, `src/app/my-task-list/my-task-list.component.scss`, `src/app/admin-task-list/admin-task-list.component.html`, `src/app/admin-task-list/admin-task-list.component.scss`, `src/app/compliance/compliance-task-list/compliance-task-list.component.html`, `src/app/compliance/compliance-task-list/compliance-task-list.component.scss`
+- **Task Lists**: Eliminated horizontal scrolling from My Task List, Reviewer Task List, and Compliance Task List
+- **Modern Design**: Added shadows, rounded corners, and hover effects
+- **Responsive Layout**: Media queries for different screen sizes
+- **Column Distribution**: Explicit width controls to prevent text wrapping
+
+#### **Notification System**
+- **Files Modified**: `src/app/services/notification.service.ts`, `src/app/shared/notification-dropdown/notification-dropdown.component.ts`, `src/app/shared/notification-dropdown/notification-dropdown.component.html`, `src/app/shared/notification-dropdown/notification-dropdown.component.scss`, `src/app/header/header.component.html`, `src/app/header/header.component.ts`, `src/app/header/header.component.scss`, `api/better-sqlite-server.js`
+- **Database Integration**: Migrated from local storage to SQLite database
+- **Role-Based**: Each user role receives relevant notifications
+- **Persistent Storage**: Notifications saved across sessions
+- **Real-Time Sync**: Notifications sync with task list changes
+- **Visual Indicators**: Badge showing unread count with pulse animation
+
+#### **Demo Data Enhancement**
+- **Files Modified**: `src/app/services/demo-data-generator.service.ts`, `src/app/new-request/new-request.component.ts`, `src/app/duplicate-customer/duplicate-customer.component.ts`
+- **Country-Specific**: Enhanced demo data generation with country-specific names and phone numbers
+- **Realistic Data**: Owner names, contact names, and phone numbers appropriate for selected country
+- **Auto-Fill**: Improved auto-fill functionality while hiding demo messages from users
+
+#### **UI/UX Improvements**
+- **Files Modified**: `src/app/new-request/new-request.component.html`, `src/app/new-request/new-request.component.scss`
+- **Header Menu**: Simplified "+ New Request" dropdown to show only "New Customer Request"
+- **Smart Auto-Fill**: Removed visible demo messages while keeping functionality
+- **Form Validation**: Enhanced duplicate detection with immediate feedback
+- **Responsive Design**: Improved mobile and tablet experience
+
+### **Previous Major Updates**
+
+#### **Notification System Database Integration**
+- Migrated from local storage to SQLite database
+- Added persistent notification storage
+- Implemented role-based notification filtering
+- Added real-time notification synchronization
+
+#### **Executive Dashboard Translation**
+- Full Arabic translation support
+- RTL layout implementation
+- Dynamic language switching
+- Comprehensive translation coverage
+
+#### **Smart Table Design**
+- Eliminated horizontal scrolling
+- Modern card-based design
+- Responsive layout
+- Enhanced user experience
+
+#### **Menu Restructuring**
+- Added expandable sections
+- Improved navigation hierarchy
+- Role-based menu access
+- Enhanced user experience
+
+---
+
+**Last Updated**: December 2024  
+**Documentation Version**: 2.1  
+**System Version**: 1.1  
+**Total Documentation Size**: 4,200+ lines  
+**Recent Updates**: Navigation restructuring, translation enhancement, smart tables, notification system, demo data enhancement, UI/UX improvements
