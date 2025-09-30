@@ -72,49 +72,51 @@
   <!-- Empty State - Removed to show table always -->
 
   <!-- Table -->
-  <nz-table #basicTable [nzPageSize]="7" [nzData]="filteredTaskList" [nzScroll]="{ x: '1300px' }">
+  <nz-table #basicTable [nzPageSize]="7" [nzData]="filteredTaskList" class="smart-table">
     <thead>
       <tr>
-        <th style="min-width:120px">{{ 'Record Type' | translate }}</th>
-        <th style="min-width:200px">{{ 'Company Name' | translate }}</th>
-        <th style="min-width:140px">{{ 'Company Type' | translate }}</th>
-        <th style="min-width:100px">{{ 'Date' | translate }}</th>
-        <th style="min-width:120px">{{ 'Action' | translate }}</th>
+        <th class="record-type-header">{{ 'Record Type' | translate }}</th>
+        <th class="company-name-header">{{ 'Company Name' | translate }}</th>
+        <th class="company-type-header">{{ 'Company Type' | translate }}</th>
+        <th class="date-header">{{ 'Date' | translate }}</th>
+        <th class="action-header">{{ 'Action' | translate }}</th>
       </tr>
     </thead>
 
     <tbody>
-      <tr *ngFor="let data of basicTable.data; let i = index">
+      <tr *ngFor="let data of basicTable.data; let i = index" class="table-row">
         <!-- Record Type Column -->
-        <td>
-          <div style="display:flex; flex-direction:column; gap:4px;">
-            <nz-tag [nzColor]="getOriginColor(data)">
+        <td class="record-type-cell">
+          <div class="record-type-info">
+            <nz-tag [nzColor]="getOriginColor(data)" class="record-type-tag">
               {{ getOriginBadge(data) }}
             </nz-tag>
-            <small style="opacity:.7; font-size:11px">
+            <small class="record-type-detail">
               {{ getRecordOrigin(data) }}
             </small>
           </div>
         </td>
 
         <!-- Company Name -->
-        <td>
-          <div class="name-container">
-            <strong>{{ data.firstName || data['name'] || '-' }}</strong>
-            <div *ngIf="data.firstNameAr" class="arabic-name">{{ data.firstNameAr }}</div>
-            <div *ngIf="data.tax" class="tax-number">
-              <small style="opacity:.7">
-                <i nz-icon nzType="number" style="margin-right:2px"></i>
+        <td class="company-name-cell">
+          <div class="company-info">
+            <div class="company-name">
+              <strong>{{ data.firstName || data['name'] || '-' }}</strong>
+              <div *ngIf="data.firstNameAr" class="company-name-ar">{{ data.firstNameAr }}</div>
+            </div>
+            <div *ngIf="data.tax" class="company-details">
+              <span class="tax-number">
+                <i nz-icon nzType="number"></i>
                 Tax: {{ data.tax }}
-              </small>
+              </span>
             </div>
           </div>
         </td>
 
         <!-- Company Type Column -->
-        <td>
-          <div class="type-container">
-            <span>{{ data['CustomerType'] || 'Customer Request' }}</span>
+        <td class="company-type-cell">
+          <div class="company-type-info">
+            <span class="company-type">{{ data['CustomerType'] || 'Customer Request' }}</span>
             <!-- Confidence score for duplicates -->
             <nz-tag *ngIf="isDuplicateRecord(data) && data.confidence" 
                     [nzColor]="getConfidenceColor(data.confidence)"
@@ -125,21 +127,20 @@
         </td>
 
         <!-- Date -->
-        <td>{{ data.createdAt | date:'MMM d, y' }}</td>
+        <td class="date-cell">
+          <span class="date-value">{{ data.createdAt | date:'MMM d, y' }}</span>
+        </td>
 
         <!-- Actions - Unified "View Details" only -->
-        <td>
-          <div class="actionHolder">
-            <!-- View Details Button - Universal for all request types -->
-            <button nz-button nzType="primary" nzGhost nzSize="small"
-                    nz-tooltip
-                    [nzTooltipTitle]="getViewTooltip(data)"
-                    (click)="viewOrEditRequest(data, false)"
-                    class="view-details-btn">
-              <span nz-icon nzType="eye"></span>
-              {{ "View Details" | translate }}
-            </button>
-          </div>
+        <td class="action-cell">
+          <button nz-button nzType="primary" nzGhost nzSize="small"
+                  nz-tooltip
+                  [nzTooltipTitle]="getViewTooltip(data)"
+                  (click)="viewOrEditRequest(data, false)"
+                  class="action-button">
+            <span nz-icon nzType="eye"></span>
+            {{ "View Details" | translate }}
+          </button>
         </td>
       </tr>
     </tbody>

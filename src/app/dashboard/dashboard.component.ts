@@ -24,6 +24,9 @@ export class DashboardComponent implements OnInit {
   isAdmin: boolean = false; // للـ admin user الجديد
   isManager: boolean = false; // للـ manager user الجديد
   isLoading: boolean = false;
+  
+  // Dashboards section state
+  dashboardsExpanded: boolean = false;
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
@@ -406,4 +409,9 @@ export class DashboardComponent implements OnInit {
 
   onAllChecked(_ev?: any): void {}
   onItemChecked(id: any, event: any): void {}
+
+  // Toggle dashboards section
+  toggleDashboardsSection(): void {
+    this.dashboardsExpanded = !this.dashboardsExpanded;
+  }
 }

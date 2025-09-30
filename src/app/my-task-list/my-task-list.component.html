@@ -29,14 +29,14 @@
 </div>
 
 
-<nz-table #tbl [nzPageSize]="7" [nzData]="rows" [nzScroll]="{ x: '1400px' }" [nzLoading]="loading">
+<nz-table #tbl [nzPageSize]="7" [nzData]="rows" [nzLoading]="loading" class="smart-table">
   <thead>
     <tr>
-      <th style="min-width:240px">{{ "Company Name" | translate }}</th>
-      <th style="min-width:120px">{{ "Origin" | translate }}</th>
-      <th style="min-width:160px">{{ "Company Type" | translate }}</th>
-      <th style="min-width:240px">{{ "Issue Description" | translate }}</th>
-      <th style="min-width:220px" class="text-right">{{ "Action" | translate }}</th>
+      <th class="company-name-header">{{ "Company Name" | translate }}</th>
+      <th class="origin-header">{{ "Origin" | translate }}</th>
+      <th class="company-type-header">{{ "Company Type" | translate }}</th>
+      <th class="issue-header">{{ "Issue Description" | translate }}</th>
+      <th class="action-header">{{ "Action" | translate }}</th>
     </tr>
   </thead>
   <tbody>
@@ -46,72 +46,80 @@
       </td>
     </tr>
 
-    <tr *ngFor="let row of tbl.data">
-      <td>
-        <div style="display:flex; flex-direction:column;">
-          <strong>{{ row.name || row.firstName || 'غير محدد' }}</strong>
-          <small *ngIf="row.firstNameAr" style="opacity:.7">{{ row.firstNameAr }}</small>
-          <small style="opacity:.7">#{{ row.requestId || row.id }}</small>
-          <small *ngIf="row.tax" style="opacity:.7">
-            <i nz-icon nzType="number" nzTheme="outline" style="margin-right:2px"></i>
-            Tax: {{ row.tax }}
-          </small>
+    <tr *ngFor="let row of tbl.data" class="table-row">
+      <td class="company-name-cell">
+        <div class="company-info">
+          <div class="company-name">
+            <strong>{{ row.name || row.firstName || 'غير محدد' }}</strong>
+            <small *ngIf="row.firstNameAr" class="company-name-ar">{{ row.firstNameAr }}</small>
+          </div>
+          <div class="company-details">
+            <span class="request-id">#{{ row.requestId || row.id }}</span>
+            <span *ngIf="row.tax" class="tax-number">
+              <i nz-icon nzType="number" nzTheme="outline"></i>
+              Tax: {{ row.tax }}
+            </span>
+          </div>
         </div>
       </td>
 
-      <td>
-        <div style="display:flex; flex-direction:column; gap:4px;">
-          <nz-tag [nzColor]="getOriginColor(row)">
+      <td class="origin-cell">
+        <div class="origin-info">
+          <nz-tag [nzColor]="getOriginColor(row)" class="origin-tag">
             {{ getOriginBadge(row) }}
           </nz-tag>
-          <small style="opacity:.7; font-size:11px">
+          <small class="origin-detail">
             {{ getRecordOrigin(row) }}
           </small>
         </div>
       </td>
 
-      <td>{{ getCustomerTypeLabel(row.CustomerType || '') }}</td>
+      <td class="company-type-cell">
+        <span class="company-type">{{ getCustomerTypeLabel(row.CustomerType || '') }}</span>
+      </td>
 
-      <td>
-        <div style="display:flex; flex-direction:column;">
-          <span *ngIf="row.rejectReason || row.IssueDescription; else noIssue">
-            {{ row.rejectReason || row.IssueDescription }}
-          </span>
-          <ng-template #noIssue>
-            <span *ngIf="row.status === 'Quarantine'">
-              Missing required data
+      <td class="issue-cell">
+        <div class="issue-info">
+          <div class="issue-main">
+            <span *ngIf="row.rejectReason || row.IssueDescription; else noIssue" class="issue-description">
+              {{ row.rejectReason || row.IssueDescription }}
             </span>
-            <span *ngIf="row.status !== 'Quarantine'">—</span>
-          </ng-template>
-          <small *ngIf="row.requestType === 'duplicate' && row.status === 'Rejected'" 
-                 style="color:#ef4444; margin-top:4px; font-weight:500">
-            <i nz-icon nzType="warning" style="margin-right:4px"></i>
-            Master record rejected by reviewer
-          </small>
-          <small *ngIf="row.originalRequestType === 'quarantine' && row.status === 'Rejected'" 
-                 style="color:#ff7a45; margin-top:4px; font-weight:500">
-            <i nz-icon nzType="warning" style="margin-right:4px"></i>
-            Originally from quarantine
-          </small>
-          <small *ngIf="row.linkedRecords > 0" 
-                 style="opacity:.7; margin-top:4px">
-            <i nz-icon nzType="link" style="margin-right:4px"></i>
-            {{ row.linkedRecords }} linked records
-          </small>
+            <ng-template #noIssue>
+              <span *ngIf="row.status === 'Quarantine'" class="quarantine-issue">
+                Missing required data
+              </span>
+              <span *ngIf="row.status !== 'Quarantine'" class="no-issue">—</span>
+            </ng-template>
+          </div>
+          <div class="issue-details">
+            <small *ngIf="row.requestType === 'duplicate' && row.status === 'Rejected'" class="warning-text">
+              <i nz-icon nzType="warning"></i>
+              Master record rejected by reviewer
+            </small>
+            <small *ngIf="row.originalRequestType === 'quarantine' && row.status === 'Rejected'" class="warning-text orange">
+              <i nz-icon nzType="warning"></i>
+              Originally from quarantine
+            </small>
+            <small *ngIf="row.linkedRecords > 0" class="linked-records">
+              <i nz-icon nzType="link"></i>
+              {{ row.linkedRecords }} linked records
+            </small>
+          </div>
         </div>
       </td>
 
-      <td class="text-right">
+      <td class="action-cell">
         <button 
           nz-button 
           nzType="primary"
+          class="action-button"
           [nzDanger]="row.requestType === 'duplicate' && row.status === 'Rejected'"
           [nzGhost]="(row.requestType !== 'duplicate' || row.status !== 'Rejected') && row.status !== 'Quarantine'"
           [style.background-color]="row.status === 'Quarantine' ? '#ff7a45' : ''"
           [style.border-color]="row.status === 'Quarantine' ? '#ff7a45' : ''"
           [style.color]="row.status === 'Quarantine' ? 'white' : ''"
           (click)="handleRecordAction(row)">
-          <i nz-icon [nzType]="getActionIcon(row)" style="margin-right:4px"></i>
+          <i nz-icon [nzType]="getActionIcon(row)"></i>
           {{ getActionLabel(row) }}
         </button>
       </td>

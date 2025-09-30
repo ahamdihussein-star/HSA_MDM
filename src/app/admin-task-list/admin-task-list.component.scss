@@ -519,3 +519,223 @@ textarea.ant-input {
     background-color: #fffbe6 !important;
     color: #faad14 !important;
 }
+
+/* Smart Table Styles for Reviewer Task List */
+.smart-table {
+    width: 100%;
+    border-collapse: collapse;
+    background: white;
+    border-radius: 8px;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+}
+
+.smart-table thead th {
+    background: #f8f9fa;
+    border-bottom: 2px solid #e9ecef;
+    padding: 16px 12px;
+    font-weight: 600;
+    color: #495057;
+    text-align: left;
+    white-space: nowrap;
+}
+
+.smart-table tbody tr {
+    border-bottom: 1px solid #f1f3f4;
+    transition: background-color 0.2s ease;
+}
+
+.smart-table tbody tr:hover {
+    background-color: #f8f9fa;
+}
+
+.smart-table tbody td {
+    padding: 16px 12px;
+    vertical-align: top;
+    border: none;
+}
+
+/* Column-specific styles for Reviewer Task List */
+.record-type-header {
+    width: 18%;
+    min-width: 140px;
+}
+
+.record-type-cell {
+    width: 18%;
+    min-width: 140px;
+}
+
+.record-type-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.record-type-tag {
+    font-size: 12px;
+    padding: 2px 8px;
+    border-radius: 4px;
+}
+
+.record-type-detail {
+    font-size: 11px;
+    color: #6c757d;
+    line-height: 1.2;
+}
+
+.company-name-header {
+    width: 30%;
+    min-width: 220px;
+}
+
+.company-name-cell {
+    width: 30%;
+    min-width: 220px;
+}
+
+.company-info {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.company-name {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.company-name strong {
+    font-size: 14px;
+    font-weight: 600;
+    color: #212529;
+    line-height: 1.3;
+}
+
+.company-name-ar {
+    font-size: 12px;
+    color: #6c757d;
+    font-style: italic;
+    direction: rtl;
+    text-align: right;
+}
+
+.company-details {
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.tax-number {
+    font-size: 11px;
+    color: #6c757d;
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.company-type-header {
+    width: 20%;
+    min-width: 160px;
+}
+
+.company-type-cell {
+    width: 20%;
+    min-width: 160px;
+}
+
+.company-type-info {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+}
+
+.company-type {
+    font-size: 13px;
+    color: #495057;
+    font-weight: 500;
+}
+
+.confidence-badge {
+    font-size: 10px !important;
+    padding: 1px 4px !important;
+    border-radius: 3px !important;
+    margin: 0 !important;
+    align-self: flex-start;
+}
+
+.date-header {
+    width: 12%;
+    min-width: 100px;
+}
+
+.date-cell {
+    width: 12%;
+    min-width: 100px;
+}
+
+.date-value {
+    font-size: 13px;
+    color: #495057;
+    font-weight: 500;
+}
+
+.action-header {
+    width: 20%;
+    min-width: 140px;
+    text-align: center;
+}
+
+.action-cell {
+    width: 20%;
+    min-width: 140px;
+    text-align: center;
+}
+
+.action-button {
+    font-size: 12px;
+    padding: 6px 12px;
+    height: auto;
+    min-width: 100px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: 4px;
+    border-radius: 6px;
+    font-weight: 500;
+    transition: all 0.2s ease;
+}
+
+.action-button:hover {
+    transform: translateY(-1px);
+    box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+/* Responsive adjustments for Reviewer Task List */
+@media (max-width: 1200px) {
+    .smart-table {
+        font-size: 13px;
+    }
+    
+    .smart-table thead th,
+    .smart-table tbody td {
+        padding: 12px 8px;
+    }
+}
+
+@media (max-width: 992px) {
+    .smart-table {
+        font-size: 12px;
+    }
+    
+    .company-name strong {
+        font-size: 13px;
+    }
+    
+    .action-button {
+        font-size: 11px;
+        padding: 4px 8px;
+        min-width: 80px;
+    }
+}

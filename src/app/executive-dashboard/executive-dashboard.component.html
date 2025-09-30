@@ -5,33 +5,33 @@
       <div class="title-section">
         <h1>
           <i nz-icon nzType="dashboard" nzTheme="fill"></i>
-          {{ isArabic ? 'لوحة المعلومات التنفيذية' : 'Executive Dashboard' }}
+          {{ "Executive Dashboard" | translate }}
         </h1>
         <span class="last-update">
           <i nz-icon nzType="sync"></i>
-          {{ isArabic ? 'آخر تحديث:' : 'Last updated:' }} {{ lastUpdated | date:'short' }}
+          {{ "Last updated:" | translate }} {{ lastUpdated | date:'short' }}
         </span>
       </div>
 
       <div class="header-controls">
         <!-- View Mode Switcher -->
         <nz-radio-group [(ngModel)]="viewMode" (ngModelChange)="switchView($event)">
-          <label nz-radio-button nzValue="executive">Executive</label>
-          <label nz-radio-button nzValue="operational">Operational</label>
-          <label nz-radio-button nzValue="technical">Technical</label>
+          <label nz-radio-button nzValue="executive">{{ "Executive" | translate }}</label>
+          <label nz-radio-button nzValue="operational">{{ "Operational" | translate }}</label>
+          <label nz-radio-button nzValue="technical">{{ "Technical" | translate }}</label>
         </nz-radio-group>
 
         <!-- Period Selector -->
         <nz-select [(ngModel)]="selectedPeriod" (ngModelChange)="onPeriodChange($event)" style="width: 120px;">
-          <nz-option nzValue="7days" nzLabel="7 Days"></nz-option>
-          <nz-option nzValue="30days" nzLabel="30 Days"></nz-option>
-          <nz-option nzValue="90days" nzLabel="90 Days"></nz-option>
+          <nz-option nzValue="7days" [nzLabel]="'7 Days' | translate"></nz-option>
+          <nz-option nzValue="30days" [nzLabel]="'30 Days' | translate"></nz-option>
+          <nz-option nzValue="90days" [nzLabel]="'90 Days' | translate"></nz-option>
         </nz-select>
 
         <!-- Auto Refresh Toggle -->
         <button nz-button [nzType]="autoRefresh ? 'primary' : 'default'" (click)="toggleAutoRefresh()">
           <i nz-icon [nzType]="autoRefresh ? 'sync' : 'pause-circle'" [nzSpin]="autoRefresh"></i>
-          {{ autoRefresh ? 'Auto' : 'Manual' }}
+          {{ autoRefresh ? ("Auto" | translate) : ("Manual" | translate) }}
         </button>
 
         <!-- Actions -->
@@ -41,12 +41,12 @@
         
         <button nz-button (click)="exportToPDF()" nzType="default">
           <i nz-icon nzType="file-pdf"></i>
-          PDF
+          {{ "PDF" | translate }}
         </button>
         
         <button nz-button (click)="exportToExcel()" nzType="default">
           <i nz-icon nzType="file-excel"></i>
-          Excel
+          {{ "Excel" | translate }}
         </button>
       </div>
     </div>
@@ -71,7 +71,7 @@
                 <i nz-icon [nzType]="kpi.icon"></i>
               </span>
               <span class="kpi-title">
-                {{ isArabic ? kpi.titleAr : kpi.title }}
+                {{ kpi.title | translate }}
               </span>
             </div>
             
@@ -98,8 +98,8 @@
       <!-- Status Distribution -->
       <div class="chart-card">
         <div class="chart-header">
-          <h3>{{ isArabic ? 'توزيع الحالة' : 'Status Distribution' }}</h3>
-          <span class="chart-subtitle">{{ totalRequests }} total records</span>
+          <h3>{{ "Status Distribution" | translate }}</h3>
+          <span class="chart-subtitle">{{ totalRequests }} {{ "total records" | translate }}</span>
         </div>
         <div class="chart-body">
           <canvas #statusChart></canvas>
@@ -109,7 +109,7 @@
       <!-- Workflow Trends -->
       <div class="chart-card large">
         <div class="chart-header">
-          <h3>{{ isArabic ? 'اتجاهات سير العمل' : 'Workflow Trends' }}</h3>
+          <h3>{{ "Workflow Trends" | translate }}</h3>
           <div class="chart-legend">
             <span class="legend-item">
               <i class="dot" style="background: #1890ff;"></i> Total
@@ -133,8 +133,8 @@
       <!-- Data Quality Metrics -->
       <div class="chart-card">
         <div class="chart-header">
-          <h3>{{ isArabic ? 'مقاييس جودة البيانات' : 'Data Quality Metrics' }}</h3>
-          <span class="chart-subtitle">Completeness by field</span>
+          <h3>{{ "Data Quality Metrics" | translate }}</h3>
+          <span class="chart-subtitle">{{ "Completeness by field" | translate }}</span>
         </div>
         <div class="chart-body">
           <canvas #qualityChart></canvas>
@@ -144,8 +144,8 @@
       <!-- User Performance -->
       <div class="chart-card">
         <div class="chart-header">
-          <h3>{{ isArabic ? 'أداء المستخدم' : 'User Performance' }}</h3>
-          <span class="chart-subtitle">Top 5 users</span>
+          <h3>{{ "User Performance" | translate }}</h3>
+          <span class="chart-subtitle">{{ "Top 5 Users" | translate }}</span>
         </div>
         <div class="chart-body">
           <canvas #performanceChart></canvas>
@@ -155,7 +155,7 @@
       <!-- Geographic Distribution -->
       <div class="chart-card">
         <div class="chart-header">
-          <h3>{{ isArabic ? 'التوزيع الجغرافي' : 'Geographic Distribution' }}</h3>
+          <h3>{{ "Geographic Distribution" | translate }}</h3>
           <span class="chart-subtitle">By country</span>
         </div>
         <div class="chart-body">
@@ -171,7 +171,7 @@
         <div class="section-header">
           <h3>
             <i nz-icon nzType="history"></i>
-            {{ isArabic ? 'سجل النشاط' : 'Recent Activity' }}
+            {{ "Recent Activity" | translate }}
           </h3>
           <button nz-button nzSize="small" nzType="text" (click)="refreshDashboard()">
             <i nz-icon nzType="reload"></i>
@@ -209,7 +209,7 @@
         <div class="section-header">
           <h3>
             <i nz-icon nzType="warning" style="color: #faad14;"></i>
-            {{ isArabic ? 'تحليل الاختناقات' : 'Bottleneck Analysis' }}
+            {{ "Bottleneck Analysis" | translate }}
           </h3>
           <nz-tag [nzColor]="'red'" *ngIf="bottlenecks.length">
             {{ bottlenecks.length }} Issues

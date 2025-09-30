@@ -41,6 +41,38 @@
          <img *ngIf="router.url.startsWith('/dashboard/duplicate-records') || router.url.startsWith('/dashboard/duplicate-customer')" src="assets/img/duplicateYellow.svg" alt="Duplicate Icon" class="navIcon" />
          {{ "DuplicateRecords" | translate }}
        </p>
+
+       <!-- Dashboards Section for Data Entry User -->
+       <div class="navSection">
+         <p class="navSectionHeader" (click)="toggleDashboardsSection()">
+           <i class="fas fa-chevron-right" [ngClass]="{'rotated': dashboardsExpanded}"></i>
+           <img src="assets/img/dashboardGray.svg" alt="Dashboards" class="navIcon" />
+           {{ "Dashboards" | translate }}
+         </p>
+         <div class="navSubItems" [ngClass]="{'expanded': dashboardsExpanded}">
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'technical']"
+              [ngClass]="[router.url.startsWith('/dashboard/technical') ? 'activeSubTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardGray.svg" alt="Technical Dashboard" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardYellow.svg" alt="Technical Dashboard" class="navIcon" />
+             {{ "Technical Dashboard" | translate }}
+           </p>
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'executive']"
+              [ngClass]="[router.url.startsWith('/dashboard/executive') ? 'activeSubTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardGray.svg" alt="Executive Dashboard" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardYellow.svg" alt="Executive Dashboard" class="navIcon" />
+             {{ "Executive Dashboard" | translate }}
+           </p>
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'business']"
+              [ngClass]="[router.url.startsWith('/dashboard/business') ? 'activeSubTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/business')" src="assets/img/dashboardGray.svg" alt="Business Dashboard" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/business')" src="assets/img/dashboardYellow.svg" alt="Business Dashboard" class="navIcon" />
+             {{ "Business Dashboard" | translate }}
+           </p>
+         </div>
+       </div>
      </div>
 
      <!-- ==== user2 (Master/Reviewer) ==== -->
@@ -60,6 +92,38 @@
          <img *ngIf="router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenYellow.svg" alt="Home Icon" class="navIcon" />
          {{ "GoldenRecords" | translate }}
        </p>
+
+       <!-- Dashboards Section for Reviewer User -->
+       <div class="navSection">
+         <p class="navSectionHeader" (click)="toggleDashboardsSection()">
+           <i class="fas fa-chevron-right" [ngClass]="{'rotated': dashboardsExpanded}"></i>
+           <img src="assets/img/dashboardGray.svg" alt="Dashboards" class="navIcon" />
+           {{ "Dashboards" | translate }}
+         </p>
+         <div class="navSubItems" [ngClass]="{'expanded': dashboardsExpanded}">
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'technical']"
+              [ngClass]="[router.url.startsWith('/dashboard/technical') ? 'activeSubTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardGray.svg" alt="Technical Dashboard" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardYellow.svg" alt="Technical Dashboard" class="navIcon" />
+             {{ "Technical Dashboard" | translate }}
+           </p>
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'executive']"
+              [ngClass]="[router.url.startsWith('/dashboard/executive') ? 'activeSubTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardGray.svg" alt="Executive Dashboard" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardYellow.svg" alt="Executive Dashboard" class="navIcon" />
+             {{ "Executive Dashboard" | translate }}
+           </p>
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'business']"
+              [ngClass]="[router.url.startsWith('/dashboard/business') ? 'activeSubTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/business')" src="assets/img/dashboardGray.svg" alt="Business Dashboard" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/business')" src="assets/img/dashboardYellow.svg" alt="Business Dashboard" class="navIcon" />
+             {{ "Business Dashboard" | translate }}
+           </p>
+         </div>
+       </div>
      </div>
 
      <!-- ==== user3 (Compliance) ==== -->

@@ -5,6 +5,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { Chart, ChartConfiguration, registerables } from 'chart.js';
 import { formatDate } from '@angular/common';
 import { environment } from '../../environments/environment';
+import { TranslateService } from '@ngx-translate/core';
 
 // Register Chart.js components
 Chart.register(...registerables);
@@ -110,7 +111,8 @@ export class ExecutiveDashboardComponent implements OnInit, OnDestroy, AfterView
   
   constructor(
     private http: HttpClient,
-    private message: NzMessageService
+    private message: NzMessageService,
+    private translate: TranslateService
   ) {}
 
   ngOnInit(): void {
@@ -222,7 +224,7 @@ export class ExecutiveDashboardComponent implements OnInit, OnDestroy, AfterView
   private processKPIData(kpis: any): void {
     this.kpiCards = [
       {
-        title: 'Active Golden Records',
+        title: 'ACTIVE GOLDEN RECORDS',
         titleAr: 'السجلات الذهبية النشطة',
         value: kpis.activeGoldenRecords || 0,
         previousValue: kpis.previousActiveGolden,
@@ -232,8 +234,8 @@ export class ExecutiveDashboardComponent implements OnInit, OnDestroy, AfterView
         color: '#52c41a'
       },
       {
-        title: 'Data Quality Score',
-        titleAr: 'جودة البيانات',
+        title: 'DATA QUALITY SCORE',
+        titleAr: 'نقاط جودة البيانات',
         value: kpis.dataQualityScore || 0,
         change: 2.1,
         changeType: kpis.dataQualityScore > 90 ? 'increase' : 'decrease',
@@ -242,7 +244,7 @@ export class ExecutiveDashboardComponent implements OnInit, OnDestroy, AfterView
         suffix: '%'
       },
       {
-        title: 'Avg Processing Time',
+        title: 'AVG PROCESSING TIME',
         titleAr: 'متوسط وقت المعالجة',
         value: kpis.avgProcessingTime || 0,
         change: -0.3,
@@ -252,7 +254,7 @@ export class ExecutiveDashboardComponent implements OnInit, OnDestroy, AfterView
         suffix: ' days'
       },
       {
-        title: 'Monthly Growth',
+        title: 'MONTHLY GROWTH',
         titleAr: 'النمو الشهري',
         value: kpis.monthlyGrowth || 0,
         change: kpis.monthlyGrowth,
@@ -262,7 +264,7 @@ export class ExecutiveDashboardComponent implements OnInit, OnDestroy, AfterView
         suffix: '%'
       },
       {
-        title: 'Compliance Rate',
+        title: 'COMPLIANCE RATE',
         titleAr: 'معدل الامتثال',
         value: kpis.complianceRate || 0,
         change: 1.2,
@@ -272,7 +274,7 @@ export class ExecutiveDashboardComponent implements OnInit, OnDestroy, AfterView
         suffix: '%'
       },
       {
-        title: 'System Efficiency',
+        title: 'SYSTEM EFFICIENCY',
         titleAr: 'كفاءة النظام',
         value: kpis.systemEfficiency || 0,
         change: -1.1,

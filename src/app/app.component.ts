@@ -26,9 +26,24 @@ export class AppComponent {
   }
   ngOnInit(): void {
      if (isPlatformBrowser(this.platformId)) {
-      // Start with English as default
-      document.body.classList.add("ltr");
-      document.body.classList.remove("rtl");
+      // Set default language
+      this.translate.setDefaultLang('en');
+      
+      // Check for saved language preference
+      const savedLang = sessionStorage.getItem('language');
+      if (savedLang === 'ar') {
+        this.translate.use('ar');
+        document.body.classList.add("rtl");
+        document.body.classList.remove("ltr");
+        document.documentElement.setAttribute("dir", "rtl");
+        document.body.setAttribute("dir", "rtl");
+      } else {
+        this.translate.use('en');
+        document.body.classList.add("ltr");
+        document.body.classList.remove("rtl");
+        document.documentElement.setAttribute("dir", "ltr");
+        document.body.setAttribute("dir", "ltr");
+      }
     }
   }
 

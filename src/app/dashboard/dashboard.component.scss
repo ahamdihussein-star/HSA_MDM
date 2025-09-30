@@ -23,6 +23,95 @@
     align-items: center;
     gap: 10px;
   }
+
+  // Navigation Section Styles
+  .navSection {
+    margin: 10px 0;
+    
+    .navSectionHeader {
+      font-size: 16px;
+      color: #b1b1b1;
+      padding: 20px 30px;
+      margin: 6px 0;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      transition: color 0.3s ease;
+      
+      &:hover {
+        color: #cba51c;
+      }
+      
+      i {
+        font-size: 12px;
+        transition: transform 0.3s ease;
+        
+        &.rotated {
+          transform: rotate(90deg);
+        }
+      }
+    }
+    
+    .navSubItems {
+      max-height: 0;
+      overflow: hidden;
+      transition: max-height 0.3s ease;
+      
+      &.expanded {
+        max-height: 300px;
+      }
+      
+      .navSubTab {
+        font-size: 14px;
+        color: #b1b1b1;
+        padding: 15px 30px 15px 50px;
+        margin: 2px 0;
+        cursor: pointer;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        transition: all 0.3s ease;
+        
+        &:hover {
+          color: #cba51c;
+          background-color: rgba(203, 165, 28, 0.1);
+        }
+        
+        &.activeSubTab {
+          color: #cba51c;
+          font-weight: 600;
+          background-color: rgba(203, 165, 28, 0.1);
+          position: relative;
+          
+          &::after {
+            content: "";
+            position: absolute;
+            top: 0px;
+            bottom: 0px;
+            width: 4px;
+            background-color: #cba51c;
+          }
+          
+          body.ltr & {
+            &::after {
+              left: 0;
+              border-top-right-radius: 10px;
+              border-bottom-right-radius: 10px;
+            }
+          }
+          
+          body.rtl & {
+            &::after {
+              right: 0;
+              border-top-left-radius: 10px;
+              border-bottom-left-radius: 10px;
+            }
+          }
+        }
+      }
+    }
+  }
   .activeTab {
     color: #cba51c;
     font-weight: 600;
