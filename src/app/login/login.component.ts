@@ -100,6 +100,29 @@ export class LoginComponent implements OnInit {
         sessionStorage.setItem('loginEmail', response.user.email);
         sessionStorage.setItem('authToken', response.token);
 
+        // ===== Avatar handling =====
+        try {
+          // 1) If login API returned avatarUrl, use it
+          let avatarUrl: string | null = (response as any).avatarUrl || (response.user as any).avatarUrl || null;
+          if (!avatarUrl) {
+            // 2) Fallback: fetch from local MDM API to get avatarUrl
+            const mdmApi = 'http://localhost:3001/api';
+            const me: any = await this.http
+              .get(`${mdmApi}/auth/me`, { params: { username: response.user.username } })
+              .toPromise();
+            avatarUrl = me?.avatarUrl || null;
+          }
+          if (avatarUrl) {
+            const absolute = avatarUrl.startsWith('http') ? avatarUrl : `http://localhost:3001${avatarUrl}`;
+            sessionStorage.setItem('userAvatarUrl', absolute);
+            // Notify header to refresh instantly
+            window.dispatchEvent(new CustomEvent('userAvatarUpdated', { detail: { avatarUrl: absolute } }));
+            console.log('✅ Login: Saved avatar to session:', absolute);
+          }
+        } catch (e) {
+          console.warn('Avatar resolve skipped:', e);
+        }
+
         // Map API roles to legacy user codes for backward compatibility
         let userCode = '1';
         let roleEnum = 'DATA_ENTRY';

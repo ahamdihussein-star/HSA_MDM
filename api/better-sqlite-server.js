@@ -1044,7 +1044,7 @@ app.get('/api/auth/me', (req, res) => {
     // If username is provided, always try to resolve from DB to get fullName
     if (username) {
       const user = db.prepare(
-        "SELECT id, username, role, fullName, email FROM users WHERE username = ? AND isActive = 1"
+        "SELECT id, username, role, fullName, email, isActive, avatarUrl FROM users WHERE username = ?"
       ).get(username);
       if (user) {
         return res.json({
@@ -1057,7 +1057,7 @@ app.get('/api/auth/me', (req, res) => {
     // If userId is provided, try lookup as well
     if (userId) {
       const userById = db.prepare(
-        "SELECT id, username, role, fullName, email FROM users WHERE id = ? AND isActive = 1"
+        "SELECT id, username, role, fullName, email, isActive, avatarUrl FROM users WHERE id = ?"
       ).get(userId);
       if (userById) {
         return res.json({
@@ -1074,6 +1074,8 @@ app.get('/api/auth/me', (req, res) => {
       fullName: username || 'User',
       role: userRole || 'reviewer',
       email: username ? `${username}@company.com` : 'user@company.com',
+      isActive: 1,
+      avatarUrl: null,
       permissions: getPermissionsForRole(userRole)
     });
   } catch (e) {
@@ -1088,7 +1090,7 @@ app.post('/api/login', (req, res) => {
     const { username, password } = req.body;
     
     const user = db.prepare(
-      "SELECT id, username, role, fullName, email FROM users WHERE username = ? AND password = ? AND isActive = 1"
+      "SELECT id, username, role, fullName, email, avatarUrl FROM users WHERE username = ? AND password = ? AND isActive = 1"
     ).get(username, password);
     
     if (!user) {
@@ -6130,33 +6132,63 @@ setInterval(() => {
 app.post('/api/users/upload-avatar', (req, res) => {
   try {
     console.log('📸 Avatar upload request received');
-    const { fileBase64, filename } = req.body || {};
-    console.log('📸 Request data:', { hasFileBase64: !!fileBase64, filename });
     
-    if (!fileBase64) {
-      console.log('❌ No fileBase64 provided');
-      return res.status(400).json({ error: 'fileBase64 is required' });
+    const { fileBase64, filename } = req.body;
+    
+    if (!fileBase64 || !filename) {
+      return res.status(400).json({ error: 'Missing file data' });
     }
-    const match = fileBase64.match(/^data:(image\/(png|jpeg|jpg));base64,(.+)$/i);
-    if (!match) {
-      return res.status(400).json({ error: 'Invalid image format. Use PNG or JPEG base64.' });
+    
+    // استخراج MIME type والـ extension
+    const matches = fileBase64.match(/^data:image\/(\w+);base64,/);
+    if (!matches) {
+      return res.status(400).json({ error: 'Invalid image format' });
     }
-    const mime = match[1].toLowerCase();
-    const ext = mime.includes('png') ? 'png' : 'jpg';
-    const buf = Buffer.from(match[3], 'base64');
-    const safeName = (filename || `avatar_${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '');
+    
+    const mimeType = matches[1]; // png أو jpg أو jpeg
+    
+    // التحقق من نوع الصورة
+    if (!['png', 'jpg', 'jpeg'].includes(mimeType.toLowerCase())) {
+      return res.status(400).json({ error: 'Only PNG and JPEG images are allowed' });
+    }
+    
+    // إنشاء اسم ملف آمن
+    const timestamp = Date.now();
+    const randomStr = Math.random().toString(36).substring(2, 8);
+    const ext = mimeType === 'jpeg' ? 'jpg' : mimeType; // تحويل jpeg إلى jpg
+    const safeName = `profile-${timestamp}-${randomStr}.${ext}`; // ✅ profile-1234567890-abc123.jpg
+    
+    const filePath = path.join(UPLOADS_DIR, safeName);
+    
+    console.log('📁 Saving to:', filePath);
+    
+    // إزالة الـ data URL prefix
+    const base64Data = fileBase64.replace(/^data:image\/\w+;base64,/, '');
+    
+    // ✅ إضافة fs محلياً
     const fs = require('fs');
-    const filePath = path.join(UPLOADS_DIR, `${safeName}.${ext}`);
     
-    console.log('📸 Saving file to:', filePath);
-    fs.writeFileSync(filePath, buf);
-    const url = `/uploads/${safeName}.${ext}`;
-    console.log('✅ Avatar uploaded successfully:', url);
-    console.log('✅ Full URL would be:', `http://localhost:3001${url}`);
-    return res.json({ url });
+    // حفظ الملف
+    fs.writeFileSync(filePath, base64Data, 'base64');
+    
+    const fileUrl = `/uploads/${safeName}`;
+    const fullUrl = `http://localhost:3001${fileUrl}`;
+    
+    console.log('✅ Avatar uploaded successfully:', fileUrl);
+    console.log('✅ Full URL:', fullUrl);
+    
+    res.json({ 
+      success: true, 
+      url: fileUrl,
+      fullUrl: fullUrl
+    });
+    
   } catch (error) {
-    console.error('Error uploading avatar:', error);
-    res.status(500).json({ error: 'Failed to upload avatar' });
+    console.error('❌ Avatar upload error:', error);
+    res.status(500).json({ 
+      error: 'Upload failed',
+      message: error.message 
+    });
   }
 });
 

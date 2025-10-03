@@ -3,6 +3,7 @@
 import { NgModule } from '@angular/core';
 import { RouterModule, Routes } from '@angular/router';
 import { DashboardComponent } from './dashboard.component';
+import { PdfBulkGeneratorComponent } from '../pdf-bulk-generator/pdf-bulk-generator.component';
 import { GoldenSummaryComponent } from './golden-summary/golden-summary.component';
 
 const routes: Routes = [
@@ -194,6 +195,9 @@ const routes: Routes = [
           import('../user-profile/user-profile.module')
             .then(m => m.UserProfileModule)
       },
+
+      // === PDF Bulk Generator ===
+      { path: 'pdf-bulk-generator', component: PdfBulkGeneratorComponent },
 
       
     ]

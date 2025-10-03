@@ -16,11 +16,31 @@ import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzUploadModule } from 'ng-zorro-antd/upload';
 import { NzSelectModule } from 'ng-zorro-antd/select';
 
+// ✅ استيراد الأيقونات المطلوبة
+import { 
+  UserOutline, 
+  MailOutline, 
+  LockOutline,      // ✅ بدلاً من lock-o
+  CameraOutline,    // ✅ بدلاً من camera-o
+  EditOutline,
+  SaveOutline 
+} from '@ant-design/icons-angular/icons';
+
 // Translation
 import { TranslateModule } from '@ngx-translate/core';
 
 // Component
 import { UserProfileComponent } from './user-profile.component';
+
+// ✅ تسجيل الأيقونات
+const icons = [
+  UserOutline, 
+  MailOutline, 
+  LockOutline, 
+  CameraOutline, 
+  EditOutline, 
+  SaveOutline
+];
 
 const routes: Routes = [
   {
@@ -46,7 +66,7 @@ const routes: Routes = [
     NzMessageModule,
     NzTagModule,
     NzInputModule,
-    NzIconModule,
+    NzIconModule.forChild(icons), // ✅ تسجيل الأيقونات
     NzSpinModule,
     NzUploadModule,
     NzSelectModule,

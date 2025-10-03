@@ -43,8 +43,19 @@
       <app-notification-dropdown></app-notification-dropdown>
     </nz-dropdown-menu>
     
-    <img src="assets/img/user.png" alt="userIcon" class="userIcon" nz-dropdown nzTrigger="click"
-      [nzDropdownMenu]="menu1">
+    <div class="user-avatar-container" nz-dropdown nzTrigger="click" [nzDropdownMenu]="menu1">
+      <img 
+        *ngIf="currentUser?.avatarUrl; else defaultAvatar"
+        [src]="currentUser.avatarUrl" 
+        [alt]="currentUser?.fullName"
+        class="userIcon"
+        (error)="onImageError($event)"
+        (load)="onImageLoad($event)"
+      />
+      <ng-template #defaultAvatar>
+        <img src="assets/img/user.png" alt="userIcon" class="userIcon">
+      </ng-template>
+    </div>
     <nz-dropdown-menu #menu1="nzDropdownMenu">
       <ul nz-menu>
         <li nz-menu-item>

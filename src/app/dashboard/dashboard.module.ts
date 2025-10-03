@@ -26,6 +26,7 @@ import { DataLineageModule } from '../data-lineage/data-lineage.module';
 import { RejectedModule } from '../rejected/rejected.module';
 import { ComplianceModule } from '../compliance/compliance.module';
 import { QuarantineModule } from '../quarantine/quarantine.module';
+// import { PdfBulkGeneratorModule } from '../pdf-bulk-generator/pdf-bulk-generator.module';
 
 // ng-zorro modules
 import { NzSpinModule } from 'ng-zorro-antd/spin';
@@ -67,6 +68,7 @@ import { GoldenSummaryComponent } from './golden-summary/golden-summary.componen
     DataLineageModule,
     ComplianceModule,
     QuarantineModule
+    // PdfBulkGeneratorModule
   ]
 })
 export class DashboardModule {

@@ -1,0 +1,344 @@
+// ============================================================================
+// PDF BULK GENERATOR - IMPROVED SCSS STYLES
+// تحسينات على الـ SCSS الأصلي مع إضافات جديدة
+// ============================================================================
+
+.pdf-bulk-generator-container {
+    padding: 24px;
+    max-width: 1200px;
+    margin: 0 auto;
+  
+    // ==========================================================================
+    // PAGE HEADER
+    // ==========================================================================
+    .page-header {
+      margin-bottom: 32px;
+      text-align: center;
+      
+      h1 {
+        font-size: 32px;
+        font-weight: 600;
+        color: #1890ff;
+        margin: 0 0 12px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 12px;
+        
+        i {
+          font-size: 36px;
+        }
+      }
+      
+      .subtitle {
+        color: #666;
+        font-size: 16px;
+      }
+    }
+  
+    // ==========================================================================
+    // CARDS
+    // ==========================================================================
+    .config-card,
+    .progress-card,
+    .structure-card {
+      margin-bottom: 24px;
+      box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+      border-radius: 8px;
+    }
+  
+    // ==========================================================================
+    // CONFIG SECTION
+    // ==========================================================================
+    .config-section {
+      margin-bottom: 32px;
+      
+      &:last-child {
+        margin-bottom: 0;
+      }
+      
+      h3 {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        margin: 0 0 16px;
+        font-size: 18px;
+        font-weight: 600;
+        color: #333;
+        
+        i {
+          color: #1890ff;
+          font-size: 20px;
+        }
+        
+        .count-badge {
+          background: #e6f7ff;
+          color: #1890ff;
+          padding: 4px 12px;
+          border-radius: 12px;
+          font-size: 13px;
+          font-weight: 500;
+          margin-left: auto;
+        }
+      }
+      
+      // SELECTION ACTIONS
+      .selection-actions {
+        margin-bottom: 16px;
+        display: flex;
+        gap: 16px;
+        
+        button {
+          display: flex;
+          align-items: center;
+          gap: 6px;
+          padding: 0;
+          height: auto;
+        }
+      }
+      
+      // CHECKBOX GRID
+      .checkbox-grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        gap: 12px;
+        
+        .country-checkbox,
+        .doc-type-checkbox {
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          padding: 14px;
+          border: 2px solid #e8e8e8;
+          border-radius: 8px;
+          cursor: pointer;
+          transition: all 0.3s ease;
+          background: white;
+          
+          &:hover {
+            border-color: #1890ff;
+            background: #f0f9ff;
+            transform: translateY(-2px);
+            box-shadow: 0 4px 8px rgba(24, 144, 255, 0.1);
+          }
+          
+          &.selected {
+            border-color: #1890ff;
+            background: #e6f7ff;
+            
+            .checkbox-label {
+              color: #1890ff;
+              font-weight: 600;
+            }
+          }
+          
+          input[type="checkbox"] {
+            width: 18px;
+            height: 18px;
+            cursor: pointer;
+          }
+          
+          .checkbox-content {
+            display: flex;
+            flex-direction: column;
+            gap: 4px;
+            flex: 1;
+          }
+          
+          .checkbox-label {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            transition: all 0.3s ease;
+          }
+          
+          .ar-label {
+            color: #999;
+            font-size: 12px;
+          }
+        }
+      }
+    }
+  
+    // ==========================================================================
+    // GENERATE SECTION
+    // ==========================================================================
+    .generate-section {
+      margin-top: 32px;
+      
+      .generate-btn {
+        height: 56px;
+        font-size: 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        border: none;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        
+        &:hover:not([disabled]) {
+          opacity: 0.9;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 16px rgba(102, 126, 234, 0.4);
+        }
+        
+        &[disabled] {
+          opacity: 0.6;
+          cursor: not-allowed;
+        }
+        
+        i {
+          font-size: 18px;
+        }
+      }
+    }
+  
+    // ==========================================================================
+    // PROGRESS CARD
+    // ==========================================================================
+    .progress-info {
+      
+      // PROGRESS STATS
+      .progress-stats {
+        display: grid;
+        grid-template-columns: repeat(3, 1fr);
+        gap: 16px;
+        margin-bottom: 24px;
+        
+        .stat-item {
+          text-align: center;
+          background: #fafafa;
+          padding: 16px;
+          border-radius: 8px;
+          border: 1px solid #f0f0f0;
+          
+          .stat-value {
+            display: block;
+            font-size: 28px;
+            color: #1890ff;
+            font-weight: 700;
+            margin-bottom: 4px;
+          }
+          
+          .stat-label {
+            color: #888;
+            font-size: 13px;
+          }
+        }
+      }
+      
+      // CURRENT STEP
+      .current-step {
+        margin-top: 16px;
+        padding: 12px;
+        background: #f0f9ff;
+        border-left: 4px solid #1890ff;
+        border-radius: 4px;
+        color: #333;
+        font-size: 14px;
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        
+        i {
+          color: #1890ff;
+          font-size: 16px;
+        }
+      }
+    }
+  
+    // ==========================================================================
+    // DOWNLOAD SECTION
+    // ==========================================================================
+    .download-section {
+      margin-top: 24px;
+      
+      .download-btn {
+        height: 50px;
+        font-size: 16px;
+        font-weight: 600;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 10px;
+        background: linear-gradient(135deg, #11998e 0%, #38ef7d 100%);
+        border: none;
+        border-radius: 8px;
+        transition: all 0.3s ease;
+        
+        &:hover {
+          opacity: 0.9;
+          transform: translateY(-2px);
+          box-shadow: 0 8px 16px rgba(17, 153, 142, 0.4);
+        }
+        
+        i {
+          font-size: 18px;
+        }
+      }
+    }
+  
+    // ==========================================================================
+    // STRUCTURE PREVIEW
+    // ==========================================================================
+    .structure-preview {
+      background: #fafafa;
+      padding: 16px;
+      border-radius: 6px;
+      font-family: 'Courier New', monospace;
+      font-size: 13px;
+      line-height: 1.6;
+      color: #333;
+      max-height: 400px;
+      overflow: auto;
+      border: 1px solid #e8e8e8;
+    }
+  
+    // ==========================================================================
+    // INFO ALERT
+    // ==========================================================================
+    .info-alert {
+      margin-top: 24px;
+    }
+  
+    // ==========================================================================
+    // RESPONSIVE DESIGN
+    // ==========================================================================
+    @media (max-width: 768px) {
+      padding: 16px;
+      
+      .page-header h1 {
+        font-size: 24px;
+      }
+      
+      .config-section {
+        .checkbox-grid {
+          grid-template-columns: 1fr;
+        }
+      }
+      
+      .progress-stats {
+        grid-template-columns: 1fr !important;
+      }
+    }
+  }
+  
+  // ============================================================================
+  // ANIMATIONS
+  // ============================================================================
+  
+  @keyframes pulse {
+    0%, 100% {
+      opacity: 1;
+    }
+    50% {
+      opacity: 0.5;
+    }
+  }
+  
+  .current-step i {
+    animation: pulse 1.5s ease-in-out infinite;
+  }

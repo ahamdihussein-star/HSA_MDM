@@ -2,10 +2,11 @@
 
 import { TranslateService } from "@ngx-translate/core";
 import { Router } from '@angular/router';
-import { Inject, PLATFORM_ID, Component, OnInit, OnDestroy } from '@angular/core';
+import { Inject, PLATFORM_ID, Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
 import { isPlatformBrowser } from "@angular/common";
 import { NotificationService } from '../services/notification.service';
-import { Observable, Subscription } from 'rxjs';
+import { Observable, Subscription, fromEvent, firstValueFrom } from 'rxjs';
+import { HttpClient } from '@angular/common/http';
 
 @Component({
   selector: "app-header",
@@ -16,13 +17,18 @@ export class HeaderComponent implements OnInit, OnDestroy {
   lang: string = "";
   user: string = "";
   unreadCount: number = 0;
+  userAvatarUrl: string | null = null;
+  currentUser: any = null;
   private subscriptions: Subscription[] = [];
+  private apiBase = 'http://localhost:3001/api';
 
   constructor(
     private translate: TranslateService, 
     @Inject(PLATFORM_ID) private platformId: Object, 
     private router: Router,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private cdr: ChangeDetectorRef,
+    private http: HttpClient
   ) {}
 
   switchLang(lang: string) {
@@ -47,7 +53,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
   }
 
-  ngOnInit(): void {
+  async ngOnInit(): Promise<void> {
     // Check sessionStorage first, then default to English
     const savedLang = sessionStorage.getItem("language");
     if (savedLang === "ar") {
@@ -73,6 +79,24 @@ export class HeaderComponent implements OnInit, OnDestroy {
     this.notificationService.reloadNotifications();
     this.user = localStorage.getItem("user") || "2";
 
+    // Load current user data with avatar
+    await this.loadCurrentUser();
+
+    // Listen to runtime avatar updates
+    if (isPlatformBrowser(this.platformId)) {
+      const sub = fromEvent<CustomEvent>(window, 'userAvatarUpdated').subscribe((e: any) => {
+        try {
+          this.userAvatarUrl = e?.detail?.avatarUrl || this.userAvatarUrl;
+          if (this.currentUser) {
+            this.currentUser.avatarUrl = e?.detail?.avatarUrl || this.currentUser.avatarUrl;
+          }
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+        } catch {}
+      });
+      this.subscriptions.push(sub);
+    }
+
     // Subscribe to notification count
     this.subscriptions.push(
       this.notificationService.getUnreadCount().subscribe(count => {
@@ -83,6 +107,42 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   ngOnDestroy(): void {
     this.subscriptions.forEach(sub => sub.unsubscribe());
+  }
+
+  private async loadCurrentUser(): Promise<void> {
+    try {
+      const username = sessionStorage.getItem('username');
+      
+      if (username) {
+        console.log('🔄 Header: Loading user data for:', username);
+        
+        // Get user data with avatar from API
+        this.currentUser = await firstValueFrom(
+          this.http.get(`${this.apiBase}/auth/me?username=${username}`)
+        );
+        
+        // Ensure absolute URL for avatar
+        if (this.currentUser?.avatarUrl && !this.currentUser.avatarUrl.startsWith('http')) {
+          this.currentUser.avatarUrl = `http://localhost:3001${this.currentUser.avatarUrl}`;
+        }
+        
+        // Set userAvatarUrl for backward compatibility
+        this.userAvatarUrl = this.currentUser?.avatarUrl || null;
+        
+        console.log('✅ Header: User loaded with avatar:', this.currentUser?.avatarUrl);
+      }
+    } catch (error) {
+      console.error('❌ Header: Error loading user:', error);
+    }
+  }
+
+  onImageError(event: any): void {
+    console.error('❌ Header: Image failed to load:', event.target.src);
+    console.error('❌ Header: Current user avatarUrl:', this.currentUser?.avatarUrl);
+  }
+
+  onImageLoad(event: any): void {
+    console.log('✅ Header: Image loaded successfully:', event.target.src);
   }
 
 

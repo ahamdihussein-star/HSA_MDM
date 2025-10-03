@@ -19,14 +19,14 @@
         <div class="avatar-section">
           <div class="avatar-container">
             <img 
-              *ngIf="currentUser.avatarUrl" 
-              [src]="currentUser.avatarUrl" 
+              *ngIf="avatarPreview || currentUser.avatarUrl" 
+              [src]="avatarPreview || currentUser.avatarUrl" 
               [alt]="currentUser.fullName"
               class="profile-avatar"
               (error)="onImageError($event)"
               (load)="onImageLoad($event)"
             />
-            <div *ngIf="!currentUser.avatarUrl" class="default-avatar">
+            <div *ngIf="!(avatarPreview || currentUser.avatarUrl)" class="default-avatar">
               <i nz-icon nzType="user" nzTheme="outline"></i>
             </div>
           </div>
@@ -114,12 +114,14 @@
           <div class="avatar-upload">
             <div class="avatar-preview">
               <img 
-                *ngIf="avatarPreview" 
-                [src]="avatarPreview" 
+                *ngIf="avatarPreview || currentUser?.avatarUrl" 
+                [src]="avatarPreview || currentUser?.avatarUrl" 
                 alt="Profile Preview"
                 class="preview-image"
+                (error)="onImageError($event)"
+                (load)="onImageLoad($event)"
               />
-              <div *ngIf="!avatarPreview" class="default-preview">
+              <div *ngIf="!(avatarPreview || currentUser?.avatarUrl)" class="default-preview">
                 <i nz-icon nzType="user" nzTheme="outline"></i>
               </div>
             </div>

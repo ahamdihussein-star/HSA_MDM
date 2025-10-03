@@ -1,4 +1,4 @@
-import { BrowserModule, provideClientHydration } from '@angular/platform-browser';
+import { BrowserModule } from '@angular/platform-browser';
 import { RouterOutlet, RouterModule } from '@angular/router';
 import { NgModule } from '@angular/core';
 
@@ -22,6 +22,7 @@ import en from '@angular/common/locales/en';
 import { DATA_REPO } from './Core/data-repo';
 import { ApiRepo } from './Core/api.repo';
 import { NotificationService } from './services/notification.service';
+import { PdfBulkGeneratorModule } from './pdf-bulk-generator/pdf-bulk-generator.module';
 registerLocaleData(en);
 
 
@@ -43,10 +44,10 @@ export function HttpLoaderFactory(http: HttpClient) {
         deps: [HttpClient]
       }
     }),
-    BrowserAnimationsModule
+    BrowserAnimationsModule,
+    PdfBulkGeneratorModule
   ],
   providers: [
-    provideClientHydration(),
     ApiRepo,
     { provide: DATA_REPO, useExisting: ApiRepo },
     { provide: NZ_I18N, useValue: en_US },

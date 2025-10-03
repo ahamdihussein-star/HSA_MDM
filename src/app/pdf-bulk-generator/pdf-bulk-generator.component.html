@@ -1,0 +1,85 @@
+<div class="pdf-bulk-generator-container">
+    <div class="page-header">
+      <h1>PDF Bulk Document Generator</h1>
+      <p class="subtitle">Generate realistic PDF documents for all companies</p>
+    </div>
+  
+    <div class="config-card">
+      <h2>Configuration</h2>
+      
+      <div class="config-section">
+        <h3>Select Countries <span class="count-badge">{{ selectedCountries.length }} selected</span></h3>
+        <div class="selection-actions">
+          <button type="button" (click)="selectAllCountries()">Select All</button>
+          <button type="button" (click)="deselectAllCountries()">Deselect All</button>
+        </div>
+        <div class="checkbox-grid">
+          <label *ngFor="let country of availableCountries" class="checkbox-item">
+            <input type="checkbox" 
+                   [checked]="selectedCountries.includes(country.value)" 
+                   (change)="onCountryChange(country.value, $event)" />
+            <span>{{ country.label }} <small>({{ country.labelAr }})</small></span>
+          </label>
+        </div>
+      </div>
+  
+      <div class="config-section">
+        <h3>Select Document Types <span class="count-badge">{{ selectedDocumentTypes.length }} selected</span></h3>
+        <div class="selection-actions">
+          <button type="button" (click)="selectAllDocumentTypes()">Select All</button>
+          <button type="button" (click)="deselectAllDocumentTypes()">Deselect All</button>
+        </div>
+        <div class="checkbox-grid">
+          <label *ngFor="let docType of availableDocumentTypes" class="checkbox-item">
+            <input type="checkbox" 
+                   [checked]="isDocTypeSelected(docType.value)" 
+                   (change)="onDocTypeChange(docType.value, $event)" />
+            <span>{{ docType.label }} <small>({{ docType.labelAr }})</small></span>
+          </label>
+        </div>
+      </div>
+  
+      <div class="generate-section">
+        <button type="button" 
+                class="generate-btn" 
+                [disabled]="isGenerating || selectedCountries.length === 0 || selectedDocumentTypes.length === 0" 
+                (click)="startBulkGeneration()">
+          <span *ngIf="!isGenerating">Generate All Documents</span>
+          <span *ngIf="isGenerating">Generating... {{ progress }}%</span>
+        </button>
+      </div>
+    </div>
+  
+    <div class="progress-card" *ngIf="isGenerating || downloadReady">
+      <h2>{{ isGenerating ? 'Generation Progress' : 'Generation Complete' }}</h2>
+      
+      <div class="progress-stats">
+        <div class="stat-item">
+          <span class="stat-value">{{ generatedCount }}</span>
+          <span class="stat-label">Companies Processed</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ totalCompanies }}</span>
+          <span class="stat-label">Total Companies</span>
+        </div>
+        <div class="stat-item">
+          <span class="stat-value">{{ progress }}%</span>
+          <span class="stat-label">Progress</span>
+        </div>
+      </div>
+      
+      <progress [value]="progress" max="100"></progress>
+      
+      <div class="current-step" *ngIf="isGenerating">{{ currentStep }}</div>
+      
+      <div *ngIf="downloadReady" class="download-section">
+        <button type="button" class="download-btn" (click)="downloadAllDocuments()">
+          Download ZIP File ({{ formatFileSize(zipSize) }})
+        </button>
+      </div>
+    </div>
+  
+    <div class="info-alert" *ngIf="!isGenerating && !downloadReady">
+      This tool generates realistic PDF documents for all companies in the demo database.
+    </div>
+  </div>

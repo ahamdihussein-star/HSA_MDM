@@ -73,8 +73,20 @@ export class UserProfileComponent implements OnInit {
       const user = await firstValueFrom(
         this.http.get<User>(`${this.apiBase}/auth/me`, { params: { username } })
       );
-      
       this.currentUser = user;
+
+      // Ensure avatar absolute & propagate to header via session + event
+      if (this.currentUser?.avatarUrl) {
+        if (!this.currentUser.avatarUrl.startsWith('http')) {
+          this.currentUser.avatarUrl = `http://localhost:3001${this.currentUser.avatarUrl}`;
+        }
+        // Set preview for initial modal state
+        this.avatarPreview = this.currentUser.avatarUrl || null;
+        sessionStorage.setItem('userAvatarUrl', this.currentUser.avatarUrl);
+        window.dispatchEvent(new CustomEvent('userAvatarUpdated', { detail: { avatarUrl: this.currentUser.avatarUrl } }));
+      } else {
+        this.avatarPreview = null;
+      }
       console.log('✅ Profile user data loaded:', user);
     } catch (error) {
       console.error('Error loading user profile:', error);
@@ -145,18 +157,22 @@ export class UserProfileComponent implements OnInit {
       );
       
       console.log('✅ Avatar upload response:', response);
-      this.avatarPreview = response.url;
-      
-      // Update currentUser avatarUrl immediately for preview
+      const fullUrl = response.url.startsWith('http') ? response.url : `http://localhost:3001${response.url}`;
+
+      // 1) Update preview immediately
+      this.avatarPreview = fullUrl;
+
+      // 2) Update current user immediately
       if (this.currentUser) {
-        // Ensure the URL is complete with domain
-        const fullUrl = response.url.startsWith('http') ? response.url : `http://localhost:3001${response.url}`;
         this.currentUser.avatarUrl = fullUrl;
-        console.log('🖼️ Updated avatar URL:', fullUrl);
-        
-        // Save to database immediately
-        await this.saveAvatarToDatabase(fullUrl);
       }
+
+      // 3) Persist in database
+      await this.saveAvatarToDatabase(fullUrl);
+
+      // 4) Update session + 5) Notify header
+      sessionStorage.setItem('userAvatarUrl', fullUrl);
+      window.dispatchEvent(new CustomEvent('userAvatarUpdated', { detail: { avatarUrl: fullUrl } }));
       
       this.message.success('Profile picture updated successfully');
     } catch (error) {
@@ -242,7 +258,8 @@ export class UserProfileComponent implements OnInit {
       email: '',
       role: ''
     };
-    this.avatarPreview = null;
+    // Keep avatarPreview for consistent preview inside modal
+    // this.avatarPreview remains as is
   }
 
   private resetPasswordForm(): void {
@@ -326,6 +343,7 @@ export class UserProfileComponent implements OnInit {
   onImageError(event: any): void {
     console.error('❌ Image failed to load:', event.target.src);
     console.error('❌ Current user avatarUrl:', this.currentUser?.avatarUrl);
+    console.error('❌ Avatar preview:', this.avatarPreview);
   }
 
   onImageLoad(event: any): void {

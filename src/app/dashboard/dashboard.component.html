@@ -208,6 +208,14 @@
        </p>
 
        <p class="navTab"
+          [routerLink]="['/dashboard', 'pdf-bulk-generator']"
+          [ngClass]="[router.url.startsWith('/dashboard/pdf-bulk-generator') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/pdf-bulk-generator')" src="assets/img/dashboardGray.svg" alt="PDF Bulk Generator" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/pdf-bulk-generator')" src="assets/img/dashboardYellow.svg" alt="PDF Bulk Generator" class="navIcon" />
+         {{ "PDF Bulk Generator" | translate }}
+       </p>
+
+       <p class="navTab"
           [routerLink]="['/dashboard', 'golden-requests']"
           [ngClass]="[router.url.startsWith('/dashboard/golden-requests') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenGrey.svg" class="navIcon" />
