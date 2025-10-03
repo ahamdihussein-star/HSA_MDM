@@ -179,6 +179,22 @@ const routes: Routes = [
             .then(m => m.SyncGoldenRecordsModule)
       },
 
+      // === User Management ===
+      {
+        path: 'user-management',
+        loadChildren: () =>
+          import('../user-management/user-management.module')
+            .then(m => m.UserManagementModule)
+      },
+
+      // === User Profile ===
+      {
+        path: 'profile',
+        loadChildren: () =>
+          import('../user-profile/user-profile.module')
+            .then(m => m.UserProfileModule)
+      },
+
       
     ]
   }

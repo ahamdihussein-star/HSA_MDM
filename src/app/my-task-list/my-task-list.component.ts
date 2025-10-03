@@ -9,6 +9,7 @@ import { NotificationService } from '../services/notification.service';
   styleUrl: "./my-task-list.component.scss",
 })
 export class MyTaskListComponent implements OnInit {
+  currentUser: { id?: string; username?: string; fullName?: string; role?: string } | null = null;
   // Arrays للطلبات
   CustomerRequests: any[] = [];
   ProductRequests: any[] = [];
@@ -76,6 +77,22 @@ export class MyTaskListComponent implements OnInit {
 
   ngOnInit(): void {
     console.log('MyTaskList: Loading data entry rejected requests');
+    // Always fetch current user from database to ensure fresh data
+    fetch('http://localhost:3001/api/auth/me?username=' + (sessionStorage.getItem('username') || 'data_entry'))
+      .then(r => r.json())
+      .then(u => {
+        this.currentUser = u;
+        console.log('✅ User data fetched from database:', u);
+      })
+      .catch(error => {
+        console.error('❌ Error fetching user from database:', error);
+        // Fallback to sessionStorage if database fails
+        this.currentUser = {
+          username: sessionStorage.getItem('username') || 'data_entry',
+          fullName: sessionStorage.getItem('userFullName') || 'Data Entry User',
+          role: 'data_entry'
+        };
+      });
     this.loadMyRequests();
     
     // Reload notifications for current user

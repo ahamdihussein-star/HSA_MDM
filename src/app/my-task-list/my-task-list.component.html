@@ -1,5 +1,5 @@
 <h3 class="welcomeMessage">
-  {{ "WelcomeBack" | translate }}, {{ "Essam" | translate }}!
+  {{ "WelcomeBack" | translate }}, {{ currentUser?.fullName || ("Essam" | translate) }}!
   <img src="assets/img/waving.svg" alt="Welcome Icon" class="welcomeIcon" />
 </h3>
 <p class="subMessage">{{ "HereIsYourTasksForToday" | translate }}</p>

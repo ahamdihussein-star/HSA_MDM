@@ -6,6 +6,7 @@ const path = require('path');
 
 const app = express();
 const PORT = 3001;
+const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 // Enhanced Middlewares with better limits
 app.use(cors());
@@ -19,6 +20,20 @@ app.use(express.json({
   }
 }));
 app.use(express.urlencoded({ extended: true, limit: '20mb' }));
+// Static hosting for uploaded avatars
+try {
+  const fs = require('fs');
+  if (!fs.existsSync(UPLOADS_DIR)) {
+    fs.mkdirSync(UPLOADS_DIR);
+    console.log('📁 Created uploads directory:', UPLOADS_DIR);
+  } else {
+    console.log('📁 Uploads directory exists:', UPLOADS_DIR);
+  }
+  app.use('/uploads', express.static(UPLOADS_DIR));
+  console.log('🌐 Static file serving configured for /uploads');
+} catch (e) {
+  console.error('Failed to prepare uploads dir', e);
+}
 
 // Add timeout middleware
 app.use((req, res, next) => {
@@ -102,10 +117,23 @@ function initializeDatabase() {
       fullName TEXT,
       email TEXT,
       isActive INTEGER DEFAULT 1,
-      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP
+      createdAt DATETIME DEFAULT CURRENT_TIMESTAMP,
+      avatarUrl TEXT
     )
   `);
   console.log('Users table ready');
+
+  // Ensure avatarUrl column exists (for legacy DBs)
+  try {
+    const cols = db.prepare("PRAGMA table_info(users)").all();
+    const hasAvatar = cols.some(c => c.name === 'avatarUrl');
+    if (!hasAvatar) {
+      db.prepare('ALTER TABLE users ADD COLUMN avatarUrl TEXT').run();
+      console.log('users.avatarUrl column added');
+    }
+  } catch (e) {
+    console.warn('Could not ensure users.avatarUrl column:', e.message);
+  }
 
   // 2. Requests Table - UPDATED WITH originalRequestType
   db.exec(`
@@ -1008,16 +1036,16 @@ app.get('/api/analytics/general', (req, res) => {
 
 // Get current user info endpoint
 app.get('/api/auth/me', (req, res) => {
-  const userRole = req.headers['x-user-role'] || req.query.role;
-  const userId = req.headers['x-user-id'] || req.query.userId;
-  const username = req.headers['x-username'] || req.query.username;
-  
-  if (!userRole && !userId && !username) {
-    if (req.query.username) {
+  try {
+    const userRole = req.headers['x-user-role'] || req.query.role;
+    const userId = req.headers['x-user-id'] || req.query.userId;
+    const username = req.headers['x-username'] || req.query.username;
+
+    // If username is provided, always try to resolve from DB to get fullName
+    if (username) {
       const user = db.prepare(
         "SELECT id, username, role, fullName, email FROM users WHERE username = ? AND isActive = 1"
-      ).get(req.query.username);
-      
+      ).get(username);
       if (user) {
         return res.json({
           ...user,
@@ -1025,20 +1053,33 @@ app.get('/api/auth/me', (req, res) => {
         });
       }
     }
-    
-    return res.status(401).json({ 
-      error: 'User not authenticated',
-      message: 'Please login first'
+
+    // If userId is provided, try lookup as well
+    if (userId) {
+      const userById = db.prepare(
+        "SELECT id, username, role, fullName, email FROM users WHERE id = ? AND isActive = 1"
+      ).get(userId);
+      if (userById) {
+        return res.json({
+          ...userById,
+          permissions: getPermissionsForRole(userById.role)
+        });
+      }
+    }
+
+    // Fallback (no DB match) – return minimal info
+    return res.json({
+      id: userId || 'user_' + Date.now(),
+      username: username || 'current_user',
+      fullName: username || 'User',
+      role: userRole || 'reviewer',
+      email: username ? `${username}@company.com` : 'user@company.com',
+      permissions: getPermissionsForRole(userRole)
     });
+  } catch (e) {
+    console.error('auth/me error', e);
+    return res.status(500).json({ error: 'Failed to get current user' });
   }
-  
-  res.json({
-    id: userId || 'user_' + Date.now(),
-    username: username || 'current_user',
-    role: userRole || 'reviewer',
-    email: username ? `${username}@company.com` : 'user@company.com',
-    permissions: getPermissionsForRole(userRole)
-  });
 });
 
 // Login endpoint
@@ -6083,6 +6124,270 @@ setInterval(() => {
     }
   }
 }, 30000); // Check every 30 seconds
+
+// ==================== USER MANAGEMENT API ENDPOINTS ====================
+// Simple base64 image upload (PNG/JPEG). Stores file on disk; returns URL
+app.post('/api/users/upload-avatar', (req, res) => {
+  try {
+    console.log('📸 Avatar upload request received');
+    const { fileBase64, filename } = req.body || {};
+    console.log('📸 Request data:', { hasFileBase64: !!fileBase64, filename });
+    
+    if (!fileBase64) {
+      console.log('❌ No fileBase64 provided');
+      return res.status(400).json({ error: 'fileBase64 is required' });
+    }
+    const match = fileBase64.match(/^data:(image\/(png|jpeg|jpg));base64,(.+)$/i);
+    if (!match) {
+      return res.status(400).json({ error: 'Invalid image format. Use PNG or JPEG base64.' });
+    }
+    const mime = match[1].toLowerCase();
+    const ext = mime.includes('png') ? 'png' : 'jpg';
+    const buf = Buffer.from(match[3], 'base64');
+    const safeName = (filename || `avatar_${Date.now()}`).replace(/[^a-zA-Z0-9_-]/g, '');
+    const fs = require('fs');
+    const filePath = path.join(UPLOADS_DIR, `${safeName}.${ext}`);
+    
+    console.log('📸 Saving file to:', filePath);
+    fs.writeFileSync(filePath, buf);
+    const url = `/uploads/${safeName}.${ext}`;
+    console.log('✅ Avatar uploaded successfully:', url);
+    console.log('✅ Full URL would be:', `http://localhost:3001${url}`);
+    return res.json({ url });
+  } catch (error) {
+    console.error('Error uploading avatar:', error);
+    res.status(500).json({ error: 'Failed to upload avatar' });
+  }
+});
+
+// Get all users
+app.get('/api/users', (req, res) => {
+  try {
+    console.log('[USER-MGMT] GET /api/users - Getting all users');
+    const users = db.prepare(`
+      SELECT id, username, role, fullName, email, isActive, createdAt,
+             COALESCE(avatarUrl, '') as avatarUrl
+      FROM users 
+      ORDER BY createdAt DESC
+    `).all();
+    
+    res.json(users);
+  } catch (error) {
+    console.error('Error getting users:', error);
+    res.status(500).json({ error: 'Failed to get users' });
+  }
+});
+
+// Get single user
+app.get('/api/users/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`[USER-MGMT] GET /api/users/${id} - Getting user`);
+    
+    const user = db.prepare(`
+      SELECT id, username, role, fullName, email, isActive, createdAt,
+             COALESCE(avatarUrl, '') as avatarUrl
+      FROM users 
+      WHERE id = ?
+    `).get(id);
+    
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    res.json(user);
+  } catch (error) {
+    console.error('Error getting user:', error);
+    res.status(500).json({ error: 'Failed to get user' });
+  }
+});
+
+// Create new user
+app.post('/api/users', (req, res) => {
+  try {
+    const { username, password, role, fullName, email, isActive, avatarUrl } = req.body;
+    console.log(`[USER-MGMT] POST /api/users - Creating user: ${username}`);
+    
+    // Validate required fields
+    if (!username || !password || !role || !fullName || !email) {
+      return res.status(400).json({ error: 'Missing required fields' });
+    }
+    
+    // Check if username already exists
+    const existingUser = db.prepare('SELECT id FROM users WHERE username = ?').get(username);
+    if (existingUser) {
+      return res.status(400).json({ error: 'Username already exists' });
+    }
+    
+    // Check if email already exists
+    const existingEmail = db.prepare('SELECT id FROM users WHERE email = ?').get(email);
+    if (existingEmail) {
+      return res.status(400).json({ error: 'Email already exists' });
+    }
+    
+    // Create user
+    const stmt = db.prepare(`
+      INSERT INTO users (username, password, role, fullName, email, isActive, avatarUrl)
+      VALUES (?, ?, ?, ?, ?, ?, ?)
+    `);
+    
+    const result = stmt.run(username, password, role, fullName, email, isActive ? 1 : 0, avatarUrl || null);
+    
+    res.json({ 
+      id: result.lastInsertRowid,
+      username,
+      role,
+      fullName,
+      email,
+      isActive: isActive ? 1 : 0,
+      avatarUrl: avatarUrl || null,
+      message: 'User created successfully'
+    });
+  } catch (error) {
+    console.error('Error creating user:', error);
+    res.status(500).json({ error: 'Failed to create user' });
+  }
+});
+
+// Update user
+app.put('/api/users/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { username, password, role, fullName, email, isActive } = req.body;
+    console.log(`[USER-MGMT] PUT /api/users/${id} - Updating user`);
+    
+    // Check if user exists
+    const existingUser = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+    if (!existingUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Check if username already exists (excluding current user)
+    if (username) {
+      const usernameCheck = db.prepare('SELECT id FROM users WHERE username = ? AND id != ?').get(username, id);
+      if (usernameCheck) {
+        return res.status(400).json({ error: 'Username already exists' });
+      }
+    }
+    
+    // Check if email already exists (excluding current user)
+    if (email) {
+      const emailCheck = db.prepare('SELECT id FROM users WHERE email = ? AND id != ?').get(email, id);
+      if (emailCheck) {
+        return res.status(400).json({ error: 'Email already exists' });
+      }
+    }
+    
+    // Build update query dynamically
+    const updates = [];
+    const values = [];
+    
+    if (username !== undefined) {
+      updates.push('username = ?');
+      values.push(username);
+    }
+    if (password !== undefined && password.trim() !== '') {
+      updates.push('password = ?');
+      values.push(password);
+    }
+    if (role !== undefined) {
+      updates.push('role = ?');
+      values.push(role);
+    }
+    if (fullName !== undefined) {
+      updates.push('fullName = ?');
+      values.push(fullName);
+    }
+    if (email !== undefined) {
+      updates.push('email = ?');
+      values.push(email);
+    }
+    if (isActive !== undefined) {
+      updates.push('isActive = ?');
+      values.push(isActive ? 1 : 0);
+    }
+    if (req.body.avatarUrl !== undefined) {
+      updates.push('avatarUrl = ?');
+      values.push(req.body.avatarUrl || null);
+      console.log('🖼️ Updating avatarUrl:', req.body.avatarUrl);
+    }
+    
+    if (updates.length === 0) {
+      return res.status(400).json({ error: 'No fields to update' });
+    }
+    
+    values.push(id);
+    
+    const stmt = db.prepare(`UPDATE users SET ${updates.join(', ')} WHERE id = ?`);
+    stmt.run(...values);
+    
+    res.json({ message: 'User updated successfully' });
+  } catch (error) {
+    console.error('Error updating user:', error);
+    res.status(500).json({ error: 'Failed to update user' });
+  }
+});
+
+// Update user password
+app.put('/api/users/:id/password', (req, res) => {
+  try {
+    const { id } = req.params;
+    const { currentPassword, newPassword } = req.body;
+    console.log(`[USER-MGMT] PUT /api/users/${id}/password - Updating password`);
+    
+    // Check if user exists
+    const user = db.prepare('SELECT id, password FROM users WHERE id = ?').get(id);
+    if (!user) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Verify current password (simple check for demo - in production use proper hashing)
+    if (currentPassword !== user.password) {
+      return res.status(400).json({ error: 'Current password is incorrect' });
+    }
+    
+    // Update password
+    const updateStmt = db.prepare('UPDATE users SET password = ? WHERE id = ?');
+    updateStmt.run(newPassword, id);
+    
+    console.log(`[USER-MGMT] Password updated for user ${id}`);
+    res.json({ message: 'Password updated successfully' });
+    
+  } catch (error) {
+    console.error('[USER-MGMT] Error updating password:', error);
+    res.status(500).json({ error: 'Failed to update password' });
+  }
+});
+
+// Delete user
+app.delete('/api/users/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`[USER-MGMT] DELETE /api/users/${id} - Deleting user`);
+    
+    // Check if user exists
+    const existingUser = db.prepare('SELECT id FROM users WHERE id = ?').get(id);
+    if (!existingUser) {
+      return res.status(404).json({ error: 'User not found' });
+    }
+    
+    // Check if user has any requests (optional safety check)
+    const userRequests = db.prepare('SELECT COUNT(*) as count FROM requests WHERE createdBy = ? OR assignedTo = ?').get(id, id);
+    if (userRequests.count > 0) {
+      return res.status(400).json({ error: 'Cannot delete user with existing requests' });
+    }
+    
+    // Delete user
+    db.prepare('DELETE FROM users WHERE id = ?').run(id);
+    
+    res.json({ message: 'User deleted successfully' });
+  } catch (error) {
+    console.error('Error deleting user:', error);
+    res.status(500).json({ error: 'Failed to delete user' });
+  }
+});
+
+// ==================== END USER MANAGEMENT API ENDPOINTS ====================
 
 process.on('SIGINT', () => {
   console.log('\nClosing database...');

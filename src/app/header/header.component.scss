@@ -71,6 +71,26 @@
     border-radius: 20px;
 }
 
+.profileText {
+    color: #1890ff;
+    display: flex;
+    align-items: center;
+    margin-bottom: 5px;
+    text-decoration: none;
+    transition: background-color 0.2s;
+    padding: 8px 16px;
+    border-radius: 4px;
+
+    &:hover {
+        background-color: #f0f8ff;
+    }
+
+    i {
+        margin: 0 5px;
+        font-size: 16px;
+    }
+}
+
 .signoutText {
     color: #EF4444;
     display: flex;

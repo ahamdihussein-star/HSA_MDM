@@ -1,0 +1,290 @@
+<div class="profile-container">
+  <!-- Page Header -->
+  <div class="page-header">
+    <h1>My Profile</h1>
+    <p>View and edit your personal information</p>
+  </div>
+
+  <!-- Loading State -->
+  <div *ngIf="loading" class="loading-container">
+    <nz-spin nzSize="large"></nz-spin>
+    <p>Loading profile...</p>
+  </div>
+
+  <!-- Profile Content -->
+  <div *ngIf="!loading && currentUser" class="profile-content">
+    <!-- Profile Card -->
+    <div class="profile-card">
+      <div class="profile-header">
+        <div class="avatar-section">
+          <div class="avatar-container">
+            <img 
+              *ngIf="currentUser.avatarUrl" 
+              [src]="currentUser.avatarUrl" 
+              [alt]="currentUser.fullName"
+              class="profile-avatar"
+              (error)="onImageError($event)"
+              (load)="onImageLoad($event)"
+            />
+            <div *ngIf="!currentUser.avatarUrl" class="default-avatar">
+              <i nz-icon nzType="user" nzTheme="outline"></i>
+            </div>
+          </div>
+        </div>
+        <div class="profile-info">
+          <h2>{{ currentUser.fullName }}</h2>
+          <p class="username">{{ currentUser.username }}</p>
+          <nz-tag [nzColor]="getRoleColor(currentUser.role)">
+            {{ getRoleLabel(currentUser.role) }}
+          </nz-tag>
+        </div>
+        <div class="profile-actions">
+          <button 
+            nz-button 
+            nzType="primary" 
+            nzSize="large"
+            (click)="openEditModal()"
+          >
+            <i nz-icon nzType="edit" nzTheme="outline"></i>
+            Edit Profile
+          </button>
+          <button 
+            nz-button 
+            nzType="default" 
+            nzSize="large"
+            (click)="openPasswordModal()"
+            style="margin-left: 12px;"
+          >
+            <i nz-icon nzType="lock" nzTheme="outline"></i>
+            Change Password
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Profile Details -->
+    <div class="profile-details">
+      <div class="details-grid">
+        <div class="detail-item">
+          <label>Full Name</label>
+          <p>{{ currentUser.fullName }}</p>
+        </div>
+        <div class="detail-item">
+          <label>Username</label>
+          <p>{{ currentUser.username }}</p>
+        </div>
+        <div class="detail-item">
+          <label>Email</label>
+          <p>{{ currentUser.email }}</p>
+        </div>
+        <div class="detail-item">
+          <label>Role</label>
+          <p>{{ getRoleLabel(currentUser.role) }}</p>
+        </div>
+        <div class="detail-item">
+          <label>Status</label>
+          <nz-tag [nzColor]="currentUser.isActive ? 'green' : 'red'">
+            {{ currentUser.isActive ? 'Active' : 'Inactive' }}
+          </nz-tag>
+        </div>
+        <div class="detail-item" *ngIf="currentUser.createdAt">
+          <label>Member Since</label>
+          <p>{{ currentUser.createdAt | date:'medium' }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Edit Profile Modal -->
+  <nz-modal
+    [(nzVisible)]="isModalVisible"
+    [nzTitle]="'Edit Profile'"
+    [nzWidth]="600"
+    [nzMaskClosable]="false"
+    [nzKeyboard]="true"
+    [nzBodyStyle]="{ padding: '24px' }"
+    (nzOnCancel)="handleCancel()"
+    [nzFooter]="modalFooter"
+  >
+    <ng-container *nzModalContent>
+      <div class="user-form">
+        <!-- Avatar Section -->
+        <div class="form-section">
+          <label class="section-label">Profile Picture</label>
+          <div class="avatar-upload">
+            <div class="avatar-preview">
+              <img 
+                *ngIf="avatarPreview" 
+                [src]="avatarPreview" 
+                alt="Profile Preview"
+                class="preview-image"
+              />
+              <div *ngIf="!avatarPreview" class="default-preview">
+                <i nz-icon nzType="user" nzTheme="outline"></i>
+              </div>
+            </div>
+            <div class="file-input-wrapper">
+              <input 
+                type="file" 
+                accept="image/*" 
+                (change)="onAvatarSelected($event)"
+                id="avatar-input"
+                class="file-input"
+              />
+              <label for="avatar-input" class="file-input-label">
+                <i nz-icon nzType="camera" nzTheme="outline"></i>
+                Change Picture
+              </label>
+            </div>
+          </div>
+        </div>
+
+        <!-- Form Fields -->
+        <div class="form-section">
+          <div class="form-row">
+            <div class="form-group">
+              <label>Full Name *</label>
+              <input 
+                nz-input 
+                [(ngModel)]="userForm.fullName" 
+                placeholder="Enter your full name"
+                class="form-input"
+              />
+            </div>
+            <div class="form-group">
+              <label>Email *</label>
+              <input 
+                nz-input 
+                type="email"
+                [(ngModel)]="userForm.email" 
+                placeholder="Enter your email"
+                class="form-input"
+              />
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>Username</label>
+              <input 
+                nz-input 
+                [(ngModel)]="userForm.username" 
+                placeholder="Username"
+                class="form-input"
+                disabled
+              />
+              <small class="form-help">Username cannot be changed</small>
+            </div>
+            <div class="form-group">
+              <label>Role</label>
+              <nz-select 
+                [(ngModel)]="userForm.role" 
+                class="form-input"
+                nzPlaceHolder="Select role"
+              >
+                <nz-option 
+                  *ngFor="let role of roleOptions" 
+                  [nzValue]="role.value" 
+                  [nzLabel]="role.label"
+                ></nz-option>
+              </nz-select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #modalFooter>
+      <div class="modal-footer">
+        <button 
+          nz-button 
+          nzType="default" 
+          (click)="handleCancel()"
+          [disabled]="loading"
+        >
+          Cancel
+        </button>
+        <button 
+          nz-button 
+          nzType="primary" 
+          (click)="handleSave()"
+          [nzLoading]="loading"
+        >
+          Save Changes
+        </button>
+      </div>
+    </ng-template>
+  </nz-modal>
+
+  <!-- Change Password Modal -->
+  <nz-modal
+    [(nzVisible)]="isPasswordModalVisible"
+    [nzTitle]="'Change Password'"
+    [nzWidth]="500"
+    [nzMaskClosable]="false"
+    [nzKeyboard]="true"
+    [nzBodyStyle]="{ padding: '24px' }"
+    (nzOnCancel)="handlePasswordCancel()"
+    [nzFooter]="passwordModalFooter"
+  >
+    <ng-container *nzModalContent>
+      <div class="password-form">
+        <div class="form-section">
+          <div class="form-group">
+            <label>Current Password *</label>
+            <input 
+              nz-input 
+              type="password"
+              [(ngModel)]="passwordForm.currentPassword" 
+              placeholder="Enter your current password"
+              class="form-input"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label>New Password *</label>
+            <input 
+              nz-input 
+              type="password"
+              [(ngModel)]="passwordForm.newPassword" 
+              placeholder="Enter your new password"
+              class="form-input"
+            />
+          </div>
+          
+          <div class="form-group">
+            <label>Confirm New Password *</label>
+            <input 
+              nz-input 
+              type="password"
+              [(ngModel)]="passwordForm.confirmPassword" 
+              placeholder="Confirm your new password"
+              class="form-input"
+            />
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
+    <ng-template #passwordModalFooter>
+      <div class="modal-footer">
+        <button 
+          nz-button 
+          nzType="default" 
+          (click)="handlePasswordCancel()"
+          [disabled]="loading"
+        >
+          Cancel
+        </button>
+        <button 
+          nz-button 
+          nzType="primary" 
+          (click)="handlePasswordSave()"
+          [nzLoading]="loading"
+        >
+          Update Password
+        </button>
+      </div>
+    </ng-template>
+  </nz-modal>
+</div>

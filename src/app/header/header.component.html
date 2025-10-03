@@ -48,6 +48,11 @@
     <nz-dropdown-menu #menu1="nzDropdownMenu">
       <ul nz-menu>
         <li nz-menu-item>
+          <a class="profileText" [routerLink]="'/dashboard/profile'">
+            <i nz-icon nzType="user" nzTheme="outline"></i> Profile
+          </a>
+        </li>
+        <li nz-menu-item>
           <a class="signoutText" [routerLink]="'/'">
             <img src="./assets/img/logout.svg" alt="">{{ "Logout" | translate }}
           </a>

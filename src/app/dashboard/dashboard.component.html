@@ -192,6 +192,14 @@
        </p>
 
        <p class="navTab"
+          [routerLink]="['/dashboard', 'user-management']"
+          [ngClass]="[router.url.startsWith('/dashboard/user-management') ? 'activeTab' : '']">
+         <img *ngIf="!router.url.startsWith('/dashboard/user-management')" src="assets/img/userGrey.svg" alt="User Management" class="navIcon" />
+         <img *ngIf="router.url.startsWith('/dashboard/user-management')" src="assets/img/userYellow.svg" alt="User Management" class="navIcon" />
+         {{ "User Management" | translate }}
+       </p>
+
+       <p class="navTab"
           [routerLink]="['/dashboard', 'data-management']"
           [ngClass]="[router.url.startsWith('/dashboard/data-management') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardGray.svg" alt="Data Management" class="navIcon" />

@@ -113,12 +113,15 @@ export class ComplianceTaskListComponent implements OnInit {
   // ====== Get current user from API ======
   private async getCurrentUser(): Promise<void> {
     try {
+      // Always fetch from database to ensure fresh data
+      const username = sessionStorage.getItem('username') || 'compliance';
       const user = await firstValueFrom(
-        this.http.get<any>(`${this.apiBase}/auth/me`)
+        this.http.get<any>(`${this.apiBase}/auth/me`, { params: { username } })
       );
       
       if (user) {
         this.currentUser = user;
+        console.log('✅ Compliance user data fetched from database:', user);
         // Map role
         if (user.role === '3' || user.role === 'compliance') {
           this.userRole = 'compliance';
@@ -129,7 +132,13 @@ export class ComplianceTaskListComponent implements OnInit {
         }
       }
     } catch (error) {
-      console.error('[ComplianceTaskList] Error getting current user:', error);
+      console.error('[ComplianceTaskList] Error getting current user from database:', error);
+      // Fallback to sessionStorage data if database fails
+      this.currentUser = {
+        username: sessionStorage.getItem('username') || 'compliance',
+        fullName: sessionStorage.getItem('userFullName') || 'Compliance Officer',
+        role: sessionStorage.getItem('userRole') || 'compliance'
+      };
       this.userRole = 'compliance';
     }
   }
