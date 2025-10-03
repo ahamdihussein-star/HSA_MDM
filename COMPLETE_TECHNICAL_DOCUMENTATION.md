@@ -11,6 +11,69 @@
 
 ## 🔄 Recent Updates & Changes Log
 
+### Latest Changes (October 2025)
+
+#### 1) User Profile page, avatar upload, role editing, and separate password change
+Files Added/Updated:
+- `src/app/user-profile/` (new module and component)
+- `src/app/header/header.component.html` (added Profile link to avatar menu)
+- `src/app/dashboard/dashboard-routing.module.ts` (lazy route `path: 'profile'` → `UserProfileModule`)
+- `api/better-sqlite-server.js` (avatar upload endpoint, password update endpoint, static hosting logs)
+
+Key Behaviors:
+- A new Profile page lets every user view and edit their own information (full name, email, role) and update their profile picture.
+- Changing the password is now isolated in its own modal with current/new/confirm fields; the normal profile save no longer requires password confirmation.
+- Role can be changed from a dropdown list on the same edit modal.
+
+New/Updated Backend Endpoints:
+- `POST /api/users/upload-avatar` – accepts `{ fileBase64, filename }`, validates PNG/JPG, saves to `api/uploads`, returns `{ url: '/uploads/<file>' }`.
+- `PUT /api/users/:id` – accepts partial updates including `{ avatarUrl, fullName, email, role }`.
+- `PUT /api/users/:id/password` – accepts `{ currentPassword, newPassword }` and updates the user password (demo-quality; see Security Notes below).
+
+Static Files:
+- `express.static` serves `api/uploads` at `/uploads`. Example full URL: `http://localhost:3001/uploads/<file>`. The server logs now show folder presence and the final URL for quick diagnosis.
+
+Frontend Flow for Avatar Upload (Step-by-step):
+1. User clicks "Change Picture" on the Profile edit modal.
+2. Frontend reads file via `FileReader.readAsDataURL` and posts to `POST /api/users/upload-avatar` as `{ fileBase64: 'data:image/...;base64,<...>', filename: 'profile-picture.jpg' }`.
+3. Backend decodes base64, validates mime type (PNG/JPEG), writes file to `api/uploads/<safeName>.<ext>`, returns `{ url: '/uploads/<safeName>.<ext>' }`.
+4. Frontend constructs an absolute URL if needed: `http://localhost:3001${url}`, updates `currentUser.avatarUrl` immediately for instant preview, then persists it with `PUT /api/users/:id` body `{ avatarUrl: fullUrl }`.
+5. The `<img [src]="currentUser.avatarUrl">` in the Profile header shows the image. Error/load handlers were added for diagnostics.
+
+Troubleshooting – Avatar Not Showing:
+- Confirm the server printed logs similar to:
+  - `📁 Uploads directory exists: <path>`
+  - `🌐 Static file serving configured for /uploads`
+  - `📸 Avatar upload request received` and `✅ Avatar uploaded successfully: /uploads/<file>`
+  - `🖼️ Updating avatarUrl: http://localhost:3001/uploads/<file>`
+- In the browser DevTools Console you should see:
+  - `🔄 Uploading avatar...`, `✅ Avatar upload response:`, `🖼️ Updated avatar URL:`, `💾 Saving avatar to database:`, `✅ Avatar saved to database successfully:`
+- If the image still does not render:
+  - Try opening the URL directly in the browser (e.g., `http://localhost:3001/uploads/<file>`). If it 404s, ensure the server is restarted and `api/uploads` exists.
+  - Clear the browser cache or force-reload (Shift + Reload).
+  - Ensure the `<img>` points to the absolute URL (`http://localhost:3001/...`) not just the relative path.
+
+Security Notes (Demo vs Production):
+- The password endpoint currently compares and stores plaintext passwords for demo purposes only. In production, enforce hashing (e.g., bcrypt), salted verification, and transport security (HTTPS).
+- Validate file size/extension on both client and server; current limits are set to reasonable demo defaults (20 MB JSON body limit, 5 MB client pre-check).
+
+UX Details:
+- The Profile avatar updates instantly after upload (optimistic UI) and is also persisted server-side to survive reloads.
+- "Change Password" is now a separate button and modal, so typical profile edits do not require password fields.
+- The header avatar dropdown now includes a "Profile" entry that routes to `/dashboard/profile`.
+
+#### 2) Welcome headers now reliably show real fullName from the database
+Files Updated:
+- `src/app/my-task-list/my-task-list.component.ts`
+- `src/app/admin-task-list/admin-task-list.component.ts`
+- `src/app/compliance/compliance-task-list/compliance-task-list.component.ts`
+
+Changes:
+- Each page now fetches the current user via `GET /api/auth/me?username=<session username>` on init to display `fullName` from the database rather than relying on potentially stale session storage. This avoids caching drift and ensures accurate greetings after login.
+
+Operational Notes:
+- After these changes, restarting both backend and frontend is recommended any time the avatar or authentication logic is changed, to ensure static hosting and route updates are applied (`node api/better-sqlite-server.js`, `ng serve`).
+
 ### Latest Changes (December 2024)
 
 #### 1. Navigation Menu Restructuring

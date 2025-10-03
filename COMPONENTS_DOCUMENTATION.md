@@ -2,6 +2,41 @@
 
 ## 🏗️ All Components - Complete Analysis
 
+### New: User Profile Module
+
+Files:
+- `src/app/user-profile/user-profile.module.ts`
+- `src/app/user-profile/user-profile.component.ts`
+- `src/app/user-profile/user-profile.component.html`
+- `src/app/user-profile/user-profile.component.scss`
+
+Routing:
+- Added lazy route `dashboard/profile` in `src/app/dashboard/dashboard-routing.module.ts`.
+
+Header Integration:
+- `src/app/header/header.component.html` adds a Profile link in the avatar dropdown to navigate to `/dashboard/profile`.
+
+Features:
+- View personal info (username, fullName, email, role, status, createdAt) and avatar preview.
+- Edit modal for fullName, email, role and avatar.
+- Separate Change Password modal for current/new/confirm password.
+
+Key Methods:
+- `openEditModal()`: prepares `userForm` and shows modal.
+- `onAvatarSelected(event)`: validates image and reads as Base64.
+- `uploadAvatar(base64)`: POSTs to `/api/users/upload-avatar`, sets preview, builds absolute URL, updates `currentUser.avatarUrl`, then calls `saveAvatarToDatabase`.
+- `saveAvatarToDatabase(url)`: PUT `/api/users/:id` with `{ avatarUrl: url }`.
+- `handleSave()`: persists profile changes `{ fullName, email, role, avatarUrl? }`.
+- `openPasswordModal()` and `handlePasswordSave()`: PUT `/api/users/:id/password`.
+
+Backend Endpoints (api/better-sqlite-server.js):
+- `POST /api/users/upload-avatar` – `{ fileBase64, filename }` → writes file in `api/uploads` and returns `{ url }`.
+- `PUT /api/users/:id` – dynamic updates, includes `avatarUrl` column.
+- `PUT /api/users/:id/password` – demo-only password update.
+
+Notes:
+- Static files served at `/uploads`; the client ensures the `<img>` gets a full `http://localhost:3001/uploads/...` URL.
+
 ### 1. **Login Component** (`LoginComponent`)
 **File**: `src/app/login/login.component.ts`
 **Lines**: 1-195
