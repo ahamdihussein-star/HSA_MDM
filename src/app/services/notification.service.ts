@@ -30,28 +30,44 @@ export class NotificationService {
   constructor(private http: HttpClient) {
     // Load notifications from database
     this.loadNotificationsFromDatabase();
+    
+    // 🔍 Add debugging to window object for browser console inspection
+    (window as any).notificationDebug = this;
   }
 
   // Method to reload notifications when user changes
   reloadNotifications(): void {
+    console.log('🔄 [NotificationService] Reloading notifications...');
     this.loadNotificationsFromDatabase();
   }
 
   private loadNotificationsFromDatabase(): void {
     const userId = localStorage.getItem('user') || '1';
+    console.log(`📡 [NotificationService] Loading notifications for userId: ${userId}`);
+    
     this.http.get<Notification[]>(`${this.apiBase}/notifications?userId=${userId}`).subscribe({
       next: (notifications) => {
+        console.log(`📥 [NotificationService] Raw notifications from API:`, notifications);
+        
         // Convert timestamp strings to Date objects and isRead to boolean
         const processedNotifications = notifications.map(notification => ({
           ...notification,
           timestamp: new Date(notification.timestamp),
           isRead: Boolean(notification.isRead)
         }));
+        
+        console.log(`✅ [NotificationService] Processed notifications:`, processedNotifications);
+        console.log(`📊 [NotificationService] Read/Unread count:`, {
+          total: processedNotifications.length,
+          read: processedNotifications.filter(n => n.isRead).length,
+          unread: processedNotifications.filter(n => !n.isRead).length
+        });
+        
         this.notificationsSubject.next(processedNotifications);
         this.updateUnreadCount();
       },
       error: (error) => {
-        console.error('Error loading notifications:', error);
+        console.error('❌ [NotificationService] Error loading notifications:', error);
         this.notificationsSubject.next([]);
         this.updateUnreadCount();
       }
@@ -68,16 +84,37 @@ export class NotificationService {
 
 
   addNotification(notification: Omit<Notification, 'id' | 'timestamp' | 'isRead'>): void {
-    const newNotification: Notification = {
+    const userId = localStorage.getItem('user') || '1';
+    const newNotification = {
       ...notification,
-      id: Date.now().toString(),
-      timestamp: new Date(),
+      userId: userId,
+      timestamp: new Date().toISOString(),
       isRead: false
     };
 
-    const currentNotifications = this.notificationsSubject.value;
-    this.notificationsSubject.next([newNotification, ...currentNotifications]);
-    this.updateUnreadCount();
+    console.log(`➕ [NotificationService] Adding new notification for userId: ${userId}`, newNotification);
+
+    // Save to database
+    this.http.post(`${this.apiBase}/notifications`, newNotification).subscribe({
+      next: (response) => {
+        console.log(`✅ [NotificationService] Successfully added notification:`, response);
+        // Reload notifications from database
+        this.loadNotificationsFromDatabase();
+      },
+      error: (error) => {
+        console.error(`❌ [NotificationService] Error adding notification:`, error);
+        // Fallback to local storage for immediate UI update
+        const localNotification: Notification = {
+          ...notification,
+          id: Date.now().toString(),
+          timestamp: new Date(),
+          isRead: false
+        };
+        const currentNotifications = this.notificationsSubject.value;
+        this.notificationsSubject.next([localNotification, ...currentNotifications]);
+        this.updateUnreadCount();
+      }
+    });
   }
 
 
@@ -291,24 +328,30 @@ export class NotificationService {
 
   // Database-based methods
   markAsRead(id: string): void {
+    console.log(`👁️ [NotificationService] Marking notification ${id} as read`);
+    
     this.http.put(`${this.apiBase}/notifications/${id}/read`, {}).subscribe({
-      next: () => {
+      next: (response) => {
+        console.log(`✅ [NotificationService] Successfully marked ${id} as read:`, response);
         this.loadNotificationsFromDatabase();
       },
       error: (error) => {
-        console.error('Error marking notification as read:', error);
+        console.error(`❌ [NotificationService] Error marking notification ${id} as read:`, error);
       }
     });
   }
 
   markAllAsRead(): void {
     const userId = localStorage.getItem('user') || '1';
+    console.log(`👁️ [NotificationService] Marking ALL notifications as read for userId: ${userId}`);
+    
     this.http.put(`${this.apiBase}/notifications/read-all`, { userId }).subscribe({
-      next: () => {
+      next: (response) => {
+        console.log(`✅ [NotificationService] Successfully marked ALL notifications as read:`, response);
         this.loadNotificationsFromDatabase();
       },
       error: (error) => {
-        console.error('Error marking all notifications as read:', error);
+        console.error(`❌ [NotificationService] Error marking all notifications as read:`, error);
       }
     });
   }
@@ -322,6 +365,168 @@ export class NotificationService {
         console.error('Error deleting notification:', error);
       }
     });
+  }
+
+  // 🔍 DEBUGGING METHODS - Available in browser console as window.notificationDebug
+  debugGetCurrentNotifications(): Notification[] {
+    const notifications = this.notificationsSubject.value;
+    console.log('🔍 Current notifications in memory:', notifications);
+    return notifications;
+  }
+
+  debugGetUnreadCount(): number {
+    const count = this.unreadCountSubject.value;
+    console.log('🔍 Current unread count:', count);
+    return count;
+  }
+
+  debugGetCurrentUser(): string {
+    const userId = localStorage.getItem('user') || '1';
+    console.log('🔍 Current user ID:', userId);
+    return userId;
+  }
+
+  debugGetNotificationsFromAPI(): void {
+    const userId = localStorage.getItem('user') || '1';
+    console.log(`🔍 Fetching notifications from API for userId: ${userId}`);
+    
+    this.http.get<Notification[]>(`${this.apiBase}/notifications?userId=${userId}`).subscribe({
+      next: (notifications) => {
+        console.log('🔍 Raw API response:', notifications);
+        console.log('🔍 API Response Analysis:', {
+          total: notifications.length,
+          read: notifications.filter(n => n.isRead).length,
+          unread: notifications.filter(n => !n.isRead).length,
+          isReadValues: notifications.map(n => ({ id: n.id, isRead: n.isRead, type: typeof n.isRead }))
+        });
+      },
+      error: (error) => {
+        console.error('🔍 API Error:', error);
+      }
+    });
+  }
+
+  debugMarkAsRead(id: string): void {
+    console.log(`🔍 Debug: Manually marking notification ${id} as read`);
+    this.markAsRead(id);
+  }
+
+  debugMarkAllAsRead(): void {
+    console.log('🔍 Debug: Manually marking ALL notifications as read');
+    this.markAllAsRead();
+  }
+
+  debugReloadNotifications(): void {
+    console.log('🔍 Debug: Manually reloading notifications');
+    this.reloadNotifications();
+  }
+
+  // 🔍 DATABASE VERIFICATION METHODS
+  debugVerifyDatabaseState(): void {
+    const userId = localStorage.getItem('user') || '1';
+    console.log(`🔍 [Database Verification] Checking database state for userId: ${userId}`);
+    
+    // Get current state from database
+    this.http.get<Notification[]>(`${this.apiBase}/notifications?userId=${userId}`).subscribe({
+      next: (dbNotifications) => {
+        console.log('🔍 [Database Verification] Current database state:', dbNotifications);
+        console.log('🔍 [Database Verification] Database Analysis:', {
+          total: dbNotifications.length,
+          read: dbNotifications.filter(n => n.isRead).length,
+          unread: dbNotifications.filter(n => !n.isRead).length,
+          details: dbNotifications.map(n => ({
+            id: n.id,
+            companyName: n.companyName,
+            isRead: n.isRead,
+            type: typeof n.isRead,
+            timestamp: n.timestamp
+          }))
+        });
+        
+        // Compare with memory state
+        const memoryNotifications = this.notificationsSubject.value;
+        console.log('🔍 [Database Verification] Memory vs Database comparison:', {
+          memoryTotal: memoryNotifications.length,
+          dbTotal: dbNotifications.length,
+          memoryRead: memoryNotifications.filter(n => n.isRead).length,
+          dbRead: dbNotifications.filter(n => n.isRead).length,
+          syncStatus: memoryNotifications.length === dbNotifications.length ? 'SYNCED' : 'OUT OF SYNC'
+        });
+      },
+      error: (error) => {
+        console.error('🔍 [Database Verification] Error fetching database state:', error);
+      }
+    });
+  }
+
+  debugMarkAsReadAndVerify(id: string): void {
+    console.log(`🔍 [Database Verification] Marking notification ${id} as read and verifying...`);
+    
+    // First, get current state
+    this.debugVerifyDatabaseState();
+    
+    // Mark as read
+    this.markAsRead(id);
+    
+    // Wait a bit then verify again
+    setTimeout(() => {
+      console.log(`🔍 [Database Verification] Verifying after mark as read...`);
+      this.debugVerifyDatabaseState();
+    }, 1000);
+  }
+
+  debugMarkAllAsReadAndVerify(): void {
+    console.log(`🔍 [Database Verification] Marking ALL notifications as read and verifying...`);
+    
+    // First, get current state
+    this.debugVerifyDatabaseState();
+    
+    // Mark all as read
+    this.markAllAsRead();
+    
+    // Wait a bit then verify again
+    setTimeout(() => {
+      console.log(`🔍 [Database Verification] Verifying after mark all as read...`);
+      this.debugVerifyDatabaseState();
+    }, 1000);
+  }
+
+  debugTestNotificationFlow(): void {
+    const userId = localStorage.getItem('user') || '1';
+    console.log(`🔍 [Database Verification] Testing complete notification flow for userId: ${userId}`);
+    
+    // Step 1: Check initial state
+    console.log('🔍 [Step 1] Initial database state:');
+    this.debugVerifyDatabaseState();
+    
+    // Step 2: Add a test notification
+    setTimeout(() => {
+      console.log('🔍 [Step 2] Adding test notification...');
+      this.addNotification({
+        companyName: 'Test Company',
+        status: 'pending',
+        message: 'Test notification for debugging',
+        taskId: 'test-task-' + Date.now(),
+        userRole: 'reviewer',
+        requestType: 'new'
+      });
+    }, 2000);
+    
+    // Step 3: Verify notification was added
+    setTimeout(() => {
+      console.log('🔍 [Step 3] Verifying notification was added:');
+      this.debugVerifyDatabaseState();
+    }, 3000);
+    
+    // Step 4: Mark as read
+    setTimeout(() => {
+      console.log('🔍 [Step 4] Marking test notification as read...');
+      const notifications = this.notificationsSubject.value;
+      const testNotification = notifications.find(n => n.companyName === 'Test Company');
+      if (testNotification) {
+        this.debugMarkAsReadAndVerify(testNotification.id);
+      }
+    }, 4000);
   }
 
   simulateNewNotification(): void {

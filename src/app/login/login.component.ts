@@ -6,6 +6,7 @@ import { NzMessageService } from 'ng-zorro-antd/message';
 import { environment } from '../../environments/environment';
 
 import { RoleService } from '../Core/role.service';
+import { NotificationService } from '../services/notification.service';
 
 @Component({
   selector: 'app-login',
@@ -24,7 +25,8 @@ export class LoginComponent implements OnInit {
     public router: Router, 
     private roles: RoleService,
     private http: HttpClient,
-    private message: NzMessageService
+    private message: NzMessageService,
+    private notificationService: NotificationService
   ) {}
 
   ngOnInit(): void {
@@ -70,6 +72,11 @@ export class LoginComponent implements OnInit {
       sessionStorage.setItem('userFullName', 'System Administrator');
       
       this.message.success('Welcome System Administrator!');
+      
+      // ✅ Reload notifications for admin user
+      console.log(`🔐 [Login] Demo Admin logged in successfully, reloading notifications`);
+      this.notificationService.reloadNotifications();
+      
       await this.router.navigateByUrl('/dashboard/data-management');
       return;
     }
@@ -134,6 +141,10 @@ export class LoginComponent implements OnInit {
           sessionStorage.setItem('userRole', 'manager');
           sessionStorage.setItem('username', 'manager');
           this.message.success(`Welcome ${response.user.fullName}!`);
+          
+          // ✅ Reload notifications for manager user
+          this.notificationService.reloadNotifications();
+          
           await this.router.navigateByUrl('/dashboard/business');
           return;
         }
@@ -162,6 +173,10 @@ export class LoginComponent implements OnInit {
             sessionStorage.setItem('user', '4');
             sessionStorage.setItem('userRole', 'admin');
             this.message.success(`Welcome ${response.user.fullName}!`);
+            
+            // ✅ Reload notifications for admin user
+            this.notificationService.reloadNotifications();
+            
             await this.router.navigateByUrl('/dashboard/data-management');
             return;  // نخرج مباشرة بدون استخدام RoleService
           case 'manager':
@@ -170,6 +185,10 @@ export class LoginComponent implements OnInit {
             sessionStorage.setItem('userRole', 'manager');
             sessionStorage.setItem('username', 'manager');
             this.message.success(`Welcome ${response.user.fullName}!`);
+            
+            // ✅ Reload notifications for manager user
+            this.notificationService.reloadNotifications();
+            
             await this.router.navigateByUrl('/dashboard/business');
             return;  // نخرج مباشرة بدون استخدام RoleService
           default:
@@ -189,6 +208,10 @@ export class LoginComponent implements OnInit {
         this.roles.setRole(roleEnum as any);
 
         this.message.success(`Welcome ${response.user.fullName}!`);
+        
+        // ✅ Reload notifications for new user
+        console.log(`🔐 [Login] User logged in successfully, reloading notifications for user: ${userCode}`);
+        this.notificationService.reloadNotifications();
         
         // Navigate to appropriate dashboard
         const navigationSuccess = await this.router.navigateByUrl(targetRoute);

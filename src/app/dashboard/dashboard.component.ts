@@ -25,11 +25,14 @@ export class DashboardComponent implements OnInit {
   isManager: boolean = false; // للـ manager user الجديد
   isLoading: boolean = false;
   
-  // Dashboards section state
-  dashboardsExpanded: boolean = false;
-  
-  // Historical Extracted Data section state
+  // Navigation sections state
   historicalDataExpanded: boolean = false;
+  dashboardsExpanded: boolean = false;
+  securityExpanded: boolean = false;
+  demoToolsExpanded: boolean = false;
+  taskListsExpanded: boolean = false;
+  goldenRecordsExpanded: boolean = false;
+
 
   constructor(
     @Inject(PLATFORM_ID) private platformId: Object,
@@ -421,4 +424,22 @@ export class DashboardComponent implements OnInit {
   toggleHistoricalDataSection(): void {
     this.historicalDataExpanded = !this.historicalDataExpanded;
   }
+
+  toggleSecuritySection(): void {
+    this.securityExpanded = !this.securityExpanded;
+  }
+
+  toggleDemoToolsSection(): void {
+    this.demoToolsExpanded = !this.demoToolsExpanded;
+  }
+
+  toggleTaskListsSection(): void {
+    this.taskListsExpanded = !this.taskListsExpanded;
+  }
+
+  toggleGoldenRecordsSection(): void {
+    this.goldenRecordsExpanded = !this.goldenRecordsExpanded;
+  }
+
+
 }

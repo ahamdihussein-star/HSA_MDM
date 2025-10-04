@@ -29,10 +29,12 @@ export class NotificationDropdownComponent implements OnInit, OnDestroy {
   }
 
   markAsRead(notificationId: string): void {
+    console.log(`🔔 [NotificationDropdown] Marking notification ${notificationId} as read`);
     this.notificationService.markAsRead(notificationId);
   }
 
   markAllAsRead(): void {
+    console.log(`🔔 [NotificationDropdown] Marking ALL notifications as read`);
     this.notificationService.markAllAsRead();
   }
 

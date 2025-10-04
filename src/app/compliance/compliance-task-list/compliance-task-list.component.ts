@@ -196,8 +196,8 @@ export class ComplianceTaskListComponent implements OnInit {
       this.loading = false;
     }
     
-    // Sync notifications after loading
-    this.syncNotificationsWithTasks();
+    // ✅ FIXED: Don't sync notifications automatically to preserve read/unread status
+    // this.syncNotificationsWithTasks(); // This was deleting all notifications and recreating them
   }
 
   // ====== Filter methods ======
@@ -233,8 +233,8 @@ export class ComplianceTaskListComponent implements OnInit {
     
     this.refreshCheckedStatus();
     
-    // Sync notifications after filtering
-    this.syncNotificationsWithTasks();
+    // ✅ FIXED: Don't sync notifications automatically to preserve read/unread status
+    // this.syncNotificationsWithTasks(); // This was deleting all notifications and recreating them
   }
 
 

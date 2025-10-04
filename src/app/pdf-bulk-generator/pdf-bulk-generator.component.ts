@@ -80,8 +80,8 @@ export class PdfBulkGeneratorComponent implements OnInit {
     this.selectedCountries = [];
   }
   
-  onCountryChange(country: string, event: any): void {
-    if (event.target.checked) {
+  onCountryChange(country: string, checked: boolean): void {
+    if (checked) {
       if (!this.selectedCountries.includes(country)) {
         this.selectedCountries.push(country);
       }
@@ -106,8 +106,8 @@ export class PdfBulkGeneratorComponent implements OnInit {
     return this.selectedDocumentTypes.includes(docType);
   }
   
-  onDocTypeChange(docType: string, event: any): void {
-    if (event.target.checked) {
+  onDocTypeChange(docType: string, checked: boolean): void {
+    if (checked) {
       if (!this.selectedDocumentTypes.includes(docType)) {
         this.selectedDocumentTypes.push(docType);
       }

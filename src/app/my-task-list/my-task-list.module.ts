@@ -14,6 +14,7 @@ import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
 import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzStatisticModule } from 'ng-zorro-antd/statistic';
 
 // Import ApiRepo
 import { ApiRepo } from '../Core/api.repo';
@@ -32,7 +33,8 @@ import { ApiRepo } from '../Core/api.repo';
     NzTagModule,
     NzEmptyModule,
     NzDropDownModule,
-    NzIconModule          // للأيقونات
+    NzIconModule,         // للأيقونات
+    NzStatisticModule     // للإحصائيات
   ],
   providers: [
     ApiRepo  // توفير ApiRepo

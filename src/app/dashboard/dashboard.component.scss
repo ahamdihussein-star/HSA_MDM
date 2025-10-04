@@ -39,6 +39,16 @@
       gap: 10px;
       transition: color 0.3s ease;
       
+      // Fix text duplication issue
+      text-overflow: clip;
+      white-space: nowrap;
+      
+      // Ensure no pseudo-elements duplicate content
+      &::before,
+      &::after {
+        content: none !important;
+      }
+      
       &:hover {
         color: #cba51c;
       }
@@ -72,12 +82,10 @@
         align-items: center;
         gap: 10px;
         transition: all 0.3s ease;
+      }
+
         
-        &:hover {
-          color: #cba51c;
-          background-color: rgba(203, 165, 28, 0.1);
-        }
-        
+      .navSubTab {
         &.activeSubTab {
           color: #cba51c;
           font-weight: 600;

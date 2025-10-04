@@ -4,125 +4,127 @@
 </h3>
 <p class="subMessage">{{ "HereIsYourTasksForToday" | translate }}</p>
 
-<div class="titleActionHolder">
-  <h1 class="pageTitle">{{ "MyTaskList" | translate }}</h1>
+<!-- Main Content -->
+<div>
+  <div class="titleActionHolder">
+    <!-- ✅ Removed page title for cleaner look -->
 
-  <div class="actionHolderTitle">
-    <div class="seachInputHolder">
-      <img src="./assets/img/search.svg" alt="" />
-      <input
-        type="text"
-        [placeholder]="'Search by name, tax, email...' | translate"
-        [ngModel]="search"
-        (ngModelChange)="onSearchChange($event)"
-      />
+    <div class="actionHolderTitle">
+      <!-- Clean header - only search and filter -->
+      <div class="seachInputHolder">
+        <img src="./assets/img/search.svg" alt="" />
+        <input 
+          type="text" 
+          [placeholder]="'Search by name, tax, email...' | translate"
+          [ngModel]="search"
+          (ngModelChange)="onSearchChange($event)" />
+      </div>
+      <select
+        [(ngModel)]="filterByStatus"
+        (change)="onFilterChange($event)"
+        class="filter-select">
+        <option value="">{{ 'All Status' | translate }}</option>
+        <option *ngFor="let status of uniqueStatuses" [value]="status.value">{{ status.label }}</option>
+      </select>
+      <button (click)="clearFilters()" class="btn btn-primary">{{ 'Clear Filters' | translate }}</button>
     </div>
-    <select 
-      [(ngModel)]="filterByStatus" 
-      (change)="onFilterChange($event)"
-      class="filter-select">
-      <option value="">{{ 'All Status' | translate }}</option>
-      <option *ngFor="let status of uniqueStatuses" [value]="status.value">{{ status.label }}</option>
-    </select>
-    <button (click)="clearFilters()" class="btn btn-primary">{{ 'Clear Filters' | translate }}</button>
   </div>
-</div>
 
+  <!-- Statistics Summary - Always visible -->
+  <div class="statistics-summary">
+    <nz-statistic 
+      [nzValue]="counters.rejected"
+      [nzTitle]="'New Requests' | translate"
+      [nzValueStyle]="{ color: '#faad14' }">
+      <span nz-icon nzType="plus" slot="prefix"></span>
+    </nz-statistic>
+    
+    <nz-statistic 
+      [nzValue]="counters.quarantine"
+      [nzTitle]="'Quarantine' | translate"
+      [nzValueStyle]="{ color: '#fa8c16' }">
+      <span nz-icon nzType="alert" slot="prefix"></span>
+    </nz-statistic>
+    
+    <nz-statistic 
+      [nzValue]="counters.duplicate"
+      [nzTitle]="'Duplicates' | translate"
+      [nzValueStyle]="{ color: '#1890ff' }">
+      <span nz-icon nzType="copy" slot="prefix"></span>
+    </nz-statistic>
+    
+    <nz-statistic 
+      [nzValue]="counters.all"
+      [nzTitle]="'Total Tasks' | translate"
+      [nzValueStyle]="{ color: '#52c41a' }">
+    </nz-statistic>
+  </div>
 
-<nz-table #tbl [nzPageSize]="7" [nzData]="rows" [nzLoading]="loading" class="smart-table">
-  <thead>
-    <tr>
-      <th class="company-name-header">{{ "Company Name" | translate }}</th>
-      <th class="origin-header">{{ "Origin" | translate }}</th>
-      <th class="company-type-header">{{ "Company Type" | translate }}</th>
-      <th class="issue-header">{{ "Issue Description" | translate }}</th>
-      <th class="action-header">{{ "Action" | translate }}</th>
-    </tr>
-  </thead>
-  <tbody>
-    <tr *ngIf="!loading && rows?.length === 0">
-      <td [attr.colspan]="5">
-        <nz-empty [nzNotFoundContent]="'No tasks to fix' | translate"></nz-empty>
-      </td>
-    </tr>
+  <!-- Table -->
+  <nz-table #basicTable [nzPageSize]="7" [nzData]="rows" class="smart-table">
+    <thead>
+      <tr>
+        <th class="record-type-header">{{ 'Record Type' | translate }}</th>
+        <th class="company-name-header">{{ 'Company Name' | translate }}</th>
+        <th class="company-type-header">{{ 'Company Type' | translate }}</th>
+        <th class="date-header">{{ 'Date' | translate }}</th>
+        <th class="action-header">{{ 'Action' | translate }}</th>
+      </tr>
+    </thead>
 
-    <tr *ngFor="let row of tbl.data" class="table-row">
-      <td class="company-name-cell">
-        <div class="company-info">
-          <div class="company-name">
-            <strong>{{ row.name || row.firstName || 'غير محدد' }}</strong>
-            <small *ngIf="row.firstNameAr" class="company-name-ar">{{ row.firstNameAr }}</small>
+    <tbody>
+      <tr *ngFor="let data of basicTable.data; let i = index" class="table-row">
+        <!-- Record Type Column -->
+        <td class="record-type-cell">
+          <div class="record-type-info">
+            <nz-tag [nzColor]="getOriginColor(data)" class="record-type-tag">
+              {{ getOriginBadge(data) }}
+            </nz-tag>
+            <small class="record-type-detail">
+              {{ getRecordOrigin(data) }}
+            </small>
           </div>
-          <div class="company-details">
-            <span class="request-id">#{{ row.requestId || row.id }}</span>
-            <span *ngIf="row.tax" class="tax-number">
-              <i nz-icon nzType="number"></i>
-              Tax: {{ row.tax }}
-            </span>
-          </div>
-        </div>
-      </td>
+        </td>
 
-      <td class="origin-cell">
-        <div class="origin-info">
-          <nz-tag [nzColor]="getOriginColor(row)" class="origin-tag">
-            {{ getOriginBadge(row) }}
-          </nz-tag>
-          <small class="origin-detail">
-            {{ getRecordOrigin(row) }}
-          </small>
-        </div>
-      </td>
-
-      <td class="company-type-cell">
-        <span class="company-type">{{ getCustomerTypeLabel(row.CustomerType || '') }}</span>
-      </td>
-
-      <td class="issue-cell">
-        <div class="issue-info">
-          <div class="issue-main">
-            <span *ngIf="row.rejectReason || row.IssueDescription; else noIssue" class="issue-description">
-              {{ row.rejectReason || row.IssueDescription }}
-            </span>
-            <ng-template #noIssue>
-              <span *ngIf="row.status === 'Quarantine'" class="quarantine-issue">
-                Missing required data
+        <!-- Company Name -->
+        <td class="company-name-cell">
+          <div class="company-info">
+            <div class="company-name">
+              <strong>{{ data.name || data.firstName || '-' }}</strong>
+              <div *ngIf="data.firstNameAr" class="company-name-ar">{{ data.firstNameAr }}</div>
+            </div>
+            <div *ngIf="data.tax" class="company-details">
+              <span class="tax-number">
+                <i nz-icon nzType="number"></i>
+                Tax: {{ data.tax }}
               </span>
-              <span *ngIf="row.status !== 'Quarantine'" class="no-issue">—</span>
-            </ng-template>
+            </div>
           </div>
-          <div class="issue-details">
-            <small *ngIf="row.requestType === 'duplicate' && row.status === 'Rejected'" class="warning-text">
-              <i nz-icon nzType="warning"></i>
-              Master record rejected by reviewer
-            </small>
-            <small *ngIf="row.originalRequestType === 'quarantine' && row.status === 'Rejected'" class="warning-text orange">
-              <i nz-icon nzType="warning"></i>
-              Originally from quarantine
-            </small>
-            <small *ngIf="row.linkedRecords > 0" class="linked-records">
-              <i nz-icon nzType="link"></i>
-              {{ row.linkedRecords }} linked records
-            </small>
-          </div>
-        </div>
-      </td>
+        </td>
 
-      <td class="action-cell">
-        <button 
-          nz-button 
-          nzType="primary"
-          class="action-button"
-          [nzDanger]="row.requestType === 'duplicate' && row.status === 'Rejected'"
-          [nzGhost]="(row.requestType !== 'duplicate' || row.status !== 'Rejected') && row.status !== 'Quarantine'"
-          [style.background-color]="row.status === 'Quarantine' ? '#ff7a45' : ''"
-          [style.border-color]="row.status === 'Quarantine' ? '#ff7a45' : ''"
-          [style.color]="row.status === 'Quarantine' ? 'white' : ''"
-          (click)="handleRecordAction(row)">
-          <i nz-icon [nzType]="getActionIcon(row)"></i>
-          {{ getActionLabel(row) }}
-        </button>
-      </td>
-    </tr>
-  </tbody>
-</nz-table>
+        <!-- Company Type Column -->
+        <td class="company-type-cell">
+          <div class="company-type-info">
+            <span class="company-type">{{ data['CustomerType'] || 'Customer Request' }}</span>
+          </div>
+        </td>
+
+        <!-- Date -->
+        <td class="date-cell">
+          <span class="date-value">{{ data.createdAt | date:'MMM d, y' }}</span>
+        </td>
+
+        <!-- Actions - Unified "View Details" only -->
+        <td class="action-cell">
+          <button nz-button nzType="primary" nzGhost nzSize="small"
+                  (click)="handleRecordAction(data)"
+                  class="action-button">
+            <span nz-icon [nzType]="getActionIcon(data)"></span>
+            {{ getActionLabel(data) }}
+          </button>
+        </td>
+      </tr>
+    </tbody>
+  </nz-table>
+
+</div>

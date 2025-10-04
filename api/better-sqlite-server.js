@@ -5924,15 +5924,34 @@ app.listen(PORT, () => {
 app.get('/api/notifications', (req, res) => {
   try {
     const userId = req.query.userId || '1';
+    
+    console.log(`🔍 [SERVER] Get notifications request:`, {
+      userId: userId,
+      timestamp: new Date().toISOString()
+    });
+    
     const notifications = db.prepare(`
       SELECT * FROM notifications 
       WHERE userId = ? 
       ORDER BY timestamp DESC
     `).all(userId);
     
+    console.log(`🔍 [SERVER] Found ${notifications.length} notifications for userId ${userId}:`, {
+      total: notifications.length,
+      read: notifications.filter(n => n.isRead).length,
+      unread: notifications.filter(n => !n.isRead).length,
+      details: notifications.map(n => ({
+        id: n.id,
+        companyName: n.companyName,
+        isRead: n.isRead,
+        type: typeof n.isRead,
+        timestamp: n.timestamp
+      }))
+    });
+    
     res.json(notifications);
   } catch (error) {
-    console.error('Error fetching notifications:', error);
+    console.error('❌ [SERVER] Error fetching notifications:', error);
     res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 });
@@ -5969,6 +5988,15 @@ app.put('/api/notifications/:id/read', (req, res) => {
   try {
     const { id } = req.params;
     
+    console.log(`🔍 [SERVER] Mark notification as read request:`, {
+      id: id,
+      timestamp: new Date().toISOString()
+    });
+    
+    // First, check current state
+    const beforeState = db.prepare('SELECT id, isRead, userId FROM notifications WHERE id = ?').get(id);
+    console.log(`🔍 [SERVER] Before update state:`, beforeState);
+    
     const stmt = db.prepare(`
       UPDATE notifications 
       SET isRead = 1, updatedAt = CURRENT_TIMESTAMP 
@@ -5977,13 +6005,28 @@ app.put('/api/notifications/:id/read', (req, res) => {
     
     const result = stmt.run(id);
     
+    console.log(`🔍 [SERVER] Update result:`, {
+      changes: result.changes,
+      lastInsertRowid: result.lastInsertRowid
+    });
+    
     if (result.changes === 0) {
+      console.log(`❌ [SERVER] Notification ${id} not found in database`);
       return res.status(404).json({ error: 'Notification not found' });
     }
     
-    res.json({ message: 'Notification marked as read' });
+    // Verify the update
+    const afterState = db.prepare('SELECT id, isRead, userId, updatedAt FROM notifications WHERE id = ?').get(id);
+    console.log(`🔍 [SERVER] After update state:`, afterState);
+    
+    console.log(`✅ [SERVER] Successfully marked notification ${id} as read`);
+    res.json({ 
+      message: 'Notification marked as read',
+      id: id,
+      updatedAt: afterState.updatedAt
+    });
   } catch (error) {
-    console.error('Error marking notification as read:', error);
+    console.error('❌ [SERVER] Error marking notification as read:', error);
     res.status(500).json({ error: 'Failed to mark notification as read' });
   }
 });
@@ -5993,6 +6036,22 @@ app.put('/api/notifications/read-all', (req, res) => {
   try {
     const userId = req.body.userId || '1';
     
+    console.log(`🔍 [SERVER] Mark all notifications as read request:`, {
+      userId: userId,
+      timestamp: new Date().toISOString()
+    });
+    
+    // First, check current state
+    const beforeState = db.prepare(`
+      SELECT COUNT(*) as total, 
+             SUM(CASE WHEN isRead = 1 THEN 1 ELSE 0 END) as readCount,
+             SUM(CASE WHEN isRead = 0 THEN 1 ELSE 0 END) as unreadCount
+      FROM notifications 
+      WHERE userId = ?
+    `).get(userId);
+    
+    console.log(`🔍 [SERVER] Before update state:`, beforeState);
+    
     const stmt = db.prepare(`
       UPDATE notifications 
       SET isRead = 1, updatedAt = CURRENT_TIMESTAMP 
@@ -6001,12 +6060,32 @@ app.put('/api/notifications/read-all', (req, res) => {
     
     const result = stmt.run(userId);
     
+    console.log(`🔍 [SERVER] Update result:`, {
+      changes: result.changes,
+      lastInsertRowid: result.lastInsertRowid
+    });
+    
+    // Verify the update
+    const afterState = db.prepare(`
+      SELECT COUNT(*) as total, 
+             SUM(CASE WHEN isRead = 1 THEN 1 ELSE 0 END) as readCount,
+             SUM(CASE WHEN isRead = 0 THEN 1 ELSE 0 END) as unreadCount
+      FROM notifications 
+      WHERE userId = ?
+    `).get(userId);
+    
+    console.log(`🔍 [SERVER] After update state:`, afterState);
+    
+    console.log(`✅ [SERVER] Successfully marked ${result.changes} notifications as read for userId ${userId}`);
+    
     res.json({ 
       message: 'All notifications marked as read',
-      updatedCount: result.changes 
+      updatedCount: result.changes,
+      beforeState: beforeState,
+      afterState: afterState
     });
   } catch (error) {
-    console.error('Error marking all notifications as read:', error);
+    console.error('❌ [SERVER] Error marking all notifications as read:', error);
     res.status(500).json({ error: 'Failed to mark all notifications as read' });
   }
 });

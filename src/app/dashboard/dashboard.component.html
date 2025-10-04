@@ -145,7 +145,7 @@
           [ngClass]="[router.url.startsWith('/dashboard/compliance-task-list') ? 'activeTab' : '']">
          <img *ngIf="!router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeGrey.svg" alt="compliance Icon" class="navIcon" />
          <img *ngIf="router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeYellow.svg" alt="compliance Icon" class="navIcon" />
-         {{ "Compliance Tasklist" | translate }}
+         {{ "MyTaskList" | translate }}
        </p>
 
        <p class="navTab"
@@ -159,78 +159,157 @@
 
      <!-- ==== user4 (System Admin) ==== -->
      <div *ngIf="user == '4' || isAdmin">
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'executive']"
-          [ngClass]="[router.url.startsWith('/dashboard/executive') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardGray.svg" alt="Executive Dashboard" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardYellow.svg" alt="Executive Dashboard" class="navIcon" />
-         {{ "Executive Dashboard" | translate }}
-       </p>
+       
+       <!-- Dashboard Section -->
+       <div class="navSection">
+         <div class="navSectionHeader" (click)="toggleDashboardsSection()">
+           <span class="section-title">{{ "Dashboards" | translate }}</span>
+           <i nz-icon [nzType]="dashboardsExpanded ? 'down' : 'right'" class="chevron-icon"></i>
+         </div>
+         
+         <div class="navSubItems" [class.expanded]="dashboardsExpanded">
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'executive']"
+              [ngClass]="[router.url.startsWith('/dashboard/executive') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardGray.svg" alt="Executive Dashboard" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardYellow.svg" alt="Executive Dashboard" class="navIcon" />
+             {{ "Executive Dashboard" | translate }}
+           </p>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'technical']"
-          [ngClass]="[router.url.startsWith('/dashboard/technical') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardGray.svg" alt="Technical Dashboard" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardYellow.svg" alt="Technical Dashboard" class="navIcon" />
-         {{ "Technical Dashboard" | translate }}
-       </p>
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'technical']"
+              [ngClass]="[router.url.startsWith('/dashboard/technical') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardGray.svg" alt="Technical Dashboard" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardYellow.svg" alt="Technical Dashboard" class="navIcon" />
+             {{ "Technical Dashboard" | translate }}
+           </p>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'business']"
-          [ngClass]="[router.url.startsWith('/dashboard/business') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/business')" src="assets/img/dashboardGray.svg" alt="Business Dashboard" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/business')" src="assets/img/dashboardYellow.svg" alt="Business Dashboard" class="navIcon" />
-         {{ "Business Dashboard" | translate }}
-       </p>
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'business']"
+              [ngClass]="[router.url.startsWith('/dashboard/business') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/business')" src="assets/img/dashboardGray.svg" alt="Business Dashboard" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/business')" src="assets/img/dashboardYellow.svg" alt="Business Dashboard" class="navIcon" />
+             {{ "Business Dashboard" | translate }}
+           </p>
+         </div>
+       </div>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'sync-golden-records']"
-          [ngClass]="[router.url.startsWith('/dashboard/sync-golden-records') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/sync-golden-records')" src="assets/img/goldenGrey.svg" alt="Sync Golden Records" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/sync-golden-records')" src="assets/img/goldenYellow.svg" alt="Sync Golden Records" class="navIcon" />
-         {{ "Sync Golden Records" | translate }}
-       </p>
+       <!-- Security Section - CORRECTED -->
+       <div class="navSection">
+         <div class="navSectionHeader" (click)="toggleSecuritySection()">
+           <span class="section-title">{{ "Security" | translate }}</span>
+           <i nz-icon [nzType]="securityExpanded ? 'down' : 'right'" class="chevron-icon"></i>
+         </div>
+         
+         <div class="navSubItems" [class.expanded]="securityExpanded">
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'user-management']"
+              [ngClass]="[router.url.startsWith('/dashboard/user-management') ? 'activeSubTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/user-management')" 
+                  src="assets/img/userGrey.svg" 
+                  class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/user-management')" 
+                  src="assets/img/userYellow.svg" 
+                  class="navIcon" />
+             {{ "User Management" | translate }}
+           </p>
+         </div>
+       </div>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'user-management']"
-          [ngClass]="[router.url.startsWith('/dashboard/user-management') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/user-management')" src="assets/img/userGrey.svg" alt="User Management" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/user-management')" src="assets/img/userYellow.svg" alt="User Management" class="navIcon" />
-         {{ "User Management" | translate }}
-       </p>
+       <!-- Demo Tools Section -->
+       <div class="navSection">
+         <div class="navSectionHeader" (click)="toggleDemoToolsSection()">
+           <span class="section-title">{{ "Demo Tools" | translate }}</span>
+           <i nz-icon [nzType]="demoToolsExpanded ? 'down' : 'right'" class="chevron-icon"></i>
+         </div>
+         
+         <div class="navSubItems" [class.expanded]="demoToolsExpanded">
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'pdf-bulk-generator']"
+              [ngClass]="[router.url.startsWith('/dashboard/pdf-bulk-generator') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/pdf-bulk-generator')" src="assets/img/dashboardGray.svg" alt="PDF Bulk Generator" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/pdf-bulk-generator')" src="assets/img/dashboardYellow.svg" alt="PDF Bulk Generator" class="navIcon" />
+             {{ "PDF Bulk Generator" | translate }}
+           </p>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'data-management']"
-          [ngClass]="[router.url.startsWith('/dashboard/data-management') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardGray.svg" alt="Data Management" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardYellow.svg" alt="Data Management" class="navIcon" />
-         {{ "Data Management" | translate }}
-       </p>
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'data-management']"
+              [ngClass]="[router.url.startsWith('/dashboard/data-management') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardGray.svg" alt="Data Management" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/data-management')" src="assets/img/dashboardYellow.svg" alt="Data Management" class="navIcon" />
+             {{ "Data Management" | translate }}
+           </p>
+         </div>
+       </div>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'pdf-bulk-generator']"
-          [ngClass]="[router.url.startsWith('/dashboard/pdf-bulk-generator') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/pdf-bulk-generator')" src="assets/img/dashboardGray.svg" alt="PDF Bulk Generator" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/pdf-bulk-generator')" src="assets/img/dashboardYellow.svg" alt="PDF Bulk Generator" class="navIcon" />
-         {{ "PDF Bulk Generator" | translate }}
-       </p>
+       <!-- Task Lists Section -->
+       <div class="navSection">
+         <div class="navSectionHeader" (click)="toggleTaskListsSection()">
+           <span class="section-title">{{ "Task Lists" | translate }}</span>
+           <i nz-icon [nzType]="taskListsExpanded ? 'down' : 'right'" class="chevron-icon"></i>
+         </div>
+         
+         <div class="navSubItems" [class.expanded]="taskListsExpanded">
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'my-task-list']"
+              [ngClass]="[router.url.startsWith('/dashboard/my-task-list') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/my-task-list')" src="assets/img/homeGrey.svg" alt="Task List Icon" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/my-task-list')" src="assets/img/homeYellow.svg" alt="Task List Icon" class="navIcon" />
+             {{ "MyTaskList" | translate }}
+           </p>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'golden-requests']"
-          [ngClass]="[router.url.startsWith('/dashboard/golden-requests') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenGrey.svg" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenYellow.svg" class="navIcon" />
-         {{ "Golden Records" | translate }}
-       </p>
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'admin-task-list']"
+              [ngClass]="[router.url.startsWith('/dashboard/admin-task-list') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeGrey.svg" alt="Task List Icon" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeYellow.svg" alt="Task List Icon" class="navIcon" />
+             {{ "Reviewer Task List" | translate }}
+           </p>
 
-       <!-- Historical Extracted Data Section -->
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'compliance-task-list']"
+              [ngClass]="[router.url.startsWith('/dashboard/compliance-task-list') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeGrey.svg" alt="Compliance Icon" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeYellow.svg" alt="Compliance Icon" class="navIcon" />
+             {{ "MyTaskList" | translate }}
+           </p>
+         </div>
+       </div>
+
+       <!-- Golden Records Section -->
+       <div class="navSection">
+         <div class="navSectionHeader" (click)="toggleGoldenRecordsSection()">
+           <span class="section-title">{{ "Golden Records" | translate }}</span>
+           <i nz-icon [nzType]="goldenRecordsExpanded ? 'down' : 'right'" class="chevron-icon"></i>
+         </div>
+         
+         <div class="navSubItems" [class.expanded]="goldenRecordsExpanded">
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'golden-requests']"
+              [ngClass]="[router.url.startsWith('/dashboard/golden-requests') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenGrey.svg" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/golden-requests')" src="assets/img/goldenYellow.svg" class="navIcon" />
+             {{ "Golden Records" | translate }}
+           </p>
+
+           <p class="navSubTab"
+              [routerLink]="['/dashboard', 'sync-golden-records']"
+              [ngClass]="[router.url.startsWith('/dashboard/sync-golden-records') ? 'activeTab' : '']">
+             <img *ngIf="!router.url.startsWith('/dashboard/sync-golden-records')" src="assets/img/goldenGrey.svg" alt="Sync Golden Records" class="navIcon" />
+             <img *ngIf="router.url.startsWith('/dashboard/sync-golden-records')" src="assets/img/goldenYellow.svg" alt="Sync Golden Records" class="navIcon" />
+             {{ "Sync Golden Records" | translate }}
+           </p>
+         </div>
+       </div>
+
+       <!-- Historical Records Section -->
        <div class="navSection">
          <div class="navSectionHeader" (click)="toggleHistoricalDataSection()">
-           <span class="section-title">{{ "Historical Extracted Data" | translate }}</span>
+           <span class="section-title">{{ "Historical Records" | translate }}</span>
            <i nz-icon [nzType]="historicalDataExpanded ? 'down' : 'right'" class="chevron-icon"></i>
          </div>
          
-         <div class="navSubItems" *ngIf="historicalDataExpanded">
+         <div class="navSubItems" [class.expanded]="historicalDataExpanded">
            <p class="navSubTab"
               [routerLink]="['/dashboard', 'duplicate-records']"
               [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') ? 'activeTab' : '']">
@@ -249,21 +328,6 @@
          </div>
        </div>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'admin-task-list']"
-          [ngClass]="[router.url.startsWith('/dashboard/admin-task-list') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeGrey.svg" alt="Task List Icon" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/admin-task-list')" src="assets/img/homeYellow.svg" alt="Task List Icon" class="navIcon" />
-         {{ "Reviewer Tasks" | translate }}
-       </p>
-
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'compliance-task-list']"
-          [ngClass]="[router.url.startsWith('/dashboard/compliance-task-list') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeGrey.svg" alt="Compliance Icon" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeYellow.svg" alt="Compliance Icon" class="navIcon" />
-         {{ "Compliance Tasks" | translate }}
-       </p>
      </div>
 
      <!-- ==== demo-admin ==== -->

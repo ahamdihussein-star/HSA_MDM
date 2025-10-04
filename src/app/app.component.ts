@@ -28,21 +28,31 @@ export class AppComponent {
      if (isPlatformBrowser(this.platformId)) {
       // Set default language
       this.translate.setDefaultLang('en');
+      console.log('🌐 [App] Default language set to: en');
       
       // Check for saved language preference
       const savedLang = sessionStorage.getItem('language');
+      console.log(`🌐 [App] Saved language from sessionStorage: ${savedLang}`);
+      
       if (savedLang === 'ar') {
         this.translate.use('ar');
         document.body.classList.add("rtl");
         document.body.classList.remove("ltr");
         document.documentElement.setAttribute("dir", "rtl");
         document.body.setAttribute("dir", "rtl");
+        console.log('✅ [App] Language set to Arabic');
+        
+        // Test translation loading
+        this.translate.get('Profile').subscribe((translation: string) => {
+          console.log(`🔍 [App] Profile translation test: ${translation}`);
+        });
       } else {
         this.translate.use('en');
         document.body.classList.add("ltr");
         document.body.classList.remove("rtl");
         document.documentElement.setAttribute("dir", "ltr");
         document.body.setAttribute("dir", "ltr");
+        console.log('✅ [App] Language set to English');
       }
     }
   }

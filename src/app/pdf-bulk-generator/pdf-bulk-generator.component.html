@@ -1,85 +1,194 @@
 <div class="pdf-bulk-generator-container">
-    <div class="page-header">
-      <h1>PDF Bulk Document Generator</h1>
-      <p class="subtitle">Generate realistic PDF documents for all companies</p>
-    </div>
-  
-    <div class="config-card">
-      <h2>Configuration</h2>
-      
-      <div class="config-section">
-        <h3>Select Countries <span class="count-badge">{{ selectedCountries.length }} selected</span></h3>
+  <!-- Page Header with Icon -->
+  <div class="page-header">
+    <h1>
+      <i nz-icon nzType="file-pdf" nzTheme="twotone"></i>
+      PDF Bulk Document Generator
+    </h1>
+    <p class="subtitle">Generate realistic PDF documents for all companies</p>
+  </div>
+
+  <!-- Configuration Card -->
+  <nz-card class="config-card" nzTitle="Configuration">
+    
+    <!-- Countries Section -->
+    <div class="config-section">
+      <div class="section-header">
+        <h3>
+          <i nz-icon nzType="global" nzTheme="outline"></i>
+          Select Countries
+          <nz-tag [nzColor]="'blue'" class="count-badge">
+            {{ selectedCountries.length }} selected
+          </nz-tag>
+        </h3>
+        
         <div class="selection-actions">
-          <button type="button" (click)="selectAllCountries()">Select All</button>
-          <button type="button" (click)="deselectAllCountries()">Deselect All</button>
+          <button nz-button nzType="link" nzSize="small" (click)="selectAllCountries()">
+            <i nz-icon nzType="check-square"></i>
+            Select All
+          </button>
+          <button nz-button nzType="link" nzSize="small" nzDanger (click)="deselectAllCountries()">
+            <i nz-icon nzType="close-square"></i>
+            Deselect All
+          </button>
         </div>
-        <div class="checkbox-grid">
-          <label *ngFor="let country of availableCountries" class="checkbox-item">
-            <input type="checkbox" 
-                   [checked]="selectedCountries.includes(country.value)" 
-                   (change)="onCountryChange(country.value, $event)" />
-            <span>{{ country.label }} <small>({{ country.labelAr }})</small></span>
+      </div>
+
+      <div class="checkbox-grid">
+        <div *ngFor="let country of availableCountries" 
+             class="country-checkbox"
+             [class.selected]="selectedCountries.includes(country.value)">
+          <label nz-checkbox 
+                 [ngModel]="selectedCountries.includes(country.value)" 
+                 (ngModelChange)="onCountryChange(country.value, $event)">
+            <div class="checkbox-content">
+              <span class="checkbox-label">{{ country.label }}</span>
+              <span class="ar-label">{{ country.labelAr }}</span>
+            </div>
           </label>
         </div>
       </div>
-  
-      <div class="config-section">
-        <h3>Select Document Types <span class="count-badge">{{ selectedDocumentTypes.length }} selected</span></h3>
+    </div>
+
+    <nz-divider></nz-divider>
+
+    <!-- Document Types Section -->
+    <div class="config-section">
+      <div class="section-header">
+        <h3>
+          <i nz-icon nzType="file-text" nzTheme="outline"></i>
+          Select Document Types
+          <nz-tag [nzColor]="'green'" class="count-badge">
+            {{ selectedDocumentTypes.length }} selected
+          </nz-tag>
+        </h3>
+        
         <div class="selection-actions">
-          <button type="button" (click)="selectAllDocumentTypes()">Select All</button>
-          <button type="button" (click)="deselectAllDocumentTypes()">Deselect All</button>
+          <button nz-button nzType="link" nzSize="small" (click)="selectAllDocumentTypes()">
+            <i nz-icon nzType="check-square"></i>
+            Select All
+          </button>
+          <button nz-button nzType="link" nzSize="small" nzDanger (click)="deselectAllDocumentTypes()">
+            <i nz-icon nzType="close-square"></i>
+            Deselect All
+          </button>
         </div>
-        <div class="checkbox-grid">
-          <label *ngFor="let docType of availableDocumentTypes" class="checkbox-item">
-            <input type="checkbox" 
-                   [checked]="isDocTypeSelected(docType.value)" 
-                   (change)="onDocTypeChange(docType.value, $event)" />
-            <span>{{ docType.label }} <small>({{ docType.labelAr }})</small></span>
+      </div>
+
+      <div class="checkbox-grid">
+        <div *ngFor="let docType of availableDocumentTypes" 
+             class="doc-type-checkbox"
+             [class.selected]="isDocTypeSelected(docType.value)">
+          <label nz-checkbox 
+                 [ngModel]="isDocTypeSelected(docType.value)" 
+                 (ngModelChange)="onDocTypeChange(docType.value, $event)">
+            <div class="checkbox-content">
+              <span class="checkbox-label">{{ docType.label }}</span>
+              <span class="ar-label">{{ docType.labelAr }}</span>
+            </div>
           </label>
         </div>
       </div>
-  
-      <div class="generate-section">
-        <button type="button" 
-                class="generate-btn" 
-                [disabled]="isGenerating || selectedCountries.length === 0 || selectedDocumentTypes.length === 0" 
-                (click)="startBulkGeneration()">
-          <span *ngIf="!isGenerating">Generate All Documents</span>
-          <span *ngIf="isGenerating">Generating... {{ progress }}%</span>
-        </button>
-      </div>
     </div>
-  
-    <div class="progress-card" *ngIf="isGenerating || downloadReady">
-      <h2>{{ isGenerating ? 'Generation Progress' : 'Generation Complete' }}</h2>
-      
+
+    <!-- Generate Button -->
+    <div class="generate-section">
+      <button nz-button 
+              nzType="primary" 
+              nzSize="large" 
+              nzBlock
+              class="generate-btn"
+              [nzLoading]="isGenerating"
+              [disabled]="isGenerating || selectedCountries.length === 0 || selectedDocumentTypes.length === 0"
+              (click)="startBulkGeneration()">
+        <i nz-icon [nzType]="isGenerating ? 'loading' : 'thunderbolt'" nzTheme="outline"></i>
+        <span *ngIf="!isGenerating">Generate All Documents</span>
+        <span *ngIf="isGenerating">Generating... {{ progress }}%</span>
+      </button>
+    </div>
+  </nz-card>
+
+  <!-- Progress Card -->
+  <nz-card *ngIf="isGenerating || downloadReady" 
+           class="progress-card"
+           [nzTitle]="isGenerating ? 'Generation Progress' : 'Generation Complete'">
+    
+    <div class="progress-info">
+      <!-- Statistics Row -->
       <div class="progress-stats">
-        <div class="stat-item">
-          <span class="stat-value">{{ generatedCount }}</span>
-          <span class="stat-label">Companies Processed</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">{{ totalCompanies }}</span>
-          <span class="stat-label">Total Companies</span>
-        </div>
-        <div class="stat-item">
-          <span class="stat-value">{{ progress }}%</span>
-          <span class="stat-label">Progress</span>
-        </div>
+        <nz-statistic 
+          [nzValue]="generatedCount" 
+          nzTitle="Companies Processed"
+          [nzValueStyle]="{ color: '#1890ff' }">
+          <ng-template #nzPrefix>
+            <i nz-icon nzType="check-circle" nzTheme="outline"></i>
+          </ng-template>
+        </nz-statistic>
+
+        <nz-statistic 
+          [nzValue]="totalCompanies" 
+          nzTitle="Total Companies"
+          [nzValueStyle]="{ color: '#52c41a' }">
+          <ng-template #nzPrefix>
+            <i nz-icon nzType="database" nzTheme="outline"></i>
+          </ng-template>
+        </nz-statistic>
+
+        <nz-statistic 
+          [nzValue]="progress" 
+          [nzSuffix]="'%'"
+          nzTitle="Progress"
+          [nzValueStyle]="{ color: '#722ed1' }">
+          <ng-template #nzPrefix>
+            <i nz-icon nzType="dashboard" nzTheme="outline"></i>
+          </ng-template>
+        </nz-statistic>
       </div>
-      
-      <progress [value]="progress" max="100"></progress>
-      
-      <div class="current-step" *ngIf="isGenerating">{{ currentStep }}</div>
-      
+
+      <!-- Progress Bar -->
+      <nz-progress 
+        [nzPercent]="progress" 
+        [nzStatus]="downloadReady ? 'success' : 'active'"
+        [nzStrokeColor]="{ '0%': '#108ee9', '100%': '#87d068' }">
+      </nz-progress>
+
+      <!-- Current Step -->
+      <nz-alert *ngIf="isGenerating"
+                nzType="info"
+                [nzMessage]="currentStep"
+                nzShowIcon
+                class="current-step">
+        <ng-template #nzIcon>
+          <i nz-icon nzType="sync" nzTheme="outline" nzSpin></i>
+        </ng-template>
+      </nz-alert>
+
+      <!-- Download Section -->
       <div *ngIf="downloadReady" class="download-section">
-        <button type="button" class="download-btn" (click)="downloadAllDocuments()">
+        <button nz-button 
+                nzType="primary" 
+                nzSize="large" 
+                nzBlock
+                class="download-btn"
+                (click)="downloadAllDocuments()">
+          <i nz-icon nzType="download" nzTheme="outline"></i>
           Download ZIP File ({{ formatFileSize(zipSize) }})
         </button>
       </div>
     </div>
-  
-    <div class="info-alert" *ngIf="!isGenerating && !downloadReady">
-      This tool generates realistic PDF documents for all companies in the demo database.
-    </div>
-  </div>
+  </nz-card>
+
+  <!-- Structure Preview Card -->
+  <nz-card class="structure-card" nzTitle="Expected Folder Structure">
+    <pre class="structure-preview">{{ previewStructure() }}</pre>
+  </nz-card>
+
+  <!-- Info Alert -->
+  <nz-alert *ngIf="!isGenerating && !downloadReady"
+            class="info-alert"
+            nzType="info"
+            nzMessage="How it works"
+            nzDescription="This tool generates realistic PDF documents for all companies in the demo database."
+            nzShowIcon>
+  </nz-alert>
+</div>

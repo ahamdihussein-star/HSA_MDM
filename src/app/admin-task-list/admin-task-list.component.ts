@@ -202,8 +202,8 @@ export class AdminTaskListComponent implements OnInit {
       this.loading = false;
     }
     
-    // Sync notifications after loading
-    this.syncNotificationsWithTasks();
+    // ✅ FIXED: Don't sync notifications automatically to preserve read/unread status
+    // this.syncNotificationsWithTasks(); // This was deleting all notifications and recreating them
   }
 
   // NEW: Get origin badge for display

@@ -32,6 +32,8 @@ export class HeaderComponent implements OnInit, OnDestroy {
   ) {}
 
   switchLang(lang: string) {
+    console.log(`🌐 [Header] Switching language to: ${lang}`);
+    
     if (lang == "en") {
       this.translate.use("en");
       this.lang = "en";
@@ -41,6 +43,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
       document.body.setAttribute("dir", "ltr");
       // Save to sessionStorage
       sessionStorage.setItem("language", "en");
+      console.log(`✅ [Header] Switched to English`);
     } else if (lang == "ar") {
       this.translate.use("ar");
       this.lang = "ar";
@@ -50,6 +53,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
       document.body.setAttribute("dir", "rtl");
       // Save to sessionStorage
       sessionStorage.setItem("language", "ar");
+      console.log(`✅ [Header] Switched to Arabic`);
+      
+      // Test translation
+      this.translate.get('Profile').subscribe((translation: string) => {
+        console.log(`🔍 [Header] Profile translation: ${translation}`);
+      });
     }
   }
 
@@ -76,6 +85,7 @@ export class HeaderComponent implements OnInit, OnDestroy {
     }
     
     // Reload notifications for current user
+    console.log(`📱 [Header] Loading notifications for current user: ${this.user}`);
     this.notificationService.reloadNotifications();
     this.user = localStorage.getItem("user") || "2";
 

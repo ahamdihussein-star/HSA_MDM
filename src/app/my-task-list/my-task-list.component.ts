@@ -168,8 +168,8 @@ async loadMyRequests(): Promise<void> {
       this.updateRows();
       this.updateCounters();
       
-      // Sync notifications after loading data
-      this.syncNotificationsWithTasks();
+      // ✅ FIXED: Don't sync notifications automatically to preserve read/unread status
+      // this.syncNotificationsWithTasks(); // This was deleting all notifications and recreating them
       
       // Generate unique statuses for filter
       this.generateUniqueStatuses();
@@ -399,8 +399,8 @@ async loadMyRequests(): Promise<void> {
     
     this.rows = filtered;
     
-    // Sync notifications after filtering
-    this.syncNotificationsWithTasks();
+    // ✅ FIXED: Don't sync notifications automatically to preserve read/unread status
+    // this.syncNotificationsWithTasks(); // This was deleting all notifications and recreating them
   }
 
   getStatusValue(row: any): string {
