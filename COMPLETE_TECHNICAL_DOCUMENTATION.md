@@ -4875,6 +4875,1000 @@ pipelines:
 - **Developer Guide**: Technical documentation for developers
 - **API Documentation**: Document PDF generation APIs
 - **Template Guide**: Guide for creating custom document templates
+
+---
+
+## Additional Services & Components Documentation
+
+### Advanced Services
+
+#### **1. AutoTranslateService** (`src/app/services/auto-translate.service.ts`)
+
+**Purpose**: Provides intelligent English-to-Arabic translation for company names and business terms.
+
+##### **Core Features:**
+- **Dictionary-Based Translation**: Over 130+ pre-defined business term translations
+- **Word-by-Word Translation**: Breaks down company names and translates each word
+- **Transliteration Fallback**: Provides phonetic Arabic transliteration when translation not available
+- **Arabic Grammar Rules**: Applies proper Arabic grammar patterns (e.g., "ال" prefix)
+- **Confidence Scoring**: Measures translation accuracy (0-1 scale)
+- **Alternative Suggestions**: Provides multiple translation options
+
+##### **Key Methods:**
+
+**1. `translateCompanyName(englishName: string): string`**
+```typescript
+translateCompanyName(englishName: string): string {
+  // Check for exact match first
+  if (this.translations[cleanName]) {
+    return this.translations[cleanName];
+  }
+
+  // Split into words and translate each
+  const words = cleanName.split(/\s+/);
+  const translatedWords: string[] = [];
+
+  for (let word of words) {
+    const translatedWord = this.translateWord(word);
+    translatedWords.push(translatedWord || this.transliterate(word));
+  }
+
+  // Apply Arabic grammar rules
+  return this.applyArabicGrammar(translatedWords);
+}
+```
+- **Input**: English company name
+- **Output**: Arabic translation with proper grammar
+- **Logic**: 
+  1. Check exact match in dictionary
+  2. Split into words and translate individually
+  3. Apply Arabic grammar rules
+  4. Return formatted Arabic text
+
+**2. `needsTranslation(name: string): boolean`**
+```typescript
+needsTranslation(name: string): boolean {
+  const englishRegex = /[a-zA-Z]/;
+  return englishRegex.test(name);
+}
+```
+- **Purpose**: Check if a name contains English characters
+- **Returns**: `true` if translation needed, `false` otherwise
+
+**3. `getTranslationConfidence(englishName: string, arabicName: string): number`**
+```typescript
+getTranslationConfidence(englishName: string, arabicName: string): number {
+  // Check for exact match
+  if (this.translations[englishName] === arabicName) {
+    return 1.0;
+  }
+  
+  // Calculate partial matches
+  const englishWords = englishName.toLowerCase().split(/\s+/);
+  const arabicWords = arabicName.split(/\s+/);
+  
+  let matches = 0;
+  for (const word of englishWords) {
+    const translation = this.translateWord(word);
+    if (translation && arabicWords.some(aw => aw.includes(translation))) {
+      matches++;
+    }
+  }
+  
+  return matches / englishWords.length;
+}
+```
+- **Purpose**: Calculate translation accuracy
+- **Returns**: Confidence score (0.0 to 1.0)
+- **Use Case**: Quality assurance for translations
+
+**4. `getAlternativeTranslations(englishName: string): string[]`**
+```typescript
+getAlternativeTranslations(englishName: string): string[] {
+  const alternatives: string[] = [];
+  
+  // Try different word orders
+  const words = englishName.split(/\s+/);
+  if (words.length > 1) {
+    const reversed = words.reverse().join(' ');
+    const reversedTranslation = this.translateCompanyName(reversed);
+    if (reversedTranslation && reversedTranslation !== this.translateCompanyName(englishName)) {
+      alternatives.push(reversedTranslation);
+    }
+  }
+  
+  return alternatives;
+}
+```
+- **Purpose**: Suggest alternative translations
+- **Returns**: Array of alternative Arabic translations
+- **Use Case**: Provide options for user selection
+
+##### **Translation Dictionary Sample:**
+```typescript
+private translations: { [key: string]: string } = {
+  // Saudi Companies
+  'Saudi Aramco': 'أرامكو السعودية',
+  'SABIC': 'الشركة السعودية للصناعات الأساسية',
+  'Almarai': 'المراعي',
+  
+  // Common Business Terms
+  'Company': 'شركة',
+  'Corporation': 'شركة',
+  'Limited': 'محدودة',
+  'Group': 'مجموعة',
+  'Holdings': 'القابضة',
+  'International': 'الدولية',
+  'Technology': 'التكنولوجيا',
+  'Services': 'الخدمات',
+  // ... 130+ more terms
+};
+```
+
+##### **Usage Example:**
+```typescript
+import { AutoTranslateService } from '../services/auto-translate.service';
+
+@Component({...})
+export class NewRequestComponent {
+  constructor(private autoTranslate: AutoTranslateService) {}
+  
+  translateCompanyName(englishName: string): void {
+    // Translate company name
+    const arabicName = this.autoTranslate.translateCompanyName(englishName);
+    
+    // Check if needs translation
+    if (this.autoTranslate.needsTranslation(englishName)) {
+      // Get confidence score
+      const confidence = this.autoTranslate.getTranslationConfidence(englishName, arabicName);
+      
+      // Get alternatives
+      const alternatives = this.autoTranslate.getAlternativeTranslations(englishName);
+      
+      console.log('Translated:', arabicName);
+      console.log('Confidence:', confidence);
+      console.log('Alternatives:', alternatives);
+    }
+  }
+}
+```
+
+##### **Performance Characteristics:**
+- **Dictionary Lookup**: O(1) constant time
+- **Word-by-Word Translation**: O(n) where n = number of words
+- **Transliteration**: O(m) where m = string length
+- **Grammar Application**: O(n) where n = number of words
+- **Memory Usage**: ~50KB for dictionary
+
+##### **Best Practices:**
+1. **Cache Translations**: Store frequently used translations to avoid recomputation
+2. **Validate Input**: Always check if translation is needed before calling
+3. **Confidence Threshold**: Use confidence score > 0.7 for auto-approval
+4. **User Feedback**: Allow users to correct translations for learning
+5. **Fallback Strategy**: Always provide transliteration as fallback
+
+---
+
+#### **2. SafePipe** (`src/app/shared/safe.pipe.ts`)
+
+**Purpose**: Bypasses Angular's security sanitization for trusted content (HTML, URLs, Scripts, Styles).
+
+##### **Implementation:**
+```typescript
+import { Pipe, PipeTransform } from '@angular/core';
+import { DomSanitizer, SafeHtml, SafeResourceUrl, SafeScript, SafeStyle, SafeUrl } from '@angular/platform-browser';
+
+@Pipe({
+  name: 'safe'
+})
+export class SafePipe implements PipeTransform {
+
+  constructor(private sanitizer: DomSanitizer) {}
+
+  transform(value: string, type: string = 'resourceUrl'): SafeHtml | SafeStyle | SafeScript | SafeUrl | SafeResourceUrl {
+    switch (type) {
+      case 'html':
+        return this.sanitizer.bypassSecurityTrustHtml(value);
+      case 'style':
+        return this.sanitizer.bypassSecurityTrustStyle(value);
+      case 'script':
+        return this.sanitizer.bypassSecurityTrustScript(value);
+      case 'url':
+        return this.sanitizer.bypassSecurityTrustUrl(value);
+      case 'resourceUrl':
+        return this.sanitizer.bypassSecurityTrustResourceUrl(value);
+      default:
+        return this.sanitizer.bypassSecurityTrustResourceUrl(value);
+    }
+  }
+}
+```
+
+##### **Supported Types:**
+1. **`html`**: Bypasses HTML sanitization for trusted HTML content
+2. **`style`**: Bypasses style sanitization for trusted CSS
+3. **`script`**: Bypasses script sanitization for trusted JavaScript
+4. **`url`**: Bypasses URL sanitization for trusted URLs
+5. **`resourceUrl`** (default): Bypasses resource URL sanitization for iframes, images, etc.
+
+##### **Usage Examples:**
+
+**1. Embedding PDF in iframe:**
+```html
+<iframe 
+  [src]="pdfDataUrl | safe:'resourceUrl'" 
+  width="100%" 
+  height="600px">
+</iframe>
+```
+
+**2. Rendering trusted HTML:**
+```html
+<div [innerHTML]="richTextContent | safe:'html'"></div>
+```
+
+**3. Dynamic styles:**
+```html
+<div [style]="dynamicStyle | safe:'style'"></div>
+```
+
+**4. Trusted URLs:**
+```html
+<a [href]="externalUrl | safe:'url'">External Link</a>
+```
+
+##### **Security Warnings:**
+⚠️ **CRITICAL**: Only use this pipe with **trusted content**. Never use with user-generated content or untrusted external sources.
+
+**Risk Scenarios:**
+- **XSS Attacks**: Unsanitized user input can execute malicious scripts
+- **Data Theft**: Malicious scripts can steal sensitive user data
+- **Session Hijacking**: Scripts can access cookies and session tokens
+- **DOM Manipulation**: Untrusted HTML can modify page structure
+
+**Safe Usage Guidelines:**
+1. ✅ Use for content from trusted internal sources
+2. ✅ Use for generated content (e.g., PDF data URLs)
+3. ✅ Use for validated external resources
+4. ❌ Never use with user input directly
+5. ❌ Never use with untrusted external APIs
+6. ❌ Never use without validation
+
+##### **Common Use Cases in MDM:**
+- **Document Preview**: Display PDF and image documents in iframes
+- **Base64 Content**: Render base64-encoded documents
+- **Internal Resources**: Load internal application resources
+- **Generated Content**: Display dynamically generated HTML/PDF content
+
+---
+
+### Advanced Components
+
+#### **3. AdminDataManagementComponent** (`src/app/admin-data-management/`)
+
+**Purpose**: Provides administrative tools for managing system data, including bulk data operations and statistics.
+
+##### **Component Overview:**
+```typescript
+@Component({
+  selector: 'app-admin-data-management',
+  templateUrl: './admin-data-management.component.html',
+  styleUrls: ['./admin-data-management.component.scss']
+})
+export class AdminDataManagementComponent implements OnInit {
+  
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3001/api';
+  
+  stats: DataStats = {
+    duplicateRecords: 0,
+    quarantineRecords: 0,
+    goldenRecords: 0,
+    totalRequests: 0,
+    pendingRequests: 0
+  };
+  
+  loading = false;
+  
+  constructor(
+    private http: HttpClient,
+    private router: Router,
+    private modal: NzModalService
+  ) {}
+  
+  ngOnInit(): void {
+    this.loadStats();
+  }
+}
+```
+
+##### **Key Features:**
+
+**1. Data Statistics Dashboard**
+- **Duplicate Records Count**: Number of duplicate detection results
+- **Quarantine Records Count**: Number of records in quarantine
+- **Golden Records Count**: Number of approved golden records
+- **Total Requests**: Total number of data requests
+- **Pending Requests**: Number of requests awaiting review
+
+**2. Data Management Operations**
+
+**Method: `clearSpecificData(dataType: string)`**
+```typescript
+async clearSpecificData(dataType: string): Promise<void> {
+  const typeLabels: any = {
+    'duplicates': 'Duplicate Records',
+    'quarantine': 'Quarantine Records',
+    'golden': 'Golden Records',
+    'requests': 'All Requests'
+  };
+  
+  this.modal.confirm({
+    nzTitle: `Clear ${typeLabels[dataType]}?`,
+    nzContent: `This will permanently delete all ${typeLabels[dataType].toLowerCase()}.`,
+    nzOkText: 'Delete',
+    nzOkType: 'primary',
+    nzOkDanger: true,
+    nzCancelText: 'Cancel',
+    nzOnOk: async () => {
+      this.loading = true;
+      try {
+        const response = await firstValueFrom(
+          this.http.delete<any>(`${this.apiBase}/requests/admin/clear-${dataType}`)
+        );
+        
+        if (response.success) {
+          this.modal.success({
+            nzTitle: 'Success',
+            nzContent: `${typeLabels[dataType]} cleared successfully!`
+          });
+          await this.loadStats();
+        }
+      } catch (error) {
+        console.error(`Error clearing ${dataType}:`, error);
+        this.modal.error({
+          nzTitle: 'Error',
+          nzContent: `Failed to clear ${typeLabels[dataType]}.`
+        });
+      } finally {
+        this.loading = false;
+      }
+    }
+  });
+}
+```
+- **Purpose**: Clears specific types of data with confirmation
+- **Supported Types**: duplicates, quarantine, golden, requests
+- **Security**: Requires user confirmation with modal dialog
+
+**Method: `confirmClearAll()`**
+```typescript
+async confirmClearAll(): Promise<void> {
+  const confirmText = prompt('Type "DELETE ALL" to confirm deletion of all data:');
+  
+  if (confirmText !== 'DELETE ALL') {
+    this.modal.warning({
+      nzTitle: 'Operation Cancelled',
+      nzContent: 'Confirmation text does not match.'
+    });
+    return;
+  }
+  
+  this.loading = true;
+  
+  try {
+    const response = await firstValueFrom(
+      this.http.delete<any>(`${this.apiBase}/requests/admin/clear-all`)
+    );
+    
+    if (response.success) {
+      this.modal.success({
+        nzTitle: 'Success',
+        nzContent: 'All data has been cleared successfully!'
+      });
+      await this.loadStats();
+    }
+  } catch (error) {
+    console.error('Error clearing data:', error);
+    this.modal.error({
+      nzTitle: 'Error',
+      nzContent: 'Failed to clear data. Please try again.'
+    });
+  } finally {
+    this.loading = false;
+  }
+}
+```
+- **Purpose**: Clears ALL system data with strict confirmation
+- **Security**: Double confirmation (modal + text input "DELETE ALL")
+- **Impact**: Deletes all records except users
+
+**3. Test Data Generation**
+
+**Method: `generateQuarantineData()`**
+```typescript
+async generateQuarantineData(): Promise<void> {
+  this.loading = true;
+  try {
+    const response = await firstValueFrom(
+      this.http.post<any>(`${this.apiBase}/requests/admin/generate-quarantine`, {})
+    );
+    
+    if (response.success) {
+      this.modal.success({
+        nzTitle: 'Success',
+        nzContent: `Generated ${response.recordIds.length} quarantine records`
+      });
+      await this.loadStats();
+    }
+  } catch (error) {
+    console.error('Error generating quarantine data:', error);
+    this.modal.error({
+      nzTitle: 'Error',
+      nzContent: 'Failed to generate quarantine data'
+    });
+  } finally {
+    this.loading = false;
+  }
+}
+```
+- **Purpose**: Generates test quarantine records for testing
+- **Output**: Creates multiple quarantine records with realistic data
+
+**Method: `generateDuplicateData()`**
+```typescript
+async generateDuplicateData(): Promise<void> {
+  this.loading = true;
+  try {
+    const response = await firstValueFrom(
+      this.http.post<any>(`${this.apiBase}/requests/admin/generate-duplicates`, {})
+    );
+    
+    if (response.success) {
+      this.modal.success({
+        nzTitle: 'Success',
+        nzContent: `Generated ${response.recordIds.length} duplicate records in ${response.groups} groups`
+      });
+      await this.loadStats();
+    }
+  } catch (error) {
+    console.error('Error generating duplicate data:', error);
+    this.modal.error({
+      nzTitle: 'Error',
+      nzContent: 'Failed to generate duplicate data'
+    });
+  } finally {
+    this.loading = false;
+  }
+}
+```
+- **Purpose**: Generates test duplicate records for testing
+- **Output**: Creates multiple duplicate groups with matching tax numbers
+
+**4. Helper Methods**
+
+```typescript
+formatNumber(num: number): string {
+  if (num === 0) return '0';
+  return num.toLocaleString();
+}
+
+getFormattedTime(): string {
+  return new Date().toLocaleString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric',
+    hour: '2-digit',
+    minute: '2-digit'
+  });
+}
+
+getStatusClass(count: number): string {
+  if (count === 0) return 'status-empty';
+  if (count < 10) return 'status-low';
+  if (count < 50) return 'status-medium';
+  return 'status-high';
+}
+
+getStatusText(count: number, type: string): string {
+  if (count === 0) return 'No records';
+  
+  const statusMap: { [key: string]: string } = {
+    'duplicates': count === 1 ? '1 duplicate found' : `${count} duplicates found`,
+    'quarantine': count === 1 ? '1 record in quarantine' : `${count} records in quarantine`,
+    'golden': count === 1 ? '1 golden record' : `${count} golden records`,
+    'requests': count === 1 ? '1 request total' : `${count} requests total`,
+    'pending': count === 1 ? '1 request pending' : `${count} requests pending`
+  };
+  
+  return statusMap[type] || `${count} records`;
+}
+
+getPendingPercentage(): number {
+  if (this.stats.totalRequests === 0) return 0;
+  return Math.round((this.stats.pendingRequests / this.stats.totalRequests) * 100);
+}
+```
+
+##### **API Endpoints Used:**
+1. **GET** `/api/requests/admin/data-stats` - Get system statistics
+2. **DELETE** `/api/requests/admin/clear-all` - Clear all data
+3. **DELETE** `/api/requests/admin/clear-{dataType}` - Clear specific data type
+4. **POST** `/api/requests/admin/generate-quarantine` - Generate test quarantine data
+5. **POST** `/api/requests/admin/generate-duplicates` - Generate test duplicate data
+
+##### **User Interface Features:**
+- **Statistics Cards**: Visual display of data counts
+- **Action Buttons**: Clear data operations with danger styling
+- **Confirmation Modals**: ng-zorro-antd modals for user confirmation
+- **Loading States**: Spinner during operations
+- **Success/Error Messages**: Toast notifications for operation results
+- **Percentage Indicators**: Progress bars for pending requests
+
+##### **Access Control:**
+- **Role Required**: Admin or Demo Admin only
+- **Route Guard**: Protected by authentication
+- **Permission Check**: Backend validates admin permissions
+
+##### **Use Cases:**
+1. **Development Testing**: Generate test data for development
+2. **System Maintenance**: Clear old or invalid data
+3. **Performance Monitoring**: View system data statistics
+4. **Data Reset**: Reset system to clean state
+5. **Demo Preparation**: Prepare system for demonstrations
+
+---
+
+#### **4. GoldenSummaryComponent** (`src/app/dashboard/golden-summary/`)
+
+**Purpose**: Displays comprehensive details of a golden record with linked records, quarantine records, contacts, and documents.
+
+##### **Component Overview:**
+```typescript
+@Component({
+  selector: 'app-golden-summary',
+  templateUrl: './golden-summary.component.html',
+  styleUrls: ['./golden-summary.component.scss', './golden-summary-table-styles.scss']
+})
+export class GoldenSummaryComponent implements OnInit {
+  // API configuration
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
+  
+  // Main data
+  master: any = {};
+  contacts: any[] = [];
+  documents: any[] = [];
+  duplicates: any[] = [];
+  blockReason: string = '';
+  
+  // NEW: Linked and Quarantine Records
+  linkedRecords: any[] = [];
+  quarantineRecords: any[] = [];
+  
+  // User permissions
+  isCompliance = false;
+  isDataEntry = false;
+  isReviewer = false;
+  currentUser: any = null;
+  
+  constructor(
+    private route: ActivatedRoute,
+    private router: Router,
+    private http: HttpClient,
+    private sanitizer: DomSanitizer
+  ) {}
+}
+```
+
+##### **Key Features:**
+
+**1. Multi-Source Data Loading**
+- **Router State**: Loads data passed via router navigation
+- **API Fetch**: Falls back to API if no router state
+- **Missing Data Recovery**: Attempts to fetch missing contacts/documents from API
+
+**2. Linked Records Management**
+
+**Method: `loadLinkedRecords(taxNumber: string)`**
+```typescript
+async loadLinkedRecords(taxNumber: string): Promise<void> {
+  // Check if this record originated from quarantine - skip loading linked records
+  if (this.master.originalRequestType === 'quarantine') {
+    console.log('Skipping linked records - record originated from quarantine');
+    this.linkedRecords = [];
+    this.quarantineRecords = [];
+    this.duplicates = [];
+    return;
+  }
+  
+  if (!taxNumber) {
+    console.log('No tax number provided for loading linked records');
+    return;
+  }
+  
+  try {
+    // Get all duplicates with the same tax number
+    const duplicatesResponse = await firstValueFrom(
+      this.http.get<any>(`${this.apiBase}/duplicates/by-tax/${taxNumber}`)
+    );
+    
+    if (duplicatesResponse && duplicatesResponse.success && duplicatesResponse.records) {
+      const allRecords = duplicatesResponse.records;
+      
+      // Filter linked records - ONLY records linked to THIS master
+      this.linkedRecords = allRecords.filter((record: any) => {
+        return (
+          record.masterId && 
+          String(record.masterId) === String(this.master.id) &&
+          record.id !== this.master.id
+        );
+      });
+      
+      // Filter quarantine records
+      this.quarantineRecords = allRecords.filter((record: any) => {
+        return (
+          record.status === 'Quarantine' ||
+          record.requestType === 'quarantine'
+        );
+      });
+      
+      // Other duplicates - only other GOLDEN records with same tax
+      this.duplicates = allRecords.filter((record: any) => {
+        return (
+          record.id !== this.master.id &&
+          record.isGolden === 1 &&
+          !this.linkedRecords.some((lr: any) => lr.id === record.id) &&
+          !this.quarantineRecords.some((qr: any) => qr.id === record.id)
+        );
+      });
+    }
+  } catch (error) {
+    console.error('Error loading linked records:', error);
+    this.linkedRecords = [];
+    this.quarantineRecords = [];
+    this.duplicates = [];
+  }
+}
+```
+- **Purpose**: Load all related records (linked, quarantine, duplicates)
+- **Logic**: 
+  1. Skip if record originates from quarantine
+  2. Fetch all records with same tax number
+  3. Filter into three categories:
+     - **Linked Records**: Records with masterId pointing to this record
+     - **Quarantine Records**: Records with quarantine status
+     - **Duplicate Golden Records**: Other golden records with same tax
+
+**3. Document Management**
+
+**Method: `previewDocument(doc: any)`**
+```typescript
+previewDocument(doc: any): void {
+  this.selectedDocument = doc;
+  this.showDocumentPreviewModal = true;
+}
+
+canPreview(doc: any): boolean {
+  if (!doc || !doc.mime) return false;
+  const mime = doc.mime.toLowerCase();
+  return mime.includes('image') || mime.includes('pdf');
+}
+
+getPreviewUrl(doc: any): string {
+  if (!doc || !doc.contentBase64) return '';
+  
+  if (doc.contentBase64.startsWith('data:')) {
+    return doc.contentBase64;
+  }
+  
+  return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+}
+
+getSafePreviewUrl(doc: any): SafeResourceUrl {
+  const url = this.getPreviewUrl(doc);
+  return this.sanitizer.bypassSecurityTrustResourceUrl(url);
+}
+
+downloadDoc(doc: any): void {
+  if (!doc.contentBase64) {
+    alert('Document content not available');
+    return;
+  }
+  
+  try {
+    let base64Content = doc.contentBase64;
+    if (base64Content.includes(',')) {
+      base64Content = base64Content.split(',')[1];
+    }
+    
+    const byteCharacters = atob(base64Content);
+    const byteNumbers = new Array(byteCharacters.length);
+    for (let i = 0; i < byteCharacters.length; i++) {
+      byteNumbers[i] = byteCharacters.charCodeAt(i);
+    }
+    const byteArray = new Uint8Array(byteNumbers);
+    const blob = new Blob([byteArray], { type: doc.mime || 'application/octet-stream' });
+    
+    const url = window.URL.createObjectURL(blob);
+    const link = document.createElement('a');
+    link.href = url;
+    link.download = doc.name || 'document';
+    document.body.appendChild(link);
+    link.click();
+    document.body.removeChild(link);
+    window.URL.revokeObjectURL(url);
+    
+  } catch (error) {
+    console.error('Error downloading document:', error);
+    alert('Failed to download document');
+  }
+}
+```
+- **Features**:
+  - Document preview in modal
+  - PDF and image preview support
+  - Base64 content decoding
+  - Safe URL generation with DomSanitizer
+  - Document download functionality
+
+**4. Role-Based Actions**
+
+**Data Entry User Actions:**
+```typescript
+editAndResubmit(): void {
+  if (!this.isDataEntry) {
+    console.log('Edit blocked - not data entry user');
+    return;
+  }
+  
+  console.log('Data Entry user editing golden record:', this.master);
+  
+  // Navigate to new-request page with golden record data
+  this.router.navigate(['/dashboard/new-request'], {
+    queryParams: {
+      mode: 'edit-golden',
+      from: 'golden-summary',
+      userRole: 'data_entry'
+    },
+    state: {
+      goldenRecord: this.master,
+      contacts: this.contacts,
+      documents: this.documents,
+      sourceGoldenId: this.master.id || this.master.goldenCode
+    }
+  });
+}
+```
+
+**Reviewer User Actions:**
+```typescript
+async approveGoldenRecord(): Promise<void> {
+  if (!this.canReviewerApprove || this.isProcessing) return;
+
+  try {
+    this.isProcessing = true;
+
+    await firstValueFrom(
+      this.http.post(`${this.apiBase}/requests/${this.master.id}/approve`, {
+        note: 'Golden record changes approved by reviewer'
+      })
+    );
+
+    this.master.requestStatus = 'Approved';
+    this.master.assignedTo = 'compliance';
+
+    alert('Golden record approved successfully! Forwarded to compliance for final approval.');
+    this.router.navigate(['/dashboard/admin-task-list']);
+
+  } catch (error) {
+    console.error('[REVIEWER] Error approving golden record:', error);
+    alert('Error approving golden record. Please try again.');
+  } finally {
+    this.isProcessing = false;
+  }
+}
+
+async submitReject(): Promise<void> {
+  if (!this.canReviewerApprove || !this.rejectReasonDraft.trim() || this.isProcessing) return;
+
+  try {
+    this.isProcessing = true;
+
+    await firstValueFrom(
+      this.http.post(`${this.apiBase}/requests/${this.master.id}/reject`, {
+        reason: this.rejectReasonDraft.trim()
+      })
+    );
+
+    this.master.requestStatus = 'Rejected';
+    this.master.assignedTo = 'data_entry';
+
+    this.isRejectModalOpen = false;
+    this.rejectReasonDraft = '';
+
+    alert('Golden record rejected successfully! Sent back to data entry for corrections.');
+    this.router.navigate(['/dashboard/admin-task-list']);
+
+  } catch (error) {
+    console.error('[REVIEWER] Error rejecting golden record:', error);
+    alert('Error rejecting golden record. Please try again.');
+  } finally {
+    this.isProcessing = false;
+  }
+}
+```
+
+**Compliance User Actions:**
+```typescript
+async setActive(): Promise<void> {
+  if (!this.isCompliance || !this.master.id) return;
+  
+  try {
+    await firstValueFrom(
+      this.http.post(`${this.apiBase}/requests/${this.master.id}/compliance/approve`, {
+        note: 'Set as Active'
+      })
+    );
+    
+    this.master.status = 'Active';
+    this.blockReason = '';
+  } catch (error) {
+    console.error('Error setting active:', error);
+  }
+}
+
+async submitBlock(): Promise<void> {
+  if (!this.isCompliance || !this.master.id || !this.blockReasonDraft.trim()) return;
+  
+  try {
+    await firstValueFrom(
+      this.http.post(`${this.apiBase}/requests/${this.master.id}/compliance/block`, {
+        reason: this.blockReasonDraft
+      })
+    );
+    
+    this.master.status = 'Blocked';
+    this.blockReason = this.blockReasonDraft;
+    this.isBlockModalOpen = false;
+    this.blockReasonDraft = '';
+  } catch (error) {
+    console.error('Error blocking:', error);
+  }
+}
+```
+
+**5. Navigation & Integration**
+
+```typescript
+goToDataLineage(): void {
+  const recordForLineage = {
+    goldenCode: this.master.goldenCode,
+    recordType: this.master.recordType,
+    status: this.master.status,
+    // ... all master data fields mapped for lineage view
+    contacts: this.contacts,
+    documents: this.documents,
+    summary: { duplicates: this.duplicates }
+  };
+  
+  this.router.navigate(["/dashboard/data-lineage"], { 
+    state: { record: recordForLineage } 
+  });
+}
+
+goBack(): void {
+  this.router.navigate(['/dashboard/golden-requests']);
+}
+```
+
+##### **Computed Properties:**
+```typescript
+get hasDuplicates(): boolean {
+  return this.duplicates && this.duplicates.length > 0;
+}
+
+get hasLinkedRecords(): boolean {
+  return this.linkedRecords && this.linkedRecords.length > 0;
+}
+
+get hasQuarantineRecords(): boolean {
+  return this.quarantineRecords && this.quarantineRecords.length > 0;
+}
+
+get isBlocked(): boolean {
+  return (this.master.status || '').toLowerCase() === 'blocked';
+}
+
+get isActive(): boolean {
+  return (this.master.status || '').toLowerCase() === 'active';
+}
+
+get canReviewerApprove(): boolean {
+  const status = this.master.status || this.master.requestStatus;
+  const hasGoldenFields = this.master.goldenCode || this.master.goldenRecordCode || this.master.isGolden;
+  
+  return this.isReviewer && 
+         status === 'Pending' && 
+         hasGoldenFields;
+}
+```
+
+##### **User Interface Sections:**
+1. **Golden Record Header**: Golden code, status, record type
+2. **Master Information**: All company data fields
+3. **Linked Records Table**: Records merged into this golden record
+4. **Quarantine Records Table**: Related quarantine records
+5. **Duplicate Records Table**: Other golden records with same tax number
+6. **Contacts Table**: All contact persons
+7. **Documents Grid**: All attached documents with preview
+8. **Action Buttons**: Role-specific actions (Edit, Approve, Reject, Block, Set Active)
+9. **Navigation**: Data Lineage, Back to Golden Requests
+
+##### **Performance Optimizations:**
+- **trackBy Functions**: Efficient list rendering
+- **Lazy Loading**: Documents loaded on demand
+- **Deduplication**: Remove duplicate documents before rendering
+- **Conditional Rendering**: Only show sections with data
+- **Memoization**: Cache translated labels
+
+##### **Error Handling:**
+- **Graceful Degradation**: Show partial data if some fails to load
+- **Fallback Strategies**: Multiple data source attempts
+- **User Feedback**: Clear error messages
+- **Logging**: Comprehensive console logging for debugging
+- **API Fallbacks**: Alternative methods if primary fails
+
+##### **Security Considerations:**
+- **Role-Based UI**: Hide/show features based on user role
+- **Permission Checks**: Verify permissions before API calls
+- **Safe URLs**: Use DomSanitizer for document URLs
+- **Confirmation Dialogs**: Require confirmation for destructive actions
+
+---
+
+### Component Integration Patterns
+
+#### **Service Usage Patterns:**
+```typescript
+// AutoTranslateService
+constructor(private autoTranslate: AutoTranslateService) {}
+
+translateName(englishName: string): void {
+  const arabicName = this.autoTranslate.translateCompanyName(englishName);
+}
+
+// DemoDataGeneratorService
+constructor(private demoData: DemoDataGeneratorService) {}
+
+generateCompany(): void {
+  const company = this.demoData.generateDemoData();
+}
+
+// SafePipe (in templates)
+<iframe [src]="documentUrl | safe:'resourceUrl'"></iframe>
+```
+
+#### **Component Communication:**
+```typescript
+// Router State Transfer
+this.router.navigate(['/dashboard/golden-summary'], {
+  state: {
+    master: this.goldenRecord,
+    contacts: this.contacts,
+    documents: this.documents,
+    linkedRecords: this.linkedRecords
+  }
+});
+
+// Query Parameters
+this.router.navigate(['/dashboard/new-request'], {
+  queryParams: {
+    mode: 'edit-golden',
+    from: 'golden-summary'
+  }
+});
+```
+
+---
 - **Troubleshooting Guide**: Guide for resolving common issues
 - **Best Practices**: Best practices for document generation
 
