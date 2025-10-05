@@ -74,6 +74,11 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
 
   ngOnInit(): void {
     this.initializeChat();
+    // Open the chat automatically shortly after load
+    setTimeout(() => {
+      this.isOpen = true;
+      this.isMinimized = false;
+    }, 1000);
   }
 
   ngOnDestroy(): void {
