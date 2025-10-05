@@ -998,6 +998,42 @@ const testResponse = await this.http.post(environment.openaiApiUrl, {
 
 This section provides comprehensive documentation for AI agents to understand and interact with the customer creation system. This is critical for automated data entry, validation, and workflow automation.
 
+### ✅ Updated (Oct 2025) — Data Entry Agent Behavior & Implementation
+
+This subsection supersedes older notes below and captures the latest implemented behavior, UX, API usage, and performance safeguards for the Data Entry AI Agent.
+
+- Floating Chat Widget (Data Entry only): Appears in `src/app/dashboard/dashboard.component.html` and is shown only for Data Entry users. Personalized greeting uses user `fullName` and time-of-day.
+- Document Upload UX parity: Upload flow mirrors `new-request` page. A modal collects per-file metadata: `country`, `type`, `description`. Files can be selected from multiple folders then accumulated before processing.
+- Smart document detection: Guesses `country` and `document type` from filename (Arabic/English keywords) to pre-fill modal fields.
+- Progress indicator: Shows a progress message while processing documents (OCR/extraction) with live updates; removed on completion or error.
+- OpenAI Vision limits: Vision accepts images only. PDFs are blocked with a clear error including filename, MIME, size, HTTP status, and OpenAI error message; user is guided to convert PDFs to images (JPG/PNG/WebP).
+- Extraction confirmation step: After extraction, the agent displays extracted fields with the same labels as `new-request` and explicitly asks the user to confirm before asking for missing fields.
+- Sequential missing fields: Prompts one field at a time. The agent detects field type:
+  - Dropdowns are rendered interactively inside the chat (e.g., `CustomerType`, `country`, `city`, `salesOrganization`, `distributionChannel`, `division`).
+  - Contacts are handled via a contact-form modal matching `new-request` fields and supports adding multiple contacts before continuing.
+  - Free text fields request simple text input. Natural-language corrections are understood and applied.
+- Duplicate detection (pre-submit): Before final submission, the agent calls `POST /api/requests/check-duplicate` with `tax` and `CustomerType` and follows the same UX as the main app (warning and blocking submission when duplicate found).
+- Performance safeguards:
+  - UI messages limited (keep last 30 of max 50) to avoid memory leaks.
+  - Conversation history sent to LLM limited to the last 20 messages.
+  - Timeouts: 30s for chat completions; 60s for document processing.
+  - Memory cleanup after each operation (clear accumulated files, reset forms, remove progress messages).
+- OpenAI request tuning: Removed `response_format` (not supported with Vision), uses `detail: 'auto'` for images, `max_tokens: 4000`, resilient JSON parsing (handles markdown-wrapped JSON), and granular error mapping (400/401/429/500/503) with precise user-facing messages.
+- Demo mode removed: The agent runs against the real OpenAI API key. If GitHub Push Protection blocks pushes due to the key in `environment.ts`, allow the secret in the repo’s Secret Scanning or disable push protection.
+
+#### Updated API Usage
+- `GET /api/users/:username`: Used on service init to load profile and personalize greeting.
+- `POST /api/requests/check-duplicate`: Called after data confirmation and once required fields exist; blocks submission on duplicates.
+- `POST /api/requests`: Final submission (planned/next) after resolving missing fields and duplicate validation.
+- Optional future: `GET /api/lookup-data` for dynamic dropdowns (currently backed by `shared/lookup-data.ts`).
+
+#### Updated UX Flow (High-level)
+1) Upload and annotate documents (accumulate from multiple folders) → 2) Extract with progress → 3) Display labeled summary and ask for confirmation → 4) Ask missing fields one by one with appropriate UI (dropdown/contact form/free text) → 5) Duplicate check → 6) Submit.
+
+#### Error Reporting (examples shown to users)
+- Shows the exact failing file(s), MIME, size, status code, and OpenAI message (e.g., “Invalid MIME type. Only image types are supported”).
+- Distinguishes between: unsupported type, oversize, network issues, rate limiting, and parsing errors.
+
 ### 📋 Overview
 
 The customer creation process in the Master Data Management system is a multi-step workflow that includes:
