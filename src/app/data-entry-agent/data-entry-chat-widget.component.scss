@@ -167,7 +167,9 @@
   }
 
   .action-buttons {
-    display: flex;
+    display: flex !important;
+    visibility: visible !important;
+    opacity: 1 !important;
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 10px;

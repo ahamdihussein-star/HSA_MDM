@@ -137,7 +137,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private addQuickActions(): void {
-    this.addMessage({
+    console.log('🎯 Adding quick actions...');
+    const actionMessage = {
       id: `actions_${Date.now()}`,
       role: 'assistant',
       content: `اختر إجراء سريع / Choose quick action:
@@ -152,7 +153,11 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
           { text: '❓ مساعدة / Help', action: 'help' }
         ]
       }
-    });
+    };
+    console.log('📦 Action message:', actionMessage);
+    this.addMessage(actionMessage);
+    console.log('✅ Actions added to messages array');
+    console.log('📊 Total messages:', this.messages.length);
   }
 
   getCurrentUserName(): string {
