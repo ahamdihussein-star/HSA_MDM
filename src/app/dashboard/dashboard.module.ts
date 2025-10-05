@@ -13,6 +13,7 @@ import { HeaderModule } from '../header/header.module';
 import { GoldenRequestsModule } from '../golden-requests/golden-requests.module';
 import { HomeModule } from '../home/home.module';
 import { AiAssistantModule } from '../ai-assistant/ai-assistant.module';
+import { DataEntryAgentModule } from '../data-entry-agent/data-entry-agent.module';
 
 import { TranslateModule } from '@ngx-translate/core';
 import { NewRequestModule } from '../new-request/new-request.module';
@@ -60,6 +61,7 @@ import { GoldenSummaryComponent } from './golden-summary/golden-summary.componen
     NewRequestModule,
     HomeModule,
     AiAssistantModule,
+    DataEntryAgentModule,
     MyTaskListModule,
     AdminTaskListModule,
     DuplicateRecordsModule,

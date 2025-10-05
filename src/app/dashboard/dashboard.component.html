@@ -435,6 +435,6 @@
    </div>
  </div>
  
- <!-- AI Assistant Chatbot - Always visible -->
- <app-ai-assistant></app-ai-assistant>
+<!-- Data Entry AI Chat Widget - visible only for Data Entry user -->
+<app-data-entry-chat-widget *ngIf="user == '1'"></app-data-entry-chat-widget>
 </div>
