@@ -430,6 +430,26 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     });
   }
 
+  onDropdownSelection(field: string, selected: any): void {
+    const value = selected && selected.value !== undefined ? selected.value : selected;
+    this.agentService.updateExtractedDataField(field, value);
+    this.addMessage({
+      id: `dropdown_selected_${Date.now()}`,
+      role: 'assistant',
+      content: `✅ تم اختيار / Selected: ${selected.label || value}`,
+      timestamp: new Date(),
+      type: 'text'
+    });
+    // Move to next field
+    const extractedData = this.agentService.getExtractedData();
+    const missingFields = this.checkMissingFields(extractedData);
+    if (missingFields.length > 0) {
+      setTimeout(() => this.askForMissingField(missingFields[0]), 500);
+    } else {
+      this.confirmDataBeforeSubmission();
+    }
+  }
+
   private askForContactForm(): void {
     this.showContactForm = true;
     
