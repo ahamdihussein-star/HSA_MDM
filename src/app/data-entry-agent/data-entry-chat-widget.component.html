@@ -87,6 +87,16 @@
               إضافة جهة اتصال
             </button>
           </div>
+
+          <!-- Action Buttons (if any) -->
+          <div *ngIf="message.data?.buttons" class="action-buttons">
+            <button 
+              *ngFor="let btn of message.data.buttons" 
+              class="action-btn"
+              (click)="onButtonClick(btn.action, btn.data)"
+              [innerHTML]="btn.text">
+            </button>
+          </div>
         </div>
       </div>
 
@@ -228,6 +238,15 @@
     </button>
   </div>
 </nz-modal>
+
+<!-- Hidden file input for programmatic uploads (used by quick actions) -->
+<input 
+  type="file" 
+  id="file-upload"
+  style="display: none"
+  multiple
+  accept="image/*"
+  (change)="onFileSelected($event)">
 
 <!-- Contact Form Modal -->
 <nz-modal 

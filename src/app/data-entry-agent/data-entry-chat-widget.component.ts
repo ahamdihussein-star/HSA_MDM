@@ -1,13 +1,14 @@
-import { Component, OnInit } from '@angular/core';
+import { Component, OnInit, OnDestroy } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { DataEntryAgentService, ExtractedData } from '../services/data-entry-agent.service';
+import { Subject, Subscription } from 'rxjs';
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  type: 'text' | 'loading' | 'progress' | 'dropdown' | 'contact-form';
+  type: 'text' | 'loading' | 'progress' | 'dropdown' | 'contact-form' | 'confirmation';
   data?: any;
 }
 
@@ -16,12 +17,24 @@ export interface ChatMessage {
   templateUrl: './data-entry-chat-widget.component.html',
   styleUrls: ['./data-entry-chat-widget.component.scss']
 })
-export class DataEntryChatWidgetComponent implements OnInit {
+export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   isOpen = false;
   isMinimized = false;
   messages: ChatMessage[] = [];
   newMessage = '';
   loading = false;
+  
+  // Performance optimizations
+  private scrollTimeout: any = null;
+  private currentAIRequest: Subscription | null = null;
+  private destroyed$ = new Subject<void>();
+  private readonly MAX_MESSAGES = 30;
+  
+  // Field tracking
+  private fieldAttempts: { [key: string]: number } = {};
+  private maxFieldAttempts = 3;
+  private currentMissingField: string | null = null;
+  private awaitingConfirmation = false;
   
   // Document upload
   uploadedFiles: File[] = [];
@@ -32,6 +45,7 @@ export class DataEntryChatWidgetComponent implements OnInit {
   // Contact form
   contactForm!: FormGroup;
   showContactForm = false;
+  contactsAdded: any[] = [];
   
   // Accumulated files
   accumulatedFiles: File[] = [];
@@ -46,25 +60,50 @@ export class DataEntryChatWidgetComponent implements OnInit {
     private agentService: DataEntryAgentService,
     private fb: FormBuilder
   ) {
-    this.contactForm = this.fb.group({
-      name: ['', Validators.required],
-      jobTitle: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      mobile: ['', Validators.required],
-      landline: [''],
-      preferredLanguage: ['Arabic']
-    });
+    this.initializeForms();
   }
 
   ngOnInit(): void {
     this.initializeChat();
   }
 
+  ngOnDestroy(): void {
+    this.cleanup();
+  }
+
+  private initializeForms(): void {
+    // Contact form with proper validation
+    this.contactForm = this.fb.group({
+      name: ['', Validators.required],
+      jobTitle: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      mobile: ['', [Validators.required, Validators.pattern(/^\+?[0-9]{10,15}$/)]],
+      landline: ['', Validators.pattern(/^\+?[0-9]{7,15}$/)],
+      preferredLanguage: ['Arabic', Validators.required]
+    });
+  }
+
   private initializeChat(): void {
-    // Add welcome message after a short delay to ensure user profile is loaded
     setTimeout(() => {
       this.addWelcomeMessage();
     }, 500);
+  }
+
+  private cleanup(): void {
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
+    }
+    
+    if (this.currentAIRequest) {
+      this.currentAIRequest.unsubscribe();
+    }
+    
+    this.destroyed$.next();
+    this.destroyed$.complete();
+    
+    this.messages = [];
+    this.uploadedFiles = [];
+    this.accumulatedFiles = [];
   }
 
   private addWelcomeMessage(): void {
@@ -76,6 +115,30 @@ export class DataEntryChatWidgetComponent implements OnInit {
       type: 'text'
     };
     this.addMessage(welcomeMessage);
+    
+    // Add quick action buttons
+    setTimeout(() => {
+      this.addQuickActions();
+    }, 1000);
+  }
+
+  private addQuickActions(): void {
+    this.addMessage({
+      id: `actions_${Date.now()}`,
+      role: 'assistant',
+      content: `اختر إجراء سريع / Choose quick action:
+      
+🚀 **الإجراءات السريعة / Quick Actions:**`,
+      timestamp: new Date(),
+      type: 'text',
+      data: {
+        buttons: [
+          { text: '📄 رفع مستند / Upload Document', action: 'upload' },
+          { text: '✍️ إدخال يدوي / Manual Entry', action: 'manual' },
+          { text: '❓ مساعدة / Help', action: 'help' }
+        ]
+      }
+    });
   }
 
   getCurrentUserName(): string {
@@ -101,139 +164,57 @@ export class DataEntryChatWidgetComponent implements OnInit {
   }
 
   onFileSelected(event: any): void {
-    if (event.target && event.target.files && event.target.files.length > 0) {
-      const files = Array.from(event.target.files) as File[];
-      
-      // Check for duplicates
-      const newFiles = files.filter(file => 
-        !this.accumulatedFiles.some(existing => 
-          existing.name === file.name && existing.size === file.size
-        )
-      );
-      
-      if (newFiles.length > 0) {
-        this.accumulatedFiles.push(...newFiles);
-        this.showAccumulatedFiles = true;
-      }
-      
-      // Clear the input
-      event.target.value = '';
-    } else {
-      console.warn('No files selected or event.target.files is undefined');
-    }
+    const files: FileList = event.target.files;
+    if (!files || files.length === 0) return;
+
+    this.pendingFiles = Array.from(files);
+    this.showDocumentModal = true;
+    this.initializeDocumentForm();
   }
 
-  removeAccumulatedFile(index: number): void {
-    this.accumulatedFiles.splice(index, 1);
-    if (this.accumulatedFiles.length === 0) {
-      this.showAccumulatedFiles = false;
-    }
-  }
-
-  clearAccumulatedFiles(): void {
-    this.accumulatedFiles = [];
-    this.showAccumulatedFiles = false;
-  }
-
-  proceedWithAccumulatedFiles(): void {
-    this.pendingFiles = [...this.accumulatedFiles];
-    this.accumulatedFiles = [];
-    this.showAccumulatedFiles = false;
-
-    // Create form groups for each file
+  private initializeDocumentForm(): void {
     this.documentMetadataForm = this.fb.group({
       documents: this.fb.array([])
     });
 
-    // Add a form group for each file
-    this.pendingFiles.forEach((file, index) => {
-      this.addDocumentFormGroup(file);
+    const documentsArray = this.documentMetadataForm.get('documents') as FormArray;
+    
+    this.pendingFiles.forEach(file => {
+      const detectedInfo = this.detectDocumentInfo(file.name);
+      
+      documentsArray.push(this.fb.group({
+        country: [detectedInfo?.country || '', Validators.required],
+        type: [detectedInfo?.type || '', Validators.required],
+        description: [this.generateSmartDescription(file.name, detectedInfo)]
+      }));
     });
-
-    this.openDocumentModal();
   }
 
-  private addDocumentFormGroup(file: File): void {
-    const documentsFA = this.documentMetadataForm.get('documents') as FormArray;
-    
-    // Smart detection
-    const detectedInfo = this.guessDocumentType(file.name);
-    
-    const documentGroup = this.fb.group({
-      name: [file.name],
-      country: [detectedInfo?.country || ''],
-      type: [detectedInfo?.type || ''],
-      description: [this.generateSmartDescription(file.name, detectedInfo)]
-    });
-    
-    documentsFA.push(documentGroup);
-  }
-
-  private guessDocumentType(filename: string): { country: string; type: string } | null {
+  private detectDocumentInfo(filename: string): { country?: string; type?: string } | null {
     const lowerName = filename.toLowerCase();
     
-    // Country detection
     let country = '';
-    if (lowerName.includes('egypt') || lowerName.includes('cairo') || lowerName.includes('مصر')) {
-      country = 'Egypt';
-    } else if (lowerName.includes('uae') || lowerName.includes('dubai') || lowerName.includes('الإمارات')) {
-      country = 'United Arab Emirates';
-    } else if (lowerName.includes('saudi') || lowerName.includes('riyadh') || lowerName.includes('السعودية')) {
-      country = 'Saudi Arabia';
-    } else if (lowerName.includes('yemen') || lowerName.includes('اليمن')) {
-      country = 'Yemen';
-    }
-    
-    // Document type detection
     let type = '';
-    if (lowerName.includes('commercial') || lowerName.includes('registration') || lowerName.includes('تجاري')) {
-      type = 'Commercial Registration';
-    } else if (lowerName.includes('tax') || lowerName.includes('ضريبي')) {
-      type = 'Tax Card';
-    } else if (lowerName.includes('license') || lowerName.includes('رخصة')) {
-      type = 'Business License';
-    }
     
-    return country && type ? { country, type } : null;
+    // Detect country
+    if (lowerName.includes('egypt') || lowerName.includes('مصر')) country = 'Egypt';
+    else if (lowerName.includes('saudi') || lowerName.includes('سعود')) country = 'Saudi Arabia';
+    else if (lowerName.includes('uae') || lowerName.includes('إمارات')) country = 'United Arab Emirates';
+    else if (lowerName.includes('yemen') || lowerName.includes('يمن')) country = 'Yemen';
+    
+    // Detect document type
+    if (lowerName.includes('commercial') || lowerName.includes('تجاري')) type = 'Commercial Registration';
+    else if (lowerName.includes('tax') || lowerName.includes('ضريب')) type = 'Tax Card';
+    else if (lowerName.includes('license') || lowerName.includes('رخصة')) type = 'Business License';
+    
+    return (country || type) ? { country, type } : null;
   }
 
   private generateSmartDescription(filename: string, detectedInfo: any): string {
     let description = `Document: ${filename}`;
-    if (detectedInfo?.country) {
-      description += ` (${detectedInfo.country})`;
-    }
-    if (detectedInfo?.type) {
-      description += ` - ${detectedInfo.type}`;
-    }
+    if (detectedInfo?.country) description += ` (${detectedInfo.country})`;
+    if (detectedInfo?.type) description += ` - ${detectedInfo.type}`;
     return description;
-  }
-
-  openDocumentModal(): void {
-    this.showDocumentModal = true;
-  }
-
-  closeDocumentModal(): void {
-    this.showDocumentModal = false;
-    this.pendingFiles = [];
-    this.documentMetadataForm.reset();
-  }
-
-  get documentsFA(): FormArray {
-    return this.documentMetadataForm.get('documents') as FormArray;
-  }
-
-  get countriesList(): string[] {
-    return ['Egypt', 'United Arab Emirates', 'Saudi Arabia', 'Yemen'];
-  }
-
-  getDocumentTypesByCountry(country: string): string[] {
-    const documentTypes: { [key: string]: string[] } = {
-      'Egypt': ['Commercial Registration', 'Tax Card', 'Business License'],
-      'United Arab Emirates': ['Commercial Registration', 'Trade License', 'Tax Certificate'],
-      'Saudi Arabia': ['Commercial Registration', 'Tax Card', 'Business License'],
-      'Yemen': ['Commercial Registration', 'Tax Card', 'Business License']
-    };
-    return documentTypes[country] || [];
   }
 
   saveDocuments(): void {
@@ -241,7 +222,6 @@ export class DataEntryChatWidgetComponent implements OnInit {
       const filesToProcess = [...this.pendingFiles];
       this.closeDocumentModal();
       
-      // Get metadata from form
       const metadata = this.documentsFA.controls.map(control => ({
         country: control.get('country')?.value,
         type: control.get('type')?.value,
@@ -254,296 +234,276 @@ export class DataEntryChatWidgetComponent implements OnInit {
 
   private async processDocumentsWithMetadata(files: File[], metadata: Array<{ country?: string; type: string; description: string }>): Promise<void> {
     try {
-      // Add user message about uploaded files
+      // User message
       const fileNames = files.map(f => f.name).join(', ');
       this.addMessage({
         id: `upload_${Date.now()}`,
         role: 'user',
-        content: `📤 تم رفع ${files.length} مستند: ${fileNames}`,
+        content: `📤 رفع ${files.length} مستند / Uploaded ${files.length} document(s): ${fileNames}`,
         timestamp: new Date(),
         type: 'text'
       });
 
-      // Show document details
-      files.forEach((file, index) => {
-        const meta = metadata[index];
-        this.addMessage({
-          id: `doc_${Date.now()}_${index}`,
-          role: 'assistant',
-          content: `📄 ${file.name} (${meta.type}) - ${meta.description}`,
-          timestamp: new Date(),
-          type: 'text'
-        });
-      });
-
-      // Show loading message
+      // Progress message
       const progressMessage = this.addMessage({
         id: `progress_${Date.now()}`,
         role: 'assistant',
-        content: '🔄 جاري معالجة المستندات...',
+        content: '🔄 جاري معالجة المستندات / Processing documents...',
         timestamp: new Date(),
         type: 'loading'
       });
 
-      // Process documents with timeout
-      await Promise.race([
+      // Process with timeout
+      const extractedData = await Promise.race([
         this.agentService.uploadAndProcessDocuments(files, metadata),
-        new Promise((_, reject) => setTimeout(() => reject(new Error('Document processing timeout')), 60000))
+        new Promise<ExtractedData>((_, reject) => 
+          setTimeout(() => reject(new Error('Processing timeout')), 60000)
+        )
       ]);
 
-      // Remove loading message
+      // Remove progress
       this.messages = this.messages.filter(m => m.id !== progressMessage.id);
 
-      // Display extracted data
-      const extractedData = this.agentService.getExtractedData();
+      // Display results
       this.displayExtractedDataWithLabels(extractedData);
 
-      // Check for missing fields
+      // Check missing fields
       const missingFields = this.checkMissingFields(extractedData);
       if (missingFields.length > 0) {
-        this.askForMissingField(missingFields[0]);
+        setTimeout(() => {
+          this.askForMissingField(missingFields[0]);
+        }, 1500);
       } else {
-        this.addMessage({
-          id: `complete_${Date.now()}`,
-          role: 'assistant',
-          content: '✅ جميع البيانات مكتملة!\n\n🔍 سأتحقق الآن من عدم وجود تكرار في النظام...',
-          timestamp: new Date(),
-          type: 'text'
-        });
+        this.confirmDataBeforeSubmission();
       }
 
     } catch (error: any) {
-      console.error('Error processing documents:', error);
-      
-      // Remove loading message
-      this.messages = this.messages.filter(m => m.type !== 'loading');
+      this.messages = this.messages.filter(m => m.type === 'loading');
       
       this.addMessage({
         id: `error_${Date.now()}`,
         role: 'assistant',
-        content: `❌ حدث خطأ أثناء معالجة المستندات:\n\nالتفاصيل: ${error.message}`,
+        content: `❌ خطأ / Error: ${error.message}`,
         timestamp: new Date(),
         type: 'text'
       });
     }
   }
 
-  private checkMissingFields(data: any): string[] {
-    const requiredFields = [
-      'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
-      'buildingNumber', 'street', 'country', 'city',
-      'salesOrganization', 'distributionChannel', 'division', 'contacts'
-    ];
+  private displayExtractedDataWithLabels(data: ExtractedData): void {
+    let content = `✅ **تم استخراج البيانات / Data Extracted Successfully:**\n\n`;
     
-    return requiredFields.filter(field => {
-      if (field === 'contacts') {
-        return !data[field] || data[field].length === 0;
+    // Company info
+    if (data.firstName || data.firstNameAR || data.tax || data.CustomerType || data.ownerName) {
+      content += `**🏢 معلومات الشركة / Company Info:**\n`;
+      if (data.firstName) content += `• الاسم (EN): ${data.firstName}\n`;
+      if (data.firstNameAR) content += `• الاسم (AR): ${data.firstNameAR}\n`;
+      if (data.tax) content += `• الرقم الضريبي: ${data.tax}\n`;
+      if (data.CustomerType) content += `• النوع: ${data.CustomerType}\n`;
+      if (data.ownerName) content += `• المالك: ${data.ownerName}\n`;
+      content += '\n';
+    }
+    
+    // Address
+    if (data.buildingNumber || data.street || data.country || data.city) {
+      content += `**📍 العنوان / Address:**\n`;
+      if (data.buildingNumber) content += `• رقم المبنى: ${data.buildingNumber}\n`;
+      if (data.street) content += `• الشارع: ${data.street}\n`;
+      if (data.country) content += `• الدولة: ${data.country}\n`;
+      if (data.city) content += `• المدينة: ${data.city}\n`;
+      content += '\n';
+    }
+
+    content += `هل البيانات صحيحة؟ / Is the data correct?`;
+
+    this.addMessage({
+      id: `extracted_${Date.now()}`,
+      role: 'assistant',
+      content,
+      timestamp: new Date(),
+      type: 'confirmation',
+      data: {
+        buttons: [
+          { text: '✅ نعم، صحيح / Yes, correct', action: 'confirm_extraction' },
+          { text: '✏️ تعديل / Edit', action: 'edit_extraction' }
+        ]
       }
-      return !data[field] || data[field].trim() === '';
     });
   }
 
+  private checkMissingFields(data: ExtractedData): string[] {
+    const required = [
+      'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
+      'buildingNumber', 'street', 'country', 'city',
+      'salesOrganization', 'distributionChannel', 'division'
+    ];
+    
+    const missing = required.filter(field => {
+      const value = (data as any)[field];
+      return !value || (typeof value === 'string' && value.trim() === '');
+    });
+
+    // Check contacts
+    if (!data.contacts || data.contacts.length === 0) {
+      missing.push('contacts');
+    }
+
+    return missing;
+  }
+
   private askForMissingField(field: string): void {
-    const fieldLabel = this.getFieldLabel(field);
+    // Prevent infinite loops
+    if (!this.fieldAttempts[field]) {
+      this.fieldAttempts[field] = 0;
+    }
+    
+    this.fieldAttempts[field]++;
+    
+    if (this.fieldAttempts[field] > this.maxFieldAttempts) {
+      console.error(`Max attempts for field: ${field}`);
+      this.skipToNextField(field);
+      return;
+    }
+
+    this.currentMissingField = field;
+    const fieldLabel = this.agentService.getFieldLabel(field);
     
     if (this.isDropdownField(field)) {
       this.askForDropdownSelection(field, fieldLabel);
     } else if (field === 'contacts') {
       this.askForContactForm();
     } else {
-      this.addMessage({
-        id: `missing_${Date.now()}`,
-        role: 'assistant',
-        content: `⚠️ بعض الحقول المطلوبة ناقصة:\n\n• ${fieldLabel}\n\nالرجاء إدخال البيانات الناقصة.`,
-        timestamp: new Date(),
-        type: 'text'
-      });
+      this.askForTextInput(field, fieldLabel);
     }
   }
 
   private isDropdownField(field: string): boolean {
-    const dropdownFields = ['salesOrganization', 'distributionChannel', 'division', 'CustomerType'];
-    return dropdownFields.includes(field);
+    return ['CustomerType', 'country', 'city', 'salesOrganization', 
+            'distributionChannel', 'division'].includes(field);
   }
 
   private askForDropdownSelection(field: string, fieldLabel: string): void {
-    const options = this.getDropdownOptions(field);
+    const options = this.agentService.getDropdownOptions(field);
     
+    if (options.length === 0) {
+      this.askForTextInput(field, fieldLabel);
+      return;
+    }
+
+    let content = `📋 ${fieldLabel}\n\nاختر من القائمة / Select from list:\n\n`;
+    
+    options.forEach((opt, index) => {
+      content += `${index + 1}. ${opt.label}\n`;
+    });
+
+    content += `\nاكتب الرقم أو الاسم / Type number or name`;
+
     this.addMessage({
-      id: `dropdown_${Date.now()}`,
+      id: `dropdown_${field}_${Date.now()}`,
       role: 'assistant',
-      content: `📋 يرجى اختيار ${fieldLabel}:`,
+      content,
       timestamp: new Date(),
       type: 'dropdown',
       data: {
-        field: field,
-        label: fieldLabel,
-        options: options
+        field,
+        options,
+        fieldLabel
       }
     });
   }
 
-  private getDropdownOptions(field: string): string[] {
-    const options: { [key: string]: string[] } = {
-      'salesOrganization': ['egypt_cairo_office', 'uae_dubai_office', 'saudi_riyadh_office', 'yemen_main_office'],
-      'distributionChannel': ['direct_sales', 'retail_chains', 'wholesale', 'online'],
-      'division': ['food_products', 'beverages', 'household_items', 'personal_care'],
-      'CustomerType': ['Corporate', 'Individual']
+  private askForTextInput(field: string, fieldLabel: string): void {
+    const examples: any = {
+      'ownerName': 'مثال / Example: محمد أحمد علي',
+      'buildingNumber': 'مثال / Example: 123',
+      'street': 'مثال / Example: شارع الملك فهد'
     };
-    return options[field] || [];
+
+    const example = examples[field] || '';
+    
+    this.addMessage({
+      id: `text_${field}_${Date.now()}`,
+      role: 'assistant',
+      content: `✍️ ${fieldLabel}\n\n${example}\n\nادخل القيمة / Enter value:`,
+      timestamp: new Date(),
+      type: 'text'
+    });
   }
 
   private askForContactForm(): void {
+    this.showContactForm = true;
+    
     this.addMessage({
-      id: `contact_form_${Date.now()}`,
+      id: `contact_${Date.now()}`,
       role: 'assistant',
-      content: '👥 يرجى إضافة معلومات جهة الاتصال:\n\nيمكنك إضافة عدة جهات اتصال قبل المتابعة.',
+      content: `👥 **إضافة جهة اتصال / Add Contact:**\n
+يرجى ملء نموذج جهة الاتصال في النافذة المنبثقة.
+Please fill the contact form in the popup window.`,
       timestamp: new Date(),
       type: 'contact-form'
     });
   }
 
-  onDropdownSelection(field: string, value: string): void {
-    this.agentService.updateExtractedDataField(field, value);
-    
-    this.addMessage({
-      id: `selected_${Date.now()}`,
-      role: 'user',
-      content: `✅ تم اختيار: ${value}`,
-      timestamp: new Date(),
-      type: 'text'
-    });
-
-    // Check for next missing field
-    const extractedData = this.agentService.getExtractedData();
-    const missingFields = this.checkMissingFields(extractedData);
-    
-    if (missingFields.length > 0) {
-      this.askForMissingField(missingFields[0]);
-    } else {
-      this.addMessage({
-        id: `complete_${Date.now()}`,
-        role: 'assistant',
-        content: '✅ جميع البيانات مكتملة!\n\n🔍 سأتحقق الآن من عدم وجود تكرار في النظام...',
-        timestamp: new Date(),
-        type: 'text'
-      });
-    }
-  }
-
-  openContactForm(): void {
-    this.showContactForm = true;
-  }
-
-  closeContactForm(): void {
-    this.showContactForm = false;
-  }
-
   saveContactForm(): void {
     if (this.contactForm.valid) {
-      const contactData = this.contactForm.value;
-      const currentData = this.agentService.getExtractedData();
-      currentData.contacts = currentData.contacts || [];
-      currentData.contacts.push(contactData);
-      this.agentService.updateExtractedDataField('contacts', currentData.contacts);
+      const contact = this.contactForm.value;
+      this.contactsAdded.push(contact);
       
-      this.contactForm.reset();
+      // Update extracted data
+      const currentData = this.agentService.getExtractedData();
+      currentData.contacts.push(contact);
       
       this.addMessage({
         id: `contact_saved_${Date.now()}`,
         role: 'assistant',
-        content: `✅ تم إضافة جهة الاتصال: ${contactData.name}\n\nهل تريد إضافة جهة اتصال أخرى؟`,
+        content: `✅ تم إضافة جهة الاتصال / Contact added: ${contact.name}
+        
+هل تريد إضافة جهة اتصال أخرى؟ / Add another contact?`,
         timestamp: new Date(),
-        type: 'text'
+        type: 'confirmation',
+        data: {
+          buttons: [
+            { text: '➕ نعم / Yes', action: 'add_another_contact' },
+            { text: '➡️ متابعة / Continue', action: 'continue_after_contact' }
+          ]
+        }
       });
+      
+      this.contactForm.reset({ preferredLanguage: 'Arabic' });
+      this.showContactForm = false;
     }
   }
 
-  continueWithoutMoreContacts(): void {
-    this.closeContactForm();
-    
-    // Check for next missing field
+  private skipToNextField(currentField: string): void {
     const extractedData = this.agentService.getExtractedData();
     const missingFields = this.checkMissingFields(extractedData);
+    const nextIndex = missingFields.indexOf(currentField) + 1;
     
-    if (missingFields.length > 0) {
-      this.askForMissingField(missingFields[0]);
+    if (nextIndex < missingFields.length) {
+      this.askForMissingField(missingFields[nextIndex]);
     } else {
-      this.addMessage({
-        id: `complete_${Date.now()}`,
-        role: 'assistant',
-        content: '✅ جميع البيانات مكتملة!\n\n🔍 سأتحقق الآن من عدم وجود تكرار في النظام...',
-        timestamp: new Date(),
-        type: 'text'
-      });
+      this.confirmDataBeforeSubmission();
     }
   }
 
-  private getFieldLabel(field: string): string {
-    const labels: { [key: string]: string } = {
-      'firstName': 'اسم الشركة بالإنجليزية / Company Name (EN)',
-      'firstNameAR': 'اسم الشركة بالعربية / Company Name (AR)',
-      'tax': 'الرقم الضريبي / Tax Number',
-      'CustomerType': 'نوع العميل / Customer Type',
-      'ownerName': 'اسم مالك الشركة / Company Owner Name',
-      'buildingNumber': 'رقم المبنى / Building Number',
-      'street': 'الشارع / Street',
-      'country': 'الدولة / Country',
-      'city': 'المدينة / City',
-      'salesOrganization': 'المنظمة البيعية / Sales Organization',
-      'distributionChannel': 'قناة التوزيع / Distribution Channel',
-      'division': 'القسم / Division',
-      'contacts': 'جهات الاتصال / Contacts'
-    };
-    return labels[field] || field;
-  }
-
-  private displayExtractedDataWithLabels(data: ExtractedData): void {
-    let content = '📋 البيانات المستخرجة من المستندات:\n\n';
-    
-    // Company info
-    content += '🏢 معلومات الشركة:\n';
-    if (data.firstName) content += `✓ اسم الشركة بالإنجليزية / Company Name (EN): ${data.firstName}\n`;
-    if (data.firstNameAR) content += `✓ اسم الشركة بالعربية / Company Name (AR): ${data.firstNameAR}\n`;
-    if (data.tax) content += `✓ الرقم الضريبي / Tax Number: ${data.tax}\n`;
-    if (data.CustomerType) content += `✓ نوع العميل / Customer Type: ${data.CustomerType}\n`;
-    if (data.ownerName) content += `✓ اسم مالك الشركة / Company Owner Name: ${data.ownerName}\n`;
-    
-    // Address info
-    content += '\n📍 معلومات العنوان:\n';
-    if (data.buildingNumber) content += `✓ رقم المبنى / Building Number: ${data.buildingNumber}\n`;
-    if (data.street) content += `✓ الشارع / Street: ${data.street}\n`;
-    if (data.country) content += `✓ الدولة / Country: ${data.country}\n`;
-    if (data.city) content += `✓ المدينة / City: ${data.city}\n`;
-    
-    // Sales area
-    content += '\n💼 منطقة المبيعات:\n';
-    if (data.salesOrganization) content += `✓ المنظمة البيعية / Sales Organization: ${data.salesOrganization}\n`;
-    if (data.distributionChannel) content += `✓ قناة التوزيع / Distribution Channel: ${data.distributionChannel}\n`;
-    if (data.division) content += `✓ القسم / Division: ${data.division}\n`;
-    
-    // Contacts
-    if (data.contacts && data.contacts.length > 0) {
-      content += '\n👥 جهات الاتصال:\n\n';
-      data.contacts.forEach((contact, index) => {
-        content += `جهة اتصال ${index + 1}:\n`;
-        content += `• الاسم: ${contact.name}\n`;
-        content += `• المسمى الوظيفي: ${contact.jobTitle}\n`;
-        content += `• البريد الإلكتروني: ${contact.email}\n`;
-        content += `• الجوال: ${contact.mobile}\n`;
-        if (contact.landline) content += `• الهاتف الأرضي: ${contact.landline}\n`;
-        content += '\n';
-      });
-    }
-    
-    content += '---\n💡 إذا كانت أي معلومة غير صحيحة، يمكنك إخباري بالصحيح وسأقوم بتعديلها.\nمثال: "اسم الشركة الصحيح هو ABC Company" أو "الرقم الضريبي خطأ، الصحيح 123456"';
-    
+  private confirmDataBeforeSubmission(): void {
     this.addMessage({
-      id: `extracted_${Date.now()}`,
+      id: `confirm_${Date.now()}`,
       role: 'assistant',
-      content: content,
+      content: `✅ **جميع البيانات مكتملة! / All data complete!**
+      
+سيتم الآن التحقق من عدم وجود تكرار ثم إرسال الطلب.
+Will now check for duplicates then submit the request.
+
+هل تريد المتابعة؟ / Do you want to proceed?`,
       timestamp: new Date(),
-      type: 'text'
+      type: 'confirmation',
+      data: {
+        buttons: [
+          { text: '✅ نعم، أرسل / Yes, submit', action: 'submit_request' },
+          { text: '✏️ مراجعة البيانات / Review data', action: 'review_data' }
+        ]
+      }
     });
   }
 
@@ -564,89 +524,219 @@ export class DataEntryChatWidgetComponent implements OnInit {
     this.loading = true;
 
     try {
-      // Check if this is a response to a missing field
-      const lastMessage = this.messages[this.messages.length - 2];
-      const isMissingFieldResponse = lastMessage && 
-        lastMessage.role === 'assistant' && 
-        lastMessage.content.includes('Company Owner Name');
-
-      if (isMissingFieldResponse) {
-        // Direct field update
-        this.agentService.updateExtractedDataField('ownerName', userMessage);
-        
-        this.addMessage({
-          id: `confirmed_${Date.now()}`,
-          role: 'assistant',
-          content: `✅ تم تحديث اسم مالك الشركة إلى: ${userMessage}`,
-          timestamp: new Date(),
-          type: 'text'
-        });
-
-        // Check for next missing field
-        const extractedData = this.agentService.getExtractedData();
-        const missingFields = this.checkMissingFields(extractedData);
-        
-        if (missingFields.length > 0) {
-          this.askForMissingField(missingFields[0]);
-        } else {
-          this.addMessage({
-            id: `complete_${Date.now()}`,
-            role: 'assistant',
-            content: '✅ جميع البيانات مكتملة!\n\n🔍 سأتحقق الآن من عدم وجود تكرار في النظام...',
-            timestamp: new Date(),
-            type: 'text'
-          });
-        }
+      // Handle field responses
+      if (this.currentMissingField) {
+        await this.handleFieldResponse(userMessage);
+      } else if (this.awaitingConfirmation) {
+        await this.handleConfirmationResponse(userMessage);
       } else {
-        // Use AI for general responses
-        const loadingMessage = this.addMessage({
-          id: `loading_${Date.now()}`,
-          role: 'assistant',
-          content: '🔄 جاري المعالجة...',
-          timestamp: new Date(),
-          type: 'loading'
-        });
-
-        try {
-          const aiResponse = await Promise.race([
-            this.agentService.sendMessage(userMessage),
-            new Promise((_, reject) => setTimeout(() => reject(new Error('Request timeout')), 30000))
-          ]) as any;
-
-          // Remove loading message
-          this.messages = this.messages.filter(m => m.id !== loadingMessage.id);
-
-          this.addMessage({
-            id: `ai_${Date.now()}`,
-            role: 'assistant',
-            content: aiResponse,
-            timestamp: new Date(),
-            type: 'text'
-          });
-        } catch (error: any) {
-          // Remove loading message
-          this.messages = this.messages.filter(m => m.id !== loadingMessage.id);
-          
-          this.addMessage({
-            id: `error_${Date.now()}`,
-            role: 'assistant',
-            content: 'عذراً، حدث خطأ في معالجة رسالتك. الرجاء المحاولة مرة أخرى.\nSorry, there was an error processing your message. Please try again.',
-            timestamp: new Date(),
-            type: 'text'
-          });
-        }
+        await this.handleGeneralMessage(userMessage);
       }
     } catch (error: any) {
-      console.error('Error in sendMessage:', error);
       this.addMessage({
         id: `error_${Date.now()}`,
         role: 'assistant',
-        content: 'عذراً، حدث خطأ في معالجة رسالتك. الرجاء المحاولة مرة أخرى.\nSorry, there was an error processing your message. Please try again.',
+        content: '❌ حدث خطأ / An error occurred',
         timestamp: new Date(),
         type: 'text'
       });
     } finally {
       this.loading = false;
+    }
+  }
+
+  private async handleFieldResponse(userMessage: string): Promise<void> {
+    const field = this.currentMissingField!;
+    
+    // Handle dropdown selection
+    if (this.isDropdownField(field)) {
+      const options = this.agentService.getDropdownOptions(field);
+      
+      // Check if user typed a number
+      const numberSelection = parseInt(userMessage);
+      if (!isNaN(numberSelection) && numberSelection > 0 && numberSelection <= options.length) {
+        const selected = options[numberSelection - 1];
+        this.agentService.updateExtractedDataField(field, selected.value);
+        
+        this.addMessage({
+          id: `confirmed_${Date.now()}`,
+          role: 'assistant',
+          content: `✅ تم اختيار / Selected: ${selected.label}`,
+          timestamp: new Date(),
+          type: 'text'
+        });
+      } else {
+        // Try to match text
+        const matched = options.find(opt => 
+          opt.label.toLowerCase().includes(userMessage.toLowerCase())
+        );
+        
+        if (matched) {
+          this.agentService.updateExtractedDataField(field, matched.value);
+          
+          this.addMessage({
+            id: `confirmed_${Date.now()}`,
+            role: 'assistant',
+            content: `✅ تم اختيار / Selected: ${matched.label}`,
+            timestamp: new Date(),
+            type: 'text'
+          });
+        } else {
+          // Ask again
+          this.askForMissingField(field);
+          return;
+        }
+      }
+    } else {
+      // Text field
+      this.agentService.updateExtractedDataField(field, userMessage);
+      
+      this.addMessage({
+        id: `confirmed_${Date.now()}`,
+        role: 'assistant',
+        content: `✅ تم حفظ / Saved: ${userMessage}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
+
+    // Reset attempts
+    this.fieldAttempts[field] = 0;
+    this.currentMissingField = null;
+
+    // Check for next missing field
+    const extractedData = this.agentService.getExtractedData();
+    const missingFields = this.checkMissingFields(extractedData);
+    
+    if (missingFields.length > 0) {
+      setTimeout(() => {
+        this.askForMissingField(missingFields[0]);
+      }, 1000);
+    } else {
+      this.confirmDataBeforeSubmission();
+    }
+  }
+
+  private async handleConfirmationResponse(userMessage: string): Promise<void> {
+    const lower = userMessage.toLowerCase();
+    
+    if (lower.includes('نعم') || lower.includes('yes') || lower === 'y') {
+      await this.finalizeAndSubmit();
+    } else if (lower.includes('لا') || lower.includes('no') || lower === 'n') {
+      this.addMessage({
+        id: `cancelled_${Date.now()}`,
+        role: 'assistant',
+        content: 'تم الإلغاء. يمكنك المراجعة وإعادة المحاولة. / Cancelled. You can review and try again.',
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
+    
+    this.awaitingConfirmation = false;
+  }
+
+  private async handleGeneralMessage(userMessage: string): Promise<void> {
+    const loadingMessage = this.addMessage({
+      id: `loading_${Date.now()}`,
+      role: 'assistant',
+      content: '🔄 جاري المعالجة / Processing...',
+      timestamp: new Date(),
+      type: 'loading'
+    });
+
+    try {
+      const response = await Promise.race([
+        this.agentService.sendMessage(userMessage),
+        new Promise<string>((_, reject) => 
+          setTimeout(() => reject(new Error('Timeout')), 30000)
+        )
+      ]);
+
+      this.messages = this.messages.filter(m => m.id !== loadingMessage.id);
+      
+      this.addMessage({
+        id: `ai_${Date.now()}`,
+        role: 'assistant',
+        content: response,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    } catch (error) {
+      this.messages = this.messages.filter(m => m.id !== loadingMessage.id);
+      throw error;
+    }
+  }
+
+  private async finalizeAndSubmit(): Promise<void> {
+    try {
+      // Check duplicates
+      const duplicateCheck = await this.agentService.checkForDuplicates();
+      
+      if (duplicateCheck.isDuplicate && duplicateCheck.existingRecord) {
+        this.addMessage({
+          id: `duplicate_${Date.now()}`,
+          role: 'assistant',
+          content: `⚠️ **تم العثور على سجل مكرر! / Duplicate found!**
+          
+السجل الموجود / Existing record:
+• الاسم / Name: ${duplicateCheck.existingRecord.firstName}
+• الرقم الضريبي / Tax: ${duplicateCheck.existingRecord.tax}
+• الحالة / Status: ${duplicateCheck.existingRecord.status}
+
+لا يمكن إنشاء سجل مكرر. / Cannot create duplicate record.`,
+          timestamp: new Date(),
+          type: 'text'
+        });
+        return;
+      }
+
+      // Submit
+      const loadingMsg = this.addMessage({
+        id: `submitting_${Date.now()}`,
+        role: 'assistant',
+        content: '📤 جاري الإرسال / Submitting...',
+        timestamp: new Date(),
+        type: 'loading'
+      });
+
+      const response = await this.agentService.submitCustomerRequest();
+      
+      this.messages = this.messages.filter(m => m.id !== loadingMsg.id);
+      
+      if (response && response.id) {
+        this.addMessage({
+          id: `success_${Date.now()}`,
+          role: 'assistant',
+          content: `🎉 **تم الإرسال بنجاح! / Submitted successfully!**
+          
+رقم الطلب / Request ID: ${response.id}
+الحالة / Status: Pending Review
+
+يمكنك متابعة الطلب من قائمة المهام.
+You can track the request in your task list.`,
+          timestamp: new Date(),
+          type: 'text'
+        });
+        
+        // Reset
+        this.agentService.reset();
+        this.uploadedFiles = [];
+        this.contactsAdded = [];
+        this.fieldAttempts = {} as any;
+        
+        // Show new options
+        setTimeout(() => {
+          this.addQuickActions();
+        }, 2000);
+      }
+    } catch (error: any) {
+      this.addMessage({
+        id: `error_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ فشل الإرسال / Submission failed: ${error.message}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
     }
   }
 
@@ -657,35 +747,232 @@ export class DataEntryChatWidgetComponent implements OnInit {
     }
   }
 
+  onButtonClick(action: string, data?: any): void {
+    switch(action) {
+      case 'upload':
+        document.getElementById('file-upload')?.click();
+        break;
+      case 'manual':
+        this.startManualEntry();
+        break;
+      case 'help':
+        this.showHelp();
+        break;
+      case 'confirm_extraction':
+        this.proceedAfterExtraction();
+        break;
+      case 'edit_extraction':
+        this.editExtractedData();
+        break;
+      case 'add_another_contact':
+        this.askForContactForm();
+        break;
+      case 'continue_after_contact':
+        this.continueAfterContacts();
+        break;
+      case 'submit_request':
+        this.finalizeAndSubmit();
+        break;
+      case 'review_data':
+        this.reviewAllData();
+        break;
+    }
+  }
+
+  private startManualEntry(): void {
+    // Reset data
+    this.agentService.reset();
+    
+    this.addMessage({
+      id: `manual_${Date.now()}`,
+      role: 'assistant',
+      content: `📝 **الإدخال اليدوي / Manual Entry**
+      
+سأساعدك في إدخال البيانات خطوة بخطوة.
+I'll help you enter data step by step.
+
+هيا نبدأ! / Let's start!`,
+      timestamp: new Date(),
+      type: 'text'
+    });
+
+    // Start with first field
+    const extractedData = this.agentService.getExtractedData();
+    const missingFields = this.checkMissingFields(extractedData);
+    
+    if (missingFields.length > 0) {
+      setTimeout(() => {
+        this.askForMissingField(missingFields[0]);
+      }, 1000);
+    }
+  }
+
+  private showHelp(): void {
+    this.addMessage({
+      id: `help_${Date.now()}`,
+      role: 'assistant',
+      content: `📖 **المساعدة / Help**
+
+**الأوامر المتاحة / Available Commands:**
+• "رفع" أو "upload" - لرفع المستندات
+• "يدوي" أو "manual" - للإدخال اليدوي
+• "مسح" أو "clear" - لمسح البيانات
+• "مساعدة" أو "help" - لعرض المساعدة
+
+**النصائح / Tips:**
+• يمكنك رفع عدة مستندات مرة واحدة
+• استخدم الأرقام للاختيار من القوائم
+• اكتب "تخطي" أو "skip" لتخطي حقل اختياري`,
+      timestamp: new Date(),
+      type: 'text'
+    });
+  }
+
+  private proceedAfterExtraction(): void {
+    const extractedData = this.agentService.getExtractedData();
+    const missingFields = this.checkMissingFields(extractedData);
+    
+    if (missingFields.length > 0) {
+      this.askForMissingField(missingFields[0]);
+    } else {
+      this.confirmDataBeforeSubmission();
+    }
+  }
+
+  private editExtractedData(): void {
+    this.addMessage({
+      id: `edit_${Date.now()}`,
+      role: 'assistant',
+      content: `✏️ **تعديل البيانات / Edit Data**
+      
+اكتب اسم الحقل الذي تريد تعديله متبوعاً بالقيمة الجديدة.
+Type the field name you want to edit followed by the new value.
+
+مثال / Example: "tax: 123456789"`,
+      timestamp: new Date(),
+      type: 'text'
+    });
+  }
+
+  private continueAfterContacts(): void {
+    const extractedData = this.agentService.getExtractedData();
+    const missingFields = this.checkMissingFields(extractedData)
+      .filter(f => f !== 'contacts');
+    
+    if (missingFields.length > 0) {
+      this.askForMissingField(missingFields[0]);
+    } else {
+      this.confirmDataBeforeSubmission();
+    }
+  }
+
+  private reviewAllData(): void {
+    const data = this.agentService.getExtractedData();
+    
+    let content = `📊 **مراجعة البيانات الكاملة / Full Data Review:**\n\n`;
+    
+    // Company Info
+    content += `**🏢 الشركة / Company:**\n`;
+    content += `• الاسم (EN): ${data.firstName}\n`;
+    content += `• الاسم (AR): ${data.firstNameAR}\n`;
+    content += `• الرقم الضريبي: ${data.tax}\n`;
+    content += `• النوع: ${data.CustomerType}\n`;
+    content += `• المالك: ${data.ownerName}\n\n`;
+    
+    // Address
+    content += `**📍 العنوان / Address:**\n`;
+    content += `• المبنى: ${data.buildingNumber}\n`;
+    content += `• الشارع: ${data.street}\n`;
+    content += `• الدولة: ${data.country}\n`;
+    content += `• المدينة: ${data.city}\n\n`;
+    
+    // Sales
+    content += `**💼 المبيعات / Sales:**\n`;
+    content += `• المنظمة: ${data.salesOrganization}\n`;
+    content += `• القناة: ${data.distributionChannel}\n`;
+    content += `• القسم: ${data.division}\n\n`;
+    
+    // Contacts
+    if (data.contacts.length > 0) {
+      content += `**👥 جهات الاتصال / Contacts:**\n`;
+      data.contacts.forEach((c, i) => {
+        content += `${i + 1}. ${c.name} - ${c.jobTitle} - ${c.mobile}\n`;
+      });
+    }
+
+    this.addMessage({
+      id: `review_${Date.now()}`,
+      role: 'assistant',
+      content,
+      timestamp: new Date(),
+      type: 'text'
+    });
+
+    this.confirmDataBeforeSubmission();
+  }
+
+  formatMessage(content: string): string {
+    // Convert markdown to HTML
+    return content
+      .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
+      .replace(/\n/g, '<br>');
+  }
+
   removeDocument(index: number): void {
     this.uploadedFiles.splice(index, 1);
     this.agentService.removeDocument(`doc_${index}`);
   }
 
-  getUploadedDocuments(): Array<{id: string, name: string, type: string, size: number, content: string}> {
+  getUploadedDocuments(): any[] {
     return this.agentService.getDocuments();
   }
 
-  formatMessage(content: string): string {
-    return content.replace(/\n/g, '<br>');
+  closeDocumentModal(): void {
+    this.showDocumentModal = false;
+    this.pendingFiles = [];
+    this.documentMetadataForm.reset();
+  }
+
+  closeContactForm(): void {
+    this.showContactForm = false;
+    this.contactForm.reset({ preferredLanguage: 'Arabic' });
+  }
+
+  get documentsFA(): FormArray {
+    return (this.documentMetadataForm?.get('documents') as FormArray) || this.fb.array([]);
+  }
+
+  get allDocumentTypes(): string[] {
+    return ['Commercial Registration', 'Tax Card', 'Business License', 
+            'Trade License', 'Tax Certificate'];
   }
 
   private addMessage(message: ChatMessage): ChatMessage {
     this.messages.push(message);
     
-    // Limit message history to prevent memory leaks
-    if (this.messages.length > 50) {
-      this.messages = this.messages.slice(-30); // Keep last 30 messages
+    // Limit messages
+    if (this.messages.length > this.MAX_MESSAGES) {
+      this.messages = this.messages.slice(-20);
     }
     
-    setTimeout(() => this.scrollToBottom(), 100);
+    this.scrollToBottom();
     return message;
   }
 
   private scrollToBottom(): void {
-    const chatBody = document.querySelector('.chat-body');
-    if (chatBody) {
-      chatBody.scrollTop = chatBody.scrollHeight;
+    if (this.scrollTimeout) {
+      clearTimeout(this.scrollTimeout);
     }
+    
+    this.scrollTimeout = setTimeout(() => {
+      const chatBody = document.querySelector('.chat-body');
+      if (chatBody) {
+        requestAnimationFrame(() => {
+          (chatBody as HTMLElement).scrollTop = (chatBody as HTMLElement).scrollHeight;
+        });
+      }
+    }, 50);
   }
 }
+
+
