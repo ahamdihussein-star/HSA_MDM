@@ -112,6 +112,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private initializeForms(): void {
+    console.log('🔧 [FORMS] Initializing forms...');
+    
     // Initialize document metadata form to avoid undefined in template
     this.documentMetadataForm = this.fb.group({
       documents: this.fb.array([])
@@ -127,9 +129,9 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       preferredLanguage: ['Arabic', Validators.required]
     });
 
-    // Edit form for extracted data
+    // ✅ Edit form - تأكد من initialization صح
     this.editForm = this.fb.group({
-      firstName: [''],
+      firstName: [''],        // ✅ بدون Validators علشان كل الحقول optional في التعديل
       firstNameAR: [''],
       tax: [''],
       CustomerType: [''],
@@ -141,6 +143,12 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       salesOrganization: [''],
       distributionChannel: [''],
       division: ['']
+    });
+    
+    console.log('✅ [FORMS] Forms initialized:', {
+      documentMetadataForm: !!this.documentMetadataForm,
+      contactForm: !!this.contactForm,
+      editForm: !!this.editForm
     });
   }
 
@@ -932,16 +940,17 @@ You can track the request in your task list.`,
   }
 
   onButtonClick(action: string, data?: any): void {
-    console.log('🧪 [Chat] onButtonClick:', action, data ?? '');
+    console.log('🎯 [BUTTON] Button clicked:', action, data ?? '');
+    
     switch(action) {
       case 'upload':
         const input = document.getElementById('file-upload') as HTMLInputElement | null;
-        console.log('🧪 [Chat] file-upload element found =', !!input);
+        console.log('🎯 [BUTTON] file-upload element found =', !!input);
         if (input) {
           input.click();
-          console.log('🧪 [Chat] file-upload click triggered');
+          console.log('🎯 [BUTTON] file-upload click triggered');
         } else {
-          console.warn('⚠️ [Chat] file-upload element missing in DOM');
+          console.warn('⚠️ [BUTTON] file-upload element missing in DOM');
         }
         break;
       case 'manual':
@@ -954,7 +963,9 @@ You can track the request in your task list.`,
         this.proceedAfterExtraction();
         break;
       case 'edit_extraction':
+        console.log('🎯 [BUTTON] Calling editExtractedData()...');
         this.editExtractedData();
+        console.log('🎯 [BUTTON] editExtractedData() completed');
         break;
       case 'add_another_contact':
         this.askForContactForm();
@@ -968,6 +979,8 @@ You can track the request in your task list.`,
       case 'review_data':
         this.reviewAllData();
         break;
+      default:
+        console.warn('⚠️ [BUTTON] Unknown action:', action);
     }
   }
 
@@ -1032,53 +1045,75 @@ I'll help you enter data step by step.
   }
 
   private editExtractedData(): void {
-    console.log('🧪 [Chat] editExtractedData called');
+    console.log('🔧 [EDIT] editExtractedData called');
     
-    // Pre-fill the form with extracted data first
-    const extractedData = this.agentService.getExtractedData();
-    console.log('🧪 [Chat] Extracted data for form:', extractedData);
-    
-    const formData = {
-      firstName: extractedData.firstName || '',
-      firstNameAR: extractedData.firstNameAR || '',
-      tax: extractedData.tax || '',
-      CustomerType: extractedData.CustomerType || '',
-      ownerName: extractedData.ownerName || '',
-      buildingNumber: extractedData.buildingNumber || '',
-      street: extractedData.street || '',
-      country: extractedData.country || '',
-      city: extractedData.city || '',
-      salesOrganization: extractedData.salesOrganization || '',
-      distributionChannel: extractedData.distributionChannel || '',
-      division: extractedData.division || ''
-    };
-    
-    console.log('🧪 [Chat] Form data to patch:', formData);
-    
-    this.editForm.patchValue(formData);
-    
-    // Force change detection
-    this.cdr.detectChanges();
-    
-    console.log('🧪 [Chat] Form patched. Current form value:', this.editForm.value);
-    
-    // Show edit form modal after form is ready
-    setTimeout(() => {
-      this.showEditForm = true;
-      this.cdr.detectChanges();
-      console.log('🧪 [Chat] Edit form modal opened');
-    }, 200);
-    
-    this.addMessage({
-      id: `edit_${Date.now()}`,
-      role: 'assistant',
-      content: `✏️ **تعديل البيانات / Edit Data**
+    try {
+      // ✅ Check if form exists
+      if (!this.editForm) {
+        console.error('❌ [EDIT] editForm is undefined! Reinitializing...');
+        this.initializeForms();
+      }
       
+      // Get extracted data
+      const extractedData = this.agentService.getExtractedData();
+      console.log('🔧 [EDIT] Extracted data:', extractedData);
+      
+      // ✅ Prepare form data with null checks
+      const formData = {
+        firstName: extractedData?.firstName || '',
+        firstNameAR: extractedData?.firstNameAR || '',
+        tax: extractedData?.tax || '',
+        CustomerType: extractedData?.CustomerType || '',
+        ownerName: extractedData?.ownerName || '',
+        buildingNumber: extractedData?.buildingNumber || '',
+        street: extractedData?.street || '',
+        country: extractedData?.country || '',
+        city: extractedData?.city || '',
+        salesOrganization: extractedData?.salesOrganization || '',
+        distributionChannel: extractedData?.distributionChannel || '',
+        division: extractedData?.division || ''
+      };
+      
+      console.log('🔧 [EDIT] Form data to patch:', formData);
+      
+      // ✅ Patch form values
+      this.editForm.patchValue(formData);
+      console.log('🔧 [EDIT] Form patched successfully');
+      console.log('🔧 [EDIT] Current form value:', this.editForm.value);
+      
+      // ✅ Force change detection before showing modal
+      this.cdr.detectChanges();
+      
+      // ✅ Show modal immediately (no setTimeout needed)
+      this.showEditForm = true;
+      
+      // ✅ Force another change detection
+      this.cdr.detectChanges();
+      
+      console.log('✅ [EDIT] Modal opened. showEditForm =', this.showEditForm);
+      
+      // ✅ Add confirmation message
+      this.addMessage({
+        id: `edit_${Date.now()}`,
+        role: 'assistant',
+        content: `✏️ **تعديل البيانات / Edit Data**
+        
 يرجى مراجعة وتعديل البيانات في النموذج المنبثق.
 Please review and edit the data in the popup form.`,
-      timestamp: new Date(),
-      type: 'text'
-    });
+        timestamp: new Date(),
+        type: 'text'
+      });
+      
+    } catch (error: any) {
+      console.error('❌ [EDIT] Error in editExtractedData:', error);
+      this.addMessage({
+        id: `edit_error_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ حدث خطأ في فتح نموذج التعديل / Error opening edit form: ${error.message}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
   }
 
   private continueAfterContacts(): void {
@@ -1172,37 +1207,50 @@ Please review and edit the data in the popup form.`,
   }
 
   saveEditForm(): void {
-    if (this.editForm.valid) {
-      const formData = this.editForm.value;
+    console.log('💾 [EDIT] saveEditForm called');
+    console.log('💾 [EDIT] Form valid?', this.editForm.valid);
+    console.log('💾 [EDIT] Form value:', this.editForm.value);
+    
+    // ✅ لا تشترط validation - اسمح بالحفظ حتى لو في حقول فاضية
+    const formData = this.editForm.value;
+    
+    // ✅ Update extracted data with form values (only non-empty values)
+    Object.keys(formData).forEach(key => {
+      const value = formData[key];
+      if (value !== null && value !== undefined && value !== '') {
+        console.log(`💾 [EDIT] Updating field: ${key} = ${value}`);
+        this.agentService.updateExtractedDataField(key, value);
+      }
+    });
+    
+    console.log('💾 [EDIT] Updated extracted data:', this.agentService.getExtractedData());
+    
+    // ✅ Show success message
+    this.addMessage({
+      id: `edit_saved_${Date.now()}`,
+      role: 'assistant',
+      content: '✅ **تم حفظ التعديلات / Changes saved successfully**\n\nسأتحقق الآن من البيانات الناقصة / Will now check for missing data.',
+      timestamp: new Date(),
+      type: 'text'
+    });
+    
+    // ✅ Close modal
+    this.showEditForm = false;
+    this.cdr.detectChanges();
+    
+    // ✅ Continue with workflow
+    setTimeout(() => {
+      const extractedData = this.agentService.getExtractedData();
+      const missingFields = this.checkMissingFields(extractedData);
       
-      // Update extracted data with form values
-      Object.keys(formData).forEach(key => {
-        if (formData[key] !== '') {
-          this.agentService.updateExtractedDataField(key, formData[key]);
-        }
-      });
-      
-      this.addMessage({
-        id: `edit_saved_${Date.now()}`,
-        role: 'assistant',
-        content: '✅ تم حفظ التعديلات / Changes saved successfully.',
-        timestamp: new Date(),
-        type: 'text'
-      });
-      
-      this.showEditForm = false;
-      
-      // Continue with missing fields check
-      setTimeout(() => {
-        const extractedData = this.agentService.getExtractedData();
-        const missingFields = this.checkMissingFields(extractedData);
-        if (missingFields.length > 0) {
-          this.askForMissingField(missingFields[0]);
-        } else {
-          this.confirmDataBeforeSubmission();
-        }
-      }, 1000);
-    }
+      if (missingFields.length > 0) {
+        console.log('💾 [EDIT] Missing fields found:', missingFields);
+        this.askForMissingField(missingFields[0]);
+      } else {
+        console.log('💾 [EDIT] All fields complete');
+        this.confirmDataBeforeSubmission();
+      }
+    }, 1000);
   }
 
   closeEditForm(): void {

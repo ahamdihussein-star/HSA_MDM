@@ -366,10 +366,14 @@
   nzTitle="تعديل البيانات المستخرجة / Edit Extracted Data"
   (nzOnCancel)="closeEditForm()"
   [nzFooter]="null"
-  nzWidth="700px">
+  nzWidth="700px"
+  [nzMaskClosable]="false"
+  [nzClosable]="true">
   
-  <form *ngIf="editForm && showEditForm" [formGroup]="editForm">
-    <div *ngIf="showEditForm" class="edit-form-content">
+  <!-- ✅ تأكد من وجود *ngIf صح -->
+  <div *nzModalContent>
+    <form *ngIf="editForm" [formGroup]="editForm">
+      <div class="edit-form-content">
       <!-- Company Information -->
       <div class="form-section">
         <h4>معلومات الشركة / Company Information</h4>
@@ -472,17 +476,19 @@
             </nz-select>
           </div>
         </div>
+        </div>
       </div>
+    </form>
+    
+    <!-- ✅ Footer buttons -->
+    <div class="modal-footer">
+      <button nz-button nzType="default" (click)="closeEditForm()">
+        إلغاء / Cancel
+      </button>
+      <button nz-button nzType="primary" (click)="saveEditForm()">
+        حفظ التعديلات / Save Changes
+      </button>
     </div>
-  </form>
-  
-  <div class="modal-footer">
-    <button nz-button nzType="default" (click)="closeEditForm()">
-      إلغاء / Cancel
-    </button>
-    <button nz-button nzType="primary" (click)="saveEditForm()">
-      حفظ التعديلات / Save Changes
-    </button>
   </div>
 </nz-modal>
 
