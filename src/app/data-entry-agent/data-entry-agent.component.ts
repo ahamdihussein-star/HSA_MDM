@@ -362,13 +362,14 @@ export class DataEntryAgentComponent implements OnInit {
     });
   }
 
-  onDropdownSelection(field: string, value: string): void {
-    this.agentService.updateExtractedDataField(field, value);
+  onDropdownSelection(field: string, value: any): void {
+    const selectedValue = typeof value === 'object' ? value.value : value;
+    this.agentService.updateExtractedDataField(field, selectedValue);
     
     this.addMessage({
       id: `selected_${Date.now()}`,
       role: 'user',
-      content: `✅ تم اختيار: ${value}`,
+      content: `✅ تم اختيار: ${selectedValue}`,
       timestamp: new Date(),
       type: 'text'
     });

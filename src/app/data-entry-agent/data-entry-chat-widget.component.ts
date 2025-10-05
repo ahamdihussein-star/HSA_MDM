@@ -56,6 +56,15 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   currentProcessingFile = '';
   showProgress = false;
 
+  // Countries and document types for metadata modal
+  countriesList: string[] = ['Egypt', 'Saudi Arabia', 'United Arab Emirates', 'Yemen'];
+  private documentTypes: { [key: string]: string[] } = {
+    'Egypt': ['Commercial Registration', 'Tax Card', 'Power of Attorney', 'Other'],
+    'Saudi Arabia': ['Commercial Registration', 'VAT Certificate', 'License', 'Other'],
+    'United Arab Emirates': ['Trade License', 'Tax Registration', 'Authority Letter', 'Other'],
+    'Yemen': ['Business License', 'Tax Document', 'Authorization', 'Other']
+  };
+
   constructor(
     private agentService: DataEntryAgentService,
     private fb: FormBuilder
@@ -462,6 +471,12 @@ Please fill the contact form in the popup window.`,
       timestamp: new Date(),
       type: 'contact-form'
     });
+  }
+
+  // Exposed method for template button
+  openContactForm(): void {
+    this.showContactForm = true;
+    this.contactForm.reset({ preferredLanguage: 'Arabic' });
   }
 
   saveContactForm(): void {
@@ -965,6 +980,44 @@ Type the field name you want to edit followed by the new value.
   get allDocumentTypes(): string[] {
     return ['Commercial Registration', 'Tax Card', 'Business License', 
             'Trade License', 'Tax Certificate'];
+  }
+
+  // Accumulated files helpers for UI panel
+  clearAccumulatedFiles(): void {
+    this.accumulatedFiles = [];
+    this.showAccumulatedFiles = false;
+    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.value = '';
+    }
+  }
+
+  removeAccumulatedFile(index: number): void {
+    this.accumulatedFiles.splice(index, 1);
+    if (this.accumulatedFiles.length === 0) {
+      this.showAccumulatedFiles = false;
+    }
+  }
+
+  async proceedWithAccumulatedFiles(): Promise<void> {
+    if (this.accumulatedFiles.length === 0) return;
+    this.pendingFiles = [...this.accumulatedFiles];
+    this.accumulatedFiles = [];
+    this.showAccumulatedFiles = false;
+    this.showDocumentModal = true;
+    this.initializeDocumentForm();
+  }
+
+  onCountryChange(selectedCountry: string, formIndex: number): void {
+    const documentsArray = this.documentMetadataForm.get('documents') as FormArray;
+    const docGroup = documentsArray?.at(formIndex);
+    if (docGroup) {
+      docGroup.patchValue({ type: '' });
+    }
+  }
+
+  getDocumentTypesByCountry(country: string): string[] {
+    return this.documentTypes[country] || ['Other'];
   }
 
   private addMessage(message: ChatMessage): ChatMessage {
