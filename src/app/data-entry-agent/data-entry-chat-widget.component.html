@@ -132,15 +132,15 @@
       <div class="input-container">
         <input 
           type="file" 
-          #fileInput 
+          id="file-upload"
           multiple 
-          accept="image/*,.pdf" 
+          accept="image/*" 
           (change)="onFileSelected($event)"
           style="display: none;">
         
         <button 
           class="attach-btn" 
-          (click)="fileInput.click()"
+          (click)="onButtonClick('upload')"
           nz-tooltip
           nzTooltipTitle="رفع مستندات / Upload Documents"
           nzTooltipPlacement="top">
