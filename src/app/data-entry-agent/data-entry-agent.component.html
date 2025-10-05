@@ -1,0 +1,246 @@
+<div class="data-entry-agent-container">
+  <div class="header">
+    <h1>🤖 Data Entry AI Assistant</h1>
+    <p class="user-greeting">مرحباً {{ getCurrentUserName() }} / Welcome {{ getCurrentUserName() }}</p>
+  </div>
+
+  <div class="chat-container">
+    <!-- Messages -->
+    <div class="messages">
+      <div 
+        *ngFor="let message of messages" 
+        class="message"
+        [ngClass]="{'user-message': message.role === 'user', 'assistant-message': message.role === 'assistant'}">
+        
+        <!-- Text Messages -->
+        <div *ngIf="message.type === 'text'" [innerHTML]="formatMessage(message.content)"></div>
+        
+        <!-- Loading Messages -->
+        <div *ngIf="message.type === 'loading'" class="loading-message">
+          <i nz-icon nzType="loading" nzTheme="outline"></i>
+          {{ message.content }}
+        </div>
+        
+        <!-- Progress Messages -->
+        <div *ngIf="message.type === 'progress'" class="progress-message">
+          <nz-progress [nzPercent]="50" [nzShowInfo]="false"></nz-progress>
+          <p>{{ message.content }}</p>
+        </div>
+        
+        <!-- Dropdown Messages -->
+        <div *ngIf="message.type === 'dropdown'" class="dropdown-message">
+          <p class="dropdown-label">{{ message.content }}</p>
+          <nz-select 
+            [nzPlaceHolder]="'اختر ' + message.data.label"
+            (ngModelChange)="onDropdownSelection(message.data.field, $event)"
+            style="width: 100%;">
+            <nz-option 
+              *ngFor="let option of message.data.options" 
+              [nzValue]="option" 
+              [nzLabel]="option">
+            </nz-option>
+          </nz-select>
+        </div>
+        
+        <!-- Contact Form Messages -->
+        <div *ngIf="message.type === 'contact-form'" class="contact-form-message">
+          <p>{{ message.content }}</p>
+          <button 
+            nz-button 
+            nzType="primary" 
+            (click)="openContactForm()">
+            <i nz-icon nzType="user-add" nzTheme="outline"></i>
+            إضافة جهة اتصال
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Input Area -->
+    <div class="input-area">
+      <div class="input-container">
+        <input 
+          type="file" 
+          #fileInput 
+          multiple 
+          accept="image/*,.pdf" 
+          (change)="onFileSelected($event)"
+          style="display: none;">
+        
+        <button 
+          class="attach-btn" 
+          (click)="fileInput.click()"
+          nz-tooltip
+          nzTooltipTitle="رفع مستندات / Upload Documents"
+          nzTooltipPlacement="top">
+          <i nz-icon nzType="paper-clip" nzTheme="outline"></i>
+        </button>
+        
+        <input 
+          type="text" 
+          [(ngModel)]="newMessage" 
+          (keydown)="onEnterKey($event)"
+          placeholder="اكتب رسالتك هنا... / Type your message here..."
+          [disabled]="loading">
+        
+        <button 
+          class="send-btn" 
+          (click)="sendMessage()"
+          [disabled]="!newMessage.trim() || loading"
+          nz-tooltip
+          nzTooltipTitle="إرسال / Send"
+          nzTooltipPlacement="top">
+          <i nz-icon nzType="send" nzTheme="outline"></i>
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Document Upload Modal -->
+<nz-modal 
+  [(nzVisible)]="showDocumentModal" 
+  nzTitle="إضافة معلومات المستندات / Add Document Information"
+  (nzOnCancel)="closeDocumentModal()"
+  [nzFooter]="null"
+  nzWidth="800px">
+  
+  <div class="document-modal-content">
+    <form [formGroup]="documentMetadataForm">
+      <div formArrayName="documents">
+        <div 
+          *ngFor="let docGroup of documentsFA.controls; let i = index" 
+          [formGroupName]="i" 
+          class="document-form">
+          
+          <nz-card [nzTitle]="'مستند ' + (i + 1)" nzSize="small">
+            <div class="form-row">
+              <div class="form-group">
+                <label>اسم الملف / File Name:</label>
+                <input formControlName="name" readonly>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>البلد / Country:</label>
+                <nz-select formControlName="country">
+                  <nz-option 
+                    *ngFor="let country of ['Egypt', 'United Arab Emirates', 'Saudi Arabia', 'Yemen']" 
+                    [nzValue]="country" 
+                    [nzLabel]="country">
+                  </nz-option>
+                </nz-select>
+              </div>
+              
+              <div class="form-group">
+                <label>نوع المستند / Document Type:</label>
+                <nz-select formControlName="type">
+                  <nz-option 
+                    *ngFor="let type of allDocumentTypes" 
+                    [nzValue]="type" 
+                    [nzLabel]="type">
+                  </nz-option>
+                </nz-select>
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group full-width">
+                <label>الوصف / Description:</label>
+                <textarea formControlName="description" rows="2"></textarea>
+              </div>
+            </div>
+          </nz-card>
+        </div>
+      </div>
+    </form>
+  </div>
+  
+  <div class="modal-footer">
+    <button nz-button nzType="default" (click)="closeDocumentModal()">
+      إلغاء / Cancel
+    </button>
+    <button nz-button nzType="primary" (click)="saveDocuments()" [disabled]="!documentMetadataForm.valid">
+      حفظ ومتابعة / Save & Continue
+    </button>
+  </div>
+</nz-modal>
+
+<!-- Contact Form Modal -->
+<nz-modal 
+  [(nzVisible)]="showContactForm" 
+  nzTitle="إضافة جهة اتصال / Add Contact"
+  (nzOnCancel)="closeContactForm()"
+  [nzFooter]="null"
+  nzWidth="600px">
+  
+  <form [formGroup]="contactForm">
+    <div class="contact-form-content">
+      <div class="form-row">
+        <div class="form-group">
+          <label>الاسم / Name: *</label>
+          <input formControlName="name" placeholder="أدخل الاسم الكامل">
+        </div>
+        <div class="form-group">
+          <label>المسمى الوظيفي / Job Title: *</label>
+          <input formControlName="jobTitle" placeholder="أدخل المسمى الوظيفي">
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>البريد الإلكتروني / Email: *</label>
+          <input formControlName="email" type="email" placeholder="example@company.com">
+        </div>
+        <div class="form-group">
+          <label>الجوال / Mobile: *</label>
+          <input formControlName="mobile" placeholder="+966501234567">
+        </div>
+      </div>
+      
+      <div class="form-row">
+        <div class="form-group">
+          <label>الهاتف الأرضي / Landline:</label>
+          <input formControlName="landline" placeholder="+966112345678">
+        </div>
+        <div class="form-group">
+          <label>اللغة المفضلة / Preferred Language:</label>
+          <nz-select formControlName="preferredLanguage">
+            <nz-option nzValue="Arabic" nzLabel="العربية"></nz-option>
+            <nz-option nzValue="English" nzLabel="English"></nz-option>
+          </nz-select>
+        </div>
+      </div>
+    </div>
+  </form>
+  
+  <div class="modal-footer">
+    <button nz-button nzType="default" (click)="closeContactForm()">
+      إلغاء / Cancel
+    </button>
+    <button nz-button nzType="primary" (click)="saveContactForm()" [disabled]="!contactForm.valid">
+      حفظ / Save
+    </button>
+  </div>
+</nz-modal>
+
+<!-- Uploaded Documents Display -->
+<div *ngIf="getUploadedDocuments().length > 0" class="uploaded-documents">
+  <h4>المستندات المرفوعة / Uploaded Documents</h4>
+  <div class="documents-grid">
+    <div *ngFor="let doc of getUploadedDocuments(); let i = index" class="document-card">
+      <div class="document-info">
+        <h5>{{ doc.name }}</h5>
+        <p>{{ doc.type }} - {{ (doc.size / 1024).toFixed(2) }}KB</p>
+      </div>
+      <button 
+        nz-button 
+        nzType="text" 
+        nzDanger 
+        (click)="removeDocument(i)">
+        <i nz-icon nzType="delete" nzTheme="outline"></i>
+      </button>
+    </div>
+  </div>
+</div>
