@@ -57,6 +57,11 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   editForm!: FormGroup;
   showEditForm = false;
   
+  // Missing fields form properties
+  missingFieldsForm!: FormGroup;
+  showMissingFieldsForm = false;
+  currentMissingFields: string[] = [];
+  
   // Accumulated files
   accumulatedFiles: File[] = [];
   showAccumulatedFiles = false;
@@ -145,10 +150,27 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       division: ['']
     });
     
+    // Missing fields form for incomplete data only
+    this.missingFieldsForm = this.fb.group({
+      firstName: [''],
+      firstNameAR: [''],
+      tax: [''],
+      CustomerType: [''],
+      ownerName: [''],
+      buildingNumber: [''],
+      street: [''],
+      country: [''],
+      city: [''],
+      salesOrganization: [''],
+      distributionChannel: [''],
+      division: ['']
+    });
+    
     console.log('✅ [FORMS] Forms initialized:', {
       documentMetadataForm: !!this.documentMetadataForm,
       contactForm: !!this.contactForm,
-      editForm: !!this.editForm
+      editForm: !!this.editForm,
+      missingFieldsForm: !!this.missingFieldsForm
     });
   }
 
@@ -788,17 +810,50 @@ Will now check for duplicates then submit the request.
       }, 1000);
       
     } else if (lower.includes('لا') || lower.includes('no') || lower === 'n') {
-      // User wants to edit the data
+      // User doesn't want to edit - show missing fields form
       this.addMessage({
-        id: `edit_requested_${Date.now()}`,
+        id: `missing_fields_info_${Date.now()}`,
         role: 'assistant',
-        content: '✏️ يمكنك تعديل البيانات الآن. اكتب الحقل والقيمة الجديدة / You can edit the data now. Type field and new value.',
+        content: `📋 **البيانات الناقصة / Missing Information**
+
+البيانات المستخرجة صحيحة، لكن هناك معلومات ناقصة مطلوبة لإكمال الطلب.
+
+The extracted data is correct, but there are missing information required to complete the request.`,
         timestamp: new Date(),
         type: 'text'
       });
       
+      // Show missing fields form button
+      setTimeout(() => {
+        const extractedData = this.agentService.getExtractedData();
+        const missingFields = this.checkMissingFields(extractedData);
+        
+        if (missingFields.length > 0) {
+          this.addMessage({
+            id: `missing_fields_button_${Date.now()}`,
+            role: 'assistant',
+            content: `📝 **إكمال البيانات الناقصة / Complete Missing Data**
+
+اضغط على الزر أدناه لإكمال المعلومات الناقصة:
+Press the button below to complete the missing information:`,
+            timestamp: new Date(),
+            type: 'confirmation',
+            data: {
+              buttons: [
+                {
+                  text: '📝 إكمال البيانات الناقصة / Complete Missing Data',
+                  action: 'open_missing_fields_form',
+                  data: { missingFields }
+                }
+              ]
+            }
+          });
+        } else {
+          this.confirmDataBeforeSubmission();
+        }
+      }, 1000);
+      
       this.awaitingDataReview = false;
-      // TODO: Implement data editing functionality
       
     } else {
       // Default to confirmation if unclear response
@@ -979,6 +1034,10 @@ You can track the request in your task list.`,
       case 'review_data':
         this.reviewAllData();
         break;
+      case 'open_missing_fields_form':
+        console.log('🎯 [BUTTON] Opening missing fields form with data:', data);
+        this.openMissingFieldsForm(data?.missingFields || []);
+        break;
       default:
         console.warn('⚠️ [BUTTON] Unknown action:', action);
     }
@@ -1058,7 +1117,18 @@ I'll help you enter data step by step.
       const extractedData = this.agentService.getExtractedData();
       console.log('🔧 [EDIT] Extracted data:', extractedData);
       
-      // ✅ Prepare form data with null checks
+      // ✅ Get all required fields (both extracted and missing)
+      const allRequiredFields = [
+        'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
+        'buildingNumber', 'street', 'country', 'city', 
+        'salesOrganization', 'distributionChannel', 'division'
+      ];
+      
+      // ✅ Check which fields are missing
+      const missingFields = this.checkMissingFields(extractedData);
+      console.log('🔧 [EDIT] Missing fields detected:', missingFields);
+      
+      // ✅ Prepare form data with extracted data + empty values for missing fields
       const formData = {
         firstName: extractedData?.firstName || '',
         firstNameAR: extractedData?.firstNameAR || '',
@@ -1097,7 +1167,11 @@ I'll help you enter data step by step.
         id: `edit_${Date.now()}`,
         role: 'assistant',
         content: `✏️ **تعديل البيانات / Edit Data**
-        
+
+النموذج يحتوي على جميع الحقول المطلوبة:
+- البيانات المستخرجة (مملوءة مسبقاً)
+- الحقول الناقصة (فارغة تحتاج إدخال)
+
 يرجى مراجعة وتعديل البيانات في النموذج المنبثق.
 Please review and edit the data in the popup form.`,
         timestamp: new Date(),
@@ -1256,6 +1330,131 @@ Please review and edit the data in the popup form.`,
   closeEditForm(): void {
     this.showEditForm = false;
     this.editForm.reset();
+  }
+
+  // Missing fields form methods
+  private openMissingFieldsForm(missingFields: string[]): void {
+    console.log('📝 [MISSING] Opening missing fields form for:', missingFields);
+    
+    try {
+      // Store current missing fields
+      this.currentMissingFields = missingFields;
+      
+      // Check if form exists
+      if (!this.missingFieldsForm) {
+        console.error('❌ [MISSING] missingFieldsForm is undefined! Reinitializing...');
+        this.initializeForms();
+      }
+      
+      // Clear form first
+      this.missingFieldsForm.reset();
+      
+      // Get extracted data to pre-fill non-missing fields (for reference)
+      const extractedData = this.agentService.getExtractedData();
+      
+      // Only pre-fill fields that are NOT missing (for reference)
+      const nonMissingFields = ['firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
+        'buildingNumber', 'street', 'country', 'city', 'salesOrganization', 
+        'distributionChannel', 'division'].filter(field => !missingFields.includes(field));
+      
+      const formData: any = {};
+      nonMissingFields.forEach(field => {
+        formData[field] = (extractedData as any)[field] || '';
+      });
+      
+      // Set missing fields as empty (to be filled by user)
+      missingFields.forEach(field => {
+        formData[field] = '';
+      });
+      
+      console.log('📝 [MISSING] Form data to patch:', formData);
+      
+      // Patch form values
+      this.missingFieldsForm.patchValue(formData);
+      console.log('📝 [MISSING] Form patched successfully');
+      
+      // Force change detection
+      this.cdr.detectChanges();
+      
+      // Show modal
+      this.showMissingFieldsForm = true;
+      this.cdr.detectChanges();
+      
+      console.log('✅ [MISSING] Missing fields modal opened');
+      
+      // Add instruction message
+      this.addMessage({
+        id: `missing_form_opened_${Date.now()}`,
+        role: 'assistant',
+        content: `📝 **إكمال البيانات الناقصة / Complete Missing Data**
+
+يرجى ملء الحقول الناقصة في النموذج المنبثق. الحقول المملوءة مسبقاً هي للمرجع فقط.
+Please fill the missing fields in the popup form. Pre-filled fields are for reference only.`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+      
+    } catch (error: any) {
+      console.error('❌ [MISSING] Error opening missing fields form:', error);
+      this.addMessage({
+        id: `missing_form_error_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ حدث خطأ في فتح نموذج البيانات الناقصة / Error opening missing fields form: ${error.message}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
+  }
+
+  saveMissingFieldsForm(): void {
+    console.log('💾 [MISSING] saveMissingFieldsForm called');
+    console.log('💾 [MISSING] Form value:', this.missingFieldsForm.value);
+    
+    const formData = this.missingFieldsForm.value;
+    
+    // Update extracted data with form values (only non-empty values)
+    Object.keys(formData).forEach(key => {
+      const value = formData[key];
+      if (value !== null && value !== undefined && value !== '') {
+        console.log(`💾 [MISSING] Updating field: ${key} = ${value}`);
+        this.agentService.updateExtractedDataField(key, value);
+      }
+    });
+    
+    console.log('💾 [MISSING] Updated extracted data:', this.agentService.getExtractedData());
+    
+    // Show success message
+    this.addMessage({
+      id: `missing_saved_${Date.now()}`,
+      role: 'assistant',
+      content: '✅ **تم حفظ البيانات الناقصة / Missing data saved successfully**\n\nسأتحقق الآن من اكتمال البيانات / Will now check data completeness.',
+      timestamp: new Date(),
+      type: 'text'
+    });
+    
+    // Close modal
+    this.showMissingFieldsForm = false;
+    this.cdr.detectChanges();
+    
+    // Continue with workflow
+    setTimeout(() => {
+      const extractedData = this.agentService.getExtractedData();
+      const remainingMissingFields = this.checkMissingFields(extractedData);
+      
+      if (remainingMissingFields.length > 0) {
+        console.log('💾 [MISSING] Still missing fields:', remainingMissingFields);
+        this.askForMissingField(remainingMissingFields[0]);
+      } else {
+        console.log('💾 [MISSING] All fields complete');
+        this.confirmDataBeforeSubmission();
+      }
+    }, 1000);
+  }
+
+  closeMissingFieldsForm(): void {
+    this.showMissingFieldsForm = false;
+    this.missingFieldsForm.reset();
+    this.currentMissingFields = [];
   }
 
   get documentsFA(): FormArray {

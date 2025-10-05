@@ -567,6 +567,11 @@
     border-radius: 8px;
     border-left: 4px solid #667eea;
     
+    .required {
+      color: #ff4d4f;
+      font-weight: bold;
+    }
+    
     h4 {
       margin: 0 0 16px 0;
       color: #333;

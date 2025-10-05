@@ -379,22 +379,22 @@
         <h4>معلومات الشركة / Company Information</h4>
         <div class="form-row">
           <div class="form-group">
-            <label>اسم الشركة (إنجليزي) / Company Name (English):</label>
+            <label>اسم الشركة (إنجليزي) / Company Name (English): <span class="required">*</span></label>
             <input formControlName="firstName" placeholder="Company Name">
           </div>
           <div class="form-group">
-            <label>اسم الشركة (عربي) / Company Name (Arabic):</label>
+            <label>اسم الشركة (عربي) / Company Name (Arabic): <span class="required">*</span></label>
             <input formControlName="firstNameAR" placeholder="اسم الشركة">
           </div>
         </div>
         
         <div class="form-row">
           <div class="form-group">
-            <label>الرقم الضريبي / Tax Number:</label>
+            <label>الرقم الضريبي / Tax Number: <span class="required">*</span></label>
             <input formControlName="tax" placeholder="Tax Number">
           </div>
           <div class="form-group">
-            <label>نوع العميل / Customer Type:</label>
+            <label>نوع العميل / Customer Type: <span class="required">*</span></label>
             <nz-select formControlName="CustomerType">
               <nz-option nzValue="Corporate" nzLabel="Corporate"></nz-option>
               <nz-option nzValue="SME" nzLabel="SME"></nz-option>
@@ -447,7 +447,7 @@
         <h4>معلومات المبيعات / Sales Information</h4>
         <div class="form-row">
           <div class="form-group">
-            <label>منظمة المبيعات / Sales Organization:</label>
+            <label>منظمة المبيعات / Sales Organization: <span class="required">*</span></label>
             <nz-select formControlName="salesOrganization">
               <nz-option nzValue="egypt_cairo_office" nzLabel="Egypt - Cairo Head Office"></nz-option>
               <nz-option nzValue="egypt_alexandria_branch" nzLabel="Egypt - Alexandria Branch"></nz-option>
@@ -457,7 +457,7 @@
             </nz-select>
           </div>
           <div class="form-group">
-            <label>قناة التوزيع / Distribution Channel:</label>
+            <label>قناة التوزيع / Distribution Channel: <span class="required">*</span></label>
             <nz-select formControlName="distributionChannel">
               <nz-option nzValue="direct_sales" nzLabel="Direct Sales"></nz-option>
               <nz-option nzValue="authorized_distributors" nzLabel="Authorized Distributors"></nz-option>
@@ -468,7 +468,7 @@
         
         <div class="form-row">
           <div class="form-group">
-            <label>القسم / Division:</label>
+            <label>القسم / Division: <span class="required">*</span></label>
             <nz-select formControlName="division">
               <nz-option nzValue="food_products" nzLabel="Food Products Division"></nz-option>
               <nz-option nzValue="beverages" nzLabel="Beverages Division"></nz-option>
@@ -487,6 +487,136 @@
       </button>
       <button nz-button nzType="primary" (click)="saveEditForm()">
         حفظ التعديلات / Save Changes
+      </button>
+    </div>
+  </div>
+</nz-modal>
+
+<!-- Missing Fields Form Modal -->
+<nz-modal 
+  [(nzVisible)]="showMissingFieldsForm" 
+  nzTitle="إكمال البيانات الناقصة / Complete Missing Data"
+  (nzOnCancel)="closeMissingFieldsForm()"
+  [nzFooter]="null"
+  nzWidth="700px"
+  [nzMaskClosable]="false"
+  [nzClosable]="true">
+  
+  <div *nzModalContent>
+    <form *ngIf="missingFieldsForm" [formGroup]="missingFieldsForm">
+      <div class="edit-form-content">
+        <!-- Company Information -->
+        <div class="form-section">
+          <h4>معلومات الشركة / Company Information</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>اسم الشركة (إنجليزي) / Company Name (English): <span class="required">*</span></label>
+              <input formControlName="firstName" placeholder="Company Name" [readonly]="!currentMissingFields.includes('firstName')">
+            </div>
+            <div class="form-group">
+              <label>اسم الشركة (عربي) / Company Name (Arabic): <span class="required">*</span></label>
+              <input formControlName="firstNameAR" placeholder="اسم الشركة" [readonly]="!currentMissingFields.includes('firstNameAR')">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>الرقم الضريبي / Tax Number: <span class="required">*</span></label>
+              <input formControlName="tax" placeholder="Tax Number" [readonly]="!currentMissingFields.includes('tax')">
+            </div>
+            <div class="form-group">
+              <label>نوع العميل / Customer Type: <span class="required">*</span></label>
+              <nz-select formControlName="CustomerType" [nzDisabled]="!currentMissingFields.includes('CustomerType')">
+                <nz-option nzValue="Corporate" nzLabel="Corporate"></nz-option>
+                <nz-option nzValue="SME" nzLabel="SME"></nz-option>
+                <nz-option nzValue="Individual" nzLabel="Individual"></nz-option>
+              </nz-select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>اسم المالك / Owner Name:</label>
+              <input formControlName="ownerName" placeholder="Owner Name" [readonly]="!currentMissingFields.includes('ownerName')">
+            </div>
+          </div>
+        </div>
+
+        <!-- Address Information -->
+        <div class="form-section">
+          <h4>معلومات العنوان / Address Information</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>رقم المبنى / Building Number:</label>
+              <input formControlName="buildingNumber" placeholder="Building Number" [readonly]="!currentMissingFields.includes('buildingNumber')">
+            </div>
+            <div class="form-group">
+              <label>الشارع / Street:</label>
+              <input formControlName="street" placeholder="Street Name" [readonly]="!currentMissingFields.includes('street')">
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>الدولة / Country: <span class="required">*</span></label>
+              <nz-select formControlName="country" [nzDisabled]="!currentMissingFields.includes('country')">
+                <nz-option nzValue="Egypt" nzLabel="Egypt"></nz-option>
+                <nz-option nzValue="Saudi Arabia" nzLabel="Saudi Arabia"></nz-option>
+                <nz-option nzValue="United Arab Emirates" nzLabel="United Arab Emirates"></nz-option>
+                <nz-option nzValue="Yemen" nzLabel="Yemen"></nz-option>
+              </nz-select>
+            </div>
+            <div class="form-group">
+              <label>المدينة / City:</label>
+              <input formControlName="city" placeholder="City" [readonly]="!currentMissingFields.includes('city')">
+            </div>
+          </div>
+        </div>
+
+        <!-- Sales Information -->
+        <div class="form-section">
+          <h4>معلومات المبيعات / Sales Information</h4>
+          <div class="form-row">
+            <div class="form-group">
+              <label>منظمة المبيعات / Sales Organization: <span class="required">*</span></label>
+              <nz-select formControlName="salesOrganization" [nzDisabled]="!currentMissingFields.includes('salesOrganization')">
+                <nz-option nzValue="egypt_cairo_office" nzLabel="Egypt - Cairo Head Office"></nz-option>
+                <nz-option nzValue="egypt_alexandria_branch" nzLabel="Egypt - Alexandria Branch"></nz-option>
+                <nz-option nzValue="egypt_giza_branch" nzLabel="Egypt - Giza Branch"></nz-option>
+                <nz-option nzValue="ksa_riyadh_office" nzLabel="Saudi Arabia - Riyadh Office"></nz-option>
+                <nz-option nzValue="ksa_jeddah_branch" nzLabel="Saudi Arabia - Jeddah Branch"></nz-option>
+              </nz-select>
+            </div>
+            <div class="form-group">
+              <label>قناة التوزيع / Distribution Channel: <span class="required">*</span></label>
+              <nz-select formControlName="distributionChannel" [nzDisabled]="!currentMissingFields.includes('distributionChannel')">
+                <nz-option nzValue="direct_sales" nzLabel="Direct Sales"></nz-option>
+                <nz-option nzValue="authorized_distributors" nzLabel="Authorized Distributors"></nz-option>
+                <nz-option nzValue="retail_chains" nzLabel="Retail Chains"></nz-option>
+              </nz-select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label>القسم / Division: <span class="required">*</span></label>
+              <nz-select formControlName="division" [nzDisabled]="!currentMissingFields.includes('division')">
+                <nz-option nzValue="food_products" nzLabel="Food Products Division"></nz-option>
+                <nz-option nzValue="beverages" nzLabel="Beverages Division"></nz-option>
+                <nz-option nzValue="household_items" nzLabel="Household Items Division"></nz-option>
+              </nz-select>
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+    
+    <div class="modal-footer">
+      <button nz-button nzType="default" (click)="closeMissingFieldsForm()">
+        إلغاء / Cancel
+      </button>
+      <button nz-button nzType="primary" (click)="saveMissingFieldsForm()">
+        حفظ البيانات الناقصة / Save Missing Data
       </button>
     </div>
   </div>
