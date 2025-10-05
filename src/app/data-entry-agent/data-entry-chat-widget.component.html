@@ -8,7 +8,7 @@
     nz-tooltip
     nzTooltipTitle="Data Entry AI Assistant"
     nzTooltipPlacement="left">
-    <i nz-icon nzType="robot" nzTheme="outline"></i>
+    <span aria-hidden="true">🤖</span>
   </button>
 
   <!-- Chat Window -->
@@ -25,14 +25,14 @@
           (click)="minimizeChat()"
           nz-tooltip
           nzTooltipTitle="Minimize">
-          <i nz-icon nzType="minus" nzTheme="outline"></i>
+          <span aria-hidden="true">–</span>
         </button>
         <button 
           class="close-btn" 
           (click)="closeChat()"
           nz-tooltip
           nzTooltipTitle="Close">
-          <i nz-icon nzType="close" nzTheme="outline"></i>
+          <span aria-hidden="true">×</span>
         </button>
       </div>
     </div>
@@ -44,10 +44,38 @@
         <div 
           *ngFor="let message of messages" 
           class="message"
+          [attr.data-message-id]="message.id"
+          [attr.data-message-type]="message.type"
           [ngClass]="{'user-message': message.role === 'user', 'assistant-message': message.role === 'assistant'}">
           
           <!-- Text Messages -->
           <div *ngIf="message.type === 'text'" [innerHTML]="formatMessage(message.content)"></div>
+
+          <!-- Actions (Quick Buttons) -->
+          <ng-container *ngIf="message.type === 'actions'">
+            <div class="action-buttons">
+              <div class="action-title" [innerHTML]="formatMessage(message.content)"></div>
+              <button 
+                *ngFor="let btn of message.data?.buttons" 
+                class="action-btn"
+                (click)="onButtonClick(btn.action, btn.data)"
+                [innerHTML]="btn.text">
+              </button>
+            </div>
+          </ng-container>
+
+          <!-- Confirmation Messages -->
+          <div *ngIf="message.type === 'confirmation'" class="confirmation-message">
+            <div [innerHTML]="formatMessage(message.content)"></div>
+            <div *ngIf="message.data?.buttons" class="confirmation-buttons">
+              <button 
+                *ngFor="let btn of message.data.buttons" 
+                class="confirmation-btn"
+                (click)="onButtonClick(btn.action, btn.data)"
+                [innerHTML]="btn.text">
+              </button>
+            </div>
+          </div>
           
           <!-- Loading Messages -->
           <div *ngIf="message.type === 'loading'" class="loading-message">
@@ -65,13 +93,13 @@
           <div *ngIf="message.type === 'dropdown'" class="dropdown-message">
             <p class="dropdown-label">{{ message.content }}</p>
             <nz-select 
-              [nzPlaceHolder]="'اختر ' + message.data.label"
+              [nzPlaceHolder]="'اختر ' + (message.data.fieldLabel || message.data.label || message.data.field)"
               (ngModelChange)="onDropdownSelection(message.data.field, $event)"
               style="width: 100%;">
               <nz-option 
                 *ngFor="let option of message.data.options" 
-                [nzValue]="option" 
-                [nzLabel]="option">
+                [nzValue]="option.value || option" 
+                [nzLabel]="option.label || option">
               </nz-option>
             </nz-select>
           </div>
@@ -85,16 +113,6 @@
               (click)="openContactForm()">
               <i nz-icon nzType="user-add" nzTheme="outline"></i>
               إضافة جهة اتصال
-            </button>
-          </div>
-
-          <!-- Action Buttons (if any) -->
-          <div *ngIf="message.data?.buttons" class="action-buttons">
-            <button 
-              *ngFor="let btn of message.data.buttons" 
-              class="action-btn"
-              (click)="onButtonClick(btn.action, btn.data)"
-              [innerHTML]="btn.text">
             </button>
           </div>
         </div>
@@ -129,6 +147,17 @@
 
     <!-- Chat Footer -->
     <div class="chat-footer">
+      <!-- Inline fallback quick actions if message rendering fails -->
+      <div class="inline-quick-actions" *ngIf="showInlineQuickActions">
+        <button class="action-btn" (click)="onButtonClick('upload')">📄 رفع مستند / Upload Document</button>
+        <button class="action-btn" (click)="onButtonClick('manual')">✍️ إدخال يدوي / Manual Entry</button>
+        <button class="action-btn" (click)="onButtonClick('help')">❓ مساعدة / Help</button>
+      </div>
+      
+      <!-- Debug info for inline actions -->
+      <div *ngIf="showInlineQuickActions" style="font-size: 10px; color: #666; margin-bottom: 5px;">
+        Debug: Inline quick actions enabled ({{ showInlineQuickActions }})
+      </div>
       <div class="input-container">
         <input 
           type="file" 
@@ -144,16 +173,19 @@
           nz-tooltip
           nzTooltipTitle="رفع مستندات / Upload Documents"
           nzTooltipPlacement="top">
-          <i nz-icon nzType="paper-clip" nzTheme="outline"></i>
+          <span aria-hidden="true">📎</span>
           <span *ngIf="accumulatedFiles.length > 0" class="file-count">{{ accumulatedFiles.length }}</span>
         </button>
         
         <input 
+          id="chat-message-input"
+          name="chat-message-input"
           type="text" 
           [(ngModel)]="newMessage" 
           (keydown)="onEnterKey($event)"
           placeholder="اكتب رسالتك هنا... / Type your message here..."
-          [disabled]="loading">
+          [disabled]="loading"
+          aria-label="اكتب رسالتك هنا / Type your message here">
         
         <button 
           class="send-btn" 
@@ -162,24 +194,29 @@
           nz-tooltip
           nzTooltipTitle="إرسال / Send"
           nzTooltipPlacement="top">
-          <i nz-icon nzType="send" nzTheme="outline"></i>
+          <span aria-hidden="true">➤</span>
         </button>
       </div>
     </div>
   </div>
 </div>
 
-<!-- Document Upload Modal -->
-<nz-modal 
-  [(nzVisible)]="showDocumentModal" 
-  nzTitle="إضافة معلومات المستندات / Add Document Information"
-  (nzOnCancel)="closeDocumentModal()"
-  [nzFooter]="null"
-  nzWidth="800px">
-  
+<!-- Document Upload Modal Template -->
+<ng-template #documentModalTemplate>
   <div class="document-modal-content">
+    <!-- Debug info -->
+    <div style="background: #f0f0f0; padding: 10px; margin-bottom: 10px; font-size: 12px;">
+      Debug: documentsFA.length = {{ documentsFA.length }}, pendingFiles.length = {{ pendingFiles.length }}
+    </div>
+    
     <form [formGroup]="documentMetadataForm">
       <div formArrayName="documents">
+        <!-- Show message if no documents -->
+        <div *ngIf="documentsFA.length === 0" style="text-align: center; padding: 20px; color: #666;">
+          <p>لا توجد مستندات للعرض / No documents to display</p>
+          <p>pendingFiles: {{ pendingFiles.length }}</p>
+        </div>
+        
         <div 
           *ngFor="let docGroup of documentsFA.controls; let i = index" 
           [formGroupName]="i" 
@@ -188,15 +225,24 @@
           <nz-card [nzTitle]="'مستند ' + (i + 1)" nzSize="small">
             <div class="form-row">
               <div class="form-group">
-                <label>اسم الملف / File Name:</label>
-                <input formControlName="name" readonly>
+                <label [for]="'fileName_' + i">اسم الملف / File Name:</label>
+                <input 
+                  [id]="'fileName_' + i"
+                  [name]="'fileName_' + i"
+                  formControlName="name" 
+                  readonly
+                  aria-label="اسم الملف / File Name">
               </div>
             </div>
             
             <div class="form-row">
               <div class="form-group">
-                <label>البلد / Country:</label>
-                <nz-select formControlName="country" (ngModelChange)="onCountryChange($event, i)">
+                <label [for]="'country_' + i">البلد / Country:</label>
+                <nz-select 
+                  [id]="'country_' + i"
+                  formControlName="country" 
+                  (ngModelChange)="onCountryChange($event, i)"
+                  aria-label="البلد / Country">
                   <nz-option 
                     *ngFor="let country of countriesList" 
                     [nzValue]="country" 
@@ -206,8 +252,11 @@
               </div>
               
               <div class="form-group">
-                <label>نوع المستند / Document Type:</label>
-                <nz-select formControlName="type">
+                <label [for]="'documentType_' + i">نوع المستند / Document Type:</label>
+                <nz-select 
+                  [id]="'documentType_' + i"
+                  formControlName="type"
+                  aria-label="نوع المستند / Document Type">
                   <nz-option 
                     *ngFor="let type of getDocumentTypesByCountry(docGroup.get('country')?.value || '')" 
                     [nzValue]="type" 
@@ -219,25 +268,30 @@
             
             <div class="form-row">
               <div class="form-group full-width">
-                <label>الوصف / Description:</label>
-                <textarea formControlName="description" rows="2"></textarea>
+                <label [for]="'description_' + i">الوصف / Description:</label>
+                <textarea 
+                  [id]="'description_' + i"
+                  [name]="'description_' + i"
+                  formControlName="description" 
+                  rows="2"
+                  aria-label="الوصف / Description"></textarea>
               </div>
             </div>
           </nz-card>
         </div>
       </div>
     </form>
+    
+    <div class="modal-footer">
+      <button nz-button nzType="default" (click)="closeDocumentModal()">
+        إلغاء / Cancel
+      </button>
+      <button nz-button nzType="primary" (click)="saveDocuments()" [disabled]="!isDocumentFormValid">
+        حفظ ومتابعة / Save & Continue
+      </button>
+    </div>
   </div>
-  
-  <div class="modal-footer">
-    <button nz-button nzType="default" (click)="closeDocumentModal()">
-      إلغاء / Cancel
-    </button>
-    <button nz-button nzType="primary" (click)="saveDocuments()" [disabled]="!documentMetadataForm.valid">
-      حفظ ومتابعة / Save & Continue
-    </button>
-  </div>
-</nz-modal>
+</ng-template>
 
 <!-- Hidden file input for programmatic uploads (used by quick actions) -->
 <input 
@@ -302,6 +356,132 @@
     </button>
     <button nz-button nzType="primary" (click)="saveContactForm()" [disabled]="!contactForm.valid">
       حفظ / Save
+    </button>
+  </div>
+</nz-modal>
+
+<!-- Edit Form Modal -->
+<nz-modal 
+  [(nzVisible)]="showEditForm" 
+  nzTitle="تعديل البيانات المستخرجة / Edit Extracted Data"
+  (nzOnCancel)="closeEditForm()"
+  [nzFooter]="null"
+  nzWidth="700px">
+  
+  <form *ngIf="editForm && showEditForm" [formGroup]="editForm">
+    <div *ngIf="showEditForm" class="edit-form-content">
+      <!-- Company Information -->
+      <div class="form-section">
+        <h4>معلومات الشركة / Company Information</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>اسم الشركة (إنجليزي) / Company Name (English):</label>
+            <input formControlName="firstName" placeholder="Company Name">
+          </div>
+          <div class="form-group">
+            <label>اسم الشركة (عربي) / Company Name (Arabic):</label>
+            <input formControlName="firstNameAR" placeholder="اسم الشركة">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>الرقم الضريبي / Tax Number:</label>
+            <input formControlName="tax" placeholder="Tax Number">
+          </div>
+          <div class="form-group">
+            <label>نوع العميل / Customer Type:</label>
+            <nz-select formControlName="CustomerType">
+              <nz-option nzValue="Corporate" nzLabel="Corporate"></nz-option>
+              <nz-option nzValue="SME" nzLabel="SME"></nz-option>
+              <nz-option nzValue="Individual" nzLabel="Individual"></nz-option>
+            </nz-select>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>اسم المالك / Owner Name:</label>
+            <input formControlName="ownerName" placeholder="Owner Name">
+          </div>
+        </div>
+      </div>
+
+      <!-- Address Information -->
+      <div class="form-section">
+        <h4>معلومات العنوان / Address Information</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>رقم المبنى / Building Number:</label>
+            <input formControlName="buildingNumber" placeholder="Building Number">
+          </div>
+          <div class="form-group">
+            <label>الشارع / Street:</label>
+            <input formControlName="street" placeholder="Street Address">
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>الدولة / Country:</label>
+            <nz-select formControlName="country">
+              <nz-option nzValue="Egypt" nzLabel="Egypt"></nz-option>
+              <nz-option nzValue="Saudi Arabia" nzLabel="Saudi Arabia"></nz-option>
+              <nz-option nzValue="United Arab Emirates" nzLabel="United Arab Emirates"></nz-option>
+              <nz-option nzValue="Yemen" nzLabel="Yemen"></nz-option>
+            </nz-select>
+          </div>
+          <div class="form-group">
+            <label>المدينة / City:</label>
+            <input formControlName="city" placeholder="City">
+          </div>
+        </div>
+      </div>
+
+      <!-- Sales Information -->
+      <div class="form-section">
+        <h4>معلومات المبيعات / Sales Information</h4>
+        <div class="form-row">
+          <div class="form-group">
+            <label>منظمة المبيعات / Sales Organization:</label>
+            <nz-select formControlName="salesOrganization">
+              <nz-option nzValue="egypt_cairo_office" nzLabel="Egypt - Cairo Head Office"></nz-option>
+              <nz-option nzValue="egypt_alexandria_branch" nzLabel="Egypt - Alexandria Branch"></nz-option>
+              <nz-option nzValue="egypt_giza_branch" nzLabel="Egypt - Giza Branch"></nz-option>
+              <nz-option nzValue="ksa_riyadh_office" nzLabel="Saudi Arabia - Riyadh Office"></nz-option>
+              <nz-option nzValue="ksa_jeddah_branch" nzLabel="Saudi Arabia - Jeddah Branch"></nz-option>
+            </nz-select>
+          </div>
+          <div class="form-group">
+            <label>قناة التوزيع / Distribution Channel:</label>
+            <nz-select formControlName="distributionChannel">
+              <nz-option nzValue="direct_sales" nzLabel="Direct Sales"></nz-option>
+              <nz-option nzValue="authorized_distributors" nzLabel="Authorized Distributors"></nz-option>
+              <nz-option nzValue="retail_chains" nzLabel="Retail Chains"></nz-option>
+            </nz-select>
+          </div>
+        </div>
+        
+        <div class="form-row">
+          <div class="form-group">
+            <label>القسم / Division:</label>
+            <nz-select formControlName="division">
+              <nz-option nzValue="food_products" nzLabel="Food Products Division"></nz-option>
+              <nz-option nzValue="beverages" nzLabel="Beverages Division"></nz-option>
+              <nz-option nzValue="household_items" nzLabel="Household Items Division"></nz-option>
+            </nz-select>
+          </div>
+        </div>
+      </div>
+    </div>
+  </form>
+  
+  <div class="modal-footer">
+    <button nz-button nzType="default" (click)="closeEditForm()">
+      إلغاء / Cancel
+    </button>
+    <button nz-button nzType="primary" (click)="saveEditForm()">
+      حفظ التعديلات / Save Changes
     </button>
   </div>
 </nz-modal>

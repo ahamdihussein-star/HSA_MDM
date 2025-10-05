@@ -18,6 +18,35 @@ body.rtl {
   }
 }
 
+/* Ensure Ant Design modal overlays sit above in-app widgets */
+.cdk-overlay-container {
+  z-index: 2000 !important;
+}
+
+/* Make long modal content scroll instead of overflowing */
+.ant-modal-content {
+  display: flex;
+  flex-direction: column;
+}
+
+.ant-modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+  flex: 1 1 auto;
+  display: block;
+}
+.document-modal-content,
+.document-modal-content form,
+.document-modal-content .ant-card,
+.document-modal-content .form-row {
+  display: block;
+}
+
+/* Ensure inner modal content participates in layout */
+.ant-modal-body > * {
+  display: block;
+}
+
 
 //import reset files
 @import "../src/assets/css/variables.scss";

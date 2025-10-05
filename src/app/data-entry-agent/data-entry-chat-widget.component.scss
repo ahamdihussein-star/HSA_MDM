@@ -3,7 +3,7 @@
   position: fixed;
   bottom: 20px;
   right: 20px;
-  z-index: 1000;
+  z-index: 900; // keep below modal overlays
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
@@ -173,6 +173,8 @@
     flex-wrap: wrap;
     gap: 8px;
     margin-top: 10px;
+    align-items: center;
+    justify-content: flex-start;
     
     .action-btn {
       padding: 8px 16px;
@@ -192,11 +194,89 @@
   }
 }
 
+/* Stronger path-specific overrides to guarantee visibility inside message bubble */
+.chat-body .messages-container .message .action-buttons {
+  display: flex !important;
+  visibility: visible !important;
+  opacity: 1 !important;
+}
+
+.chat-body .messages-container .message .action-title {
+  width: 100%;
+  margin-bottom: 8px;
+}
+
+.chat-body .messages-container .message .action-btn {
+  display: inline-block;
+  pointer-events: auto;
+}
+
+/* Confirmation Messages */
+.chat-body .messages-container .message .confirmation-message {
+  width: 100%;
+  
+  .confirmation-buttons {
+    display: flex;
+    gap: 8px;
+    margin-top: 10px;
+    align-items: center;
+    justify-content: flex-start;
+    
+    .confirmation-btn {
+      padding: 8px 16px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: white;
+      border: none;
+      border-radius: 20px;
+      cursor: pointer;
+      font-size: 14px;
+      transition: all 0.3s;
+      
+      &:hover {
+        transform: translateY(-2px);
+        box-shadow: 0 4px 12px rgba(102, 126, 234, 0.3);
+      }
+      
+      &:active {
+        transform: translateY(0);
+      }
+      
+      &:first-child {
+        background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+      }
+      
+      &:last-child {
+        background: linear-gradient(135deg, #ffc107 0%, #fd7e14 100%);
+      }
+    }
+  }
+}
+
+/* Temporary debug outline - comment out later */
+/*.chat-body .messages-container .message .action-buttons { outline: 1px dashed #764ba2; }*/
+
 .chat-footer {
   padding: 15px 20px;
   background: white;
   border-top: 1px solid #e8e8e8;
   border-radius: 0 0 20px 20px;
+
+  .inline-quick-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    margin-bottom: 8px;
+
+    .action-btn {
+      padding: 6px 12px;
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      border: none;
+      border-radius: 16px;
+      cursor: pointer;
+      font-size: 12px;
+    }
+  }
 
   .input-container {
     display: flex;
@@ -416,6 +496,16 @@
   }
 }
 
+// Ensure modal always overlays the chat widget and content is scrollable
+:host ::ng-deep .cdk-overlay-container {
+  z-index: 2000;
+}
+
+:host ::ng-deep .ant-modal-body {
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
 .modal-footer {
   display: flex;
   gap: 10px;
@@ -462,6 +552,57 @@
           border-color: #667eea;
           box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
           outline: none;
+        }
+      }
+    }
+  }
+}
+
+// Edit Form Styles
+.edit-form-content {
+  .form-section {
+    margin-bottom: 24px;
+    padding: 16px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    
+    h4 {
+      margin: 0 0 16px 0;
+      color: #333;
+      font-size: 16px;
+      font-weight: 600;
+    }
+    
+    .form-row {
+      display: flex;
+      gap: 15px;
+      margin-bottom: 15px;
+      
+      .form-group {
+        flex: 1;
+        
+        label {
+          display: block;
+          margin-bottom: 5px;
+          font-weight: 500;
+          color: #333;
+          font-size: 13px;
+        }
+        
+        input, nz-select {
+          width: 100%;
+          padding: 8px 12px;
+          border: 1px solid #d9d9d9;
+          border-radius: 6px;
+          font-size: 14px;
+          transition: all 0.2s ease;
+          
+          &:focus {
+            border-color: #667eea;
+            box-shadow: 0 0 0 2px rgba(102, 126, 234, 0.2);
+            outline: none;
+          }
         }
       }
     }

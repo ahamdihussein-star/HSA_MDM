@@ -43,7 +43,7 @@
       <app-notification-dropdown></app-notification-dropdown>
     </nz-dropdown-menu>
     
-    <div class="user-avatar-container" nz-dropdown nzTrigger="click" [nzDropdownMenu]="menu1">
+    <div class="user-avatar-container" nz-dropdown nzTrigger="click" [nzDropdownMenu]="menu1" (click)="onAvatarClick()">
       <img 
         *ngIf="currentUser?.avatarUrl; else defaultAvatar"
         [src]="currentUser.avatarUrl" 

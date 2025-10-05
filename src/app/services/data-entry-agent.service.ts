@@ -83,18 +83,33 @@ export class DataEntryAgentService {
   }
 
   private async loadCurrentUser(): Promise<void> {
-    try {
-      const username = sessionStorage.getItem('username') || localStorage.getItem('username');
-      if (username) {
+    const username = sessionStorage.getItem('username') || localStorage.getItem('username') || 'data_entry';
+    console.log('🧪 [Service] Loading current user with username:', username);
+    
+    // Try to load user with retry logic
+    let retries = 3;
+    while (retries > 0) {
+      try {
         const response = await firstValueFrom(
-          this.http.get<any>(`${this.apiBase}/users/${username}`)
+          this.http.get<any>(`${this.apiBase}/auth/me?username=${username}`)
         );
         this.currentUser = response;
+        console.log('🧪 [Service] Current user loaded:', this.currentUser);
+        break;
+      } catch (error) {
+        retries--;
+        console.warn(`Could not load current user (${3 - retries}/3):`, error);
+        
+        if (retries === 0) {
+          this.currentUser = { fullName: 'Data Entry User', role: 'data_entry', username: 'data_entry' };
+          console.log('🧪 [Service] Using fallback user after all retries failed:', this.currentUser);
+        } else {
+          // Wait before retry
+          await new Promise(resolve => setTimeout(resolve, 1000));
+        }
       }
-    } catch (error) {
-      console.warn('Could not load current user:', error);
-      this.currentUser = { fullName: 'Data Entry User', role: 'data_entry', username: 'data_entry' };
     }
+    
     this.initializeSystemPrompt();
   }
 
@@ -137,23 +152,12 @@ export class DataEntryAgentService {
   }
 
   getWelcomeMessage(): string {
-    const userName = this.currentUser?.fullName || 'Data Entry User';
-    const greeting = this.getTimeBasedGreeting();
+    const userName = this.currentUser?.fullName || 'User';
     
-    return `${greeting} ${userName}! 👋
+    return `Welcome to User [${userName}] AI Assistant
+I can help you create new customer request quickly and save your time.
 
-مرحباً بك في مساعد إدخال البيانات الذكي / Welcome to Data Entry AI Assistant
-
-يمكنني مساعدتك في:
-I can help you with:
-
-📄 استخراج البيانات من المستندات / Extract data from documents
-✍️ إكمال البيانات الناقصة / Complete missing information
-✅ التحقق من التكرارات / Check for duplicates
-📤 إرسال الطلبات للمراجعة / Submit requests for review
-
-ابدأ برفع المستندات أو اكتب "help" للمساعدة
-Start by uploading documents or type "help" for assistance`;
+Please start upload the company documents,`;
   }
 
   private getTimeBasedGreeting(): string {
@@ -238,44 +242,77 @@ Start by uploading documents or type "help" for assistance`;
   }
 
   private async extractDataFromDocuments(documents: Array<{content: string, name: string, type: string, size: number}>): Promise<Partial<ExtractedData>> {
-    try {
+    const maxRetries = 3;
+    let lastError: any = null;
+    
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      let requestBody: any = null;
+      try {
+        console.log(`🧪 [Service] Starting document extraction (attempt ${attempt}/${maxRetries})...`, {
+          documentCount: documents.length,
+          hasApiKey: !!environment.openaiApiKey,
+          apiKeyLength: environment.openaiApiKey?.length || 0,
+          model: environment.openaiModel
+        });
+
+      // Validate API key
+      if (!environment.openaiApiKey) {
+        throw new Error('OpenAI API key not configured');
+      }
+
       const messages = [
         {
           role: 'user',
           content: [
             {
               type: 'text',
-              text: `Extract customer data from these business documents. 
-              
-CRITICAL INSTRUCTIONS:
-1. Extract ALL visible information accurately
-2. For Arabic text, provide both Arabic and transliterated English
-3. Identify the document type (Commercial Registration, Tax Card, etc.)
-4. Look for company names, tax numbers, addresses, owner names
-5. Extract registration numbers, dates, and official stamps
-6. If multiple languages exist, extract both
+              text: `Extract customer data from these business documents with MAXIMUM PRECISION.
 
-Return ONLY a JSON object with these exact fields:
+CRITICAL EXTRACTION RULES:
+1. SCAN EVERY PIXEL - examine headers, footers, margins, stamps, logos, watermarks
+2. For Arabic text, provide both Arabic and transliterated English versions
+3. Find ALL numbers - tax IDs, VAT numbers, registration numbers, license numbers, certificate numbers
+4. Look for company names in headers, logos, official stamps, or anywhere on the document
+5. Extract complete addresses from all sections including building numbers, street names, districts
+6. Find owner/CEO/manager names in signatures, official sections, or any text
+7. Extract ALL dates in any format (DD/MM/YYYY, YYYY-MM-DD, Arabic dates, etc.)
+8. Look for business activity descriptions, company purpose, or trade descriptions
+
+SPECIAL ATTENTION TO TAX NUMBERS:
+- Look for patterns like: EG-XXXXXXX, VAT numbers, Tax ID, Registration numbers
+- Check headers, footers, official stamps, and certificate numbers
+- Include any number that looks like an official identifier
+- Even if partially visible, extract what you can see
+
+REQUIRED JSON FORMAT (NO OTHER TEXT):
 {
-  "firstName": "Company name in English",
-  "firstNameAR": "اسم الشركة بالعربية",
-  "tax": "Tax/Registration number",
+  "firstName": "Complete company name in English",
+  "firstNameAR": "اسم الشركة الكامل بالعربية",
+  "tax": "Tax number, VAT number, or ANY official ID number found",
   "CustomerType": "Corporate or Individual",
-  "ownerName": "Owner/CEO/Manager name",
-  "buildingNumber": "Building/Unit number",
-  "street": "Street name/address",
-  "country": "Country",
-  "city": "City",
-  "registrationNumber": "Commercial registration number",
-  "issueDate": "Document issue date",
-  "expiryDate": "Document expiry date",
-  "businessActivity": "Business type/activity"
+  "ownerName": "Owner/CEO/Manager/Director name",
+  "buildingNumber": "Building, unit, or property number",
+  "street": "Complete street address",
+  "country": "Country name",
+  "city": "City name",
+  "registrationNumber": "Commercial registration or license number",
+  "issueDate": "Document issue date (any format)",
+  "expiryDate": "Document expiry date (any format)",
+  "businessActivity": "Business type, activity, or company purpose"
 }
 
-IMPORTANT: Extract EVERYTHING visible, even if some fields remain empty.`
+MANDATORY REQUIREMENTS:
+- If you see ANY number that could be a tax/registration/VAT ID - extract it EXACTLY
+- If you see a company name - extract the COMPLETE name
+- If you see an address - extract the FULL address including building numbers
+- If you see dates - extract them in ANY readable format
+- If you see owner names - extract them COMPLETELY
+- NEVER leave tax, registration, or ID fields empty if ANY number is visible
+- SCAN the entire document multiple times for completeness
+- Double-check every field for accuracy`
             },
             ...documents.map(doc => ({
-              type: 'image',
+              type: 'image_url',
               image_url: {
                 url: `data:${doc.type};base64,${doc.content}`
               }
@@ -288,8 +325,99 @@ IMPORTANT: Extract EVERYTHING visible, even if some fields remain empty.`
         model: environment.openaiModel || 'gpt-4o',
         messages,
         max_tokens: 4000,
-        temperature: 0.1
+        temperature: 0.0, // More deterministic for consistent extraction
+        top_p: 1.0,
+        frequency_penalty: 0.0,
+        presence_penalty: 0.0
       };
+
+      console.log('🧪 [Service] Sending request to OpenAI...', {
+        model: requestBody.model,
+        messageCount: messages.length,
+        documentCount: documents.length,
+        documentTypes: documents.map(doc => ({ name: doc.name, type: doc.type, contentLength: doc.content.length }))
+      });
+
+      // Validate request structure before sending
+      console.log('🧪 [Service] Validating request structure...');
+      
+      // Check if messages array exists and has content
+      if (!requestBody.messages || requestBody.messages.length === 0) {
+        throw new Error('No messages to send');
+      }
+      
+      // Check each message
+      requestBody.messages.forEach((message, index) => {
+        if (!message.role) {
+          throw new Error(`Message ${index} missing role`);
+        }
+        if (!message.content || message.content.length === 0) {
+          throw new Error(`Message ${index} missing content`);
+        }
+        
+        // Check each content item
+        message.content.forEach((content, contentIndex) => {
+          if (!content.type) {
+            throw new Error(`Message ${index}, Content ${contentIndex} missing type`);
+          }
+          
+          if (content.type === 'image_url') {
+            if (!(content as any).image_url || !(content as any).image_url.url) {
+              throw new Error(`Message ${index}, Content ${contentIndex} image_url missing or invalid`);
+            }
+            
+            const url = (content as any).image_url.url;
+            if (!url.startsWith('data:')) {
+              throw new Error(`Message ${index}, Content ${contentIndex} image_url does not start with 'data:'`);
+            }
+            
+            console.log(`🧪 [Service] Validated image_url: ${url.substring(0, 50)}...`);
+          }
+        });
+      });
+      
+      console.log('🧪 [Service] Request structure validation passed ✅');
+
+      // Log the actual request body structure for debugging
+      console.log('🧪 [Service] Request body structure:', {
+        model: requestBody.model,
+        messageCount: requestBody.messages.length,
+        firstMessageContentTypes: requestBody.messages[0]?.content?.map(c => c.type),
+        imageUrls: requestBody.messages[0]?.content?.filter(c => c.type === 'image_url')?.map(c => ({
+          type: c.type,
+          urlPrefix: (c as any).image_url?.url?.substring(0, 50) + '...'
+        }))
+      });
+
+      // Log the full request body for debugging (be careful with large data)
+      console.log('🧪 [Service] Full request body (first 500 chars):', JSON.stringify(requestBody).substring(0, 500));
+      
+      // Log each message content in detail
+      requestBody.messages.forEach((message, index) => {
+        console.log(`🧪 [Service] Message ${index}:`, {
+          role: message.role,
+          contentTypes: message.content?.map(c => c.type),
+          contentCount: message.content?.length
+        });
+        
+        if (message.content) {
+          message.content.forEach((content, contentIndex) => {
+            if (content.type === 'image_url') {
+              console.log(`🧪 [Service] Content ${contentIndex} (image_url):`, {
+                type: content.type,
+                urlLength: (content as any).image_url?.url?.length,
+                urlPrefix: (content as any).image_url?.url?.substring(0, 100) + '...'
+              });
+            } else {
+              console.log(`🧪 [Service] Content ${contentIndex} (${content.type}):`, {
+                type: content.type,
+                textLength: (content as any).text?.length,
+                textPreview: (content as any).text?.substring(0, 100) + '...'
+              });
+            }
+          });
+        }
+      });
 
       const response = await firstValueFrom(
         this.http.post<any>('https://api.openai.com/v1/chat/completions', requestBody, {
@@ -300,19 +428,70 @@ IMPORTANT: Extract EVERYTHING visible, even if some fields remain empty.`
         })
       );
 
+      console.log('🧪 [Service] OpenAI response received:', {
+        hasChoices: !!response.choices,
+        choiceCount: response.choices?.length || 0,
+        hasContent: !!response.choices?.[0]?.message?.content
+      });
+
+      if (!response.choices || response.choices.length === 0) {
+        throw new Error('No response from OpenAI');
+      }
+
       const content = response.choices[0].message.content;
+      if (!content) {
+        throw new Error('Empty response from OpenAI');
+      }
+
+      console.log('🧪 [Service] Raw OpenAI content:', content.substring(0, 200) + '...');
+
       const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      console.log('🧪 [Service] Cleaned content:', cleanedContent.substring(0, 200) + '...');
+
       const extractedData = JSON.parse(cleanedContent);
+      console.log('🧪 [Service] Parsed data:', extractedData);
       
       // Auto-detect country from content if not set
       if (!extractedData.country) {
         extractedData.country = this.detectCountryFromData(extractedData);
       }
 
-      return extractedData;
-    } catch (error: any) {
-      throw this.handleExtractionError(error);
+        return extractedData;
+      } catch (error: any) {
+        lastError = error;
+        console.error(`🧪 [Service] Extraction error (attempt ${attempt}/${maxRetries}):`, error);
+        
+        // Log detailed error information
+        if (error.error) {
+          console.error('🧪 [Service] Error details:', {
+            message: error.error.message,
+            type: error.error.type,
+            param: error.error.param,
+            code: error.error.code,
+            status: error.status,
+            statusText: error.statusText
+          });
+        }
+        
+        // Log the request that caused the error
+        console.error('🧪 [Service] Failed request details:', {
+          model: requestBody?.model || 'unknown',
+          messageCount: requestBody?.messages?.length || 0,
+          firstMessageContentTypes: requestBody?.messages?.[0]?.content?.map((c: any) => c.type) || []
+        });
+        
+        // If this is not the last attempt, wait before retrying
+        if (attempt < maxRetries) {
+          const waitTime = attempt * 1000; // Exponential backoff: 1s, 2s, 3s
+          console.log(`🧪 [Service] Waiting ${waitTime}ms before retry...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      }
     }
+    
+    // If we get here, all retries failed
+    console.error('🧪 [Service] All extraction attempts failed');
+    throw this.handleExtractionError(lastError);
   }
 
   private detectCountryFromData(data: any): string {
@@ -441,11 +620,17 @@ For dropdown fields, provide numbered options.`;
   }
 
   updateExtractedDataField(field: string, value: any): void {
+    console.log('🧪 [Service] updateExtractedDataField called:', { field, value });
+    console.log('🧪 [Service] Before update - extractedData:', this.extractedData);
+    
     (this.extractedData as any)[field] = value;
+    
+    console.log('🧪 [Service] After update - extractedData:', this.extractedData);
     
     // Handle country-city relationship
     if (field === 'country') {
       this.extractedData.city = ''; // Reset city when country changes
+      console.log('🧪 [Service] Reset city due to country change');
     }
   }
 
@@ -458,13 +643,47 @@ For dropdown fields, provide numbered options.`;
       'CustomerType': CUSTOMER_TYPE_OPTIONS.map(opt => ({ value: opt, label: opt })),
       'country': Object.keys(CITY_OPTIONS).map(c => ({ value: c, label: c })),
       'city': getCitiesByCountry(this.extractedData.country).map(c => ({ value: c, label: c })),
-      'salesOrganization': (SALES_ORG_OPTIONS as any[]).map(opt => ({ value: opt.value, label: opt.label })),
+      'salesOrganization': this.getSalesOrgOptionsByCountry(this.extractedData.country),
       'distributionChannel': (DISTRIBUTION_CHANNEL_OPTIONS as any[]).map(opt => ({ value: opt.value, label: opt.label })),
       'division': (DIVISION_OPTIONS as any[]).map(opt => ({ value: opt.value, label: opt.label })),
       'preferredLanguage': (PREFERRED_LANGUAGE_OPTIONS as any[]).map(opt => ({ value: opt, label: opt }))
     };
     
     return mapping[fieldName] || [];
+  }
+
+  private getSalesOrgOptionsByCountry(country: string): any[] {
+    if (!country || country.trim() === '') {
+      return (SALES_ORG_OPTIONS as any[]).map(opt => ({ value: opt.value, label: opt.label }));
+    }
+
+    console.log('🧪 [Service] Filtering sales org options for country:', country);
+    
+    // Map country names to their prefixes in sales org values
+    const countryPrefixMap: { [key: string]: string } = {
+      'Egypt': 'egypt_',
+      'Saudi Arabia': 'ksa_',
+      'United Arab Emirates': 'uae_',
+      'UAE': 'uae_',
+      'Yemen': 'yemen_',
+      'Kuwait': 'kuwait_',
+      'Qatar': 'qatar_',
+      'Bahrain': 'bahrain_',
+      'Oman': 'oman_'
+    };
+
+    const prefix = countryPrefixMap[country] || '';
+    console.log('🧪 [Service] Using prefix:', prefix);
+
+    if (prefix) {
+      const filteredOptions = (SALES_ORG_OPTIONS as any[]).filter(opt => opt.value.startsWith(prefix));
+      console.log('🧪 [Service] Filtered sales org options:', filteredOptions.length, 'options found');
+      return filteredOptions.map(opt => ({ value: opt.value, label: opt.label }));
+    } else {
+      // If no prefix found, return all options
+      console.log('🧪 [Service] No prefix found, returning all sales org options');
+      return (SALES_ORG_OPTIONS as any[]).map(opt => ({ value: opt.value, label: opt.label }));
+    }
   }
 
   getFieldLabel(fieldName: string): string {
@@ -588,7 +807,23 @@ For dropdown fields, provide numbered options.`;
 
   private handleExtractionError(error: any): Error {
     console.error('Extraction error details:', error);
-    return new Error('فشل استخراج البيانات من المستند / Failed to extract data');
+    
+    // Provide more specific error messages
+    if (error.status === 401) {
+      return new Error('مفتاح OpenAI غير صالح / Invalid OpenAI API key');
+    } else if (error.status === 429) {
+      return new Error('تجاوزت حد الاستخدام، حاول بعد دقائق / Rate limit exceeded, try again later');
+    } else if (error.status === 400) {
+      return new Error('خطأ في البيانات المرسلة / Bad request - check image format');
+    } else if (error.status === 413) {
+      return new Error('الصورة كبيرة جداً / Image too large');
+    } else if (error.status === 0 || !navigator.onLine) {
+      return new Error('لا يوجد اتصال بالإنترنت / No internet connection');
+    } else if (error.message?.includes('JSON')) {
+      return new Error('خطأ في تحليل البيانات المستخرجة / Error parsing extracted data');
+    }
+    
+    return new Error(`فشل استخراج البيانات / Extraction failed: ${error.message || 'Unknown error'}`);
   }
 
   private async fileToBase64(file: File): Promise<string> {
@@ -624,5 +859,6 @@ For dropdown fields, provide numbered options.`;
     };
   }
 }
+
 
 

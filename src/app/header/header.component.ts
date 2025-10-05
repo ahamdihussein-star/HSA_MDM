@@ -2,7 +2,7 @@
 
 import { TranslateService } from "@ngx-translate/core";
 import { Router } from '@angular/router';
-import { Inject, PLATFORM_ID, Component, OnInit, OnDestroy, ChangeDetectorRef } from '@angular/core';
+import { Inject, PLATFORM_ID, Component, OnInit, OnDestroy, ChangeDetectorRef, AfterViewInit } from '@angular/core';
 import { isPlatformBrowser } from "@angular/common";
 import { NotificationService } from '../services/notification.service';
 import { Observable, Subscription, fromEvent, firstValueFrom } from 'rxjs';
@@ -13,7 +13,7 @@ import { HttpClient } from '@angular/common/http';
   templateUrl: "./header.component.html",
   styleUrl: "./header.component.scss",
 })
-export class HeaderComponent implements OnInit, OnDestroy {
+export class HeaderComponent implements OnInit, OnDestroy, AfterViewInit {
   lang: string = "";
   user: string = "";
   unreadCount: number = 0;
@@ -63,6 +63,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    try {
+      console.log('🧭 [Header] ngOnInit start');
+      console.log('🧭 [Header] sessionStorage.username =', sessionStorage.getItem('username'));
+      console.log('🧭 [Header] sessionStorage.userRole =', sessionStorage.getItem('userRole'));
+      console.log('🧭 [Header] localStorage.username =', localStorage.getItem('username'));
+    } catch {}
     // Check sessionStorage first, then default to English
     const savedLang = sessionStorage.getItem("language");
     if (savedLang === "ar") {
@@ -115,6 +121,24 @@ export class HeaderComponent implements OnInit, OnDestroy {
     );
   }
 
+  ngAfterViewInit(): void {
+    // Give Angular a tick to render, then inspect DOM
+    setTimeout(() => {
+      try {
+        const img: HTMLImageElement | null = document.querySelector('.user-avatar-container img.userIcon');
+        if (!img) {
+          console.warn('🖼️ [Header] Avatar <img.userIcon> not found in DOM. The container may be hidden or not rendered.');
+        } else {
+          console.log('🖼️ [Header] Avatar element found. src =', img.src);
+          const rect = img.getBoundingClientRect();
+          console.log('🖼️ [Header] Avatar element size:', { width: rect.width, height: rect.height, top: rect.top, left: rect.left });
+        }
+      } catch (e) {
+        console.warn('🖼️ [Header] Error while inspecting avatar element:', e);
+      }
+    }, 0);
+  }
+
   ngOnDestroy(): void {
     this.subscriptions.forEach(sub => sub.unsubscribe());
   }
@@ -140,6 +164,30 @@ export class HeaderComponent implements OnInit, OnDestroy {
         this.userAvatarUrl = this.currentUser?.avatarUrl || null;
         
         console.log('✅ Header: User loaded with avatar:', this.currentUser?.avatarUrl);
+
+        // Verify the avatar URL is reachable
+        if (this.currentUser?.avatarUrl) {
+          try {
+            await firstValueFrom(this.http.head(this.currentUser.avatarUrl, { observe: 'response' as const }));
+            console.log('🧪 [Header] Avatar URL reachable:', this.currentUser.avatarUrl);
+          } catch (e) {
+            console.warn('⚠️ [Header] Avatar URL not reachable:', this.currentUser.avatarUrl, e);
+          }
+        }
+
+        // Force UI refresh and re-check DOM image source
+        try {
+          this.cdr.markForCheck();
+          this.cdr.detectChanges();
+          setTimeout(() => {
+            const img: HTMLImageElement | null = document.querySelector('.user-avatar-container img.userIcon');
+            if (img) {
+              console.log('🖼️ [Header] Post-load avatar src =', img.src);
+            } else {
+              console.warn('🖼️ [Header] Post-load avatar <img> still not found');
+            }
+          }, 50);
+        } catch {}
       }
     } catch (error) {
       console.error('❌ Header: Error loading user:', error);
@@ -153,6 +201,12 @@ export class HeaderComponent implements OnInit, OnDestroy {
 
   onImageLoad(event: any): void {
     console.log('✅ Header: Image loaded successfully:', event.target.src);
+  }
+
+  onAvatarClick(): void {
+    try {
+      console.log('🖱️ [Header] Avatar container clicked. currentUser:', this.currentUser);
+    } catch {}
   }
 
 

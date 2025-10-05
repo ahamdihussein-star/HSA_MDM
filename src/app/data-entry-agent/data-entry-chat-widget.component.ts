@@ -1,14 +1,15 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, TemplateRef, ViewChild } from '@angular/core';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { DataEntryAgentService, ExtractedData } from '../services/data-entry-agent.service';
 import { Subject, Subscription } from 'rxjs';
+import { NzModalService } from 'ng-zorro-antd/modal';
 
 export interface ChatMessage {
   id: string;
   role: 'user' | 'assistant';
   content: string;
   timestamp: Date;
-  type: 'text' | 'loading' | 'progress' | 'dropdown' | 'contact-form' | 'confirmation';
+  type: 'text' | 'loading' | 'progress' | 'dropdown' | 'contact-form' | 'confirmation' | 'actions';
   data?: any;
 }
 
@@ -18,6 +19,8 @@ export interface ChatMessage {
   styleUrls: ['./data-entry-chat-widget.component.scss']
 })
 export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
+  @ViewChild('documentModalTemplate', { static: false }) documentModalTemplate!: TemplateRef<any>;
+  
   isOpen = false;
   isMinimized = false;
   messages: ChatMessage[] = [];
@@ -35,17 +38,24 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   private maxFieldAttempts = 3;
   private currentMissingField: string | null = null;
   private awaitingConfirmation = false;
+  private awaitingDataReview = false;
   
   // Document upload
   uploadedFiles: File[] = [];
   showDocumentModal = false;
   pendingFiles: File[] = [];
   documentMetadataForm!: FormGroup;
+  modalKey = 0; // Force modal re-render
+  private modalInstance: any = null; // Track modal instance
   
   // Contact form
   contactForm!: FormGroup;
   showContactForm = false;
   contactsAdded: any[] = [];
+  
+  // Edit form
+  editForm!: FormGroup;
+  showEditForm = false;
   
   // Accumulated files
   accumulatedFiles: File[] = [];
@@ -55,6 +65,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   extractionProgress = 0;
   currentProcessingFile = '';
   showProgress = false;
+  // Fallback quick actions bar visibility
+  showInlineQuickActions = false;
 
   // Countries and document types for metadata modal
   countriesList: string[] = ['Egypt', 'Saudi Arabia', 'United Arab Emirates', 'Yemen'];
@@ -67,17 +79,31 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
 
   constructor(
     private agentService: DataEntryAgentService,
-    private fb: FormBuilder
+    private fb: FormBuilder,
+    private cdr: ChangeDetectorRef,
+    private modalService: NzModalService
   ) {
     this.initializeForms();
   }
 
   ngOnInit(): void {
+    console.log('🧪 [Chat] ngOnInit called');
+    console.log('🧪 [Chat] countriesList:', this.countriesList);
+    console.log('🧪 [Chat] documentTypes:', this.documentTypes);
     this.initializeChat();
     // Open the chat automatically shortly after load
     setTimeout(() => {
       this.isOpen = true;
       this.isMinimized = false;
+      // Debug: verify quick action buttons render
+      setTimeout(() => {
+        try {
+          const buttons = document.querySelectorAll('.action-btn');
+          console.log('🧪 [Chat] Action buttons count after open =', buttons.length);
+          const fileInput = document.getElementById('file-upload') as HTMLInputElement | null;
+          console.log('🧪 [Chat] file-upload input exists =', !!fileInput, ' accept =', fileInput?.accept, ' multiple =', fileInput?.multiple);
+        } catch {}
+      }, 250);
     }, 1000);
   }
 
@@ -86,6 +112,11 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private initializeForms(): void {
+    // Initialize document metadata form to avoid undefined in template
+    this.documentMetadataForm = this.fb.group({
+      documents: this.fb.array([])
+    });
+
     // Contact form with proper validation
     this.contactForm = this.fb.group({
       name: ['', Validators.required],
@@ -95,6 +126,26 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       landline: ['', Validators.pattern(/^\+?[0-9]{7,15}$/)],
       preferredLanguage: ['Arabic', Validators.required]
     });
+
+    // Edit form for extracted data
+    this.editForm = this.fb.group({
+      firstName: [''],
+      firstNameAR: [''],
+      tax: [''],
+      CustomerType: [''],
+      ownerName: [''],
+      buildingNumber: [''],
+      street: [''],
+      country: [''],
+      city: [''],
+      salesOrganization: [''],
+      distributionChannel: [''],
+      division: ['']
+    });
+  }
+
+  get isDocumentFormValid(): boolean {
+    return !!this.documentMetadataForm && this.documentMetadataForm.valid;
   }
 
   private initializeChat(): void {
@@ -129,36 +180,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       type: 'text'
     };
     this.addMessage(welcomeMessage);
-    
-    // Add quick action buttons
-    setTimeout(() => {
-      this.addQuickActions();
-    }, 1000);
   }
 
-  private addQuickActions(): void {
-    console.log('🎯 Adding quick actions...');
-    const actionMessage = {
-      id: `actions_${Date.now()}`,
-      role: 'assistant',
-      content: `اختر إجراء سريع / Choose quick action:
-      
-🚀 **الإجراءات السريعة / Quick Actions:**`,
-      timestamp: new Date(),
-      type: 'text',
-      data: {
-        buttons: [
-          { text: '📄 رفع مستند / Upload Document', action: 'upload' },
-          { text: '✍️ إدخال يدوي / Manual Entry', action: 'manual' },
-          { text: '❓ مساعدة / Help', action: 'help' }
-        ]
-      }
-    };
-    console.log('📦 Action message:', actionMessage);
-    this.addMessage(actionMessage);
-    console.log('✅ Actions added to messages array');
-    console.log('📊 Total messages:', this.messages.length);
-  }
 
   getCurrentUserName(): string {
     const user = this.agentService.getCurrentUser();
@@ -183,30 +206,78 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   onFileSelected(event: any): void {
-    const files: FileList = event.target.files;
+    const files: FileList = event?.target?.files;
+    console.log('🧪 [Chat] onFileSelected fired. files? =', !!files, 'count =', files?.length ?? 0);
     if (!files || files.length === 0) return;
 
     this.pendingFiles = Array.from(files);
-    this.showDocumentModal = true;
     this.initializeDocumentForm();
+    
+    // Use modal service instead of template modal
+    this.openDocumentModalWithService();
+  }
+
+  private openDocumentModalWithService(): void {
+    // Close any existing modal
+    if (this.modalInstance) {
+      this.modalInstance.destroy();
+    }
+
+    this.modalInstance = this.modalService.create({
+      nzTitle: 'إضافة معلومات المستندات / Add Document Information',
+      nzContent: this.documentModalTemplate,
+      nzWidth: '800px',
+      nzFooter: null,
+      nzOnCancel: () => {
+        this.closeDocumentModal();
+      }
+    });
+
+    // Handle modal close
+    this.modalInstance.afterClose.subscribe(() => {
+      this.modalInstance = null;
+    });
+
+    // Wait for modal to render then check content
+    setTimeout(() => {
+      this.debugModalLayoutCheck('openDocumentModalWithService');
+    }, 100);
   }
 
   private initializeDocumentForm(): void {
+    console.log('🧪 [Chat] initializeDocumentForm() start. pendingFiles =', this.pendingFiles.map(f => f.name));
+    
+    // Clear existing form
     this.documentMetadataForm = this.fb.group({
       documents: this.fb.array([])
     });
 
     const documentsArray = this.documentMetadataForm.get('documents') as FormArray;
     
+    // Clear any existing form controls
+    while (documentsArray.length !== 0) {
+      documentsArray.removeAt(0);
+    }
+    
     this.pendingFiles.forEach(file => {
       const detectedInfo = this.detectDocumentInfo(file.name);
+      console.log('🧪 [Chat] detected info for', file.name, '=', detectedInfo);
       
-      documentsArray.push(this.fb.group({
+      const documentGroup = this.fb.group({
+        name: [file.name],
         country: [detectedInfo?.country || '', Validators.required],
         type: [detectedInfo?.type || '', Validators.required],
         description: [this.generateSmartDescription(file.name, detectedInfo)]
-      }));
+      });
+      
+      documentsArray.push(documentGroup);
     });
+    
+    console.log('🧪 [Chat] documentsFA length =', documentsArray.length);
+    console.log('🧪 [Chat] documentMetadataForm valid =', this.documentMetadataForm.valid);
+    
+    // Force change detection to ensure form is updated
+    this.cdr.markForCheck();
   }
 
   private detectDocumentInfo(filename: string): { country?: string; type?: string } | null {
@@ -237,22 +308,28 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   saveDocuments(): void {
+    console.log('🧪 [Chat] saveDocuments() clicked. form valid =', this.documentMetadataForm?.valid, ' pendingFiles =', this.pendingFiles.map(f => f.name));
     if (this.documentMetadataForm.valid) {
       const filesToProcess = [...this.pendingFiles];
-      this.closeDocumentModal();
-      
       const metadata = this.documentsFA.controls.map(control => ({
         country: control.get('country')?.value,
         type: control.get('type')?.value,
         description: control.get('description')?.value
       }));
+      console.log('🧪 [Chat] saveDocuments() metadata =', metadata);
+      // Close modal and confirm visibility state
+      this.closeDocumentModal();
+      console.log('🧪 [Chat] after closeDocumentModal -> showDocumentModal =', this.showDocumentModal);
 
       this.processDocumentsWithMetadata(filesToProcess, metadata);
+    } else {
+      console.warn('⚠️ [Chat] saveDocuments() blocked due to invalid form');
     }
   }
 
   private async processDocumentsWithMetadata(files: File[], metadata: Array<{ country?: string; type: string; description: string }>): Promise<void> {
     try {
+      console.log('🧪 [Chat] processDocumentsWithMetadata start. files =', files.map(f => f.name), ' metadata count =', metadata.length);
       // User message
       const fileNames = files.map(f => f.name).join(', ');
       this.addMessage({
@@ -279,24 +356,19 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
           setTimeout(() => reject(new Error('Processing timeout')), 60000)
         )
       ]);
+      console.log('🧪 [Chat] processDocumentsWithMetadata success. Extracted keys =', Object.keys(extractedData || {}));
 
       // Remove progress
       this.messages = this.messages.filter(m => m.id !== progressMessage.id);
 
-      // Display results
+      // Display results and wait for user review
       this.displayExtractedDataWithLabels(extractedData);
-
-      // Check missing fields
-      const missingFields = this.checkMissingFields(extractedData);
-      if (missingFields.length > 0) {
-        setTimeout(() => {
-          this.askForMissingField(missingFields[0]);
-        }, 1500);
-      } else {
-        this.confirmDataBeforeSubmission();
-      }
+      
+      // Set flag to wait for user confirmation
+      this.awaitingDataReview = true;
 
     } catch (error: any) {
+      console.error('❌ [Chat] processDocumentsWithMetadata error:', error);
       this.messages = this.messages.filter(m => m.type === 'loading');
       
       this.addMessage({
@@ -351,6 +423,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private checkMissingFields(data: ExtractedData): string[] {
+    console.log('🧪 [Chat] checkMissingFields called with data:', data);
+    
     const required = [
       'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
       'buildingNumber', 'street', 'country', 'city',
@@ -359,14 +433,18 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     
     const missing = required.filter(field => {
       const value = (data as any)[field];
-      return !value || (typeof value === 'string' && value.trim() === '');
+      const isEmpty = !value || (typeof value === 'string' && value.trim() === '');
+      console.log(`🧪 [Chat] Field ${field}: value="${value}", isEmpty=${isEmpty}`);
+      return isEmpty;
     });
 
     // Check contacts
     if (!data.contacts || data.contacts.length === 0) {
       missing.push('contacts');
+      console.log('🧪 [Chat] Contacts field is missing');
     }
 
+    console.log('🧪 [Chat] Missing fields result:', missing);
     return missing;
   }
 
@@ -409,13 +487,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       return;
     }
 
-    let content = `📋 ${fieldLabel}\n\nاختر من القائمة / Select from list:\n\n`;
-    
-    options.forEach((opt, index) => {
-      content += `${index + 1}. ${opt.label}\n`;
-    });
-
-    content += `\nاكتب الرقم أو الاسم / Type number or name`;
+    // Simple message without listing all options
+    const content = `📋 ${fieldLabel}\nاختر من القائمة / Select from list:`;
 
     this.addMessage({
       id: `dropdown_${field}_${Date.now()}`,
@@ -450,21 +523,35 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   onDropdownSelection(field: string, selected: any): void {
+    console.log('🧪 [Chat] onDropdownSelection called:', { field, selected });
+    
     const value = selected && selected.value !== undefined ? selected.value : selected;
+    console.log('🧪 [Chat] Extracted value:', value);
+    
     this.agentService.updateExtractedDataField(field, value);
+    console.log('🧪 [Chat] Field updated in service');
+    
     this.addMessage({
       id: `dropdown_selected_${Date.now()}`,
       role: 'assistant',
-      content: `✅ تم اختيار / Selected: ${selected.label || value}`,
+      content: `✅ تم اختيار / Selected: ${selected?.label || value}`,
       timestamp: new Date(),
       type: 'text'
     });
+    console.log('🧪 [Chat] Confirmation message added');
+    
     // Move to next field
     const extractedData = this.agentService.getExtractedData();
+    console.log('🧪 [Chat] Current extracted data:', extractedData);
+    
     const missingFields = this.checkMissingFields(extractedData);
+    console.log('🧪 [Chat] Missing fields after selection:', missingFields);
+    
     if (missingFields.length > 0) {
+      console.log('🧪 [Chat] Moving to next field:', missingFields[0]);
       setTimeout(() => this.askForMissingField(missingFields[0]), 500);
     } else {
+      console.log('🧪 [Chat] All fields complete, showing confirmation');
       this.confirmDataBeforeSubmission();
     }
   }
@@ -572,6 +659,8 @@ Will now check for duplicates then submit the request.
       // Handle field responses
       if (this.currentMissingField) {
         await this.handleFieldResponse(userMessage);
+      } else if (this.awaitingDataReview) {
+        await this.handleDataReviewResponse(userMessage);
       } else if (this.awaitingConfirmation) {
         await this.handleConfirmationResponse(userMessage);
       } else {
@@ -659,6 +748,59 @@ Will now check for duplicates then submit the request.
       }, 1000);
     } else {
       this.confirmDataBeforeSubmission();
+    }
+  }
+
+  private async handleDataReviewResponse(userMessage: string): Promise<void> {
+    console.log('🧪 [Chat] handleDataReviewResponse called with:', userMessage);
+    
+    const lower = userMessage.toLowerCase();
+    
+    if (lower.includes('نعم') || lower.includes('yes') || lower === 'y') {
+      // User confirmed the extracted data is correct
+      this.addMessage({
+        id: `data_confirmed_${Date.now()}`,
+        role: 'assistant',
+        content: '✅ تم تأكيد البيانات / Data confirmed. سأتابع الآن لطلب البيانات الناقصة / Will now continue to ask for missing data.',
+        timestamp: new Date(),
+        type: 'text'
+      });
+      
+      this.awaitingDataReview = false;
+      
+      // Continue with missing fields check
+      setTimeout(() => {
+        const extractedData = this.agentService.getExtractedData();
+        const missingFields = this.checkMissingFields(extractedData);
+        if (missingFields.length > 0) {
+          this.askForMissingField(missingFields[0]);
+        } else {
+          this.confirmDataBeforeSubmission();
+        }
+      }, 1000);
+      
+    } else if (lower.includes('لا') || lower.includes('no') || lower === 'n') {
+      // User wants to edit the data
+      this.addMessage({
+        id: `edit_requested_${Date.now()}`,
+        role: 'assistant',
+        content: '✏️ يمكنك تعديل البيانات الآن. اكتب الحقل والقيمة الجديدة / You can edit the data now. Type field and new value.',
+        timestamp: new Date(),
+        type: 'text'
+      });
+      
+      this.awaitingDataReview = false;
+      // TODO: Implement data editing functionality
+      
+    } else {
+      // Default to confirmation if unclear response
+      this.addMessage({
+        id: `clarify_data_${Date.now()}`,
+        role: 'assistant',
+        content: 'هل البيانات صحيحة أم تريد تعديلها؟ / Is the data correct or do you want to edit it? (نعم/yes أو لا/no)',
+        timestamp: new Date(),
+        type: 'text'
+      });
     }
   }
 
@@ -769,10 +911,7 @@ You can track the request in your task list.`,
         this.contactsAdded = [];
         this.fieldAttempts = {} as any;
         
-        // Show new options
-        setTimeout(() => {
-          this.addQuickActions();
-        }, 2000);
+        // Conversation completed successfully
       }
     } catch (error: any) {
       this.addMessage({
@@ -793,9 +932,17 @@ You can track the request in your task list.`,
   }
 
   onButtonClick(action: string, data?: any): void {
+    console.log('🧪 [Chat] onButtonClick:', action, data ?? '');
     switch(action) {
       case 'upload':
-        document.getElementById('file-upload')?.click();
+        const input = document.getElementById('file-upload') as HTMLInputElement | null;
+        console.log('🧪 [Chat] file-upload element found =', !!input);
+        if (input) {
+          input.click();
+          console.log('🧪 [Chat] file-upload click triggered');
+        } else {
+          console.warn('⚠️ [Chat] file-upload element missing in DOM');
+        }
         break;
       case 'manual':
         this.startManualEntry();
@@ -885,15 +1032,50 @@ I'll help you enter data step by step.
   }
 
   private editExtractedData(): void {
+    console.log('🧪 [Chat] editExtractedData called');
+    
+    // Pre-fill the form with extracted data first
+    const extractedData = this.agentService.getExtractedData();
+    console.log('🧪 [Chat] Extracted data for form:', extractedData);
+    
+    const formData = {
+      firstName: extractedData.firstName || '',
+      firstNameAR: extractedData.firstNameAR || '',
+      tax: extractedData.tax || '',
+      CustomerType: extractedData.CustomerType || '',
+      ownerName: extractedData.ownerName || '',
+      buildingNumber: extractedData.buildingNumber || '',
+      street: extractedData.street || '',
+      country: extractedData.country || '',
+      city: extractedData.city || '',
+      salesOrganization: extractedData.salesOrganization || '',
+      distributionChannel: extractedData.distributionChannel || '',
+      division: extractedData.division || ''
+    };
+    
+    console.log('🧪 [Chat] Form data to patch:', formData);
+    
+    this.editForm.patchValue(formData);
+    
+    // Force change detection
+    this.cdr.detectChanges();
+    
+    console.log('🧪 [Chat] Form patched. Current form value:', this.editForm.value);
+    
+    // Show edit form modal after form is ready
+    setTimeout(() => {
+      this.showEditForm = true;
+      this.cdr.detectChanges();
+      console.log('🧪 [Chat] Edit form modal opened');
+    }, 200);
+    
     this.addMessage({
       id: `edit_${Date.now()}`,
       role: 'assistant',
       content: `✏️ **تعديل البيانات / Edit Data**
       
-اكتب اسم الحقل الذي تريد تعديله متبوعاً بالقيمة الجديدة.
-Type the field name you want to edit followed by the new value.
-
-مثال / Example: "tax: 123456789"`,
+يرجى مراجعة وتعديل البيانات في النموذج المنبثق.
+Please review and edit the data in the popup form.`,
       timestamp: new Date(),
       type: 'text'
     });
@@ -976,11 +1158,56 @@ Type the field name you want to edit followed by the new value.
     this.showDocumentModal = false;
     this.pendingFiles = [];
     this.documentMetadataForm.reset();
+    
+    // Close modal service instance if it exists
+    if (this.modalInstance) {
+      this.modalInstance.destroy();
+      this.modalInstance = null;
+    }
   }
 
   closeContactForm(): void {
     this.showContactForm = false;
     this.contactForm.reset({ preferredLanguage: 'Arabic' });
+  }
+
+  saveEditForm(): void {
+    if (this.editForm.valid) {
+      const formData = this.editForm.value;
+      
+      // Update extracted data with form values
+      Object.keys(formData).forEach(key => {
+        if (formData[key] !== '') {
+          this.agentService.updateExtractedDataField(key, formData[key]);
+        }
+      });
+      
+      this.addMessage({
+        id: `edit_saved_${Date.now()}`,
+        role: 'assistant',
+        content: '✅ تم حفظ التعديلات / Changes saved successfully.',
+        timestamp: new Date(),
+        type: 'text'
+      });
+      
+      this.showEditForm = false;
+      
+      // Continue with missing fields check
+      setTimeout(() => {
+        const extractedData = this.agentService.getExtractedData();
+        const missingFields = this.checkMissingFields(extractedData);
+        if (missingFields.length > 0) {
+          this.askForMissingField(missingFields[0]);
+        } else {
+          this.confirmDataBeforeSubmission();
+        }
+      }, 1000);
+    }
+  }
+
+  closeEditForm(): void {
+    this.showEditForm = false;
+    this.editForm.reset();
   }
 
   get documentsFA(): FormArray {
@@ -1014,8 +1241,10 @@ Type the field name you want to edit followed by the new value.
     this.pendingFiles = [...this.accumulatedFiles];
     this.accumulatedFiles = [];
     this.showAccumulatedFiles = false;
-    this.showDocumentModal = true;
     this.initializeDocumentForm();
+    
+    // Use modal service instead of template modal
+    this.openDocumentModalWithService();
   }
 
   onCountryChange(selectedCountry: string, formIndex: number): void {
@@ -1027,17 +1256,59 @@ Type the field name you want to edit followed by the new value.
   }
 
   getDocumentTypesByCountry(country: string): string[] {
-    return this.documentTypes[country] || ['Other'];
+    if (!country || country.trim() === '') {
+      return ['Other'];
+    }
+    console.log('🧪 [Chat] getDocumentTypesByCountry called with country:', country);
+    const types = this.documentTypes[country] || ['Other'];
+    console.log('🧪 [Chat] Returning document types:', types);
+    return types;
   }
 
   private addMessage(message: ChatMessage): ChatMessage {
-    this.messages.push(message);
+    console.log('🧪 [Chat] addMessage type=', message.type, 'id=', message.id);
+    console.log('🧪 [Chat] message.data =', message.data);
+    console.log('🧪 [Chat] message.data?.buttons =', message.data?.buttons);
     
+    // Use immutable update to guarantee change detection
+    this.messages = [...this.messages, message];
+
     // Limit messages
     if (this.messages.length > this.MAX_MESSAGES) {
       this.messages = this.messages.slice(-20);
     }
-    
+
+    // Force change detection immediately
+    try { 
+      this.cdr.markForCheck(); 
+      this.cdr.detectChanges(); 
+    } catch (e) {
+      console.warn('🧪 [Chat] Change detection error:', e);
+    }
+
+    // Debug: verify DOM rendering for action buttons when applicable
+    setTimeout(() => {
+      try {
+        const buttonsContainer = document.querySelectorAll('.action-buttons');
+        const buttons = document.querySelectorAll('.action-buttons .action-btn');
+        const messagesContainer = document.querySelectorAll('.message');
+        console.log('🧪 [Chat] DOM action-buttons containers =', buttonsContainer.length, ' action-btn count =', buttons.length);
+        console.log('🧪 [Chat] DOM messages count =', messagesContainer.length);
+        
+        // Check if the specific action message is in DOM
+        if (message.type === 'actions') {
+          const actionMessage = document.querySelector(`[data-message-id="${message.id}"]`);
+          console.log('🧪 [Chat] Action message in DOM =', !!actionMessage);
+          if (actionMessage) {
+            const actionButtons = actionMessage.querySelectorAll('.action-buttons');
+            console.log('🧪 [Chat] Action buttons in message =', actionButtons.length);
+          }
+        }
+      } catch (e) {
+        console.warn('🧪 [Chat] DOM inspection error:', e);
+      }
+    }, 100);
+
     this.scrollToBottom();
     return message;
   }
@@ -1055,6 +1326,76 @@ Type the field name you want to edit followed by the new value.
         });
       }
     }, 50);
+  }
+
+  private debugModalLayoutCheck(context: string): void {
+    try {
+      const runCheck = (attempt: number) => {
+        const overlay = document.querySelector('.cdk-overlay-container') as HTMLElement | null;
+        const modalBody = document.querySelector('.ant-modal-body') as HTMLElement | null;
+        const chat = document.querySelector('.chat-widget-container') as HTMLElement | null;
+
+        const overlayZ = overlay ? getComputedStyle(overlay).zIndex : 'N/A';
+        const chatZ = chat ? getComputedStyle(chat).zIndex : 'N/A';
+        const bodyMaxH = modalBody ? getComputedStyle(modalBody).maxHeight : 'N/A';
+        const bodyOverflow = modalBody ? getComputedStyle(modalBody).overflowY : 'N/A';
+
+        console.log(`🧪 [Chat][${context}] Modal debug (attempt ${attempt}) → overlay z-index=`, overlayZ, ' chat z-index=', chatZ);
+        console.log(`🧪 [Chat][${context}] Modal body styles → max-height=`, bodyMaxH, ' overflow-y=', bodyOverflow);
+        
+        // Check if modal is visible
+        console.log(`🧪 [Chat][${context}] showDocumentModal =`, this.showDocumentModal);
+        console.log(`🧪 [Chat][${context}] documentMetadataForm exists =`, !!this.documentMetadataForm);
+        console.log(`🧪 [Chat][${context}] documentsFA length =`, this.documentsFA.length);
+        
+        if (modalBody) {
+          const rect = modalBody.getBoundingClientRect();
+          console.log('🧪 [Chat] Modal body rect:', { width: rect.width, height: rect.height, top: rect.top, left: rect.left });
+
+          // Dump a snippet of HTML to confirm projection
+          const htmlSample = (modalBody.innerHTML || '').slice(0, 200).replace(/\n/g, ' ');
+          console.log('🧪 [Chat] Modal body HTML sample:', htmlSample);
+
+          // Inspect children visibility/size
+          const container = modalBody.querySelector('.document-modal-content') as HTMLElement | null;
+          const form = modalBody.querySelector('.document-modal-content form') as HTMLElement | null;
+          const card = modalBody.querySelector('.document-modal-content nz-card, .document-modal-content .ant-card') as HTMLElement | null;
+          const firstRow = modalBody.querySelector('.document-modal-content .form-row') as HTMLElement | null;
+
+          const logEl = (label: string, el: HTMLElement | null) => {
+            if (!el) { 
+              console.warn(`🧪 [Chat] ${label} not found`); 
+              return; 
+            }
+            const cs = getComputedStyle(el);
+            const r = el.getBoundingClientRect();
+            console.log(`🧪 [Chat] ${label} → display=${cs.display} visibility=${cs.visibility} height=${r.height} width=${r.width}`);
+          };
+          logEl('document-modal-content', container);
+          logEl('document-modal-content form', form);
+          logEl('first ant-card', card);
+          logEl('first .form-row', firstRow);
+
+          // Count controls
+          const inputs = modalBody.querySelectorAll('input, textarea, nz-select');
+          console.log('🧪 [Chat] Modal inputs/selects count =', inputs.length);
+
+          // If content is still not rendered, try to force change detection
+          if ((!container || inputs.length === 0) && attempt < 5) {
+            console.log(`🧪 [Chat] Attempting to force change detection (attempt ${attempt})`);
+            this.cdr.detectChanges();
+            setTimeout(() => runCheck(attempt + 1), 200);
+          } else if (attempt >= 5) {
+            console.warn('🧪 [Chat] Modal content still not rendered after 5 attempts');
+          }
+        } else {
+          console.warn('🧪 [Chat] Modal body element not found for debug');
+        }
+      };
+      setTimeout(() => runCheck(1), 100);
+    } catch (e) {
+      console.warn('🧪 [Chat] debugModalLayoutCheck error:', e);
+    }
   }
 }
 
