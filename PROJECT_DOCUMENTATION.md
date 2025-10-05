@@ -994,4 +994,791 @@ const testResponse = await this.http.post(environment.openaiApiUrl, {
 
 ---
 
+## 🤖 Important for Data Entry Customer Creation AI Agent
+
+This section provides comprehensive documentation for AI agents to understand and interact with the customer creation system. This is critical for automated data entry, validation, and workflow automation.
+
+### 📋 Overview
+
+The customer creation process in the Master Data Management system is a multi-step workflow that includes:
+1. **Data Entry**: Creating new customer requests with comprehensive information
+2. **Validation**: Real-time duplicate detection and field validation
+3. **Document Upload**: Attaching required documents
+4. **Contact Management**: Managing multiple contact persons
+5. **Submission**: Submitting requests for review
+
+---
+
+### 🔧 New Customer Request Form Fields
+
+The customer request form (`/dashboard/new-request`) contains the following field structure:
+
+#### **1. General Data Section (معلومات عامة)**
+
+| Field Name | Type | Required | Description | API Field Name |
+|------------|------|----------|-------------|----------------|
+| Company Name (English) | Text Input | ✅ Yes | Company name in English | `firstName` |
+| Company Name (Arabic) | Text Input | ✅ Yes | Company name in Arabic - Has auto-translate button | `firstNameAR` |
+| Customer Type | Dropdown List | ✅ Yes | Type of customer/company | `CustomerType` |
+| Company Owner Full Name | Text Input | ✅ Yes | Full name of company owner | `CompanyOwnerFullName` |
+| Tax Number | Text Input | ✅ Yes | Company tax registration number | `tax` |
+| Building Number | Text Input | ❌ No | Building number in address | `buildingNumber` |
+| Street | Text Input | ❌ No | Street name | `street` |
+| Country | Dropdown List | ✅ Yes | Country selection | `country` |
+| City | Dropdown List | ✅ Yes | City selection (filtered by country) | `city` |
+
+**Field Details:**
+
+- **firstName** (Text): 
+  - Primary company name in English
+  - Placeholder: "Enter Company Name"
+  - Validation: Required
+
+- **firstNameAR** (Text):
+  - Company name in Arabic
+  - Placeholder: "Enter Company Name AR"
+  - Has auto-translate button (using AutoTranslateService)
+  - Validation: Required
+
+- **CustomerType** (Dropdown):
+  - **Options**:
+    - `Corporate` - Corporate
+    - `SME` - SME (Small and Medium Enterprise)
+    - `sole_proprietorship` - Sole Proprietorship
+    - `limited_liability` - Limited Liability
+    - `joint_stock` - Joint Stock
+    - `Retail Chain` - Retail Chain
+  - Source: `CUSTOMER_TYPE_OPTIONS` from `shared/lookup-data.ts`
+  - Validation: Required
+  - **Important**: Used in duplicate detection logic
+
+- **CompanyOwnerFullName** (Text):
+  - Full name of the company owner
+  - Placeholder: "Enter Company Owner"
+  - Validation: Required
+
+- **tax** (Text):
+  - Tax registration number
+  - Placeholder: "Tax Number"
+  - Validation: Required
+  - **Important**: Used in duplicate detection logic (primary key)
+
+- **buildingNumber** (Text):
+  - Building number in address
+  - Placeholder: "Enter Building Number"
+  - Optional field
+
+- **street** (Text):
+  - Street name
+  - Placeholder: "Enter Street Name"
+  - Optional field
+
+- **country** (Dropdown):
+  - **Options**:
+    - `Egypt` - Egypt
+    - `Saudi Arabia` - Saudi Arabia
+    - `United Arab Emirates` - United Arab Emirates
+    - `Yemen` - Yemen
+  - Source: `COUNTRY_OPTIONS` from `shared/lookup-data.ts`
+  - Validation: Required
+  - **Important**: Controls which cities are available in City dropdown
+
+- **city** (Dropdown):
+  - **Options**: Dynamically populated based on selected country
+  - **Egypt Cities**: Cairo, Alexandria, Giza, Luxor
+  - **Saudi Arabia Cities**: Riyadh, Jeddah, Mecca, Dammam
+  - **United Arab Emirates Cities**: Dubai, Abu Dhabi, Sharjah, Ajman
+  - **Yemen Cities**: Sanaa, Aden, Taiz
+  - Source: `CITY_OPTIONS` from `shared/lookup-data.ts`
+  - Validation: Required
+  - **Important**: Auto-filtered when country changes via `getCitiesByCountry()` function
+
+---
+
+#### **2. Contacts Section (جهات الاتصال)**
+
+The contacts section is a **dynamic array** that allows adding multiple contact persons. Each contact has the following fields:
+
+| Field Name | Type | Required | Description | API Field Name |
+|------------|------|----------|-------------|----------------|
+| Name | Text Input | ❌ No | Full name of contact person | `name` |
+| Job Title | Text Input | ❌ No | Job title/position | `jobTitle` |
+| Email Address | Text Input | ❌ No | Email address | `email` |
+| Mobile Number | Text Input | ❌ No | Mobile phone number | `mobile` |
+| Landline | Text Input | ❌ No | Landline phone number | `landline` |
+| Preferred Language | Dropdown List | ❌ No | Communication language preference | `preferredLanguage` |
+
+**Contact Management:**
+- Users can add multiple contacts using "Add +" button
+- Each contact has a delete button (trash icon)
+- Contacts are stored in a FormArray in the form
+- When no contacts exist, empty state is shown
+- API Field: `contacts` (array of contact objects)
+
+**Preferred Language Options:**
+- `EN` - English
+- `AR` - Arabic
+- `Both` - Both English and Arabic
+- Source: `PREFERRED_LANGUAGE_OPTIONS` from `shared/lookup-data.ts`
+
+**Contact Object Structure:**
+```typescript
+interface ContactPerson {
+  id: string;              // Auto-generated unique ID
+  name: string;
+  jobTitle?: string;
+  email?: string;
+  mobile?: string;
+  landline?: string;
+  preferredLanguage?: string;
+  source?: string;         // System source (e.g., 'Data Steward')
+  by?: string;            // Created by username
+  when?: string;          // Timestamp
+}
+```
+
+---
+
+#### **3. Documents Section (المستندات)**
+
+The documents section allows uploading multiple documents with metadata.
+
+**Document Upload Process:**
+1. Click "Upload Document" button
+2. Select file from computer
+3. Fill document metadata:
+   - File Name (editable)
+   - Document Type (dropdown)
+   - Description (optional)
+4. Click "Upload Document" to save
+
+**Document Types (docTypeOptions):**
+
+**Yemen Documents:**
+- `yemen_commercial_register` - Yemen - Commercial Registration Certificate
+- `yemen_tax_card` - Yemen - Tax Registration Card
+- `yemen_chamber_commerce` - Yemen - Chamber of Commerce Certificate
+- `yemen_import_export_license` - Yemen - Import Export License
+- `yemen_industrial_license` - Yemen - Industrial License
+- `yemen_municipality_license` - Yemen - Municipality License
+
+**Egypt Documents:**
+- `egypt_commercial_register` - Egypt - Commercial Registration
+- `egypt_tax_card` - Egypt - Tax Registration Card
+- `egypt_vat_certificate` - Egypt - VAT Registration Certificate
+- `egypt_import_register` - Egypt - Importers Register
+- `egypt_export_register` - Egypt - Exporters Register
+- `egypt_industrial_register` - Egypt - Industrial Register
+- `egypt_chamber_commerce` - Egypt - Chamber of Commerce Certificate
+- `egypt_gafi_license` - Egypt - GAFI Investment License
+
+**Saudi Arabia Documents:**
+- `ksa_commercial_register` - KSA - Commercial Registration (Sijil Tijari)
+- `ksa_vat_certificate` - KSA - VAT Registration Certificate
+- `ksa_zakat_certificate` - KSA - Zakat and Tax Certificate
+- `ksa_chamber_commerce` - KSA - Chamber of Commerce Certificate
+- `ksa_municipality_license` - KSA - Municipality License (Baladia)
+- `ksa_industrial_license` - KSA - Industrial License
+- `ksa_saso_certificate` - KSA - SASO Quality Certificate
+- `ksa_nitaqat_certificate` - KSA - Nitaqat Certificate
+
+**UAE Documents:**
+- `uae_trade_license` - UAE - Trade License
+- `uae_establishment_card` - UAE - Establishment Card
+- `uae_chamber_commerce` - UAE - Chamber of Commerce Certificate
+- `uae_vat_registration` - UAE - VAT Registration Certificate
+- `uae_customs_code` - UAE - Customs Code Certificate
+- `uae_economic_license` - UAE - Economic Department License
+- `uae_municipality_permit` - UAE - Municipality Permit
+
+**General Documents (All Countries):**
+- `bank_account_letter` - Bank Account Verification Letter
+- `authorized_signature_list` - Authorized Signatures List
+- `power_of_attorney` - Power of Attorney
+- `articles_of_association` - Articles of Association
+- `board_resolution` - Board Resolution
+- `financial_statements` - Audited Financial Statements
+- `iso_certificate` - ISO Certification
+- `halal_certificate` - Halal Certificate
+
+**Document Object Structure:**
+```typescript
+interface UploadedDoc {
+  id: string;              // Auto-generated unique ID
+  name: string;            // File name
+  type: string;            // Document type from dropdown
+  description: string;     // Optional description
+  size: number;           // File size in bytes
+  mime: string;           // MIME type (e.g., 'application/pdf')
+  uploadedAt: string;     // ISO timestamp
+  contentBase64: string;  // Base64 encoded file content
+  source?: string;        // System source
+  by?: string;           // Uploaded by username
+  when?: string;         // Upload timestamp
+}
+```
+
+**Allowed File Types:**
+- PDF: `application/pdf`
+- Images: `image/jpeg`, `image/png`, `image/webp`
+- Word: `application/msword`, `application/vnd.openxmlformats-officedocument.wordprocessingml.document`
+- Excel: `application/vnd.ms-excel`, `application/vnd.openxmlformats-officedocument.spreadsheetml.sheet`
+- Text: `text/plain`
+
+**Maximum File Size:** 10 MB per file
+
+**Document Actions:**
+- **Preview**: View document (for PDF and images)
+- **Download**: Download document file
+- **Delete**: Remove document (for data entry users only)
+
+---
+
+#### **4. Sales Area Section (منطقة المبيعات)**
+
+| Field Name | Type | Required | Description | API Field Name |
+|------------|------|----------|-------------|----------------|
+| Sales Organization | Dropdown List | ❌ No | Sales organization | `SalesOrgOption` |
+| Distribution Channel | Dropdown List | ❌ No | Distribution channel | `DistributionChannelOption` |
+| Division | Dropdown List | ❌ No | Division | `DivisionOption` |
+
+**Sales Organization Options (SalesOrgOption):**
+
+**Yemen Operations:**
+- `yemen_main_office` - Yemen - Main Office Sanaa
+- `yemen_aden_branch` - Yemen - Aden Branch
+- `yemen_taiz_branch` - Yemen - Taiz Branch
+- `yemen_hodeidah_branch` - Yemen - Hodeidah Branch
+- `yemen_hadramout_branch` - Yemen - Hadramout Branch
+
+**Egypt Operations:**
+- `egypt_cairo_office` - Egypt - Cairo Head Office
+- `egypt_alexandria_branch` - Egypt - Alexandria Branch
+- `egypt_giza_branch` - Egypt - Giza Branch
+- `egypt_upper_egypt_branch` - Egypt - Upper Egypt Branch
+- `egypt_delta_region_branch` - Egypt - Delta Region Branch
+
+**Saudi Arabia Operations:**
+- `ksa_riyadh_office` - Saudi Arabia - Riyadh Office
+- `ksa_jeddah_branch` - Saudi Arabia - Jeddah Branch
+- `ksa_dammam_branch` - Saudi Arabia - Dammam Branch
+- `ksa_makkah_branch` - Saudi Arabia - Makkah Branch
+- `ksa_madinah_branch` - Saudi Arabia - Madinah Branch
+
+**UAE Operations:**
+- `uae_dubai_office` - UAE - Dubai Office
+- `uae_abu_dhabi_branch` - UAE - Abu Dhabi Branch
+- `uae_sharjah_branch` - UAE - Sharjah Branch
+- `uae_ajman_branch` - UAE - Ajman Branch
+
+**Distribution Channel Options (DistributionChannelOption):**
+- `direct_sales` - Direct Sales
+- `authorized_distributors` - Authorized Distributors
+- `retail_chains` - Retail Chains
+- `wholesale_partners` - Wholesale Partners
+- `ecommerce_platform` - E-commerce Platform
+- `business_to_business` - Business to Business
+- `hospitality_sector` - Hotels Restaurants Cafes
+- `export_partners` - Export Partners
+- `government_contracts` - Government Contracts
+- `institutional_sales` - Institutional Sales
+
+**Division Options (DivisionOption):**
+- `food_products` - Food Products Division
+- `beverages` - Beverages Division
+- `dairy_products` - Dairy Products Division
+- `biscuits_confectionery` - Biscuits and Confectionery Division
+- `pasta_wheat_products` - Pasta and Wheat Products Division
+- `cooking_oils_fats` - Cooking Oils and Fats Division
+- `detergents_cleaning` - Detergents and Cleaning Products Division
+- `personal_care` - Personal Care Products Division
+- `industrial_supplies` - Industrial Supplies Division
+- `packaging_materials` - Packaging Materials Division
+
+---
+
+### 🔗 Country-City Relationship (ربط الدولة بالمدينة)
+
+The Country and City dropdown lists are **dynamically linked**:
+
+**How it works:**
+
+1. **Initial Load**: City dropdown is empty
+2. **Country Selection**: When user selects a country, the `setupCountryCityLogic()` function is triggered
+3. **City Filtering**: Cities are filtered using `getCitiesByCountry(selectedCountry)` function from `shared/lookup-data.ts`
+4. **City Reset**: If country changes and current city is invalid, city is reset to null
+5. **Validation**: City options are automatically filtered based on country
+
+**Technical Implementation:**
+```typescript
+// Country change listener
+this.requestForm.get('country')?.valueChanges.subscribe(selectedCountry => {
+  // Filter cities by country
+  this.filteredCityOptions = getCitiesByCountry(selectedCountry || '');
+  
+  // Reset city if not valid for new country
+  const currentCity = this.requestForm.get('city')?.value;
+  const cityStillValid = this.filteredCityOptions.some(o => o.value === currentCity);
+  if (!cityStillValid) {
+    this.requestForm.get('city')?.setValue(null);
+  }
+});
+```
+
+**Country-City Mapping:**
+```typescript
+CITY_OPTIONS = {
+  'Egypt': [
+    { value: 'Cairo', label: 'Cairo' },
+    { value: 'Alexandria', label: 'Alexandria' },
+    { value: 'Giza', label: 'Giza' },
+    { value: 'Luxor', label: 'Luxor' }
+  ],
+  'Saudi Arabia': [
+    { value: 'Riyadh', label: 'Riyadh' },
+    { value: 'Jeddah', label: 'Jeddah' },
+    { value: 'Mecca', label: 'Mecca' },
+    { value: 'Dammam', label: 'Dammam' }
+  ],
+  'United Arab Emirates': [
+    { value: 'Dubai', label: 'Dubai' },
+    { value: 'Abu Dhabi', label: 'Abu Dhabi' },
+    { value: 'Sharjah', label: 'Sharjah' },
+    { value: 'Ajman', label: 'Ajman' }
+  ],
+  'Yemen': [
+    { value: 'Sanaa', label: 'Sanaa' },
+    { value: 'Aden', label: 'Aden' },
+    { value: 'Taiz', label: 'Taiz' }
+  ]
+};
+```
+
+---
+
+### 🔍 Duplicate Detection Rules (قواعد كشف التكرار)
+
+The system has **real-time duplicate detection** to prevent duplicate customer records:
+
+#### **Detection Logic:**
+
+**Primary Keys for Duplicate Check:**
+1. **Tax Number** (`tax` field)
+2. **Customer Type** (`CustomerType` field)
+
+**When Duplicate Check is Triggered:**
+- When user enters/changes tax number
+- When user selects/changes customer type
+- Automatically after both fields have values
+
+**Detection Process:**
+1. Form monitors `tax` and `CustomerType` fields via `valueChanges`
+2. When both have values, `validateForDuplicateImmediate()` is called
+3. API call to `POST /api/requests/check-duplicate` with payload:
+   ```json
+   {
+     "tax": "123456789",
+     "CustomerType": "Corporate"
+   }
+   ```
+4. API queries golden records (`isGolden = 1`) for matching records
+5. If match found, duplicate warning is displayed
+
+**Customer Type Mapping:**
+The API performs mapping for legacy values:
+```javascript
+const customerTypeMapping = {
+  'limited_liability': 'Limited Liability Company',
+  'joint_stock': 'Joint Stock Company',
+  'sole_proprietorship': 'Sole Proprietorship',
+  'Corporate': 'Corporate',
+  'SME': 'SME',
+  'Retail Chain': 'Retail Chain'
+};
+```
+
+#### **Duplicate Warning Messages:**
+
+**When Duplicate is Found:**
+```html
+⚠️ DUPLICATE FOUND:
+Existing Customer: [Company Name]
+Tax Number: [Tax Number]
+Type: [Customer Type]
+
+[View Duplicate Details Button]
+```
+
+**Duplicate Warning Display:**
+- Background: Light red (`#fff2f0`)
+- Border: Left border red (`#ff4d4f`)
+- Icon: Warning emoji (⚠️)
+- Action Button: "View Duplicate Details" (blue)
+
+**Submit Button Behavior:**
+- **Enabled**: When no duplicate found or fields incomplete
+- **Disabled**: When duplicate is found (`hasDuplicate = true`)
+- Disable Logic: `isSubmitDisabled() { return this.hasDuplicate || this.isLoading; }`
+
+---
+
+### 📡 APIs Used for New Customer Request
+
+#### **1. Check Duplicate API**
+
+**Endpoint:** `POST /api/requests/check-duplicate`
+
+**Purpose:** Check if a customer with the same tax number and customer type already exists in golden records
+
+**Request Body:**
+```json
+{
+  "tax": "string",
+  "CustomerType": "string"
+}
+```
+
+**Response (Duplicate Found):**
+```json
+{
+  "isDuplicate": true,
+  "message": "A customer with this tax number and type already exists in golden records.",
+  "existingRecord": {
+    "id": "string",
+    "firstName": "string",
+    "tax": "string",
+    "CustomerType": "string",
+    "country": "string",
+    "city": "string"
+  }
+}
+```
+
+**Response (No Duplicate):**
+```json
+{
+  "isDuplicate": false,
+  "message": "No duplicate found"
+}
+```
+
+**Error Response:**
+```json
+{
+  "error": "Tax number and Customer Type are required"
+}
+```
+
+---
+
+#### **2. Create Request API**
+
+**Endpoint:** `POST /api/requests`
+
+**Purpose:** Create a new customer request
+
+**Request Body:**
+```json
+{
+  "firstName": "string",
+  "firstNameAR": "string",
+  "tax": "string",
+  "CustomerType": "string",
+  "CompanyOwnerFullName": "string",
+  "buildingNumber": "string",
+  "street": "string",
+  "country": "string",
+  "city": "string",
+  "SalesOrgOption": "string",
+  "DistributionChannelOption": "string",
+  "DivisionOption": "string",
+  "contacts": [
+    {
+      "id": "string",
+      "name": "string",
+      "jobTitle": "string",
+      "email": "string",
+      "mobile": "string",
+      "landline": "string",
+      "preferredLanguage": "string"
+    }
+  ],
+  "documents": [
+    {
+      "id": "string",
+      "name": "string",
+      "type": "string",
+      "description": "string",
+      "size": number,
+      "mime": "string",
+      "uploadedAt": "string",
+      "contentBase64": "string"
+    }
+  ],
+  "origin": "dataEntry",
+  "sourceSystem": "Data Steward",
+  "createdBy": "string",
+  "status": "Pending",
+  "assignedTo": "reviewer"
+}
+```
+
+**Response (Success):**
+```json
+{
+  "id": "unique-request-id",
+  "message": "Request created successfully"
+}
+```
+
+**Error Response:**
+```json
+{
+  "error": "Error message",
+  "details": "Detailed error information"
+}
+```
+
+---
+
+#### **3. Get Request API**
+
+**Endpoint:** `GET /api/requests/:id`
+
+**Purpose:** Retrieve a specific customer request
+
+**Response:**
+```json
+{
+  "id": "string",
+  "requestId": "string",
+  "firstName": "string",
+  "firstNameAr": "string",
+  "tax": "string",
+  "CustomerType": "string",
+  "CompanyOwner": "string",
+  "buildingNumber": "string",
+  "street": "string",
+  "country": "string",
+  "city": "string",
+  "status": "string",
+  "contacts": [...],
+  "documents": [...],
+  "createdAt": "ISO timestamp",
+  "createdBy": "string"
+}
+```
+
+---
+
+#### **4. Update Request API**
+
+**Endpoint:** `POST /api/requests/:id/resubmit`
+
+**Purpose:** Update and resubmit an existing request (for rejected/quarantined records)
+
+**Request Body:** Same as Create Request API
+
+**Response:**
+```json
+{
+  "message": "Request updated and resubmitted successfully"
+}
+```
+
+---
+
+#### **5. Auto-Translate API**
+
+**Endpoint:** Internal service - `AutoTranslateService`
+
+**Purpose:** Translate company name from English to Arabic
+
+**Method:** `translateToArabic()`
+
+**Implementation:**
+```typescript
+async translateToArabic(): Promise<void> {
+  const englishName = this.requestForm.get('firstName')?.value;
+  if (englishName) {
+    try {
+      const arabicName = await this.autoTranslate.translateToArabic(englishName);
+      this.requestForm.get('firstNameAR')?.setValue(arabicName);
+      this.msg.success('Translation completed');
+    } catch (error) {
+      this.msg.error('Translation failed');
+    }
+  }
+}
+```
+
+---
+
+### 🎲 Demo Data Generation
+
+The system includes a **Demo Data Generator Service** for testing and demonstration purposes.
+
+#### **How Demo Data Works:**
+
+1. **Service**: `DemoDataGeneratorService` (located in `services/demo-data-generator.service.ts`)
+2. **Keyboard Shortcut**: Press `Ctrl + Shift + D` to auto-fill the form with demo data
+3. **Data Pool**: Service contains a predefined list of demo companies
+4. **Random Selection**: Each time demo data is triggered, a random company is selected
+5. **Sequential Loading**: Companies are loaded sequentially to avoid repetition
+
+#### **Demo Data Structure:**
+
+```typescript
+interface DemoCompany {
+  name: string;              // Company name (English)
+  nameAr: string;           // Company name (Arabic)
+  tax: string;              // Tax number (format: XXX-XXX-XXX)
+  customerType: string;     // Customer type
+  companyOwner: string;     // Owner name
+  buildingNumber: string;   // Building number
+  street: string;           // Street name
+  country: string;          // Country
+  city: string;             // City
+  salesOrg: string;         // Sales organization
+  distributionChannel: string; // Distribution channel
+  division: string;         // Division
+  contacts: Array<{         // Contact persons
+    name: string;
+    jobTitle: string;
+    email: string;
+    mobile: string;
+    landline: string;
+    preferredLanguage: string;
+  }>;
+  documents: Array<{        // Documents metadata
+    name: string;
+    type: string;
+    description: string;
+  }>;
+}
+```
+
+#### **Demo Companies List:**
+
+The system includes demo companies from various countries:
+
+**Egypt Companies:**
+1. Al Ahram Beverages Company
+2. Egyptian Steel
+3. Cairo Pharmaceutical Industries
+4. Delta Sugar Company
+5. Alexandria Containers
+
+**Saudi Arabia Companies:**
+1. Saudi Dairy & Foodstuff Company (SADAFCO)
+2. National Gas & Industrialization Company (GASAN)
+3. Saudi Industrial Investment Group
+4. Riyadh Cables Group Company
+5. Jeddah Pharmaceutical Company
+
+**UAE Companies:**
+1. Emirates Steel Industries
+2. Al Ain Water Company
+3. Dubai Refreshments Company
+4. Sharjah Cement Factory
+5. Abu Dhabi Food Industries
+
+**Yemen Companies:**
+1. Yemen Soft Drinks Industries
+2. Yemen Company for Industry and Commerce
+3. Yemen Tobacco and Matches Company
+4. National Company for Grain Industry
+5. Yemen Company for Cement Industry
+
+#### **Demo Data Features:**
+
+- **Complete Form Fill**: Fills all required and optional fields
+- **Multiple Contacts**: Each company has 2-3 pre-defined contacts
+- **Document Templates**: Provides document names and types
+- **Country-City Sync**: Automatically sets correct city for selected country
+- **Realistic Data**: Uses real-looking company names and information
+- **No Duplicates**: Sequential loading ensures no repetition within a session
+- **Reset Capability**: Can reset and reload the demo data pool
+
+#### **Keyboard Shortcut Implementation:**
+
+```typescript
+private setupKeyboardAutoFill(): void {
+  if (isPlatformBrowser(this.platformId)) {
+    const handleKeyDown = (event: KeyboardEvent) => {
+      // Ctrl + Shift + D
+      if (event.ctrlKey && event.shiftKey && event.key === 'D') {
+        event.preventDefault();
+        this.fillDemoData();
+      }
+    };
+    
+    document.addEventListener('keydown', handleKeyDown);
+  }
+}
+```
+
+#### **Demo Data API Integration:**
+
+Demo data does NOT require special APIs. It simply:
+1. Fills the form fields with demo values
+2. Creates contact FormGroups with demo contacts
+3. User can then submit the form normally
+4. Follows the same validation and submission flow
+
+---
+
+### ✅ Validation Rules Summary
+
+| Field | Required | Validation Type | Special Rules |
+|-------|----------|----------------|---------------|
+| firstName | Yes | Non-empty | - |
+| firstNameAR | Yes | Non-empty | - |
+| tax | Yes | Non-empty | Used in duplicate check |
+| CustomerType | Yes | Dropdown selection | Used in duplicate check |
+| CompanyOwnerFullName | Yes | Non-empty | - |
+| country | Yes | Dropdown selection | Controls city options |
+| city | Yes | Dropdown selection | Filtered by country |
+| buildingNumber | No | - | - |
+| street | No | - | - |
+| SalesOrgOption | No | - | - |
+| DistributionChannelOption | No | - | - |
+| DivisionOption | No | - | - |
+| contacts | No | Array | Optional, can be empty |
+| documents | No | Array | Optional, can be empty |
+
+---
+
+### 🔄 Form Submission Flow
+
+1. **User fills form** with required fields
+2. **Duplicate check** runs automatically when tax + CustomerType are entered
+3. **Validation** checks all required fields
+4. **Submit button** is enabled only when:
+   - All required fields are filled
+   - No duplicate found (`hasDuplicate = false`)
+   - Not currently loading (`isLoading = false`)
+5. **Submit request** calls `POST /api/requests`
+6. **Response handling**:
+   - Success: Show success message and redirect
+   - Error: Show error message and keep form open
+7. **Status change** to "Pending" and assigned to "reviewer"
+
+---
+
+### 📝 Important Notes for AI Agents
+
+1. **Duplicate Detection is Critical**: Always check for duplicates before submission
+2. **Country-City Relationship**: City must be valid for selected country
+3. **Dynamic Arrays**: Contacts and documents are arrays that can have 0 to many items
+4. **Document Upload**: Files must be base64 encoded in the request
+5. **Demo Data**: Use demo data for testing but ensure it doesn't create real records
+6. **Validation**: Respect required fields and dropdown options
+7. **API Endpoints**: Use correct API endpoints with proper HTTP methods
+8. **Error Handling**: Handle API errors gracefully
+9. **User Role**: Only data entry users can create new requests
+10. **Form State**: Track form state (new, edit, view) for proper UI behavior
+
+---
+
 *This documentation is maintained and updated regularly. For questions or contributions, please contact the development team.*
