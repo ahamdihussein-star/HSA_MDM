@@ -2146,40 +2146,28 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
     return this.placeholderMap.get(field) || field;
   }
 
-  // ✅ Optimized select options with Map for O(1) lookup
-  private selectOptionsMap = new Map([
-    ['CustomerType', [
-      { value: 'Corporate', label: 'Corporate' },
-      { value: 'SME', label: 'SME' },
-      { value: 'Individual', label: 'Individual' }
-    ]],
-    ['country', [
-      { value: 'Egypt', label: 'Egypt' },
-      { value: 'Saudi Arabia', label: 'Saudi Arabia' },
-      { value: 'United Arab Emirates', label: 'United Arab Emirates' },
-      { value: 'Yemen', label: 'Yemen' }
-    ]],
-    ['salesOrganization', [
-      { value: 'egypt_cairo_office', label: 'Egypt - Cairo Head Office' },
-      { value: 'egypt_alexandria_branch', label: 'Egypt - Alexandria Branch' },
-      { value: 'egypt_giza_branch', label: 'Egypt - Giza Branch' },
-      { value: 'ksa_riyadh_office', label: 'Saudi Arabia - Riyadh Office' },
-      { value: 'ksa_jeddah_branch', label: 'Saudi Arabia - Jeddah Branch' }
-    ]],
-    ['distributionChannel', [
-      { value: 'direct_sales', label: 'Direct Sales' },
-      { value: 'authorized_distributors', label: 'Authorized Distributors' },
-      { value: 'retail_chains', label: 'Retail Chains' }
-    ]],
-    ['division', [
-      { value: 'food_products', label: 'Food Products Division' },
-      { value: 'beverages', label: 'Beverages Division' },
-      { value: 'household_items', label: 'Household Items Division' }
-    ]]
-  ]);
-
-  getSelectOptions(field: string): Array<{value: string, label: string}> {
-    return this.selectOptionsMap.get(field) || [];
+  // Use shared lookup lists for dropdowns in modals
+  getSelectOptions(field: string): Array<{ value: string; label: string }> {
+    switch (field) {
+      case 'CustomerType':
+        // CUSTOMER_TYPE_OPTIONS is an array of { value, label } in shared lookups
+        return (this.customerTypeOptions as any[]).map((o: any) => ({ value: o.value || o, label: o.label || o }));
+      case 'country':
+        return (this.countryOptions as any[]).map((o: any) => ({ value: o.value || o, label: o.label || o }));
+      case 'city': {
+        const country = this.unifiedModalForm?.get('country')?.value || '';
+        const cities = getCitiesByCountry(country);
+        return (cities as any[]).map((c: any) => ({ value: c.value || c, label: c.label || c }));
+      }
+      case 'salesOrganization':
+        return (this.salesOrgOptions as any[]).map((o: any) => ({ value: o.value, label: o.label }));
+      case 'distributionChannel':
+        return (this.distributionChannelOptions as any[]).map((o: any) => ({ value: o.value, label: o.label }));
+      case 'division':
+        return (this.divisionOptions as any[]).map((o: any) => ({ value: o.value, label: o.label }));
+      default:
+        return [];
+    }
   }
 
   get documentsFA(): FormArray {
