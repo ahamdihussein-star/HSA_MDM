@@ -1430,10 +1430,33 @@ I'll help you enter data step by step.
 
   fillWithDemoData(): void {
     try {
+      console.log('🎯 [DEMO] Starting demo data generation...');
+      console.log('🎯 [DEMO] Modal state:', { 
+        showUnifiedModal: this.showUnifiedModal, 
+        unifiedModalForm: !!this.unifiedModalForm 
+      });
+      
+      // Ensure modal and form are ready
+      if (!this.showUnifiedModal) {
+        console.warn('⚠️ [DEMO] Unified modal not open. Opening now before applying demo data...');
+        this.openUnifiedModal();
+        this.cdr.detectChanges();
+      }
+      if (!this.unifiedModalForm) {
+        console.warn('⚠️ [DEMO] unifiedModalForm not initialized yet. Deferring demo fill...');
+        setTimeout(() => this.fillWithDemoData(), 50);
+        return;
+      }
+
       if (!this.currentDemoCompany) {
         this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+        console.log('🎯 [DEMO] Generated new company:', this.currentDemoCompany);
       }
+      
       if (this.showUnifiedModal && this.unifiedModalForm) {
+        console.log('🎯 [DEMO] Patching form with demo data...');
+        
+        // Patch main form fields
         this.unifiedModalForm.patchValue({
           firstName: this.currentDemoCompany.name,
           firstNameAR: this.currentDemoCompany.nameAr,
@@ -1448,10 +1471,22 @@ I'll help you enter data step by step.
           distributionChannel: this.currentDemoCompany.distributionChannel,
           division: this.currentDemoCompany.division
         });
+        
+        // Update city options based on country
         this.updateCityOptions(this.currentDemoCompany.country);
+        
+        // Handle contacts
         const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
-        while (contactsArray.length !== 0) contactsArray.removeAt(0);
-        this.currentDemoCompany.contacts.forEach(contact => {
+        console.log('🎯 [DEMO] Current contacts array length:', contactsArray.length);
+        
+        // Clear existing contacts
+        while (contactsArray.length !== 0) {
+          contactsArray.removeAt(0);
+        }
+        
+        // Add demo contacts
+        this.currentDemoCompany.contacts.forEach((contact, index) => {
+          console.log(`🎯 [DEMO] Adding contact ${index + 1}:`, contact);
           this.addContactToUnifiedForm();
           const idx = contactsArray.length - 1;
           contactsArray.at(idx).patchValue({
@@ -1463,7 +1498,19 @@ I'll help you enter data step by step.
             preferredLanguage: contact.preferredLanguage
           });
         });
+        
+        // Force change detection
+        this.cdr.detectChanges();
+        
+        console.log('✅ [DEMO] Demo data applied successfully');
+    } else {
+        console.warn('⚠️ [DEMO] Cannot apply demo data - modal not open or form not initialized');
+        console.log('Modal state:', { 
+          showUnifiedModal: this.showUnifiedModal, 
+          unifiedModalForm: !!this.unifiedModalForm 
+        });
       }
+      
       this.addMessage({
         id: `demo_${Date.now()}`,
         role: 'assistant',
@@ -1472,8 +1519,14 @@ I'll help you enter data step by step.
         type: 'text'
       });
     } catch (e) {
-      console.error('Error generating demo data:', e);
-      alert('Failed to generate demo data. Please try again.');
+      console.error('❌ [DEMO] Error generating demo data:', e);
+      this.addMessage({
+        id: `demo_error_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ **Demo data failed:** ${e}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
     }
   }
 

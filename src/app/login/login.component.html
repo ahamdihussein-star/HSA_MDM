@@ -14,7 +14,7 @@
         [formGroup]="loginForm"
         (ngSubmit)="onSubmit()"
         class="form_holder"
-        autocomplete="off"
+        autocomplete="on"
         data-lpignore="true"
       >
         <!-- Changed from email to username -->
@@ -30,9 +30,10 @@
             <input
               nz-input
               id="username"
+              name="username"
               formControlName="username"
               placeholder="{{ 'EnterUsername' | translate }}"
-              autocomplete="off"
+              autocomplete="on"
               data-lpignore="true"
               data-form-type="other"
             />
