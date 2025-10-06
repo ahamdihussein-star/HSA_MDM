@@ -511,21 +511,12 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private displayExtractedDataWithLabels(data: ExtractedData): void {
-    const extractedFieldsList = Object.entries(data)
-      .filter(([key, value]) => value && value !== '' && key !== 'contacts')
-      .map(([key, value]) => `• ${this.getFieldLabel(key)}: ${value}`)
-      .join('\n');
+    const contentHtml = this.generateConfirmationMessage(data as any);
 
     this.addMessage({
       id: `review_${Date.now()}`,
       role: 'assistant',
-      content: `✅ **تم استخراج البيانات بنجاح! / Data Extracted Successfully!**
-
-**البيانات المستخرجة / Extracted Data:**
-${extractedFieldsList}
-
-يرجى مراجعة البيانات وإكمال أي معلومات ناقصة.
-Please review the data and complete any missing information.`,
+      content: contentHtml,
       timestamp: new Date(),
       type: 'confirmation',
       data: {
@@ -533,13 +524,51 @@ Please review the data and complete any missing information.`,
           { 
             text: '📝 مراجعة وإكمال البيانات / Review & Complete Data', 
             action: 'open_unified_modal',
-            class: 'primary-action-button'
+            class: 'modern-btn btn-primary'
           }
         ]
       }
     });
     
     this.awaitingDataReview = true;
+  }
+
+  private generateConfirmationMessage(data: any): string {
+    return `
+<div class="extraction-success-card">
+  <div class="success-header">
+    <span class="success-icon">✅</span>
+    <h3>تم استخراج البيانات بنجاح / Data Extracted Successfully</h3>
+  </div>
+  <div class="data-preview">
+    <div class="data-section">
+      <h4>🏢 معلومات الشركة / Company Information</h4>
+      <div class="data-grid">
+        <div class="data-item">
+          <span class="label">Company Name:</span>
+          <span class="value">${data.firstName || 'N/A'}</span>
+        </div>
+        <div class="data-item">
+          <span class="label">Tax Number:</span>
+          <span class="value">${data.tax || 'N/A'}</span>
+        </div>
+      </div>
+    </div>
+    <div class="data-section">
+      <h4>📍 العنوان / Address</h4>
+      <div class="data-grid">
+        <div class="data-item">
+          <span class="label">Country:</span>
+          <span class="value">${data.country || 'N/A'}</span>
+        </div>
+        <div class="data-item">
+          <span class="label">City:</span>
+          <span class="value">${data.city || 'N/A'}</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>`;
   }
 
   private checkMissingFields(data: ExtractedData): string[] {

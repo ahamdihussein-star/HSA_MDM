@@ -70,6 +70,57 @@
   background: #e6f7ff !important;
   transition: background 0.3s ease;
 }
+
+.modern-action-buttons {
+  display: flex;
+  gap: 12px;
+  padding: 16px 0;
+  .modern-btn {
+    flex: 1;
+    padding: 12px 24px;
+    border-radius: 8px;
+    font-size: 14px;
+    font-weight: 600;
+    border: none;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    &.btn-primary {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+      color: #fff;
+      &:hover { transform: translateY(-2px); box-shadow: 0 8px 20px rgba(102,126,234,0.4); }
+    }
+    &.btn-secondary {
+      background: #f3f4f6;
+      color: #374151;
+      border: 2px solid #e5e7eb;
+      &:hover { background: #e5e7eb; transform: translateY(-1px); }
+    }
+  }
+}
+
+.extraction-success-card {
+  background: linear-gradient(135deg, #f6ffed 0%, #ffffff 100%);
+  border: 1px solid #b7eb8f;
+  border-radius: 12px;
+  padding: 20px;
+  .success-header {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    margin-bottom: 20px;
+    .success-icon { font-size: 28px; }
+    h3 { margin: 0; color: #52c41a; }
+  }
+  .data-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 12px;
+    .data-item {
+      .label { color: #6b7280; font-size: 12px; }
+      .value { color: #111827; font-weight: 600; }
+    }
+  }
+}
 // Floating Chat Widget Styles
 .chat-widget-container {
   position: fixed;
