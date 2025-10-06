@@ -14,6 +14,8 @@ import { NzCardModule } from 'ng-zorro-antd/card';
 import { NzToolTipModule } from 'ng-zorro-antd/tooltip';
 import { NzProgressModule } from 'ng-zorro-antd/progress';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
+import { NzSpinModule } from 'ng-zorro-antd/spin';
+import { NzAlertModule } from 'ng-zorro-antd/alert';
 
 // Components
 import { DataEntryAgentComponent } from './data-entry-agent.component';
@@ -38,7 +40,9 @@ import { DataEntryChatWidgetComponent } from './data-entry-chat-widget.component
     NzCardModule,
     NzToolTipModule,
     NzProgressModule,
-    NzDividerModule
+    NzDividerModule,
+    NzSpinModule,
+    NzAlertModule
   ],
   exports: [
     DataEntryAgentComponent,

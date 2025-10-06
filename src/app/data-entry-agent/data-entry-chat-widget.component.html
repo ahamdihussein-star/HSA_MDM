@@ -621,6 +621,16 @@
   
   <div *nzModalContent>
     <form *ngIf="unifiedModalForm" [formGroup]="unifiedModalForm">
+      <div class="modal-section-header" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f0f0f0;">
+        <h3 style="margin:0;">📝 مراجعة وإكمال البيانات / Review & Complete Data</h3>
+        <div class="header-actions">
+          <button type="button" nz-button nzType="dashed" (click)="fillWithDemoData()">
+            <i nz-icon nzType="experiment"></i>
+            Demo Fill
+          </button>
+          <span class="demo-info">{{ getRemainingDemoCompanies() }} companies remaining</span>
+        </div>
+      </div>
       
       <!-- Section 1: Extracted Data -->
       <div class="modal-section extracted-section" *ngIf="unifiedModalData.extractedFields.length > 0">
@@ -853,10 +863,49 @@
         </div>
       </div>
       
-      <!-- Section 3: Contacts -->
+      <!-- Section 3: Documents -->
+      <div class="modal-section documents-section">
+        <div class="section-header">
+          <h3>📄 المستندات المرفوعة / Uploaded Documents</h3>
+          <button type="button" 
+                  nz-button 
+                  nzType="default"
+                  nzSize="small"
+                  (click)="triggerDocumentReplacement()"
+                  [disabled]="isReprocessingDocuments">
+            <span nz-icon nzType="upload"></span>
+            استبدال المستندات / Replace Documents
+          </button>
+        </div>
+        <input type="file" id="unifiedFileInput" multiple accept="image/*,.pdf" (change)="onUnifiedDocumentSelected($event)" style="display: none;">
+        <div *ngIf="isReprocessingDocuments" class="reprocessing-indicator">
+          <nz-spin nzSimple [nzSize]="'large'"></nz-spin>
+          <p>جاري إعادة معالجة المستندات بتقنية OCR...</p>
+          <p>Reprocessing documents with OCR...</p>
+        </div>
+        <div class="documents-list" *ngIf="!isReprocessingDocuments">
+          <div class="document-item" *ngFor="let doc of unifiedModalDocuments; let i = index">
+            <div class="document-info">
+              <span nz-icon nzType="file-pdf" *ngIf="doc.type?.includes('pdf')"></span>
+              <span nz-icon nzType="file-image" *ngIf="doc.type?.includes('image')"></span>
+              <span nz-icon nzType="file" *ngIf="!doc.type?.includes('pdf') && !doc.type?.includes('image')"></span>
+              <span class="document-name">{{ doc.name }}</span>
+              <span class="document-size">{{ (doc.size / 1024).toFixed(2) }} KB</span>
+            </div>
+            <button type="button" nz-button nzType="text" nzDanger nzSize="small" (click)="removeDocumentFromUnified(i)">
+              <span nz-icon nzType="delete"></span>
+            </button>
+          </div>
+          <div *ngIf="unifiedModalDocuments.length === 0" class="no-documents">
+            <p>لا توجد مستندات مرفوعة / No documents uploaded</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- Section 4: Contacts -->
       <div class="modal-section contacts-section">
         <div class="section-header">
-          <h3>👥 جهات الاتصال / Contact Persons</h3>
+          <h3>👥 جهات الاتصال (اختياري) / Contacts (Optional)</h3>
           <button type="button" 
                   nz-button 
                   nzType="primary" 
@@ -923,8 +972,8 @@
         </div>
         
         <div class="contacts-hint" *ngIf="unifiedContactsArray.length === 0">
-          <span nz-icon nzType="warning" nzTheme="fill" style="color: #fa8c16;"></span>
-          يجب إضافة جهة اتصال واحدة على الأقل / At least one contact is required
+          <span nz-icon nzType="info-circle" nzTheme="outline" style="color: #1890ff;"></span>
+          جهات الاتصال اختيارية / Contacts are optional
         </div>
       </div>
       
@@ -956,6 +1005,10 @@
           حفظ وإرسال / Save & Submit
         </button>
       </div>
+    </div>
+
+    <div class="auto-fill-hint">
+      <nz-alert nzType="info" nzMessage="Tip: Double Space in any field to auto-fill with demo data" nzShowIcon [nzCloseable]="true"></nz-alert>
     </div>
   </div>
 </nz-modal>

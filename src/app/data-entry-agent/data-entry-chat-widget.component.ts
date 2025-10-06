@@ -1,6 +1,8 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, TemplateRef, ViewChild } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, TemplateRef, ViewChild, Inject, PLATFORM_ID } from '@angular/core';
+import { isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { DataEntryAgentService, ExtractedData } from '../services/data-entry-agent.service';
+import { DemoDataGeneratorService, DemoCompany } from '../services/demo-data-generator.service';
 import { Subject, Subscription } from 'rxjs';
 import { NzModalService } from 'ng-zorro-antd/modal';
 import { 
@@ -80,6 +82,17 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     missingFields: [],
     contacts: []
   };
+  // Demo data properties
+  currentDemoCompany: DemoCompany | null = null;
+  private keyboardListener: ((event: KeyboardEvent) => void) | null = null;
+  private lastSpaceTime: number = 0;
+  private spaceClickCount: number = 0;
+
+  // Document management for unified modal
+  unifiedModalDocuments: any[] = [];
+  showDocumentReplace = false;
+  isReprocessingDocuments = false;
+  originalExtractedData: any = {};
 
   // Lookup data for dropdowns
   customerTypeOptions = CUSTOMER_TYPE_OPTIONS;
@@ -114,7 +127,9 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     private agentService: DataEntryAgentService,
     private fb: FormBuilder,
     private cdr: ChangeDetectorRef,
-    private modalService: NzModalService
+    private modalService: NzModalService,
+    private demoDataGenerator: DemoDataGeneratorService,
+    @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.initializeForms();
   }
@@ -127,10 +142,16 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     // Open the chat automatically
       this.isOpen = true;
       this.isMinimized = false;
+
+    // Setup keyboard auto-fill
+    this.setupKeyboardAutoFill();
   }
 
   ngOnDestroy(): void {
     this.cleanup();
+    if (this.keyboardListener && isPlatformBrowser(this.platformId)) {
+      document.removeEventListener('keydown', this.keyboardListener);
+    }
   }
 
   private initializeForms(): void {
@@ -433,25 +454,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     return description;
   }
 
-  saveDocuments(): void {
-    console.log('🧪 [Chat] saveDocuments() clicked. form valid =', this.documentMetadataForm?.valid, ' pendingFiles =', this.pendingFiles.map(f => f.name));
-    if (this.documentMetadataForm.valid) {
-      const filesToProcess = [...this.pendingFiles];
-      const metadata = this.documentsFA.controls.map(control => ({
-        country: control.get('country')?.value,
-        type: control.get('type')?.value,
-        description: control.get('description')?.value
-      }));
-      console.log('🧪 [Chat] saveDocuments() metadata =', metadata);
-      // Close modal and confirm visibility state
-      this.closeDocumentModal();
-      console.log('🧪 [Chat] after closeDocumentModal -> showDocumentModal =', this.showDocumentModal);
-
-      this.processDocumentsWithMetadata(filesToProcess, metadata);
-    } else {
-      console.warn('⚠️ [Chat] saveDocuments() blocked due to invalid form');
-    }
-  }
+  
 
   private async processDocumentsWithMetadata(files: File[], metadata: Array<{ country?: string; type: string; description: string }>): Promise<void> {
     try {
@@ -1256,6 +1259,202 @@ I'll help you enter data step by step.
     });
   }
 
+  // Demo auto-fill setup (double space)
+  private setupKeyboardAutoFill(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    console.log('Setting up keyboard auto-fill for data entry');
+    this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+    this.keyboardListener = (event: KeyboardEvent) => {
+      if (event.key === ' ' || event.code === 'Space') {
+        const now = Date.now();
+        if (now - this.lastSpaceTime < 500) {
+          this.spaceClickCount++;
+          if (this.spaceClickCount >= 2) {
+            event.preventDefault();
+            console.log('Double space detected - triggering auto-fill');
+            this.handleAutoFillKeypress();
+            this.spaceClickCount = 0;
+          }
+        } else {
+          this.spaceClickCount = 1;
+        }
+        this.lastSpaceTime = now;
+      }
+    };
+    document.addEventListener('keydown', this.keyboardListener);
+  }
+
+  private handleAutoFillKeypress(): void {
+    const activeElement = document.activeElement as HTMLElement;
+    if (!activeElement || !this.currentDemoCompany) return;
+    const fieldName = this.getFieldNameFromElement(activeElement);
+    if (!fieldName) return;
+    const demoValue = this.getDemoValueForField(fieldName);
+    if (demoValue !== null && demoValue !== undefined) {
+      this.fillFieldWithValue(fieldName, demoValue);
+      this.addVisualFeedback(activeElement);
+    }
+  }
+
+  private getFieldNameFromElement(element: HTMLElement): string | null {
+    const formControlName = element.getAttribute('formControlName');
+    if (formControlName) return formControlName;
+    const name = element.getAttribute('name');
+    if (name) return name;
+    const id = element.getAttribute('id');
+    if (id) return id;
+    let parent = element.parentElement;
+    while (parent && parent.tagName !== 'FORM') {
+      const parentFormControlName = parent.getAttribute('formControlName');
+      if (parentFormControlName) return parentFormControlName;
+      parent = parent.parentElement;
+    }
+    return null;
+  }
+
+  private getDemoValueForField(fieldName: string): any {
+    if (!this.currentDemoCompany) return null;
+    const map: { [key: string]: any } = {
+      firstName: this.currentDemoCompany.name,
+      firstNameAR: this.currentDemoCompany.nameAr,
+      tax: this.currentDemoCompany.taxNumber,
+      CustomerType: this.currentDemoCompany.customerType,
+      ownerName: this.currentDemoCompany.ownerName,
+      buildingNumber: this.currentDemoCompany.buildingNumber,
+      street: this.currentDemoCompany.street,
+      country: this.currentDemoCompany.country,
+      city: this.currentDemoCompany.city,
+      salesOrganization: this.currentDemoCompany.salesOrg,
+      distributionChannel: this.currentDemoCompany.distributionChannel,
+      division: this.currentDemoCompany.division,
+      CompanyOwnerFullName: this.currentDemoCompany.ownerName,
+      CompanyOwner: this.currentDemoCompany.ownerName,
+      taxNumber: this.currentDemoCompany.taxNumber,
+      SalesOrgOption: this.currentDemoCompany.salesOrg,
+      DistributionChannelOption: this.currentDemoCompany.distributionChannel,
+      DivisionOption: this.currentDemoCompany.division
+    };
+    return map[fieldName] || null;
+  }
+
+  private fillFieldWithValue(fieldName: string, demoValue: any): void {
+    if (this.showUnifiedModal && this.unifiedModalForm) {
+      const contactFields = new Set(['name','jobTitle','email','mobile','landline','preferredLanguage']);
+      if (contactFields.has(fieldName)) {
+        const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
+        if (contactsArray && contactsArray.length > 0) {
+          // Determine which contact card is focused
+          const active = document.activeElement as HTMLElement | null;
+          let targetIndex = 0;
+          if (active) {
+            const cardEl = active.closest('.contact-card');
+            const cards = Array.from(document.querySelectorAll('.contact-card'));
+            const idx = cards.indexOf(cardEl as Element);
+            if (idx >= 0 && idx < contactsArray.length) {
+              targetIndex = idx;
+            }
+          }
+          const grp = contactsArray.at(targetIndex) as FormGroup;
+          const ctrl = grp.get(fieldName);
+          if (ctrl) {
+            ctrl.patchValue(demoValue);
+          }
+        }
+    } else {
+        const control = this.unifiedModalForm.get(fieldName);
+        if (control && control.enabled) {
+          control.patchValue(demoValue);
+          if (fieldName === 'country') this.updateCityOptions(demoValue);
+        }
+      }
+    } else if (this.showMissingFieldsForm && this.missingFieldsForm) {
+      const control = this.missingFieldsForm.get(fieldName);
+      if (control) control.patchValue(demoValue);
+    } else if (this.showContactForm && this.contactForm) {
+      const contact = this.currentDemoCompany?.contacts[0];
+      if (contact) {
+        const cmap: any = {
+          name: contact.name,
+          jobTitle: contact.jobTitle,
+          email: contact.email,
+          mobile: contact.mobile,
+          landline: contact.landline,
+          preferredLanguage: contact.preferredLanguage
+        };
+        const control = this.contactForm.get(fieldName);
+        if (control && cmap[fieldName] !== undefined) control.patchValue(cmap[fieldName]);
+      }
+    }
+  }
+
+  private addVisualFeedback(element: HTMLElement): void {
+    element.classList.add('field-auto-filled');
+    setTimeout(() => element.classList.remove('field-auto-filled'), 1000);
+  }
+
+  fillWithDemoData(): void {
+    try {
+      if (!this.currentDemoCompany) {
+        this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+      }
+      if (this.showUnifiedModal && this.unifiedModalForm) {
+        this.unifiedModalForm.patchValue({
+          firstName: this.currentDemoCompany.name,
+          firstNameAR: this.currentDemoCompany.nameAr,
+          tax: this.currentDemoCompany.taxNumber,
+          CustomerType: this.currentDemoCompany.customerType,
+          ownerName: this.currentDemoCompany.ownerName,
+          buildingNumber: this.currentDemoCompany.buildingNumber,
+          street: this.currentDemoCompany.street,
+          country: this.currentDemoCompany.country,
+          city: this.currentDemoCompany.city,
+          salesOrganization: this.currentDemoCompany.salesOrg,
+          distributionChannel: this.currentDemoCompany.distributionChannel,
+          division: this.currentDemoCompany.division
+        });
+        this.updateCityOptions(this.currentDemoCompany.country);
+        const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
+        while (contactsArray.length !== 0) contactsArray.removeAt(0);
+        this.currentDemoCompany.contacts.forEach(contact => {
+          this.addContactToUnifiedForm();
+          const idx = contactsArray.length - 1;
+          contactsArray.at(idx).patchValue({
+            name: contact.name,
+            jobTitle: contact.jobTitle,
+            email: contact.email,
+            mobile: contact.mobile,
+            landline: contact.landline,
+            preferredLanguage: contact.preferredLanguage
+          });
+        });
+      }
+      this.addMessage({
+        id: `demo_${Date.now()}`,
+        role: 'assistant',
+        content: `✅ **Demo data loaded: ${this.currentDemoCompany?.name}**\nRemaining companies: ${this.demoDataGenerator.getRemainingCompaniesCount()}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    } catch (e) {
+      console.error('Error generating demo data:', e);
+      alert('Failed to generate demo data. Please try again.');
+    }
+  }
+
+  getCurrentDemoCompany(): DemoCompany | null {
+    return this.demoDataGenerator.getLastUsedCompany();
+  }
+
+  getRemainingDemoCompanies(): number {
+    return this.demoDataGenerator.getRemainingCompaniesCount();
+  }
+
+  resetDemoGenerator(): void {
+    this.demoDataGenerator.resetGenerator();
+  }
+
   private proceedAfterExtraction(): void {
     console.log('🚀 [EXTRACTION] proceedAfterExtraction called');
     
@@ -1976,6 +2175,10 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
         contacts: (extractedData as any).contacts || []
       };
       
+      // Store current uploaded documents and original data
+      this.unifiedModalDocuments = [...this.uploadedFiles];
+      this.originalExtractedData = { ...extractedData };
+
       // Initialize form with all data
       const formData: any = {
         firstName: extractedData.firstName || '',
@@ -2028,12 +2231,12 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
         } else {
         this.unifiedModalData.contacts.forEach((contact: any) => {
           const contactForm = this.fb.group({
-            name: [contact.name || '', Validators.required],
-            jobTitle: [contact.jobTitle || '', Validators.required],
-            email: [contact.email || '', [Validators.required, Validators.email]],
-            mobile: [contact.mobile || '', [Validators.required, Validators.pattern(/^\+?[0-9]{10,15}$/)]],
+            name: [contact.name || ''],
+            jobTitle: [contact.jobTitle || ''],
+            email: [contact.email || '', [Validators.email]],
+            mobile: [contact.mobile || '', [Validators.pattern(/^\+?[0-9]{10,15}$/)]],
             landline: [contact.landline || '', Validators.pattern(/^\+?[0-9]{7,15}$/)],
-            preferredLanguage: [contact.preferredLanguage || 'Arabic', Validators.required]
+            preferredLanguage: [contact.preferredLanguage || 'Arabic']
           });
           contactsArray.push(contactForm);
         });
@@ -2111,12 +2314,12 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
   addContactToUnifiedForm(): void {
     const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
     const contactForm = this.fb.group({
-      name: ['', Validators.required],
-      jobTitle: ['', Validators.required],
-      email: ['', [Validators.required, Validators.email]],
-      mobile: ['', [Validators.required, Validators.pattern(/^\+?[0-9]{10,15}$/)]],
+      name: [''],
+      jobTitle: [''],
+      email: ['', [Validators.email]],
+      mobile: ['', [Validators.pattern(/^\+?[0-9]{10,15}$/)]],
       landline: ['', Validators.pattern(/^\+?[0-9]{7,15}$/)],
-      preferredLanguage: ['Arabic', Validators.required]
+      preferredLanguage: ['Arabic']
     });
     contactsArray.push(contactForm);
   }
@@ -2144,11 +2347,12 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
       }
     });
     
-    // Update contacts
+    // Update contacts ONLY if provided (optional)
     const contacts = formData.contacts || [];
-    if (contacts.length > 0) {
-      this.agentService.updateExtractedDataField('contacts', contacts);
-      this.contactsAdded = contacts;
+    const validContacts = contacts.filter((c: any) => c?.name || c?.email);
+    if (validContacts.length > 0) {
+      this.agentService.updateExtractedDataField('contacts', validContacts);
+      this.contactsAdded = validContacts;
     }
     
     console.log('💾 [UNIFIED] Updated data:', this.agentService.getExtractedData());
@@ -2176,6 +2380,155 @@ Will now check for duplicates then submit the request.`,
     setTimeout(() => {
       this.finalizeAndSubmit();
     }, 1500);
+  }
+
+  // Unified modal document replacement flow
+  triggerDocumentReplacement(): void {
+    const fileInput = document.querySelector('#unifiedFileInput') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  async onUnifiedDocumentSelected(event: any): Promise<void> {
+    const files: FileList = event?.target?.files;
+    if (!files || files.length === 0) return;
+    const newFiles = Array.from(files);
+    console.log('🔄 [UNIFIED] Replacing documents with:', newFiles.map(f => f.name));
+    const userConfirmed = confirm(
+      'تحذير: سيتم إعادة معالجة جميع المستندات واستخراج البيانات من جديد.\n' +
+      'Warning: All documents will be reprocessed and data will be re-extracted.\n\n' +
+      'هل تريد المتابعة؟ / Do you want to continue?'
+    );
+    if (!userConfirmed) {
+      event.target.value = '';
+      return;
+    }
+    await this.reprocessDocumentsWithOCR(newFiles);
+    event.target.value = '';
+  }
+
+  private async reprocessDocumentsWithOCR(files: File[]): Promise<void> {
+    try {
+      this.isReprocessingDocuments = true;
+      this.cdr.detectChanges();
+      console.log('🔄 [REPROCESS] Starting OCR reprocessing for', files.length, 'files');
+      this.unifiedModalDocuments = files;
+      // Prepare metadata form for new files
+      this.pendingFiles = files;
+      this.showDocumentModal = true;
+      this.documentMetadataForm = this.fb.group({
+        documents: this.fb.array([])
+      });
+      const documentsArray = this.documentMetadataForm.get('documents') as FormArray;
+      files.forEach(file => {
+        const detectedInfo = this.detectDocumentInfo(file.name);
+        const documentGroup = this.fb.group({
+          name: [file.name],
+          country: [detectedInfo?.country || '', Validators.required],
+          type: [detectedInfo?.type || '', Validators.required],
+          description: [this.generateSmartDescription(file.name, detectedInfo)]
+        });
+        documentsArray.push(documentGroup);
+      });
+    } catch (error: any) {
+      console.error('❌ [REPROCESS] Error:', error);
+      this.isReprocessingDocuments = false;
+      alert('حدث خطأ أثناء إعادة المعالجة / Error during reprocessing');
+    }
+  }
+
+  private async processDocumentsForUnifiedModal(files: File[], metadata: any[]): Promise<void> {
+    try {
+      console.log('🔄 [UNIFIED OCR] Processing new documents with OCR');
+      const extractedData = await Promise.race([
+        this.agentService.uploadAndProcessDocuments(files, metadata),
+        new Promise<ExtractedData>((_, reject) => setTimeout(() => reject(new Error('Processing timeout')), 60000))
+      ]);
+      console.log('✅ [UNIFIED OCR] New extracted data:', extractedData);
+      this.updateUnifiedModalWithNewData(extractedData);
+      this.uploadedFiles = files;
+      this.unifiedModalDocuments = files;
+      this.isReprocessingDocuments = false;
+      this.cdr.detectChanges();
+      alert('✅ تم إعادة معالجة المستندات بنجاح / Documents reprocessed successfully');
+    } catch (error: any) {
+      console.error('❌ [UNIFIED OCR] Processing error:', error);
+      this.isReprocessingDocuments = false;
+      alert('فشلت إعادة المعالجة / Reprocessing failed');
+    }
+  }
+
+  private updateUnifiedModalWithNewData(newExtractedData: any): void {
+    console.log('📝 [UNIFIED] Updating form with new extracted data');
+    Object.keys(newExtractedData).forEach(key => {
+      if (newExtractedData[key] !== null && newExtractedData[key] !== undefined) {
+        this.agentService.updateExtractedDataField(key, newExtractedData[key]);
+      }
+    });
+    const allRequiredFields = [
+      'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
+      'buildingNumber', 'street', 'country', 'city',
+      'salesOrganization', 'distributionChannel', 'division'
+    ];
+    const newExtractedFields = allRequiredFields.filter(field => {
+      const value = newExtractedData[field];
+      return value && value.toString().trim() !== '';
+    });
+    const newMissingFields = allRequiredFields.filter(field => {
+      const value = newExtractedData[field];
+      return !value || value.toString().trim() === '';
+    });
+    this.unifiedModalData.extractedFields = newExtractedFields;
+    this.unifiedModalData.missingFields = newMissingFields;
+    const formData = {
+      firstName: newExtractedData.firstName || '',
+      firstNameAR: newExtractedData.firstNameAR || '',
+      tax: newExtractedData.tax || '',
+      CustomerType: newExtractedData.CustomerType || '',
+      ownerName: newExtractedData.ownerName || '',
+      buildingNumber: newExtractedData.buildingNumber || '',
+      street: newExtractedData.street || '',
+      country: newExtractedData.country || '',
+      city: newExtractedData.city || '',
+      salesOrganization: newExtractedData.salesOrganization || '',
+      distributionChannel: newExtractedData.distributionChannel || '',
+      division: newExtractedData.division || ''
+    } as any;
+    this.unifiedModalForm.patchValue(formData);
+    if (formData.country) {
+      this.updateCityOptions(formData.country);
+    }
+    this.toggleExtractedDataEdit(false);
+    console.log('✅ [UNIFIED] Form updated with new OCR data');
+  }
+
+  saveDocuments(): void {
+    console.log('🧪 [Chat] saveDocuments() clicked. Reprocessing?', this.isReprocessingDocuments);
+    if (this.documentMetadataForm.valid) {
+      const filesToProcess = [...this.pendingFiles];
+      const metadata = this.documentsFA.controls.map(control => ({
+        country: control.get('country')?.value,
+        type: control.get('type')?.value,
+        description: control.get('description')?.value
+      }));
+      this.closeDocumentModal();
+      if (this.isReprocessingDocuments) {
+        this.processDocumentsForUnifiedModal(filesToProcess, metadata);
+      } else {
+        this.processDocumentsWithMetadata(filesToProcess, metadata);
+      }
+    } else {
+      console.warn('⚠️ [Chat] saveDocuments() blocked due to invalid form');
+    }
+  }
+
+  removeDocumentFromUnified(index: number): void {
+    if (confirm('هل تريد حذف هذا المستند؟ / Delete this document?')) {
+      this.unifiedModalDocuments.splice(index, 1);
+      this.uploadedFiles.splice(index, 1);
+      this.cdr.detectChanges();
+    }
   }
 
   get unifiedContactsArray(): FormArray {
