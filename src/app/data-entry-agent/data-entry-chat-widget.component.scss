@@ -218,6 +218,101 @@
   font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
 }
 
+// Styles for confirmation review message rendered via innerHTML
+::ng-deep .message-content {
+  .review-container {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+    max-width: 100%;
+    .stats-row {
+      display: flex !important;
+      justify-content: space-between !important;
+      margin-bottom: 16px !important;
+      font-size: 13px !important;
+      color: #666 !important;
+    }
+
+    .section-title {
+      font-size: 14px !important;
+      font-weight: 600 !important;
+      color: #333 !important;
+      margin: 16px 0 8px 0 !important;
+      display: flex !important;
+      align-items: center !important;
+      gap: 6px !important;
+    }
+
+    .fields-grid {
+      display: grid !important;
+      grid-template-columns: repeat(2, 1fr) !important;
+      gap: 8px !important;
+      margin-bottom: 12px !important;
+    }
+
+    .field-item {
+      display: flex !important;
+      align-items: flex-start !important;
+      padding: 6px 10px !important;
+      background: #f8f9fa !important;
+      border-radius: 6px !important;
+      min-height: 32px !important;
+      border: 1px solid #e9ecef !important;
+
+      &.extracted {
+        background: #e8f5e9 !important;
+        border-color: #c8e6c9 !important;
+      }
+
+      &.missing {
+        background: #fff3e0 !important;
+        border-color: #ffe0b2 !important;
+      }
+
+      .field-content { flex: 1 !important; min-width: 0 !important; }
+      .field-label { font-size: 11px !important; color: #666 !important; margin-bottom: 2px !important; font-weight: 500 !important; }
+      .field-value { font-size: 13px !important; color: #212529 !important; font-weight: 600 !important; word-break: break-word !important; line-height: 1.3 !important; }
+      .missing-value { color: #ff6b6b !important; font-style: italic !important; font-size: 12px !important; }
+    }
+
+    .completion-bar {
+      background: #f0f0f0 !important;
+      height: 8px !important;
+      border-radius: 8px !important;
+      overflow: hidden !important;
+      margin: 12px 0 !important;
+
+      .completion-fill {
+        background: linear-gradient(90deg, #4CAF50, #45a049) !important;
+        height: 100% !important;
+        width: 0%;
+        transition: width 0.3s ease;
+      }
+    }
+
+    .summary-box {
+      background: linear-gradient(135deg, #667eea 0%, #764ba2 100%) !important;
+      color: white !important;
+      padding: 12px !important;
+      border-radius: 8px !important;
+      margin-bottom: 12px !important;
+    }
+
+    .summary-text { font-size: 14px !important; font-weight: 500 !important; }
+
+    .info-box {
+      margin-top: 16px;
+      padding: 10px;
+      background: #e3f2fd;
+      border-radius: 6px;
+      border-left: 3px solid #2196F3;
+      .info-text { margin: 0; font-size: 13px; color: #1976D2; }
+    }
+
+    @media (max-width: 480px) {
+      .fields-grid { grid-template-columns: 1fr !important; }
+    }
+  }
+}
+
 .chat-toggle-button {
   width: 60px;
   height: 60px;

@@ -66,7 +66,15 @@
           
           <!-- Confirmation Messages -->
           <div *ngIf="message.type === 'confirmation'" class="confirmation-message">
-            <div [innerHTML]="formatMessage(message.content)"></div>
+            <ng-container *ngIf="message.data?.component === 'review'; else legacyConfirmation">
+              <app-data-entry-review-message
+                [extractedData]="message.data?.extractedData"
+                [fields]="message.data?.fields">
+              </app-data-entry-review-message>
+            </ng-container>
+            <ng-template #legacyConfirmation>
+              <div [innerHTML]="formatMessage(message.content)"></div>
+            </ng-template>
             <div class="modern-action-buttons" *ngIf="message.data?.buttons">
               <button *ngFor="let button of message.data?.buttons"
                       class="modern-btn"

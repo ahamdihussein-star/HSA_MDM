@@ -513,15 +513,32 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private displayExtractedDataWithLabels(data: ExtractedData): void {
-    const contentHtml = this.generateConfirmationMessage(data as any);
+    // Structured review component message
+    const fields = [
+      { key: 'firstName', label: 'Company Name' },
+      { key: 'firstNameAR', label: 'الاسم بالعربي' },
+      { key: 'tax', label: 'Tax Number' },
+      { key: 'CustomerType', label: 'Customer Type' },
+      { key: 'ownerName', label: 'Owner Name' },
+      { key: 'buildingNumber', label: 'Building' },
+      { key: 'street', label: 'Street' },
+      { key: 'country', label: 'Country' },
+      { key: 'city', label: 'City' },
+      { key: 'salesOrganization', label: 'Sales Org' },
+      { key: 'distributionChannel', label: 'Distribution' },
+      { key: 'division', label: 'Division' }
+    ];
 
     this.addMessage({
       id: `review_${Date.now()}`,
       role: 'assistant',
-      content: contentHtml,
+      content: '',
       timestamp: new Date(),
       type: 'confirmation',
       data: {
+        component: 'review',
+        extractedData: data,
+        fields,
         buttons: [
           { 
             text: '📝 مراجعة وإكمال البيانات / Review & Complete Data', 
@@ -535,112 +552,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     this.awaitingDataReview = true;
   }
 
-  private generateConfirmationMessage(extractedData: any): string {
-    const fields = [
-      { key: 'firstName', label: 'Company Name', icon: '🏢' },
-      { key: 'firstNameAR', label: 'الاسم بالعربي', icon: '' },
-      { key: 'tax', label: 'Tax Number', icon: '📑' },
-      { key: 'CustomerType', label: 'Customer Type', icon: '' },
-      { key: 'ownerName', label: 'Owner Name', icon: '👤' },
-      { key: 'buildingNumber', label: 'Building', icon: '' },
-      { key: 'street', label: 'Street', icon: '' },
-      { key: 'country', label: 'Country', icon: '🌍' },
-      { key: 'city', label: 'City', icon: '' },
-      { key: 'salesOrganization', label: 'Sales Org', icon: '' },
-      { key: 'distributionChannel', label: 'Distribution', icon: '' },
-      { key: 'division', label: 'Division', icon: '' }
-    ];
-
-    const extractedFields = fields.filter(field => 
-      extractedData[field.key] && extractedData[field.key] !== ''
-    );
-    
-    const missingFields = fields.filter(field => 
-      !extractedData[field.key] || extractedData[field.key] === ''
-    );
-
-    const extractedCount = extractedFields.length;
-    const missingCount = missingFields.length;
-    const totalFields = fields.length;
-    const completionRate = Math.round((extractedCount / totalFields) * 100);
-
-    let html = `
-    <style>
-      .review-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 100%; margin: 0; }
-      .completion-bar { background: #f0f0f0; border-radius: 8px; height: 8px; overflow: hidden; margin: 12px 0; }
-      .completion-fill { background: linear-gradient(90deg, #4CAF50, #45a049); height: 100%; transition: width 0.3s ease; }
-      .stats-row { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 13px; color: #666; }
-      .section-title { font-size: 14px; font-weight: 600; color: #333; margin: 16px 0 8px 0; display: flex; align-items: center; gap: 6px; }
-      .fields-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
-      .field-item { display: flex; align-items: flex-start; padding: 6px 10px; background: #f8f9fa; border-radius: 6px; min-height: 32px; border: 1px solid #e9ecef; }
-      .field-item.extracted { background: #e8f5e9; border-color: #c8e6c9; }
-      .field-item.missing { background: #fff3e0; border-color: #ffe0b2; }
-      .field-label { font-size: 11px; color: #666; margin-bottom: 2px; font-weight: 500; }
-      .field-value { font-size: 13px; color: #212529; font-weight: 600; word-break: break-word; line-height: 1.3; }
-      .field-content { flex: 1; min-width: 0; }
-      .missing-value { color: #ff6b6b; font-style: italic; font-size: 12px; }
-      .summary-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
-      .summary-text { font-size: 14px; font-weight: 500; }
-      @media (max-width: 480px) { .fields-grid { grid-template-columns: 1fr; } }
-    </style>
-    
-    <div class="review-container">
-      <div class="summary-box">
-        <div class="summary-text">✅ تم استخراج ${extractedCount} من ${totalFields} حقل بنجاح</div>
-        <div class="completion-bar"><div class="completion-fill" style="width: ${completionRate}%"></div></div>
-      </div>
-      <div class="stats-row">
-        <span>📊 معدل الاكتمال: ${completionRate}%</span>
-        <span>⏱️ ${missingCount > 0 ? `يتبقى ${missingCount} حقول` : 'اكتمل!'}</span>
-      </div>
-    `;
-
-    if (extractedCount > 0) {
-      html += `
-      <div class="section-title"><span>✅</span><span>البيانات المستخرجة / Extracted Data</span><span style="color: #4CAF50; font-size: 12px;">(${extractedCount})</span></div>
-      <div class="fields-grid">`;
-      
-      extractedFields.forEach(field => {
-        const value = extractedData[field.key];
-        const displayValue = (value && value.length > 30) ? value.substring(0, 30) + '...' : value;
-        html += `
-        <div class="field-item extracted">
-          <div class="field-content">
-            <div class="field-label">${field.label}</div>
-            <div class="field-value" title="${value}">${displayValue}</div>
-          </div>
-        </div>`;
-      });
-      
-      html += `</div>`;
-    }
-
-    if (missingCount > 0) {
-      html += `
-      <div class="section-title"><span>⚠️</span><span>البيانات الناقصة / Missing Data</span><span style=\"color: #ff9800; font-size: 12px;\">(${missingCount})</span></div>
-      <div class="fields-grid">`;
-      
-      missingFields.forEach(field => {
-        html += `
-        <div class="field-item missing">
-          <div class="field-content">
-            <div class="field-label">${field.label}</div>
-            <div class="missing-value">مطلوب / Required</div>
-          </div>
-        </div>`;
-      });
-      
-      html += `</div>`;
-    }
-
-    html += `
-      <div style="margin-top: 16px; padding: 10px; background: #e3f2fd; border-radius: 6px; border-left: 3px solid #2196F3;">
-        <p style="margin: 0; font-size: 13px; color: #1976D2;">${missingCount > 0 ? '💡 سيتم سؤالك عن البيانات الناقصة في الخطوة التالية' : '🎉 ممتاز! كل البيانات المطلوبة متوفرة'}</p>
-      </div>
-    </div>`;
-
-    return html;
-  }
+  // Legacy generator kept for fallback; not used with component rendering.
+  private generateConfirmationMessage(_extractedData: any): string { return ''; }
 
   private checkMissingFields(data: ExtractedData): string[] {
     console.log('🧪 [Chat] checkMissingFields called with data:', data);

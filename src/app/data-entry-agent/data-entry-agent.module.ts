@@ -20,11 +20,13 @@ import { NzAlertModule } from 'ng-zorro-antd/alert';
 // Components
 import { DataEntryAgentComponent } from './data-entry-agent.component';
 import { DataEntryChatWidgetComponent } from './data-entry-chat-widget.component';
+import { DataEntryReviewMessageComponent } from './data-entry-review-message/data-entry-review-message.component';
 
 @NgModule({
   declarations: [
     DataEntryAgentComponent,
-    DataEntryChatWidgetComponent
+    DataEntryChatWidgetComponent,
+    DataEntryReviewMessageComponent
   ],
   imports: [
     CommonModule,
