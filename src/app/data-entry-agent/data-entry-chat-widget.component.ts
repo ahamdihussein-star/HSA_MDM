@@ -3,6 +3,15 @@ import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { DataEntryAgentService, ExtractedData } from '../services/data-entry-agent.service';
 import { Subject, Subscription } from 'rxjs';
 import { NzModalService } from 'ng-zorro-antd/modal';
+import { 
+  CUSTOMER_TYPE_OPTIONS,
+  SALES_ORG_OPTIONS,
+  DISTRIBUTION_CHANNEL_OPTIONS,
+  DIVISION_OPTIONS,
+  CITY_OPTIONS,
+  COUNTRY_OPTIONS,
+  getCitiesByCountry
+} from '../shared/lookup-data';
 
 export interface ChatMessage {
   id: string;
@@ -61,6 +70,24 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   missingFieldsForm!: FormGroup;
   showMissingFieldsForm = false;
   currentMissingFields: string[] = [];
+  
+  // Unified Modal properties
+  unifiedModalForm!: FormGroup;
+  showUnifiedModal = false;
+  extractedDataReadOnly = true; // Toggle for edit mode
+  unifiedModalData: any = {
+    extractedFields: [],
+    missingFields: [],
+    contacts: []
+  };
+
+  // Lookup data for dropdowns
+  customerTypeOptions = CUSTOMER_TYPE_OPTIONS;
+  countryOptions = COUNTRY_OPTIONS;
+  salesOrgOptions = SALES_ORG_OPTIONS;
+  distributionChannelOptions = DISTRIBUTION_CHANNEL_OPTIONS;
+  divisionOptions = DIVISION_OPTIONS;
+  cityOptions: any[] = [];
   currentExtractedFields: string[] = []; // ✅ For dynamic edit form
   
   // Accumulated files
@@ -154,6 +181,35 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       salesOrganization: [''],
       distributionChannel: [''],
       division: ['']
+    });
+    
+    // Unified modal form
+    this.unifiedModalForm = this.fb.group({
+      // Company Information
+      firstName: [{value: '', disabled: true}],
+      firstNameAR: [{value: '', disabled: true}],
+      tax: [{value: '', disabled: true}],
+      CustomerType: [{value: '', disabled: true}],
+      ownerName: [{value: '', disabled: true}],
+      
+      // Address Information
+      buildingNumber: [{value: '', disabled: true}],
+      street: [{value: '', disabled: true}],
+      country: [{value: '', disabled: true}],
+      city: [{value: '', disabled: true}],
+      
+      // Sales Information
+      salesOrganization: [{value: '', disabled: true}],
+      distributionChannel: [{value: '', disabled: true}],
+      division: [{value: '', disabled: true}],
+      
+      // Contacts FormArray
+      contacts: this.fb.array([])
+    });
+
+    // Watch country changes to update city options
+    this.unifiedModalForm.get('country')?.valueChanges.subscribe(country => {
+      this.updateCityOptions(country);
     });
     
     console.log('✅ [FORMS] Forms initialized:', {
@@ -452,78 +508,35 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private displayExtractedDataWithLabels(data: ExtractedData): void {
-    const extractionMessage = `
-<div class="extraction-result">
-  <div class="result-header">
-    <span class="success-badge">✅ Data Extracted Successfully</span>
-    <span class="arabic-text">تم استخراج البيانات بنجاح</span>
-  </div>
-  
-  <div class="info-card company-info">
-    <div class="card-title">🏢 Company Information</div>
-    <div class="info-row">
-      <span class="label">English Name:</span>
-      <span class="value">${data.firstName || 'Not provided'}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Arabic Company Name:</span>
-      <span class="value">${data.firstNameAR || 'غير متوفر'}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Tax Number:</span>
-      <span class="value">${data.tax || 'Not provided'}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Customer Type:</span>
-      <span class="value type-badge">${data.CustomerType || 'Not provided'}</span>
-    </div>
-  </div>
-  
-  <div class="info-card address-info">
-    <div class="card-title">📍 Address Details</div>
-    <div class="info-row">
-      <span class="label">Building:</span>
-      <span class="value">${data.buildingNumber || 'N/A'}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Street:</span>
-      <span class="value">${data.street || 'N/A'}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">City:</span>
-      <span class="value">${data.city || 'N/A'}</span>
-    </div>
-    <div class="info-row">
-      <span class="label">Country:</span>
-      <span class="value">${data.country || 'N/A'}</span>
-    </div>
-  </div>
-  
-  <div class="review-prompt">Is the extracted data correct?</div>
-</div>
-`;
+    const extractedFieldsList = Object.entries(data)
+      .filter(([key, value]) => value && value !== '' && key !== 'contacts')
+      .map(([key, value]) => `• ${this.getFieldLabel(key)}: ${value}`)
+      .join('\n');
 
     this.addMessage({
-      id: `extracted_${Date.now()}`,
+      id: `review_${Date.now()}`,
       role: 'assistant',
-      content: extractionMessage,
+      content: `✅ **تم استخراج البيانات بنجاح! / Data Extracted Successfully!**
+
+**البيانات المستخرجة / Extracted Data:**
+${extractedFieldsList}
+
+يرجى مراجعة البيانات وإكمال أي معلومات ناقصة.
+Please review the data and complete any missing information.`,
       timestamp: new Date(),
       type: 'confirmation',
       data: {
         buttons: [
           { 
-            text: '✓ Yes, correct', 
-            action: 'data_review_yes',
-            className: 'btn-confirm'
-          },
-          { 
-            text: '✏️ Edit', 
-            action: 'data_review_no',
-            className: 'btn-edit'
+            text: '📝 مراجعة وإكمال البيانات / Review & Complete Data', 
+            action: 'open_unified_modal',
+            class: 'primary-action-button'
           }
         ]
       }
     });
+    
+    this.awaitingDataReview = true;
   }
 
   private checkMissingFields(data: ExtractedData): string[] {
@@ -1185,6 +1198,10 @@ You can track the request in your task list.`,
         console.log('🎯 [BUTTON] Opening missing fields form with data:', data);
         this.openMissingFieldsForm(data?.missingFields || []);
         break;
+      case 'open_unified_modal':
+        console.log('🎯 [BUTTON] Opening unified modal');
+        this.openUnifiedModal();
+        break;
       default:
         console.warn('⚠️ [BUTTON] Unknown action:', action);
     }
@@ -1668,12 +1685,6 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
     return (extractedData as any)[field] || 'N/A';
   }
 
-  // ✅ Helper method to check if a field was extracted (for Edit Form)
-  isFieldExtracted(field: string): boolean {
-    const extractedData = this.agentService.getExtractedData();
-    const value = (extractedData as any)[field];
-    return value && value.toString().trim() !== '';
-  }
 
   // ✅ Create dynamic edit form based on extracted fields
   private createDynamicEditForm(extractedFields: string[], extractedData: any): void {
@@ -1946,6 +1957,209 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
     } catch (e) {
       console.warn('🧪 [Chat] debugModalLayoutCheck error:', e);
     }
+  }
+
+  // Unified Modal Methods
+  private openUnifiedModal(): void {
+    console.log('🎯 [UNIFIED] Opening unified modal');
+    
+    try {
+      const extractedData = this.agentService.getExtractedData();
+      const missingFields = this.checkMissingFields(extractedData);
+      
+      // Prepare modal data
+      this.unifiedModalData = {
+        extractedFields: Object.keys(extractedData).filter(key => 
+          (extractedData as any)[key] && (extractedData as any)[key] !== '' && key !== 'contacts'
+        ),
+        missingFields: missingFields.filter(f => f !== 'contacts'),
+        contacts: (extractedData as any).contacts || []
+      };
+      
+      // Initialize form with all data
+      const formData: any = {
+        firstName: extractedData.firstName || '',
+        firstNameAR: extractedData.firstNameAR || '',
+        tax: extractedData.tax || '',
+        CustomerType: extractedData.CustomerType || '',
+        ownerName: extractedData.ownerName || '',
+        buildingNumber: extractedData.buildingNumber || '',
+        street: extractedData.street || '',
+        country: extractedData.country || '',
+        city: extractedData.city || '',
+        salesOrganization: extractedData.salesOrganization || '',
+        distributionChannel: extractedData.distributionChannel || '',
+        division: extractedData.division || ''
+      };
+      
+      // Patch form values
+      this.unifiedModalForm.patchValue(formData);
+      
+      // Update city options if country is set
+      if (formData.country) {
+        this.updateCityOptions(formData.country);
+      }
+      
+      // Start with extracted data as read-only
+      this.extractedDataReadOnly = true;
+      this.toggleExtractedDataEdit(false);
+      
+      // Clear and add contacts
+      const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
+      contactsArray.clear();
+      
+      if (this.unifiedModalData.contacts.length === 0) {
+        this.addContactToUnifiedForm();
+      } else {
+        this.unifiedModalData.contacts.forEach((contact: any) => {
+          const contactForm = this.fb.group({
+            name: [contact.name || '', Validators.required],
+            jobTitle: [contact.jobTitle || '', Validators.required],
+            email: [contact.email || '', [Validators.required, Validators.email]],
+            mobile: [contact.mobile || '', [Validators.required, Validators.pattern(/^\+?[0-9]{10,15}$/)]],
+            landline: [contact.landline || '', Validators.pattern(/^\+?[0-9]{7,15}$/)],
+            preferredLanguage: [contact.preferredLanguage || 'Arabic', Validators.required]
+          });
+          contactsArray.push(contactForm);
+        });
+      }
+      
+      // Show modal
+      this.showUnifiedModal = true;
+      this.cdr.detectChanges();
+      
+      console.log('✅ [UNIFIED] Modal opened with data:', this.unifiedModalData);
+      
+    } catch (error: any) {
+      console.error('❌ [UNIFIED] Error opening modal:', error);
+      this.addMessage({
+        id: `unified_error_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ حدث خطأ / Error: ${error.message}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
+  }
+
+  private updateCityOptions(country: string): void {
+    if (country) {
+      const cities = getCitiesByCountry(country);
+      this.cityOptions = cities;
+      
+      // Reset city if not in new options
+      const currentCity = this.unifiedModalForm.get('city')?.value;
+      const cityExists = cities.some((c: any) => c.value === currentCity);
+      if (!cityExists) {
+        this.unifiedModalForm.get('city')?.setValue('');
+      }
+    } else {
+      this.cityOptions = [];
+    }
+  }
+
+  toggleExtractedDataEdit(enable: boolean): void {
+    this.extractedDataReadOnly = !enable;
+    
+    // Only toggle fields that have extracted data
+    this.unifiedModalData.extractedFields.forEach((field: string) => {
+      if (enable) {
+        this.unifiedModalForm.get(field)?.enable();
+      } else {
+        this.unifiedModalForm.get(field)?.disable();
+      }
+    });
+    
+    // Always keep missing fields enabled
+    this.unifiedModalData.missingFields.forEach((field: string) => {
+      if (field !== 'contacts') {
+        this.unifiedModalForm.get(field)?.enable();
+      }
+    });
+  }
+
+  addContactToUnifiedForm(): void {
+    const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
+    const contactForm = this.fb.group({
+      name: ['', Validators.required],
+      jobTitle: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      mobile: ['', [Validators.required, Validators.pattern(/^\+?[0-9]{10,15}$/)]],
+      landline: ['', Validators.pattern(/^\+?[0-9]{7,15}$/)],
+      preferredLanguage: ['Arabic', Validators.required]
+    });
+    contactsArray.push(contactForm);
+  }
+
+  removeContactFromUnifiedForm(index: number): void {
+    const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
+    if (contactsArray.length > 1) {
+      contactsArray.removeAt(index);
+    }
+  }
+
+  saveUnifiedModal(): void {
+    console.log('💾 [UNIFIED] Saving unified modal data');
+    
+    // Get form values (including disabled fields)
+    const formData = this.unifiedModalForm.getRawValue();
+    
+    // Update extracted data with ALL form values
+    Object.keys(formData).forEach(key => {
+      if (key !== 'contacts') {
+        const value = formData[key];
+        if (value !== null && value !== undefined && value !== '') {
+          this.agentService.updateExtractedDataField(key, value);
+        }
+      }
+    });
+    
+    // Update contacts
+    const contacts = formData.contacts || [];
+    if (contacts.length > 0) {
+      this.agentService.updateExtractedDataField('contacts', contacts);
+      this.contactsAdded = contacts;
+    }
+    
+    console.log('💾 [UNIFIED] Updated data:', this.agentService.getExtractedData());
+    
+    // Close modal
+    this.showUnifiedModal = false;
+    this.cdr.detectChanges();
+    
+    // Show success message
+    this.addMessage({
+      id: `unified_saved_${Date.now()}`,
+      role: 'assistant',
+      content: `✅ **تم حفظ جميع البيانات بنجاح! / All data saved successfully!**
+    
+سيتم الآن التحقق من عدم وجود تكرار ثم إرسال الطلب.
+Will now check for duplicates then submit the request.`,
+      timestamp: new Date(),
+      type: 'text'
+    });
+    
+    // Reset flags
+    this.awaitingDataReview = false;
+    
+    // Proceed to submission
+    setTimeout(() => {
+      this.finalizeAndSubmit();
+    }, 1500);
+  }
+
+  get unifiedContactsArray(): FormArray {
+    return this.unifiedModalForm.get('contacts') as FormArray;
+  }
+
+  // Helper method to check if field is missing
+  isFieldMissing(field: string): boolean {
+    return this.unifiedModalData.missingFields.includes(field);
+  }
+
+  // Helper method to check if field was extracted
+  isFieldExtracted(field: string): boolean {
+    return this.unifiedModalData.extractedFields.includes(field);
   }
 }
 

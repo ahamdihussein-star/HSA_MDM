@@ -63,7 +63,7 @@
               </button>
             </div>
           </ng-container>
-
+          
           <!-- Confirmation Messages -->
           <div *ngIf="message.type === 'confirmation'" class="confirmation-message">
             <div [innerHTML]="formatMessage(message.content)"></div>
@@ -308,15 +308,15 @@
         </div>
       </div>
     </form>
-    
-    <div class="modal-footer">
-      <button nz-button nzType="default" (click)="closeDocumentModal()">
-        إلغاء / Cancel
-      </button>
-      <button nz-button nzType="primary" (click)="saveDocuments()" [disabled]="!isDocumentFormValid">
-        حفظ ومتابعة / Save & Continue
-      </button>
-    </div>
+  
+  <div class="modal-footer">
+    <button nz-button nzType="default" (click)="closeDocumentModal()">
+      إلغاء / Cancel
+    </button>
+    <button nz-button nzType="primary" (click)="saveDocuments()" [disabled]="!isDocumentFormValid">
+      حفظ ومتابعة / Save & Continue
+    </button>
+  </div>
   </div>
 </ng-template>
 
@@ -331,7 +331,7 @@
   
   <div *nzModalContent>
     <form *ngIf="contactForm" [formGroup]="contactForm">
-      <div class="contact-form-content">
+    <div class="contact-form-content">
       <div class="form-row">
         <div class="form-group">
           <label>الاسم / Name: *</label>
@@ -368,15 +368,15 @@
         </div>
       </div>
     </div>
-    
+  
     <!-- ✅ Footer buttons -->
-    <div class="modal-footer">
-      <button nz-button nzType="default" (click)="closeContactForm()">
-        إلغاء / Cancel
-      </button>
-      <button nz-button nzType="primary" (click)="saveContactForm()" [disabled]="!contactForm.valid">
-        حفظ / Save
-      </button>
+  <div class="modal-footer">
+    <button nz-button nzType="default" (click)="closeContactForm()">
+      إلغاء / Cancel
+    </button>
+    <button nz-button nzType="primary" (click)="saveContactForm()" [disabled]="!contactForm.valid">
+      حفظ / Save
+    </button>
     </div>
   </form>
   </div>
@@ -604,6 +604,358 @@
       <button nz-button nzType="primary" (click)="saveMissingFieldsForm()">
         حفظ البيانات الناقصة / Save Missing Data
       </button>
+    </div>
+  </div>
+</nz-modal>
+
+<!-- Unified Review & Complete Modal -->
+<nz-modal 
+  [(nzVisible)]="showUnifiedModal" 
+  nzTitle="📝 مراجعة وإكمال البيانات / Review & Complete Data"
+  (nzOnCancel)="showUnifiedModal = false"
+  [nzFooter]="null"
+  nzWidth="1000px"
+  [nzMaskClosable]="false"
+  [nzClosable]="true"
+  [nzBodyStyle]="{'padding': '0'}">
+  
+  <div *nzModalContent>
+    <form *ngIf="unifiedModalForm" [formGroup]="unifiedModalForm">
+      
+      <!-- Section 1: Extracted Data -->
+      <div class="modal-section extracted-section" *ngIf="unifiedModalData.extractedFields.length > 0">
+        <div class="section-header">
+          <h3>✅ البيانات المستخرجة / Extracted Data</h3>
+          <button type="button" 
+                  nz-button 
+                  [nzType]="extractedDataReadOnly ? 'default' : 'primary'"
+                  nzSize="small"
+                  (click)="toggleExtractedDataEdit(!extractedDataReadOnly)">
+            <span nz-icon [nzType]="extractedDataReadOnly ? 'edit' : 'save'"></span>
+            {{ extractedDataReadOnly ? 'تعديل / Edit' : 'حفظ التعديلات / Save Changes' }}
+          </button>
+        </div>
+        
+        <div class="form-grid">
+          <!-- Company Information -->
+          <div class="form-row" *ngIf="isFieldExtracted('firstName') || isFieldExtracted('firstNameAR')">
+            <div class="form-group" *ngIf="isFieldExtracted('firstName')">
+              <label>Company Name (English):</label>
+              <input formControlName="firstName" [readonly]="extractedDataReadOnly">
+            </div>
+            <div class="form-group" *ngIf="isFieldExtracted('firstNameAR')">
+              <label>اسم الشركة (عربي):</label>
+              <input formControlName="firstNameAR" [readonly]="extractedDataReadOnly">
+            </div>
+          </div>
+          
+          <div class="form-row" *ngIf="isFieldExtracted('tax') || isFieldExtracted('CustomerType')">
+            <div class="form-group" *ngIf="isFieldExtracted('tax')">
+              <label>Tax Number:</label>
+              <input formControlName="tax" [readonly]="extractedDataReadOnly">
+            </div>
+            <div class="form-group" *ngIf="isFieldExtracted('CustomerType')">
+              <label>Customer Type:</label>
+              <nz-select formControlName="CustomerType" [nzDisabled]="extractedDataReadOnly">
+                <nz-option *ngFor="let option of customerTypeOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+          </div>
+          
+          <div class="form-row" *ngIf="isFieldExtracted('ownerName')">
+            <div class="form-group full-width">
+              <label>Owner Name:</label>
+              <input formControlName="ownerName" [readonly]="extractedDataReadOnly">
+            </div>
+          </div>
+          
+          <!-- Address Information -->
+          <div class="form-row" *ngIf="isFieldExtracted('buildingNumber') || isFieldExtracted('street')">
+            <div class="form-group" *ngIf="isFieldExtracted('buildingNumber')">
+              <label>Building Number:</label>
+              <input formControlName="buildingNumber" [readonly]="extractedDataReadOnly">
+            </div>
+            <div class="form-group" *ngIf="isFieldExtracted('street')">
+              <label>Street:</label>
+              <input formControlName="street" [readonly]="extractedDataReadOnly">
+            </div>
+          </div>
+          
+          <div class="form-row" *ngIf="isFieldExtracted('country') || isFieldExtracted('city')">
+            <div class="form-group" *ngIf="isFieldExtracted('country')">
+              <label>Country:</label>
+              <nz-select formControlName="country" [nzDisabled]="extractedDataReadOnly">
+                <nz-option *ngFor="let option of countryOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+            <div class="form-group" *ngIf="isFieldExtracted('city')">
+              <label>City:</label>
+              <nz-select formControlName="city" [nzDisabled]="extractedDataReadOnly">
+                <nz-option *ngFor="let option of cityOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+          </div>
+          
+          <!-- Sales Information -->
+          <div class="form-row" *ngIf="isFieldExtracted('salesOrganization') || isFieldExtracted('distributionChannel')">
+            <div class="form-group" *ngIf="isFieldExtracted('salesOrganization')">
+              <label>Sales Organization:</label>
+              <nz-select formControlName="salesOrganization" [nzDisabled]="extractedDataReadOnly">
+                <nz-option *ngFor="let option of salesOrgOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+            <div class="form-group" *ngIf="isFieldExtracted('distributionChannel')">
+              <label>Distribution Channel:</label>
+              <nz-select formControlName="distributionChannel" [nzDisabled]="extractedDataReadOnly">
+                <nz-option *ngFor="let option of distributionChannelOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+          </div>
+          
+          <div class="form-row" *ngIf="isFieldExtracted('division')">
+            <div class="form-group">
+              <label>Division:</label>
+              <nz-select formControlName="division" [nzDisabled]="extractedDataReadOnly">
+                <nz-option *ngFor="let option of divisionOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Section 2: Missing Data -->
+      <div class="modal-section missing-section" *ngIf="unifiedModalData.missingFields.length > 0">
+        <div class="section-header">
+          <h3>❌ البيانات الناقصة / Missing Data</h3>
+          <span class="missing-count">{{ unifiedModalData.missingFields.length }} حقول / fields</span>
+        </div>
+        
+        <div class="form-grid">
+          <!-- Company Information -->
+          <div class="form-row" *ngIf="isFieldMissing('firstName') || isFieldMissing('firstNameAR')">
+            <div class="form-group" *ngIf="isFieldMissing('firstName')">
+              <label class="required">Company Name (English):</label>
+              <input formControlName="firstName" placeholder="Enter company name in English">
+            </div>
+            <div class="form-group" *ngIf="isFieldMissing('firstNameAR')">
+              <label class="required">اسم الشركة (عربي):</label>
+              <input formControlName="firstNameAR" placeholder="أدخل اسم الشركة بالعربية">
+            </div>
+          </div>
+          
+          <div class="form-row" *ngIf="isFieldMissing('tax') || isFieldMissing('CustomerType')">
+            <div class="form-group" *ngIf="isFieldMissing('tax')">
+              <label class="required">Tax Number:</label>
+              <input formControlName="tax" placeholder="Enter tax registration number">
+            </div>
+            <div class="form-group" *ngIf="isFieldMissing('CustomerType')">
+              <label class="required">Customer Type:</label>
+              <nz-select formControlName="CustomerType" nzPlaceHolder="Select customer type">
+                <nz-option *ngFor="let option of customerTypeOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+          </div>
+          
+          <div class="form-row" *ngIf="isFieldMissing('ownerName')">
+            <div class="form-group full-width">
+              <label class="required">Owner Name:</label>
+              <input formControlName="ownerName" placeholder="Enter company owner full name">
+            </div>
+          </div>
+          
+          <!-- Address Information -->
+          <div class="form-row" *ngIf="isFieldMissing('buildingNumber') || isFieldMissing('street')">
+            <div class="form-group" *ngIf="isFieldMissing('buildingNumber')">
+              <label class="required">Building Number:</label>
+              <input formControlName="buildingNumber" placeholder="Enter building number">
+            </div>
+            <div class="form-group" *ngIf="isFieldMissing('street')">
+              <label class="required">Street:</label>
+              <input formControlName="street" placeholder="Enter street name">
+            </div>
+          </div>
+          
+          <div class="form-row" *ngIf="isFieldMissing('country') || isFieldMissing('city')">
+            <div class="form-group" *ngIf="isFieldMissing('country')">
+              <label class="required">Country:</label>
+              <nz-select formControlName="country" nzPlaceHolder="Select country">
+                <nz-option *ngFor="let option of countryOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+            <div class="form-group" *ngIf="isFieldMissing('city')">
+              <label class="required">City:</label>
+              <nz-select formControlName="city" nzPlaceHolder="Select city">
+                <nz-option *ngFor="let option of cityOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+          </div>
+          
+          <!-- Sales Information -->
+          <div class="form-row" *ngIf="isFieldMissing('salesOrganization') || isFieldMissing('distributionChannel')">
+            <div class="form-group" *ngIf="isFieldMissing('salesOrganization')">
+              <label class="required">Sales Organization:</label>
+              <nz-select formControlName="salesOrganization" nzPlaceHolder="Select sales organization">
+                <nz-option *ngFor="let option of salesOrgOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+            <div class="form-group" *ngIf="isFieldMissing('distributionChannel')">
+              <label class="required">Distribution Channel:</label>
+              <nz-select formControlName="distributionChannel" nzPlaceHolder="Select distribution channel">
+                <nz-option *ngFor="let option of distributionChannelOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+          </div>
+          
+          <div class="form-row" *ngIf="isFieldMissing('division')">
+            <div class="form-group">
+              <label class="required">Division:</label>
+              <nz-select formControlName="division" nzPlaceHolder="Select division">
+                <nz-option *ngFor="let option of divisionOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Section 3: Contacts -->
+      <div class="modal-section contacts-section">
+        <div class="section-header">
+          <h3>👥 جهات الاتصال / Contact Persons</h3>
+          <button type="button" 
+                  nz-button 
+                  nzType="primary" 
+                  nzSize="small" 
+                  (click)="addContactToUnifiedForm()">
+            <span nz-icon nzType="plus"></span> Add Contact
+          </button>
+        </div>
+        
+        <div formArrayName="contacts" class="contacts-grid">
+          <div *ngFor="let contact of unifiedContactsArray.controls; let i = index" 
+               [formGroupName]="i" 
+               class="contact-card">
+            
+            <div class="contact-header">
+              <h4>Contact {{ i + 1 }}</h4>
+              <button type="button" 
+                      *ngIf="unifiedContactsArray.length > 1"
+                      nz-button 
+                      nzType="text" 
+                      nzDanger 
+                      nzSize="small"
+                      (click)="removeContactFromUnifiedForm(i)">
+                <span nz-icon nzType="delete"></span>
+              </button>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="required">Name:</label>
+                <input formControlName="name" placeholder="Full name">
+              </div>
+              <div class="form-group">
+                <label class="required">Job Title:</label>
+                <input formControlName="jobTitle" placeholder="Job position">
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label class="required">Email:</label>
+                <input formControlName="email" type="email" placeholder="email@company.com">
+              </div>
+              <div class="form-group">
+                <label class="required">Mobile:</label>
+                <input formControlName="mobile" placeholder="+201234567890">
+              </div>
+            </div>
+            
+            <div class="form-row">
+              <div class="form-group">
+                <label>Landline:</label>
+                <input formControlName="landline" placeholder="Optional">
+              </div>
+              <div class="form-group">
+                <label class="required">Language:</label>
+                <nz-select formControlName="preferredLanguage">
+                  <nz-option nzValue="Arabic" nzLabel="Arabic"></nz-option>
+                  <nz-option nzValue="English" nzLabel="English"></nz-option>
+                </nz-select>
+              </div>
+            </div>
+          </div>
+        </div>
+        
+        <div class="contacts-hint" *ngIf="unifiedContactsArray.length === 0">
+          <span nz-icon nzType="warning" nzTheme="fill" style="color: #fa8c16;"></span>
+          يجب إضافة جهة اتصال واحدة على الأقل / At least one contact is required
+        </div>
+      </div>
+      
+    </form>
+    
+    <!-- Modal Footer -->
+    <div class="modal-footer unified-footer">
+      <div class="footer-info">
+        <span class="info-item extracted" *ngIf="unifiedModalData.extractedFields.length > 0">
+          ✅ {{ unifiedModalData.extractedFields.length }} extracted
+        </span>
+        <span class="info-item missing" *ngIf="unifiedModalData.missingFields.length > 0">
+          ⚠️ {{ unifiedModalData.missingFields.length }} missing
+        </span>
+        <span class="info-item contacts">
+          👥 {{ unifiedContactsArray.length }} contacts
+        </span>
+</div>
+      
+      <div class="footer-actions">
+        <button nz-button nzType="default" (click)="showUnifiedModal = false">
+          إلغاء / Cancel
+        </button>
+        <button nz-button 
+                nzType="primary" 
+                (click)="saveUnifiedModal()"
+                [disabled]="unifiedModalForm.invalid || unifiedContactsArray.length === 0">
+          <span nz-icon nzType="save"></span>
+          حفظ وإرسال / Save & Submit
+        </button>
+      </div>
     </div>
   </div>
 </nz-modal>
