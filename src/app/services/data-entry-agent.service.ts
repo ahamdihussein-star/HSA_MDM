@@ -152,12 +152,13 @@ export class DataEntryAgentService {
   }
 
   getWelcomeMessage(): string {
-    const userName = this.currentUser?.fullName || 'User';
+    const fullName = this.currentUser?.fullName || 'User';
     
-    return `Welcome to User [${userName}] AI Assistant
-I can help you create new customer request quickly and save your time.
+    return `Welcome ${fullName}! 
 
-Please start upload the company documents,`;
+Ready to save some time today? I'm your AI assistant - I can quickly extract data from your documents and help you create customer requests effortlessly. 
+
+Just hit the paperclip icon to upload your files and watch the magic happen! ✨`;
   }
 
   private getTimeBasedGreeting(): string {

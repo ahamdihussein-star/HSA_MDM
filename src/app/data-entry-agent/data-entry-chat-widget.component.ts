@@ -61,6 +61,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   missingFieldsForm!: FormGroup;
   showMissingFieldsForm = false;
   currentMissingFields: string[] = [];
+  currentExtractedFields: string[] = []; // ✅ For dynamic edit form
   
   // Accumulated files
   accumulatedFiles: File[] = [];
@@ -96,20 +97,9 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     console.log('🧪 [Chat] countriesList:', this.countriesList);
     console.log('🧪 [Chat] documentTypes:', this.documentTypes);
     this.initializeChat();
-    // Open the chat automatically shortly after load
-    setTimeout(() => {
-      this.isOpen = true;
-      this.isMinimized = false;
-      // Debug: verify quick action buttons render
-      setTimeout(() => {
-        try {
-          const buttons = document.querySelectorAll('.action-btn');
-          console.log('🧪 [Chat] Action buttons count after open =', buttons.length);
-          const fileInput = document.getElementById('file-upload') as HTMLInputElement | null;
-          console.log('🧪 [Chat] file-upload input exists =', !!fileInput, ' accept =', fileInput?.accept, ' multiple =', fileInput?.multiple);
-        } catch {}
-      }, 250);
-    }, 1000);
+    // Open the chat automatically
+    this.isOpen = true;
+    this.isMinimized = false;
   }
 
   ngOnDestroy(): void {
@@ -179,9 +169,14 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private initializeChat(): void {
-    setTimeout(() => {
+    // Use requestIdleCallback for better performance, fallback to immediate execution
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        this.addWelcomeMessage();
+      });
+    } else {
       this.addWelcomeMessage();
-    }, 500);
+    }
   }
 
   private cleanup(): void {
@@ -240,11 +235,18 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     console.log('🧪 [Chat] onFileSelected fired. files? =', !!files, 'count =', files?.length ?? 0);
     if (!files || files.length === 0) return;
 
-    this.pendingFiles = Array.from(files);
-    this.initializeDocumentForm();
+    // ✅ Add to accumulated files (not process immediately)
+    for (let i = 0; i < files.length; i++) {
+      this.accumulatedFiles.push(files[i]);
+    }
     
-    // Use modal service instead of template modal
-    this.openDocumentModalWithService();
+    // ✅ Show accumulated files panel
+    this.showAccumulatedFiles = true;
+    
+    console.log('✅ [Chat] Files accumulated:', this.accumulatedFiles.length);
+    
+    // Clear the input so user can add more files
+    event.target.value = '';
   }
 
   private openDocumentModalWithService(): void {
@@ -268,10 +270,17 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       this.modalInstance = null;
     });
 
-    // Wait for modal to render then check content
-    setTimeout(() => {
-      this.debugModalLayoutCheck('openDocumentModalWithService');
-    }, 100);
+    // Use requestIdleCallback for better performance
+    if ('requestIdleCallback' in window) {
+      requestIdleCallback(() => {
+        this.debugModalLayoutCheck('openDocumentModalWithService');
+      });
+    } else {
+      // Fallback: use microtask for immediate execution without blocking
+      Promise.resolve().then(() => {
+        this.debugModalLayoutCheck('openDocumentModalWithService');
+      });
+    }
   }
 
   private initializeDocumentForm(): void {
@@ -579,7 +588,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     
     if (missingFields.length > 0) {
       console.log('🧪 [Chat] Moving to next field:', missingFields[0]);
-      setTimeout(() => this.askForMissingField(missingFields[0]), 500);
+      // Use microtask for better performance
+      Promise.resolve().then(() => this.askForMissingField(missingFields[0]));
     } else {
       console.log('🧪 [Chat] All fields complete, showing confirmation');
       this.confirmDataBeforeSubmission();
@@ -587,7 +597,19 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private askForContactForm(): void {
+    console.log('👥 [CONTACT] askForContactForm called');
+    console.log('👥 [CONTACT] contactForm exists:', !!this.contactForm);
+    
+    // ✅ Check if form exists
+    if (!this.contactForm) {
+      console.error('❌ [CONTACT] contactForm is undefined! Reinitializing...');
+      this.initializeForms();
+    }
+    
     this.showContactForm = true;
+    this.cdr.detectChanges();
+    
+    console.log('✅ [CONTACT] Contact form opened. showContactForm =', this.showContactForm);
     
     this.addMessage({
       id: `contact_${Date.now()}`,
@@ -602,7 +624,20 @@ Please fill the contact form in the popup window.`,
 
   // Exposed method for template button
   openContactForm(): void {
+    console.log('👥 [CONTACT] Opening contact form');
+    console.log('👥 [CONTACT] contactForm exists:', !!this.contactForm);
+    console.log('👥 [CONTACT] contactForm value:', this.contactForm?.value);
+    
+    // ✅ Check if form exists
+    if (!this.contactForm) {
+      console.error('❌ [CONTACT] contactForm is undefined! Reinitializing...');
+      this.initializeForms();
+    }
+    
     this.showContactForm = true;
+    this.cdr.detectChanges();
+    
+    console.log('✅ [CONTACT] Contact form opened. showContactForm =', this.showContactForm);
     this.contactForm.reset({ preferredLanguage: 'Arabic' });
   }
 
@@ -810,48 +845,93 @@ Will now check for duplicates then submit the request.
       }, 1000);
       
     } else if (lower.includes('لا') || lower.includes('no') || lower === 'n') {
-      // User doesn't want to edit - show missing fields form
+      // User doesn't want to edit - show missing fields form with detailed info
+      const extractedData = this.agentService.getExtractedData();
+      const missingFields = this.checkMissingFields(extractedData);
+      
+      // Create detailed missing fields message
+      const missingFieldsList = missingFields
+        .filter(field => field !== 'contacts') // Exclude contacts from this list
+        .map(field => {
+          const fieldLabels: { [key: string]: string } = {
+            'firstName': 'Company Name (English)',
+            'firstNameAR': 'Company Name (Arabic)',
+            'tax': 'Tax Number',
+            'CustomerType': 'Customer Type',
+            'ownerName': 'Owner Name',
+            'buildingNumber': 'Building Number',
+            'street': 'Street',
+            'country': 'Country',
+            'city': 'City',
+            'salesOrganization': 'Sales Organization',
+            'distributionChannel': 'Distribution Channel',
+            'division': 'Division'
+          };
+          return `• ${fieldLabels[field] || field}`;
+        })
+        .join('\n');
+
       this.addMessage({
         id: `missing_fields_info_${Date.now()}`,
         role: 'assistant',
-        content: `📋 **البيانات الناقصة / Missing Information**
+        content: `📊 **مراجعة البيانات / Data Review**
 
-البيانات المستخرجة صحيحة، لكن هناك معلومات ناقصة مطلوبة لإكمال الطلب.
+**البيانات المستخرجة (✅ Complete):**
+• Company Name: ${extractedData.firstName || 'N/A'}
+• Tax Number: ${extractedData.tax || 'N/A'}
+• Customer Type: ${extractedData.CustomerType || 'N/A'}
+• Country: ${extractedData.country || 'N/A'}
 
-The extracted data is correct, but there are missing information required to complete the request.`,
+**البيانات الناقصة (❌ Missing):**
+${missingFieldsList}
+
+📝 يرجى ملء البيانات الناقصة لإكمال الطلب.
+Please fill the missing data to complete the request.`,
         timestamp: new Date(),
         type: 'text'
       });
       
-      // Show missing fields form button
-      setTimeout(() => {
-        const extractedData = this.agentService.getExtractedData();
-        const missingFields = this.checkMissingFields(extractedData);
-        
-        if (missingFields.length > 0) {
-          this.addMessage({
-            id: `missing_fields_button_${Date.now()}`,
-            role: 'assistant',
-            content: `📝 **إكمال البيانات الناقصة / Complete Missing Data**
-
-اضغط على الزر أدناه لإكمال المعلومات الناقصة:
-Press the button below to complete the missing information:`,
-            timestamp: new Date(),
-            type: 'confirmation',
-            data: {
-              buttons: [
-                {
-                  text: '📝 إكمال البيانات الناقصة / Complete Missing Data',
-                  action: 'open_missing_fields_form',
-                  data: { missingFields }
-                }
-              ]
-            }
-          });
-        } else {
-          this.confirmDataBeforeSubmission();
-        }
-      }, 1000);
+      // ✅ Auto-open missing fields form instead of showing button
+      // Use requestIdleCallback for better performance
+      if ('requestIdleCallback' in window) {
+        requestIdleCallback(() => {
+          const extractedData = this.agentService.getExtractedData();
+          const missingFields = this.checkMissingFields(extractedData);
+          
+          if (missingFields.length > 0) {
+            console.log('🚀 [AUTO] Auto-opening missing fields form for:', missingFields);
+            
+            // ✅ Open missing fields form automatically
+            this.openMissingFieldsForm(missingFields);
+            
+            // Add message explaining what happened
+            this.addMessage({
+              id: `auto_opened_form_${Date.now()}`,
+              role: 'assistant',
+              content: `🚀 **فتح النموذج تلقائياً / Auto-opened Form**
+    
+    تم فتح نموذج البيانات الناقصة تلقائياً.
+    The missing data form has been opened automatically.`,
+              timestamp: new Date(),
+              type: 'text'
+            });
+          } else {
+            this.confirmDataBeforeSubmission();
+          }
+        });
+      } else {
+        // Fallback: use microtask
+        Promise.resolve().then(() => {
+          const extractedData = this.agentService.getExtractedData();
+          const missingFields = this.checkMissingFields(extractedData);
+          
+          if (missingFields.length > 0) {
+            this.openMissingFieldsForm(missingFields);
+          } else {
+            this.confirmDataBeforeSubmission();
+          }
+        });
+      }
       
       this.awaitingDataReview = false;
       
@@ -1017,6 +1097,14 @@ You can track the request in your task list.`,
       case 'confirm_extraction':
         this.proceedAfterExtraction();
         break;
+      case 'data_review_yes':
+        console.log('🎯 [BUTTON] User confirmed extracted data');
+        this.handleDataReviewResponse('نعم');
+        break;
+      case 'data_review_no':
+        console.log('🎯 [BUTTON] User wants to edit extracted data');
+        this.handleDataReviewResponse('لا');
+        break;
       case 'edit_extraction':
         console.log('🎯 [BUTTON] Calling editExtractedData()...');
         this.editExtractedData();
@@ -1093,14 +1181,26 @@ I'll help you enter data step by step.
   }
 
   private proceedAfterExtraction(): void {
-    const extractedData = this.agentService.getExtractedData();
-    const missingFields = this.checkMissingFields(extractedData);
+    console.log('🚀 [EXTRACTION] proceedAfterExtraction called');
     
-    if (missingFields.length > 0) {
-      this.askForMissingField(missingFields[0]);
-    } else {
-      this.confirmDataBeforeSubmission();
-    }
+    // ✅ Always ask user to review extracted data first
+    this.awaitingDataReview = true;
+    
+    this.addMessage({
+      id: `data_review_${Date.now()}`,
+      role: 'assistant',
+      content: `📊 **مراجعة البيانات المستخرجة / Review Extracted Data**
+
+هل البيانات المستخرجة صحيحة؟ / Is the extracted data correct?`,
+      timestamp: new Date(),
+      type: 'confirmation',
+      data: {
+        buttons: [
+          { text: '✅ نعم، صحيح / Yes, correct', action: 'data_review_yes' },
+          { text: '✏️ تعديل / Edit', action: 'data_review_no' }
+        ]
+      }
+    });
   }
 
   private editExtractedData(): void {
@@ -1117,63 +1217,72 @@ I'll help you enter data step by step.
       const extractedData = this.agentService.getExtractedData();
       console.log('🔧 [EDIT] Extracted data:', extractedData);
       
-      // ✅ Get all required fields (both extracted and missing)
-      const allRequiredFields = [
+      // ✅ Get only extracted fields (non-empty values)
+      const extractedFields = [
         'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
         'buildingNumber', 'street', 'country', 'city', 
         'salesOrganization', 'distributionChannel', 'division'
-      ];
+      ].filter(field => {
+        const value = (extractedData as any)[field];
+        return value && value.toString().trim() !== '';
+      });
       
-      // ✅ Check which fields are missing
-      const missingFields = this.checkMissingFields(extractedData);
-      console.log('🔧 [EDIT] Missing fields detected:', missingFields);
+      console.log('🔧 [EDIT] Extracted fields only:', extractedFields);
       
-      // ✅ Prepare form data with extracted data + empty values for missing fields
-      const formData = {
-        firstName: extractedData?.firstName || '',
-        firstNameAR: extractedData?.firstNameAR || '',
-        tax: extractedData?.tax || '',
-        CustomerType: extractedData?.CustomerType || '',
-        ownerName: extractedData?.ownerName || '',
-        buildingNumber: extractedData?.buildingNumber || '',
-        street: extractedData?.street || '',
-        country: extractedData?.country || '',
-        city: extractedData?.city || '',
-        salesOrganization: extractedData?.salesOrganization || '',
-        distributionChannel: extractedData?.distributionChannel || '',
-        division: extractedData?.division || ''
-      };
+      // ✅ Create dynamic form with only extracted fields
+      this.createDynamicEditForm(extractedFields, extractedData);
       
-      console.log('🔧 [EDIT] Form data to patch:', formData);
+      console.log('🔧 [EDIT] Dynamic form created with fields:', extractedFields);
       
-      // ✅ Patch form values
-      this.editForm.patchValue(formData);
-      console.log('🔧 [EDIT] Form patched successfully');
-      console.log('🔧 [EDIT] Current form value:', this.editForm.value);
-      
-      // ✅ Force change detection before showing modal
-      this.cdr.detectChanges();
-      
-      // ✅ Show modal immediately (no setTimeout needed)
+      // ✅ Show modal immediately
       this.showEditForm = true;
       
-      // ✅ Force another change detection
+      // ✅ Use single change detection after modal is shown
       this.cdr.detectChanges();
       
       console.log('✅ [EDIT] Modal opened. showEditForm =', this.showEditForm);
       
-      // ✅ Add confirmation message
+      // ✅ Add message showing only extracted data
+      const extractedFieldsCount = extractedFields.length;
+      
+      // ✅ Create extracted fields list for display
+      const extractedFieldsList = extractedFields
+        .map(field => {
+          const fieldLabels: { [key: string]: string } = {
+            'firstName': 'Company Name (English)',
+            'firstNameAR': 'Company Name (Arabic)',
+            'tax': 'Tax Number',
+            'CustomerType': 'Customer Type',
+            'ownerName': 'Owner Name',
+            'buildingNumber': 'Building Number',
+            'street': 'Street',
+            'country': 'Country',
+            'city': 'City',
+            'salesOrganization': 'Sales Organization',
+            'distributionChannel': 'Distribution Channel',
+            'division': 'Division'
+          };
+          return `• ${fieldLabels[field] || field}: ${(extractedData as any)[field]}`;
+        })
+        .join('\n');
+
       this.addMessage({
         id: `edit_${Date.now()}`,
         role: 'assistant',
-        content: `✏️ **تعديل البيانات / Edit Data**
+        content: `✏️ **تعديل البيانات المستخرجة / Edit Extracted Data**
 
-النموذج يحتوي على جميع الحقول المطلوبة:
-- البيانات المستخرجة (مملوءة مسبقاً)
-- الحقول الناقصة (فارغة تحتاج إدخال)
+📊 **البيانات المستخرجة فقط / Extracted Data Only:**
+${extractedFieldsCount} fields were extracted from the document.
+
+✅ **البيانات المستخرجة:**
+${extractedFieldsList}
+
+📝 **النموذج المنبثق يحتوي على:**
+• البيانات المستخرجة فقط (قابلة للتعديل)
+• لا توجد حقول فارغة أو غير مستخرجة
 
 يرجى مراجعة وتعديل البيانات في النموذج المنبثق.
-Please review and edit the data in the popup form.`,
+Please review and edit the extracted data in the popup form.`,
         timestamp: new Date(),
         type: 'text'
       });
@@ -1371,7 +1480,14 @@ Please review and edit the data in the popup form.`,
       
       // Patch form values
       this.missingFieldsForm.patchValue(formData);
-      console.log('📝 [MISSING] Form patched successfully');
+      
+      // ✅ Disable non-missing fields (make them read-only for reference)
+      nonMissingFields.forEach(field => {
+        this.missingFieldsForm.get(field)?.disable();
+        console.log(`📝 [MISSING] Disabled field: ${field} (non-missing, for reference)`);
+      });
+      
+      console.log('📝 [MISSING] Form patched and fields configured successfully');
       
       // Force change detection
       this.cdr.detectChanges();
@@ -1457,8 +1573,213 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
     this.currentMissingFields = [];
   }
 
+  // ✅ Helper methods for missing fields form
+  hasMissingField(fields: string[]): boolean {
+    return fields.some(field => this.currentMissingFields.includes(field));
+  }
+
+  getCompletedFields(): string[] {
+    const allFields = ['firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
+      'buildingNumber', 'street', 'country', 'city', 'salesOrganization', 
+      'distributionChannel', 'division'];
+    return allFields.filter(field => !this.currentMissingFields.includes(field));
+  }
+
+  getFieldLabel(field: string): string {
+    const labels: { [key: string]: string } = {
+      'firstName': 'Company Name (English)',
+      'firstNameAR': 'Company Name (Arabic)',
+      'tax': 'Tax Number',
+      'CustomerType': 'Customer Type',
+      'ownerName': 'Owner Name',
+      'buildingNumber': 'Building Number',
+      'street': 'Street',
+      'country': 'Country',
+      'city': 'City',
+      'salesOrganization': 'Sales Organization',
+      'distributionChannel': 'Distribution Channel',
+      'division': 'Division'
+    };
+    return labels[field] || field;
+  }
+
+  getFieldValue(field: string): string {
+    const extractedData = this.agentService.getExtractedData();
+    return (extractedData as any)[field] || 'N/A';
+  }
+
+  // ✅ Helper method to check if a field was extracted (for Edit Form)
+  isFieldExtracted(field: string): boolean {
+    const extractedData = this.agentService.getExtractedData();
+    const value = (extractedData as any)[field];
+    return value && value.toString().trim() !== '';
+  }
+
+  // ✅ Create dynamic edit form based on extracted fields
+  private createDynamicEditForm(extractedFields: string[], extractedData: any): void {
+    console.log('🔧 [DYNAMIC] Creating dynamic form for fields:', extractedFields);
+    
+    // Create form controls object dynamically with minimal operations
+    const formControls: any = {};
+    
+    // Batch the form control creation
+    for (const field of extractedFields) {
+      formControls[field] = [extractedData[field] || '', []];
+    }
+    
+    // Create new form group with only extracted fields
+    this.editForm = this.fb.group(formControls);
+    
+    // Store extracted fields for template use
+    this.currentExtractedFields = extractedFields;
+    
+    console.log('🔧 [DYNAMIC] Dynamic form created successfully');
+  }
+
+  // ✅ Helper methods for dynamic form rendering - optimized with Sets for O(1) lookup
+  private fullWidthFieldsSet = new Set(['firstName', 'firstNameAR', 'street', 'ownerName']);
+  private textFieldsSet = new Set(['firstName', 'firstNameAR', 'tax', 'ownerName', 'buildingNumber', 'street', 'city']);
+  private selectFieldsSet = new Set(['CustomerType', 'country', 'salesOrganization', 'distributionChannel', 'division']);
+
+  shouldBeFullWidth(field: string): boolean {
+    return this.fullWidthFieldsSet.has(field);
+  }
+
+  isTextInput(field: string): boolean {
+    return this.textFieldsSet.has(field);
+  }
+
+  isSelectInput(field: string): boolean {
+    return this.selectFieldsSet.has(field);
+  }
+
+  // ✅ Optimized placeholder lookup with Map
+  private placeholderMap = new Map([
+    ['firstName', 'Company Name (English)'],
+    ['firstNameAR', 'اسم الشركة (عربي)'],
+    ['tax', 'Tax Number'],
+    ['ownerName', 'Owner Name'],
+    ['buildingNumber', 'Building Number'],
+    ['street', 'Street Address'],
+    ['city', 'City']
+  ]);
+
+  getFieldPlaceholder(field: string): string {
+    return this.placeholderMap.get(field) || field;
+  }
+
+  // ✅ Optimized select options with Map for O(1) lookup
+  private selectOptionsMap = new Map([
+    ['CustomerType', [
+      { value: 'Corporate', label: 'Corporate' },
+      { value: 'SME', label: 'SME' },
+      { value: 'Individual', label: 'Individual' }
+    ]],
+    ['country', [
+      { value: 'Egypt', label: 'Egypt' },
+      { value: 'Saudi Arabia', label: 'Saudi Arabia' },
+      { value: 'United Arab Emirates', label: 'United Arab Emirates' },
+      { value: 'Yemen', label: 'Yemen' }
+    ]],
+    ['salesOrganization', [
+      { value: 'egypt_cairo_office', label: 'Egypt - Cairo Head Office' },
+      { value: 'egypt_alexandria_branch', label: 'Egypt - Alexandria Branch' },
+      { value: 'egypt_giza_branch', label: 'Egypt - Giza Branch' },
+      { value: 'ksa_riyadh_office', label: 'Saudi Arabia - Riyadh Office' },
+      { value: 'ksa_jeddah_branch', label: 'Saudi Arabia - Jeddah Branch' }
+    ]],
+    ['distributionChannel', [
+      { value: 'direct_sales', label: 'Direct Sales' },
+      { value: 'authorized_distributors', label: 'Authorized Distributors' },
+      { value: 'retail_chains', label: 'Retail Chains' }
+    ]],
+    ['division', [
+      { value: 'food_products', label: 'Food Products Division' },
+      { value: 'beverages', label: 'Beverages Division' },
+      { value: 'household_items', label: 'Household Items Division' }
+    ]]
+  ]);
+
+  getSelectOptions(field: string): Array<{value: string, label: string}> {
+    return this.selectOptionsMap.get(field) || [];
+  }
+
   get documentsFA(): FormArray {
     return (this.documentMetadataForm?.get('documents') as FormArray) || this.fb.array([]);
+  }
+
+  // Document type detection for accumulated files
+  detectDocumentType(fileName: string): string {
+    const name = fileName.toLowerCase();
+    
+    // Company registration documents
+    if (name.includes('commercial') || name.includes('registration') || name.includes('تجاري') || name.includes('سجل')) {
+      return 'Commercial Registration';
+    }
+    if (name.includes('trade') || name.includes('license') || name.includes('ترخيص') || name.includes('تجاري')) {
+      return 'Trade License';
+    }
+    if (name.includes('tax') || name.includes('vat') || name.includes('ضريبي') || name.includes('ضريبة')) {
+      return 'Tax Certificate';
+    }
+    if (name.includes('certificate') || name.includes('شهادة') || name.includes('إثبات')) {
+      return 'Certificate';
+    }
+    if (name.includes('contract') || name.includes('agreement') || name.includes('عقد') || name.includes('اتفاق')) {
+      return 'Contract/Agreement';
+    }
+    if (name.includes('invoice') || name.includes('فاتورة') || name.includes('bill')) {
+      return 'Invoice/Bill';
+    }
+    if (name.includes('id') || name.includes('passport') || name.includes('هوية') || name.includes('جواز')) {
+      return 'ID Document';
+    }
+    if (name.includes('bank') || name.includes('statement') || name.includes('بنك') || name.includes('كشف')) {
+      return 'Bank Statement';
+    }
+    
+    // Default
+    return 'Document';
+  }
+
+  // Remove accumulated file
+  removeAccumulatedFile(index: number): void {
+    console.log('🗑️ [Chat] Removing accumulated file at index:', index);
+    this.accumulatedFiles.splice(index, 1);
+    
+    if (this.accumulatedFiles.length === 0) {
+      this.showAccumulatedFiles = false;
+    }
+    
+    console.log('🗑️ [Chat] Remaining accumulated files:', this.accumulatedFiles.length);
+  }
+
+  // Clear all accumulated files
+  clearAccumulatedFiles(): void {
+    console.log('🗑️ [Chat] Clearing all accumulated files');
+    this.accumulatedFiles = [];
+    this.showAccumulatedFiles = false;
+  }
+
+  // Proceed with accumulated files to metadata collection
+  async proceedWithAccumulatedFiles(): Promise<void> {
+    if (this.accumulatedFiles.length === 0) {
+      console.warn('⚠️ [Chat] No accumulated files to proceed with');
+      return;
+    }
+    
+    console.log('📁 [Chat] Proceeding with accumulated files:', this.accumulatedFiles.length);
+    
+    // ✅ Move to pending files for metadata collection
+    this.pendingFiles = [...this.accumulatedFiles];
+    this.accumulatedFiles = [];
+    this.showAccumulatedFiles = false;
+    
+    console.log('📁 [Chat] Files moved to pending:', this.pendingFiles.length);
+    
+    // ✅ Initialize metadata form for ALL files
+    this.initializeDocumentForm();
+    this.openDocumentModalWithService();
   }
 
   get allDocumentTypes(): string[] {
@@ -1466,33 +1787,15 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
             'Trade License', 'Tax Certificate'];
   }
 
-  // Accumulated files helpers for UI panel
-  clearAccumulatedFiles(): void {
-    this.accumulatedFiles = [];
-    this.showAccumulatedFiles = false;
+  // Trigger file upload from accumulated files panel
+  triggerFileUpload(): void {
     const fileInput = document.getElementById('file-upload') as HTMLInputElement;
     if (fileInput) {
-      fileInput.value = '';
+      fileInput.click();
     }
   }
 
-  removeAccumulatedFile(index: number): void {
-    this.accumulatedFiles.splice(index, 1);
-    if (this.accumulatedFiles.length === 0) {
-      this.showAccumulatedFiles = false;
-    }
-  }
 
-  async proceedWithAccumulatedFiles(): Promise<void> {
-    if (this.accumulatedFiles.length === 0) return;
-    this.pendingFiles = [...this.accumulatedFiles];
-    this.accumulatedFiles = [];
-    this.showAccumulatedFiles = false;
-    this.initializeDocumentForm();
-    
-    // Use modal service instead of template modal
-    this.openDocumentModalWithService();
-  }
 
   onCountryChange(selectedCountry: string, formIndex: number): void {
     const documentsArray = this.documentMetadataForm.get('documents') as FormArray;
@@ -1565,81 +1868,28 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
       clearTimeout(this.scrollTimeout);
     }
     
+    // Use a more efficient scrolling approach
     this.scrollTimeout = setTimeout(() => {
       const chatBody = document.querySelector('.chat-body');
       if (chatBody) {
-        requestAnimationFrame(() => {
-          (chatBody as HTMLElement).scrollTop = (chatBody as HTMLElement).scrollHeight;
+        // Use scrollTo for better performance than scrollTop
+        chatBody.scrollTo({
+          top: chatBody.scrollHeight,
+          behavior: 'smooth'
         });
       }
-    }, 50);
+    }, 10); // Reduced timeout for better responsiveness
   }
 
   private debugModalLayoutCheck(context: string): void {
+    // Simplified debug check with minimal DOM operations
     try {
-      const runCheck = (attempt: number) => {
-        const overlay = document.querySelector('.cdk-overlay-container') as HTMLElement | null;
-        const modalBody = document.querySelector('.ant-modal-body') as HTMLElement | null;
-        const chat = document.querySelector('.chat-widget-container') as HTMLElement | null;
-
-        const overlayZ = overlay ? getComputedStyle(overlay).zIndex : 'N/A';
-        const chatZ = chat ? getComputedStyle(chat).zIndex : 'N/A';
-        const bodyMaxH = modalBody ? getComputedStyle(modalBody).maxHeight : 'N/A';
-        const bodyOverflow = modalBody ? getComputedStyle(modalBody).overflowY : 'N/A';
-
-        console.log(`🧪 [Chat][${context}] Modal debug (attempt ${attempt}) → overlay z-index=`, overlayZ, ' chat z-index=', chatZ);
-        console.log(`🧪 [Chat][${context}] Modal body styles → max-height=`, bodyMaxH, ' overflow-y=', bodyOverflow);
-        
-        // Check if modal is visible
-        console.log(`🧪 [Chat][${context}] showDocumentModal =`, this.showDocumentModal);
-        console.log(`🧪 [Chat][${context}] documentMetadataForm exists =`, !!this.documentMetadataForm);
-        console.log(`🧪 [Chat][${context}] documentsFA length =`, this.documentsFA.length);
-        
-        if (modalBody) {
-          const rect = modalBody.getBoundingClientRect();
-          console.log('🧪 [Chat] Modal body rect:', { width: rect.width, height: rect.height, top: rect.top, left: rect.left });
-
-          // Dump a snippet of HTML to confirm projection
-          const htmlSample = (modalBody.innerHTML || '').slice(0, 200).replace(/\n/g, ' ');
-          console.log('🧪 [Chat] Modal body HTML sample:', htmlSample);
-
-          // Inspect children visibility/size
-          const container = modalBody.querySelector('.document-modal-content') as HTMLElement | null;
-          const form = modalBody.querySelector('.document-modal-content form') as HTMLElement | null;
-          const card = modalBody.querySelector('.document-modal-content nz-card, .document-modal-content .ant-card') as HTMLElement | null;
-          const firstRow = modalBody.querySelector('.document-modal-content .form-row') as HTMLElement | null;
-
-          const logEl = (label: string, el: HTMLElement | null) => {
-            if (!el) { 
-              console.warn(`🧪 [Chat] ${label} not found`); 
-              return; 
-            }
-            const cs = getComputedStyle(el);
-            const r = el.getBoundingClientRect();
-            console.log(`🧪 [Chat] ${label} → display=${cs.display} visibility=${cs.visibility} height=${r.height} width=${r.width}`);
-          };
-          logEl('document-modal-content', container);
-          logEl('document-modal-content form', form);
-          logEl('first ant-card', card);
-          logEl('first .form-row', firstRow);
-
-          // Count controls
-          const inputs = modalBody.querySelectorAll('input, textarea, nz-select');
-          console.log('🧪 [Chat] Modal inputs/selects count =', inputs.length);
-
-          // If content is still not rendered, try to force change detection
-          if ((!container || inputs.length === 0) && attempt < 5) {
-            console.log(`🧪 [Chat] Attempting to force change detection (attempt ${attempt})`);
-            this.cdr.detectChanges();
-            setTimeout(() => runCheck(attempt + 1), 200);
-          } else if (attempt >= 5) {
-            console.warn('🧪 [Chat] Modal content still not rendered after 5 attempts');
-          }
-        } else {
-          console.warn('🧪 [Chat] Modal body element not found for debug');
-        }
-      };
-      setTimeout(() => runCheck(1), 100);
+      const modalBody = document.querySelector('.ant-modal-body') as HTMLElement | null;
+      if (modalBody) {
+        console.log(`🧪 [Chat][${context}] Modal visible:`, !!modalBody);
+        console.log(`🧪 [Chat][${context}] Form exists:`, !!this.documentMetadataForm);
+        console.log(`🧪 [Chat][${context}] Documents count:`, this.documentsFA.length);
+      }
     } catch (e) {
       console.warn('🧪 [Chat] debugModalLayoutCheck error:', e);
     }

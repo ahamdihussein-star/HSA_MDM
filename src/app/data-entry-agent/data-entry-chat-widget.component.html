@@ -127,9 +127,13 @@
           </button>
         </div>
         <div class="files-list">
-          <div *ngFor="let file of accumulatedFiles; let i = index" class="file-item">
-            <span>{{ file.name }}</span>
-            <button nz-button nzType="text" nzSize="small" (click)="removeAccumulatedFile(i)">
+          <div *ngFor="let file of accumulatedFiles; let i = index" class="accumulated-file-card">
+            <div class="file-info">
+              <span class="file-name">{{ file.name }}</span>
+              <span class="file-size">{{ (file.size / 1024).toFixed(2) }}KB</span>
+              <span class="detected-type">🔍 {{ detectDocumentType(file.name) }}</span>
+            </div>
+            <button nz-button nzType="text" nzSize="small" (click)="removeAccumulatedFile(i)" class="remove-btn">
               <i nz-icon nzType="close" nzTheme="outline"></i>
             </button>
           </div>
@@ -138,8 +142,12 @@
           <button nz-button nzType="default" (click)="clearAccumulatedFiles()">
             إلغاء / Cancel
           </button>
+          <button nz-button nzType="dashed" (click)="triggerFileUpload()">
+            <i nz-icon nzType="plus"></i>
+            إضافة ملفات أخرى / Add More Files
+          </button>
           <button nz-button nzType="primary" (click)="proceedWithAccumulatedFiles()">
-            متابعة / Continue
+            متابعة / Continue ({{ accumulatedFiles.length }})
           </button>
         </div>
       </div>
@@ -310,8 +318,9 @@
   [nzFooter]="null"
   nzWidth="600px">
   
-  <form [formGroup]="contactForm">
-    <div class="contact-form-content">
+  <div *nzModalContent>
+    <form *ngIf="contactForm" [formGroup]="contactForm">
+      <div class="contact-form-content">
       <div class="form-row">
         <div class="form-group">
           <label>الاسم / Name: *</label>
@@ -348,15 +357,17 @@
         </div>
       </div>
     </div>
+    
+    <!-- ✅ Footer buttons -->
+    <div class="modal-footer">
+      <button nz-button nzType="default" (click)="closeContactForm()">
+        إلغاء / Cancel
+      </button>
+      <button nz-button nzType="primary" (click)="saveContactForm()" [disabled]="!contactForm.valid">
+        حفظ / Save
+      </button>
+    </div>
   </form>
-  
-  <div class="modal-footer">
-    <button nz-button nzType="default" (click)="closeContactForm()">
-      إلغاء / Cancel
-    </button>
-    <button nz-button nzType="primary" (click)="saveContactForm()" [disabled]="!contactForm.valid">
-      حفظ / Save
-    </button>
   </div>
 </nz-modal>
 
@@ -372,111 +383,40 @@
   
   <!-- ✅ تأكد من وجود *ngIf صح -->
   <div *nzModalContent>
-    <form *ngIf="editForm" [formGroup]="editForm">
+    <form *ngIf="editForm && currentExtractedFields.length > 0" [formGroup]="editForm">
       <div class="edit-form-content">
-      <!-- Company Information -->
-      <div class="form-section">
-        <h4>معلومات الشركة / Company Information</h4>
-        <div class="form-row">
-          <div class="form-group">
-            <label>اسم الشركة (إنجليزي) / Company Name (English): <span class="required">*</span></label>
-            <input formControlName="firstName" placeholder="Company Name">
-          </div>
-          <div class="form-group">
-            <label>اسم الشركة (عربي) / Company Name (Arabic): <span class="required">*</span></label>
-            <input formControlName="firstNameAR" placeholder="اسم الشركة">
+        
+        <!-- ✅ Dynamic form fields based on extracted data -->
+        <div class="form-section">
+          <h4>البيانات المستخرجة / Extracted Data</h4>
+          <p class="section-description">
+            تم استخراج {{currentExtractedFields.length}} حقل من المستند / {{currentExtractedFields.length}} fields extracted from document
+          </p>
+          
+          <!-- Dynamic form fields -->
+          <div class="dynamic-fields-grid">
+            <div class="form-group" *ngFor="let field of currentExtractedFields; let i = index" 
+                 [ngClass]="{'full-width': shouldBeFullWidth(field)}">
+              
+              <!-- Text inputs -->
+              <ng-container *ngIf="isTextInput(field)">
+                <label>{{getFieldLabel(field)}}:</label>
+                <input [formControlName]="field" [placeholder]="getFieldPlaceholder(field)">
+              </ng-container>
+              
+              <!-- Select inputs -->
+              <ng-container *ngIf="isSelectInput(field)">
+                <label>{{getFieldLabel(field)}}:</label>
+                <nz-select [formControlName]="field">
+                  <nz-option *ngFor="let option of getSelectOptions(field)" 
+                            [nzValue]="option.value" [nzLabel]="option.label">
+                  </nz-option>
+                </nz-select>
+              </ng-container>
+            </div>
           </div>
         </div>
         
-        <div class="form-row">
-          <div class="form-group">
-            <label>الرقم الضريبي / Tax Number: <span class="required">*</span></label>
-            <input formControlName="tax" placeholder="Tax Number">
-          </div>
-          <div class="form-group">
-            <label>نوع العميل / Customer Type: <span class="required">*</span></label>
-            <nz-select formControlName="CustomerType">
-              <nz-option nzValue="Corporate" nzLabel="Corporate"></nz-option>
-              <nz-option nzValue="SME" nzLabel="SME"></nz-option>
-              <nz-option nzValue="Individual" nzLabel="Individual"></nz-option>
-            </nz-select>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>اسم المالك / Owner Name:</label>
-            <input formControlName="ownerName" placeholder="Owner Name">
-          </div>
-        </div>
-      </div>
-
-      <!-- Address Information -->
-      <div class="form-section">
-        <h4>معلومات العنوان / Address Information</h4>
-        <div class="form-row">
-          <div class="form-group">
-            <label>رقم المبنى / Building Number:</label>
-            <input formControlName="buildingNumber" placeholder="Building Number">
-          </div>
-          <div class="form-group">
-            <label>الشارع / Street:</label>
-            <input formControlName="street" placeholder="Street Address">
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>الدولة / Country:</label>
-            <nz-select formControlName="country">
-              <nz-option nzValue="Egypt" nzLabel="Egypt"></nz-option>
-              <nz-option nzValue="Saudi Arabia" nzLabel="Saudi Arabia"></nz-option>
-              <nz-option nzValue="United Arab Emirates" nzLabel="United Arab Emirates"></nz-option>
-              <nz-option nzValue="Yemen" nzLabel="Yemen"></nz-option>
-            </nz-select>
-          </div>
-          <div class="form-group">
-            <label>المدينة / City:</label>
-            <input formControlName="city" placeholder="City">
-          </div>
-        </div>
-      </div>
-
-      <!-- Sales Information -->
-      <div class="form-section">
-        <h4>معلومات المبيعات / Sales Information</h4>
-        <div class="form-row">
-          <div class="form-group">
-            <label>منظمة المبيعات / Sales Organization: <span class="required">*</span></label>
-            <nz-select formControlName="salesOrganization">
-              <nz-option nzValue="egypt_cairo_office" nzLabel="Egypt - Cairo Head Office"></nz-option>
-              <nz-option nzValue="egypt_alexandria_branch" nzLabel="Egypt - Alexandria Branch"></nz-option>
-              <nz-option nzValue="egypt_giza_branch" nzLabel="Egypt - Giza Branch"></nz-option>
-              <nz-option nzValue="ksa_riyadh_office" nzLabel="Saudi Arabia - Riyadh Office"></nz-option>
-              <nz-option nzValue="ksa_jeddah_branch" nzLabel="Saudi Arabia - Jeddah Branch"></nz-option>
-            </nz-select>
-          </div>
-          <div class="form-group">
-            <label>قناة التوزيع / Distribution Channel: <span class="required">*</span></label>
-            <nz-select formControlName="distributionChannel">
-              <nz-option nzValue="direct_sales" nzLabel="Direct Sales"></nz-option>
-              <nz-option nzValue="authorized_distributors" nzLabel="Authorized Distributors"></nz-option>
-              <nz-option nzValue="retail_chains" nzLabel="Retail Chains"></nz-option>
-            </nz-select>
-          </div>
-        </div>
-        
-        <div class="form-row">
-          <div class="form-group">
-            <label>القسم / Division: <span class="required">*</span></label>
-            <nz-select formControlName="division">
-              <nz-option nzValue="food_products" nzLabel="Food Products Division"></nz-option>
-              <nz-option nzValue="beverages" nzLabel="Beverages Division"></nz-option>
-              <nz-option nzValue="household_items" nzLabel="Household Items Division"></nz-option>
-            </nz-select>
-          </div>
-        </div>
-        </div>
       </div>
     </form>
     
@@ -503,108 +443,143 @@
   [nzClosable]="true">
   
   <div *nzModalContent>
+    <!-- ✅ Header with clear instructions -->
+    <div class="missing-fields-header">
+      <div class="instructions">
+        <h3>📝 إكمال البيانات الناقصة / Complete Missing Data</h3>
+        <p>الحقول المملوءة مسبقاً هي للمرجع فقط. يرجى ملء الحقول الناقصة.</p>
+        <p><em>Pre-filled fields are for reference only. Please fill the missing fields.</em></p>
+      </div>
+      <div class="field-status">
+        <div class="status-item completed">
+          <span class="icon">✅</span>
+          <span class="text">مكتملة / Complete</span>
+        </div>
+        <div class="status-item missing">
+          <span class="icon">❌</span>
+          <span class="text">ناقصة / Missing</span>
+        </div>
+      </div>
+    </div>
+    
     <form *ngIf="missingFieldsForm" [formGroup]="missingFieldsForm">
       <div class="edit-form-content">
-        <!-- Company Information -->
-        <div class="form-section">
-          <h4>معلومات الشركة / Company Information</h4>
-          <div class="form-row">
-            <div class="form-group">
-              <label>اسم الشركة (إنجليزي) / Company Name (English): <span class="required">*</span></label>
-              <input formControlName="firstName" placeholder="Company Name" [readonly]="!currentMissingFields.includes('firstName')">
+        
+        <!-- ✅ MISSING FIELDS ONLY - Priority Section -->
+        <div class="form-section missing-fields-section" *ngIf="currentMissingFields.length > 0">
+          <h4>🔴 البيانات المطلوبة / Required Fields</h4>
+          <p class="section-description">يرجى ملء الحقول التالية لإكمال الطلب / Please fill the following fields to complete the request:</p>
+          
+          <!-- Missing Company Fields -->
+          <div class="missing-fields-group" *ngIf="hasMissingField(['firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName'])">
+            <h5>معلومات الشركة / Company Information</h5>
+            <div class="form-row">
+              <div class="form-group" *ngIf="currentMissingFields.includes('firstName')">
+                <label>اسم الشركة (إنجليزي) / Company Name (English): <span class="required">*</span></label>
+                <input formControlName="firstName" placeholder="Company Name">
+              </div>
+              <div class="form-group" *ngIf="currentMissingFields.includes('firstNameAR')">
+                <label>اسم الشركة (عربي) / Company Name (Arabic): <span class="required">*</span></label>
+                <input formControlName="firstNameAR" placeholder="اسم الشركة">
+              </div>
             </div>
-            <div class="form-group">
-              <label>اسم الشركة (عربي) / Company Name (Arabic): <span class="required">*</span></label>
-              <input formControlName="firstNameAR" placeholder="اسم الشركة" [readonly]="!currentMissingFields.includes('firstNameAR')">
+            <div class="form-row">
+              <div class="form-group" *ngIf="currentMissingFields.includes('tax')">
+                <label>الرقم الضريبي / Tax Number: <span class="required">*</span></label>
+                <input formControlName="tax" placeholder="Tax Number">
+              </div>
+              <div class="form-group" *ngIf="currentMissingFields.includes('CustomerType')">
+                <label>نوع العميل / Customer Type: <span class="required">*</span></label>
+                <nz-select formControlName="CustomerType">
+                  <nz-option nzValue="Corporate" nzLabel="Corporate"></nz-option>
+                  <nz-option nzValue="SME" nzLabel="SME"></nz-option>
+                  <nz-option nzValue="Individual" nzLabel="Individual"></nz-option>
+                </nz-select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group" *ngIf="currentMissingFields.includes('ownerName')">
+                <label>اسم المالك / Owner Name:</label>
+                <input formControlName="ownerName" placeholder="Owner Name">
+              </div>
             </div>
           </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label>الرقم الضريبي / Tax Number: <span class="required">*</span></label>
-              <input formControlName="tax" placeholder="Tax Number" [readonly]="!currentMissingFields.includes('tax')">
+
+          <!-- Missing Address Fields -->
+          <div class="missing-fields-group" *ngIf="hasMissingField(['buildingNumber', 'street', 'country', 'city'])">
+            <h5>معلومات العنوان / Address Information</h5>
+            <div class="form-row">
+              <div class="form-group" *ngIf="currentMissingFields.includes('buildingNumber')">
+                <label>رقم المبنى / Building Number:</label>
+                <input formControlName="buildingNumber" placeholder="Building Number">
+              </div>
+              <div class="form-group" *ngIf="currentMissingFields.includes('street')">
+                <label>الشارع / Street:</label>
+                <input formControlName="street" placeholder="Street Address">
+              </div>
             </div>
-            <div class="form-group">
-              <label>نوع العميل / Customer Type: <span class="required">*</span></label>
-              <nz-select formControlName="CustomerType" [nzDisabled]="!currentMissingFields.includes('CustomerType')">
-                <nz-option nzValue="Corporate" nzLabel="Corporate"></nz-option>
-                <nz-option nzValue="SME" nzLabel="SME"></nz-option>
-                <nz-option nzValue="Individual" nzLabel="Individual"></nz-option>
-              </nz-select>
+            <div class="form-row">
+              <div class="form-group" *ngIf="currentMissingFields.includes('country')">
+                <label>الدولة / Country: <span class="required">*</span></label>
+                <nz-select formControlName="country">
+                  <nz-option nzValue="Egypt" nzLabel="Egypt"></nz-option>
+                  <nz-option nzValue="Saudi Arabia" nzLabel="Saudi Arabia"></nz-option>
+                  <nz-option nzValue="United Arab Emirates" nzLabel="United Arab Emirates"></nz-option>
+                  <nz-option nzValue="Yemen" nzLabel="Yemen"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group" *ngIf="currentMissingFields.includes('city')">
+                <label>المدينة / City:</label>
+                <input formControlName="city" placeholder="City">
+              </div>
             </div>
           </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label>اسم المالك / Owner Name:</label>
-              <input formControlName="ownerName" placeholder="Owner Name" [readonly]="!currentMissingFields.includes('ownerName')">
+
+          <!-- Missing Sales Fields -->
+          <div class="missing-fields-group" *ngIf="hasMissingField(['salesOrganization', 'distributionChannel', 'division'])">
+            <h5>معلومات المبيعات / Sales Information</h5>
+            <div class="form-row">
+              <div class="form-group" *ngIf="currentMissingFields.includes('salesOrganization')">
+                <label>منظمة المبيعات / Sales Organization: <span class="required">*</span></label>
+                <nz-select formControlName="salesOrganization">
+                  <nz-option nzValue="egypt_cairo_office" nzLabel="Egypt - Cairo Head Office"></nz-option>
+                  <nz-option nzValue="egypt_alexandria_branch" nzLabel="Egypt - Alexandria Branch"></nz-option>
+                  <nz-option nzValue="egypt_giza_branch" nzLabel="Egypt - Giza Branch"></nz-option>
+                  <nz-option nzValue="ksa_riyadh_office" nzLabel="Saudi Arabia - Riyadh Office"></nz-option>
+                  <nz-option nzValue="ksa_jeddah_branch" nzLabel="Saudi Arabia - Jeddah Branch"></nz-option>
+                </nz-select>
+              </div>
+              <div class="form-group" *ngIf="currentMissingFields.includes('distributionChannel')">
+                <label>قناة التوزيع / Distribution Channel: <span class="required">*</span></label>
+                <nz-select formControlName="distributionChannel">
+                  <nz-option nzValue="direct_sales" nzLabel="Direct Sales"></nz-option>
+                  <nz-option nzValue="authorized_distributors" nzLabel="Authorized Distributors"></nz-option>
+                  <nz-option nzValue="retail_chains" nzLabel="Retail Chains"></nz-option>
+                </nz-select>
+              </div>
+            </div>
+            <div class="form-row">
+              <div class="form-group" *ngIf="currentMissingFields.includes('division')">
+                <label>القسم / Division: <span class="required">*</span></label>
+                <nz-select formControlName="division">
+                  <nz-option nzValue="food_products" nzLabel="Food Products Division"></nz-option>
+                  <nz-option nzValue="beverages" nzLabel="Beverages Division"></nz-option>
+                  <nz-option nzValue="household_items" nzLabel="Household Items Division"></nz-option>
+                </nz-select>
+              </div>
             </div>
           </div>
         </div>
 
-        <!-- Address Information -->
-        <div class="form-section">
-          <h4>معلومات العنوان / Address Information</h4>
-          <div class="form-row">
-            <div class="form-group">
-              <label>رقم المبنى / Building Number:</label>
-              <input formControlName="buildingNumber" placeholder="Building Number" [readonly]="!currentMissingFields.includes('buildingNumber')">
-            </div>
-            <div class="form-group">
-              <label>الشارع / Street:</label>
-              <input formControlName="street" placeholder="Street Name" [readonly]="!currentMissingFields.includes('street')">
-            </div>
-          </div>
+        <!-- ✅ COMPLETED FIELDS - Reference Section -->
+        <div class="form-section completed-fields-section" *ngIf="getCompletedFields().length > 0">
+          <h4>✅ البيانات المكتملة / Completed Fields</h4>
+          <p class="section-description">البيانات التالية تم استخراجها من المستندات (للمرجع فقط) / The following data was extracted from documents (for reference only):</p>
           
-          <div class="form-row">
-            <div class="form-group">
-              <label>الدولة / Country: <span class="required">*</span></label>
-              <nz-select formControlName="country" [nzDisabled]="!currentMissingFields.includes('country')">
-                <nz-option nzValue="Egypt" nzLabel="Egypt"></nz-option>
-                <nz-option nzValue="Saudi Arabia" nzLabel="Saudi Arabia"></nz-option>
-                <nz-option nzValue="United Arab Emirates" nzLabel="United Arab Emirates"></nz-option>
-                <nz-option nzValue="Yemen" nzLabel="Yemen"></nz-option>
-              </nz-select>
-            </div>
-            <div class="form-group">
-              <label>المدينة / City:</label>
-              <input formControlName="city" placeholder="City" [readonly]="!currentMissingFields.includes('city')">
-            </div>
-          </div>
-        </div>
-
-        <!-- Sales Information -->
-        <div class="form-section">
-          <h4>معلومات المبيعات / Sales Information</h4>
-          <div class="form-row">
-            <div class="form-group">
-              <label>منظمة المبيعات / Sales Organization: <span class="required">*</span></label>
-              <nz-select formControlName="salesOrganization" [nzDisabled]="!currentMissingFields.includes('salesOrganization')">
-                <nz-option nzValue="egypt_cairo_office" nzLabel="Egypt - Cairo Head Office"></nz-option>
-                <nz-option nzValue="egypt_alexandria_branch" nzLabel="Egypt - Alexandria Branch"></nz-option>
-                <nz-option nzValue="egypt_giza_branch" nzLabel="Egypt - Giza Branch"></nz-option>
-                <nz-option nzValue="ksa_riyadh_office" nzLabel="Saudi Arabia - Riyadh Office"></nz-option>
-                <nz-option nzValue="ksa_jeddah_branch" nzLabel="Saudi Arabia - Jeddah Branch"></nz-option>
-              </nz-select>
-            </div>
-            <div class="form-group">
-              <label>قناة التوزيع / Distribution Channel: <span class="required">*</span></label>
-              <nz-select formControlName="distributionChannel" [nzDisabled]="!currentMissingFields.includes('distributionChannel')">
-                <nz-option nzValue="direct_sales" nzLabel="Direct Sales"></nz-option>
-                <nz-option nzValue="authorized_distributors" nzLabel="Authorized Distributors"></nz-option>
-                <nz-option nzValue="retail_chains" nzLabel="Retail Chains"></nz-option>
-              </nz-select>
-            </div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label>القسم / Division: <span class="required">*</span></label>
-              <nz-select formControlName="division" [nzDisabled]="!currentMissingFields.includes('division')">
-                <nz-option nzValue="food_products" nzLabel="Food Products Division"></nz-option>
-                <nz-option nzValue="beverages" nzLabel="Beverages Division"></nz-option>
-                <nz-option nzValue="household_items" nzLabel="Household Items Division"></nz-option>
-              </nz-select>
+          <div class="completed-fields-grid">
+            <div class="completed-field" *ngFor="let field of getCompletedFields()">
+              <div class="field-label">{{ getFieldLabel(field) }}</div>
+              <div class="field-value">{{ getFieldValue(field) }}</div>
             </div>
           </div>
         </div>
