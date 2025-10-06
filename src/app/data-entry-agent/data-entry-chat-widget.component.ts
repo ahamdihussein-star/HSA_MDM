@@ -125,8 +125,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     console.log('🧪 [Chat] documentTypes:', this.documentTypes);
     this.initializeChat();
     // Open the chat automatically
-    this.isOpen = true;
-    this.isMinimized = false;
+      this.isOpen = true;
+      this.isMinimized = false;
   }
 
   ngOnDestroy(): void {
@@ -183,25 +183,25 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       division: ['']
     });
     
-    // Unified modal form
+    // Unified modal form - Initialize with normal values, not disabled objects
     this.unifiedModalForm = this.fb.group({
       // Company Information
-      firstName: [{value: '', disabled: true}],
-      firstNameAR: [{value: '', disabled: true}],
-      tax: [{value: '', disabled: true}],
-      CustomerType: [{value: '', disabled: true}],
-      ownerName: [{value: '', disabled: true}],
+      firstName: [''],
+      firstNameAR: [''],
+      tax: [''],
+      CustomerType: [''],
+      ownerName: [''],
       
       // Address Information
-      buildingNumber: [{value: '', disabled: true}],
-      street: [{value: '', disabled: true}],
-      country: [{value: '', disabled: true}],
-      city: [{value: '', disabled: true}],
+      buildingNumber: [''],
+      street: [''],
+      country: [''],
+      city: [''],
       
       // Sales Information
-      salesOrganization: [{value: '', disabled: true}],
-      distributionChannel: [{value: '', disabled: true}],
-      division: [{value: '', disabled: true}],
+      salesOrganization: [''],
+      distributionChannel: [''],
+      division: [''],
       
       // Contacts FormArray
       contacts: this.fb.array([])
@@ -228,7 +228,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     // Use requestIdleCallback for better performance, fallback to immediate execution
     if ('requestIdleCallback' in window) {
       requestIdleCallback(() => {
-        this.addWelcomeMessage();
+      this.addWelcomeMessage();
       });
     } else {
       this.addWelcomeMessage();
@@ -394,7 +394,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
         country: [detectedInfo?.country || '', Validators.required],
         type: [detectedInfo?.type || '', Validators.required],
         description: [this.generateSmartDescription(file.name, detectedInfo)]
-      });
+    });
       
       documentsArray.push(documentGroup);
     });
@@ -489,7 +489,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
 
       // Display results and wait for user review
       this.displayExtractedDataWithLabels(extractedData);
-      
+
       // Set flag to wait for user confirmation
       this.awaitingDataReview = true;
 
@@ -1342,9 +1342,9 @@ I'll help you enter data step by step.
         })
         .join('\n');
 
-      this.addMessage({
-        id: `edit_${Date.now()}`,
-        role: 'assistant',
+    this.addMessage({
+      id: `edit_${Date.now()}`,
+      role: 'assistant',
         content: `✏️ **تعديل البيانات المستخرجة / Edit Extracted Data**
 
 📊 **البيانات المستخرجة فقط / Extracted Data Only:**
@@ -1369,9 +1369,9 @@ Please review and edit the extracted data in the popup form.`,
         id: `edit_error_${Date.now()}`,
         role: 'assistant',
         content: `❌ حدث خطأ في فتح نموذج التعديل / Error opening edit form: ${error.message}`,
-        timestamp: new Date(),
-        type: 'text'
-      });
+      timestamp: new Date(),
+      type: 'text'
+    });
     }
   }
 
@@ -1948,8 +1948,8 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
   private debugModalLayoutCheck(context: string): void {
     // Simplified debug check with minimal DOM operations
     try {
-      const modalBody = document.querySelector('.ant-modal-body') as HTMLElement | null;
-      if (modalBody) {
+        const modalBody = document.querySelector('.ant-modal-body') as HTMLElement | null;
+        if (modalBody) {
         console.log(`🧪 [Chat][${context}] Modal visible:`, !!modalBody);
         console.log(`🧪 [Chat][${context}] Form exists:`, !!this.documentMetadataForm);
         console.log(`🧪 [Chat][${context}] Documents count:`, this.documentsFA.length);
@@ -2004,13 +2004,28 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
       this.extractedDataReadOnly = true;
       this.toggleExtractedDataEdit(false);
       
+      // Debug form state after initialization
+      console.log('🐛 [DEBUG] Form state after modal open:', {
+        formValid: this.unifiedModalForm.valid,
+        extractedFields: this.unifiedModalData.extractedFields,
+        missingFields: this.unifiedModalData.missingFields,
+        readOnlyState: this.extractedDataReadOnly,
+        sampleFieldState: {
+          firstName: {
+            value: this.unifiedModalForm.get('firstName')?.value,
+            disabled: this.unifiedModalForm.get('firstName')?.disabled,
+            enabled: this.unifiedModalForm.get('firstName')?.enabled
+          }
+        }
+      });
+      
       // Clear and add contacts
       const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
       contactsArray.clear();
       
       if (this.unifiedModalData.contacts.length === 0) {
         this.addContactToUnifiedForm();
-      } else {
+        } else {
         this.unifiedModalData.contacts.forEach((contact: any) => {
           const contactForm = this.fb.group({
             name: [contact.name || '', Validators.required],
@@ -2059,23 +2074,38 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
   }
 
   toggleExtractedDataEdit(enable: boolean): void {
+    console.log('🔄 [TOGGLE] Toggling edit mode:', enable);
     this.extractedDataReadOnly = !enable;
     
-    // Only toggle fields that have extracted data
-    this.unifiedModalData.extractedFields.forEach((field: string) => {
-      if (enable) {
-        this.unifiedModalForm.get(field)?.enable();
-      } else {
-        this.unifiedModalForm.get(field)?.disable();
+    // Define all form fields
+    const allFields = ['firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
+      'buildingNumber', 'street', 'country', 'city', 'salesOrganization', 
+      'distributionChannel', 'division'];
+      
+    allFields.forEach(field => {
+      const control = this.unifiedModalForm.get(field);
+      if (!control) return;
+      
+      // If it's an extracted field - toggle based on edit mode
+      if (this.unifiedModalData.extractedFields.includes(field)) {
+        if (enable) {
+          control.enable();
+          console.log(`✅ [TOGGLE] Enabled extracted field: ${field}`);
+        } else {
+          control.disable();
+          console.log(`🔒 [TOGGLE] Disabled extracted field: ${field}`);
+        }
+      }
+      // If it's a missing field - always keep enabled
+      else if (this.unifiedModalData.missingFields.includes(field)) {
+        control.enable();
+        console.log(`✏️ [TOGGLE] Missing field always enabled: ${field}`);
       }
     });
     
-    // Always keep missing fields enabled
-    this.unifiedModalData.missingFields.forEach((field: string) => {
-      if (field !== 'contacts') {
-        this.unifiedModalForm.get(field)?.enable();
-      }
-    });
+    // Force Angular change detection
+    this.cdr.detectChanges();
+    console.log('🔄 [TOGGLE] Toggle complete. ReadOnly state:', this.extractedDataReadOnly);
   }
 
   addContactToUnifiedForm(): void {

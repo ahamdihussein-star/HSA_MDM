@@ -641,22 +641,22 @@
           <div class="form-row" *ngIf="isFieldExtracted('firstName') || isFieldExtracted('firstNameAR')">
             <div class="form-group" *ngIf="isFieldExtracted('firstName')">
               <label>Company Name (English):</label>
-              <input formControlName="firstName" [readonly]="extractedDataReadOnly">
+              <input formControlName="firstName">
             </div>
             <div class="form-group" *ngIf="isFieldExtracted('firstNameAR')">
               <label>اسم الشركة (عربي):</label>
-              <input formControlName="firstNameAR" [readonly]="extractedDataReadOnly">
+              <input formControlName="firstNameAR">
             </div>
           </div>
           
           <div class="form-row" *ngIf="isFieldExtracted('tax') || isFieldExtracted('CustomerType')">
             <div class="form-group" *ngIf="isFieldExtracted('tax')">
               <label>Tax Number:</label>
-              <input formControlName="tax" [readonly]="extractedDataReadOnly">
+              <input formControlName="tax">
             </div>
             <div class="form-group" *ngIf="isFieldExtracted('CustomerType')">
               <label>Customer Type:</label>
-              <nz-select formControlName="CustomerType" [nzDisabled]="extractedDataReadOnly">
+              <nz-select formControlName="CustomerType">
                 <nz-option *ngFor="let option of customerTypeOptions" 
                           [nzValue]="option.value" 
                           [nzLabel]="option.label">
@@ -668,7 +668,7 @@
           <div class="form-row" *ngIf="isFieldExtracted('ownerName')">
             <div class="form-group full-width">
               <label>Owner Name:</label>
-              <input formControlName="ownerName" [readonly]="extractedDataReadOnly">
+              <input formControlName="ownerName">
             </div>
           </div>
           
@@ -676,18 +676,18 @@
           <div class="form-row" *ngIf="isFieldExtracted('buildingNumber') || isFieldExtracted('street')">
             <div class="form-group" *ngIf="isFieldExtracted('buildingNumber')">
               <label>Building Number:</label>
-              <input formControlName="buildingNumber" [readonly]="extractedDataReadOnly">
+              <input formControlName="buildingNumber">
             </div>
             <div class="form-group" *ngIf="isFieldExtracted('street')">
               <label>Street:</label>
-              <input formControlName="street" [readonly]="extractedDataReadOnly">
+              <input formControlName="street">
             </div>
           </div>
           
           <div class="form-row" *ngIf="isFieldExtracted('country') || isFieldExtracted('city')">
             <div class="form-group" *ngIf="isFieldExtracted('country')">
               <label>Country:</label>
-              <nz-select formControlName="country" [nzDisabled]="extractedDataReadOnly">
+              <nz-select formControlName="country">
                 <nz-option *ngFor="let option of countryOptions" 
                           [nzValue]="option.value" 
                           [nzLabel]="option.label">
@@ -696,7 +696,7 @@
             </div>
             <div class="form-group" *ngIf="isFieldExtracted('city')">
               <label>City:</label>
-              <nz-select formControlName="city" [nzDisabled]="extractedDataReadOnly">
+              <nz-select formControlName="city">
                 <nz-option *ngFor="let option of cityOptions" 
                           [nzValue]="option.value" 
                           [nzLabel]="option.label">
@@ -709,7 +709,7 @@
           <div class="form-row" *ngIf="isFieldExtracted('salesOrganization') || isFieldExtracted('distributionChannel')">
             <div class="form-group" *ngIf="isFieldExtracted('salesOrganization')">
               <label>Sales Organization:</label>
-              <nz-select formControlName="salesOrganization" [nzDisabled]="extractedDataReadOnly">
+              <nz-select formControlName="salesOrganization">
                 <nz-option *ngFor="let option of salesOrgOptions" 
                           [nzValue]="option.value" 
                           [nzLabel]="option.label">
@@ -718,7 +718,7 @@
             </div>
             <div class="form-group" *ngIf="isFieldExtracted('distributionChannel')">
               <label>Distribution Channel:</label>
-              <nz-select formControlName="distributionChannel" [nzDisabled]="extractedDataReadOnly">
+              <nz-select formControlName="distributionChannel">
                 <nz-option *ngFor="let option of distributionChannelOptions" 
                           [nzValue]="option.value" 
                           [nzLabel]="option.label">
@@ -730,7 +730,7 @@
           <div class="form-row" *ngIf="isFieldExtracted('division')">
             <div class="form-group">
               <label>Division:</label>
-              <nz-select formControlName="division" [nzDisabled]="extractedDataReadOnly">
+              <nz-select formControlName="division">
                 <nz-option *ngFor="let option of divisionOptions" 
                           [nzValue]="option.value" 
                           [nzLabel]="option.label">

@@ -750,19 +750,19 @@ For dropdown fields, provide numbered options.`;
 
   private buildRequestPayload(): any {
     return {
-      // Map to correct field names used by new-request component
+      // Correct field names matching new-request component
       firstName: this.extractedData.firstName,
       firstNameAR: this.extractedData.firstNameAR,
       tax: this.extractedData.tax,
       CustomerType: this.extractedData.CustomerType,
-      CompanyOwnerFullName: this.extractedData.ownerName, // Different field name!
+      CompanyOwner: this.extractedData.ownerName, // FIXED: was CompanyOwnerFullName
       buildingNumber: this.extractedData.buildingNumber,
       street: this.extractedData.street,
       country: this.extractedData.country,
       city: this.extractedData.city,
-      SalesOrgOption: this.extractedData.salesOrganization, // Different field name!
-      DistributionChannelOption: this.extractedData.distributionChannel, // Different field name!
-      DivisionOption: this.extractedData.division, // Different field name!
+      salesOrganization: this.extractedData.salesOrganization, // FIXED: was SalesOrgOption
+      distributionChannel: this.extractedData.distributionChannel, // FIXED: was DistributionChannelOption
+      division: this.extractedData.division, // FIXED: was DivisionOption
       status: 'pending',
       created_at: new Date().toISOString(),
       created_by: this.currentUser?.username || 'data_entry',
