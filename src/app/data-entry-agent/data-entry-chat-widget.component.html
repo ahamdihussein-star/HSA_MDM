@@ -67,12 +67,12 @@
           <!-- Confirmation Messages -->
           <div *ngIf="message.type === 'confirmation'" class="confirmation-message">
             <div [innerHTML]="formatMessage(message.content)"></div>
-            <div *ngIf="message.data?.buttons" class="confirmation-buttons">
-              <button 
-                *ngFor="let btn of message.data.buttons" 
-                class="confirmation-btn"
-                (click)="onButtonClick(btn.action, btn.data)"
-                [innerHTML]="btn.text">
+            <div class="modern-action-buttons" *ngIf="message.data?.buttons">
+              <button *ngFor="let button of message.data?.buttons"
+                      class="modern-btn"
+                      [ngClass]="button.className"
+                      (click)="onButtonClick(button.action, button.data)">
+                <span>{{ button.text }}</span>
               </button>
             </div>
           </div>

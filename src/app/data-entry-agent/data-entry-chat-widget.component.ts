@@ -452,41 +452,75 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private displayExtractedDataWithLabels(data: ExtractedData): void {
-    let content = `✅ **تم استخراج البيانات / Data Extracted Successfully:**\n\n`;
-    
-    // Company info
-    if (data.firstName || data.firstNameAR || data.tax || data.CustomerType || data.ownerName) {
-      content += `**🏢 معلومات الشركة / Company Info:**\n`;
-      if (data.firstName) content += `• الاسم (EN): ${data.firstName}\n`;
-      if (data.firstNameAR) content += `• الاسم (AR): ${data.firstNameAR}\n`;
-      if (data.tax) content += `• الرقم الضريبي: ${data.tax}\n`;
-      if (data.CustomerType) content += `• النوع: ${data.CustomerType}\n`;
-      if (data.ownerName) content += `• المالك: ${data.ownerName}\n`;
-      content += '\n';
-    }
-    
-    // Address
-    if (data.buildingNumber || data.street || data.country || data.city) {
-      content += `**📍 العنوان / Address:**\n`;
-      if (data.buildingNumber) content += `• رقم المبنى: ${data.buildingNumber}\n`;
-      if (data.street) content += `• الشارع: ${data.street}\n`;
-      if (data.country) content += `• الدولة: ${data.country}\n`;
-      if (data.city) content += `• المدينة: ${data.city}\n`;
-      content += '\n';
-    }
-
-    content += `هل البيانات صحيحة؟ / Is the data correct?`;
+    const extractionMessage = `
+<div class="extraction-result">
+  <div class="result-header">
+    <span class="success-badge">✅ Data Extracted Successfully</span>
+    <span class="arabic-text">تم استخراج البيانات بنجاح</span>
+  </div>
+  
+  <div class="info-card company-info">
+    <div class="card-title">🏢 Company Information</div>
+    <div class="info-row">
+      <span class="label">English Name:</span>
+      <span class="value">${data.firstName || 'Not provided'}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Arabic Company Name:</span>
+      <span class="value">${data.firstNameAR || 'غير متوفر'}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Tax Number:</span>
+      <span class="value">${data.tax || 'Not provided'}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Customer Type:</span>
+      <span class="value type-badge">${data.CustomerType || 'Not provided'}</span>
+    </div>
+  </div>
+  
+  <div class="info-card address-info">
+    <div class="card-title">📍 Address Details</div>
+    <div class="info-row">
+      <span class="label">Building:</span>
+      <span class="value">${data.buildingNumber || 'N/A'}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Street:</span>
+      <span class="value">${data.street || 'N/A'}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">City:</span>
+      <span class="value">${data.city || 'N/A'}</span>
+    </div>
+    <div class="info-row">
+      <span class="label">Country:</span>
+      <span class="value">${data.country || 'N/A'}</span>
+    </div>
+  </div>
+  
+  <div class="review-prompt">Is the extracted data correct?</div>
+</div>
+`;
 
     this.addMessage({
       id: `extracted_${Date.now()}`,
       role: 'assistant',
-      content,
+      content: extractionMessage,
       timestamp: new Date(),
       type: 'confirmation',
       data: {
         buttons: [
-          { text: '✅ نعم، صحيح / Yes, correct', action: 'confirm_extraction' },
-          { text: '✏️ تعديل / Edit', action: 'edit_extraction' }
+          { 
+            text: '✓ Yes, correct', 
+            action: 'data_review_yes',
+            className: 'btn-confirm'
+          },
+          { 
+            text: '✏️ Edit', 
+            action: 'data_review_no',
+            className: 'btn-edit'
+          }
         ]
       }
     });
@@ -1382,7 +1416,11 @@ Please review and edit the extracted data in the popup form.`,
   }
 
   formatMessage(content: string): string {
-    // Convert markdown to HTML
+    // Keep HTML intact for structured messages
+    if (content.includes('<div class="extraction-result">')) {
+      return content;
+    }
+    // For regular messages, convert markdown
     return content
       .replace(/\*\*(.*?)\*\*/g, '<strong>$1</strong>')
       .replace(/\n/g, '<br>');
