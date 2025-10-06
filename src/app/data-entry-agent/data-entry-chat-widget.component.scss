@@ -103,21 +103,109 @@
   border: 1px solid #b7eb8f;
   border-radius: 12px;
   padding: 20px;
+  
   .success-header {
     display: flex;
     align-items: center;
     gap: 12px;
     margin-bottom: 20px;
+    
     .success-icon { font-size: 28px; }
     h3 { margin: 0; color: #52c41a; }
+    
+    .extraction-stats {
+      display: flex;
+      gap: 12px;
+      margin-top: 8px;
+      
+      .extracted-count {
+        background: #52c41a;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+      
+      .missing-count {
+        background: #ff7875;
+        color: white;
+        padding: 4px 8px;
+        border-radius: 12px;
+        font-size: 12px;
+        font-weight: 600;
+      }
+    }
   }
-  .data-grid {
-    display: grid;
-    grid-template-columns: repeat(2, 1fr);
-    gap: 12px;
-    .data-item {
-      .label { color: #6b7280; font-size: 12px; }
-      .value { color: #111827; font-weight: 600; }
+  
+  .data-preview {
+    .data-section {
+      margin-bottom: 20px;
+      
+      h4 {
+        color: #1890ff;
+        margin-bottom: 12px;
+        font-size: 14px;
+        font-weight: 600;
+      }
+      
+      .data-grid {
+        display: grid;
+        grid-template-columns: repeat(2, 1fr);
+        gap: 12px;
+        
+        .data-item {
+          display: flex;
+          flex-direction: column;
+          gap: 4px;
+          
+          .label {
+            color: #6b7280;
+            font-size: 12px;
+            font-weight: 500;
+          }
+          .value {
+            color: #111827;
+            font-weight: 600;
+            font-size: 13px;
+          }
+        }
+      }
+    }
+    
+    .missing-section {
+      background: #fff2f0;
+      border: 1px solid #ffccc7;
+      border-radius: 8px;
+      padding: 16px;
+      
+      h4 {
+        color: #ff4d4f;
+        margin-bottom: 12px;
+      }
+      
+      .missing-fields-list {
+        p {
+          margin: 0 0 8px 0;
+          color: #8c8c8c;
+          font-size: 12px;
+        }
+        
+        .missing-tags {
+          display: flex;
+          flex-wrap: wrap;
+          gap: 6px;
+          
+          .missing-tag {
+            background: #ff4d4f;
+            color: white;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 11px;
+            font-weight: 500;
+          }
+        }
+      }
     }
   }
 }

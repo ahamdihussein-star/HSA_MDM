@@ -258,255 +258,175 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
 
   private async extractDataFromDocuments(documents: Array<{content: string, name: string, type: string, size: number}>): Promise<Partial<ExtractedData>> {
     const maxRetries = 3;
-    let lastError: any = null;
-    
+    const allAttempts: Array<{ data: any; score: number; attempt: number }> = [];
+
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       let requestBody: any = null;
       try {
-        console.log(`🧪 [Service] Starting document extraction (attempt ${attempt}/${maxRetries})...`, {
-          documentCount: documents.length,
-          hasApiKey: !!environment.openaiApiKey,
-          apiKeyLength: environment.openaiApiKey?.length || 0,
-          model: environment.openaiModel
-        });
+        console.log(`🧪 [Service] Starting document extraction (attempt ${attempt}/${maxRetries})...`);
 
-      // Validate API key
-      if (!environment.openaiApiKey) {
-        throw new Error('OpenAI API key not configured');
-      }
-
-      const messages = [
-        {
-          role: 'user',
-          content: [
-            {
-              type: 'text',
-              text: `Extract customer data from these business documents with MAXIMUM PRECISION.
-
-CRITICAL EXTRACTION RULES:
-1. SCAN EVERY PIXEL - examine headers, footers, margins, stamps, logos, watermarks
-2. For Arabic text, provide both Arabic and transliterated English versions
-3. Find ALL numbers - tax IDs, VAT numbers, registration numbers, license numbers, certificate numbers
-4. Look for company names in headers, logos, official stamps, or anywhere on the document
-5. Extract complete addresses from all sections including building numbers, street names, districts
-6. Find owner/CEO/manager names in signatures, official sections, or any text
-7. Extract ALL dates in any format (DD/MM/YYYY, YYYY-MM-DD, Arabic dates, etc.)
-8. Look for business activity descriptions, company purpose, or trade descriptions
-
-SPECIAL ATTENTION TO TAX NUMBERS:
-- Look for patterns like: EG-XXXXXXX, VAT numbers, Tax ID, Registration numbers
-- Check headers, footers, official stamps, and certificate numbers
-- Include any number that looks like an official identifier
-- Even if partially visible, extract what you can see
-
-REQUIRED JSON FORMAT (NO OTHER TEXT):
-{
-  "firstName": "Complete company name in English",
-  "firstNameAR": "اسم الشركة الكامل بالعربية",
-  "tax": "Tax number, VAT number, or ANY official ID number found",
-  "CustomerType": "Corporate or Individual",
-  "ownerName": "Owner/CEO/Manager/Director name",
-  "buildingNumber": "Building, unit, or property number",
-  "street": "Complete street address",
-  "country": "Country name",
-  "city": "City name",
-  "registrationNumber": "Commercial registration or license number",
-  "issueDate": "Document issue date (any format)",
-  "expiryDate": "Document expiry date (any format)",
-  "businessActivity": "Business type, activity, or company purpose"
-}
-
-MANDATORY REQUIREMENTS:
-- If you see ANY number that could be a tax/registration/VAT ID - extract it EXACTLY
-- If you see a company name - extract the COMPLETE name
-- If you see an address - extract the FULL address including building numbers
-- If you see dates - extract them in ANY readable format
-- If you see owner names - extract them COMPLETELY
-- NEVER leave tax, registration, or ID fields empty if ANY number is visible
-- SCAN the entire document multiple times for completeness
-- Double-check every field for accuracy`
-            },
-            ...documents.map(doc => ({
-              type: 'image_url',
-              image_url: {
-                url: `data:${doc.type};base64,${doc.content}`
-              }
-            }))
-          ]
+        if (!environment.openaiApiKey) {
+          throw new Error('OpenAI API key not configured');
         }
-      ];
 
-      const requestBody = {
-        model: environment.openaiModel || 'gpt-4o',
-        messages,
-        max_tokens: 4000,
-        temperature: 0.0, // More deterministic for consistent extraction
-        top_p: 1.0,
-        frequency_penalty: 0.0,
-        presence_penalty: 0.0
-      };
-
-      console.log('🧪 [Service] Sending request to OpenAI...', {
-        model: requestBody.model,
-        messageCount: messages.length,
-        documentCount: documents.length,
-        documentTypes: documents.map(doc => ({ name: doc.name, type: doc.type, contentLength: doc.content.length }))
-      });
-
-      // Validate request structure before sending
-      console.log('🧪 [Service] Validating request structure...');
-      
-      // Check if messages array exists and has content
-      if (!requestBody.messages || requestBody.messages.length === 0) {
-        throw new Error('No messages to send');
-      }
-      
-      // Check each message
-      requestBody.messages.forEach((message, index) => {
-        if (!message.role) {
-          throw new Error(`Message ${index} missing role`);
-        }
-        if (!message.content || message.content.length === 0) {
-          throw new Error(`Message ${index} missing content`);
-        }
-        
-        // Check each content item
-        message.content.forEach((content, contentIndex) => {
-          if (!content.type) {
-            throw new Error(`Message ${index}, Content ${contentIndex} missing type`);
+        const messages = [
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
+                text: `Extract customer data from these business documents with MAXIMUM PRECISION.
+                
+                Attempt ${attempt}/${maxRetries} - Focus on extracting ALL possible fields.
+                
+                CRITICAL EXTRACTION RULES:
+                1. SCAN EVERY PIXEL - examine headers, footers, margins, stamps, logos, watermarks
+                2. For Arabic text, provide both Arabic and transliterated English versions
+                3. Find ALL numbers - tax IDs, VAT numbers, registration numbers, license numbers
+                4. Look for company names in headers, logos, stamps, or anywhere
+                5. Extract complete addresses including building numbers, streets, districts
+                6. Find owner/CEO/manager names in signatures or official sections
+                7. Extract ALL dates in any format
+                8. Double-check for fields you might have missed in previous attempts
+                
+                Return ONLY valid JSON with these fields (leave empty string "" if not found):
+                {
+                  "firstName": "",
+                  "firstNameAR": "",
+                  "tax": "",
+                  "CustomerType": "",
+                  "ownerName": "",
+                  "buildingNumber": "",
+                  "street": "",
+                  "country": "",
+                  "city": "",
+                  "registrationNumber": "",
+                  "commercialLicense": "",
+                  "vatNumber": "",
+                  "establishmentDate": "",
+                  "legalForm": "",
+                  "capital": "",
+                  "website": "",
+                  "poBox": "",
+                  "fax": "",
+                  "branch": ""
+                }`
+              },
+              ...documents.map(doc => ({
+                type: 'image_url' as const,
+                image_url: { url: `data:${doc.type};base64,${doc.content}` }
+              }))
+            ]
           }
-          
-          if (content.type === 'image_url') {
-            if (!(content as any).image_url || !(content as any).image_url.url) {
-              throw new Error(`Message ${index}, Content ${contentIndex} image_url missing or invalid`);
-            }
-            
-            const url = (content as any).image_url.url;
-            if (!url.startsWith('data:')) {
-              throw new Error(`Message ${index}, Content ${contentIndex} image_url does not start with 'data:'`);
-            }
-            
-            console.log(`🧪 [Service] Validated image_url: ${url.substring(0, 50)}...`);
-          }
-        });
-      });
-      
-      console.log('🧪 [Service] Request structure validation passed ✅');
+        ];
 
-      // Log the actual request body structure for debugging
-      console.log('🧪 [Service] Request body structure:', {
-        model: requestBody.model,
-        messageCount: requestBody.messages.length,
-        firstMessageContentTypes: requestBody.messages[0]?.content?.map(c => c.type),
-        imageUrls: requestBody.messages[0]?.content?.filter(c => c.type === 'image_url')?.map(c => ({
-          type: c.type,
-          urlPrefix: (c as any).image_url?.url?.substring(0, 50) + '...'
-        }))
-      });
+        requestBody = {
+          model: environment.openaiModel || 'gpt-4o',
+          messages,
+          max_tokens: 4000,
+          temperature: attempt === 1 ? 0.1 : (attempt === 2 ? 0.3 : 0.5),
+          seed: attempt * 1000
+        };
 
-      // Log the full request body for debugging (be careful with large data)
-      console.log('🧪 [Service] Full request body (first 500 chars):', JSON.stringify(requestBody).substring(0, 500));
-      
-      // Log each message content in detail
-      requestBody.messages.forEach((message, index) => {
-        console.log(`🧪 [Service] Message ${index}:`, {
-          role: message.role,
-          contentTypes: message.content?.map(c => c.type),
-          contentCount: message.content?.length
-        });
-        
-        if (message.content) {
-          message.content.forEach((content, contentIndex) => {
-            if (content.type === 'image_url') {
-              console.log(`🧪 [Service] Content ${contentIndex} (image_url):`, {
-                type: content.type,
-                urlLength: (content as any).image_url?.url?.length,
-                urlPrefix: (content as any).image_url?.url?.substring(0, 100) + '...'
-              });
-            } else {
-              console.log(`🧪 [Service] Content ${contentIndex} (${content.type}):`, {
-                type: content.type,
-                textLength: (content as any).text?.length,
-                textPreview: (content as any).text?.substring(0, 100) + '...'
-              });
+        const response = await firstValueFrom(
+          this.http.post<any>('https://api.openai.com/v1/chat/completions', requestBody, {
+            headers: {
+              'Authorization': `Bearer ${environment.openaiApiKey}`,
+              'Content-Type': 'application/json'
             }
-          });
+          })
+        );
+
+        if (!response.choices || response.choices.length === 0) {
+          throw new Error('No response from OpenAI');
         }
-      });
 
-      const response = await firstValueFrom(
-        this.http.post<any>('https://api.openai.com/v1/chat/completions', requestBody, {
-          headers: {
-            'Authorization': `Bearer ${environment.openaiApiKey}`,
-            'Content-Type': 'application/json'
-          }
-        })
-      );
+        const content = response.choices[0].message.content;
+        const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const extractedData = JSON.parse(cleanedContent);
 
-      console.log('🧪 [Service] OpenAI response received:', {
-        hasChoices: !!response.choices,
-        choiceCount: response.choices?.length || 0,
-        hasContent: !!response.choices?.[0]?.message?.content
-      });
+        const score = this.calculateDataCompleteness(extractedData);
+        console.log(`🧪 [Service] Attempt ${attempt} extracted ${score} fields`);
+        allAttempts.push({ data: extractedData, score, attempt });
 
-      if (!response.choices || response.choices.length === 0) {
-        throw new Error('No response from OpenAI');
-      }
-
-      const content = response.choices[0].message.content;
-      if (!content) {
-        throw new Error('Empty response from OpenAI');
-      }
-
-      console.log('🧪 [Service] Raw OpenAI content:', content.substring(0, 200) + '...');
-
-      const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
-      console.log('🧪 [Service] Cleaned content:', cleanedContent.substring(0, 200) + '...');
-
-      const extractedData = JSON.parse(cleanedContent);
-      console.log('🧪 [Service] Parsed data:', extractedData);
-      
-      // Auto-detect country from content if not set
-      if (!extractedData.country) {
-        extractedData.country = this.detectCountryFromData(extractedData);
-      }
-
-        return extractedData;
-      } catch (error: any) {
-        lastError = error;
-        console.error(`🧪 [Service] Extraction error (attempt ${attempt}/${maxRetries}):`, error);
-        
-        // Log detailed error information
-        if (error.error) {
-          console.error('🧪 [Service] Error details:', {
-            message: error.error.message,
-            type: error.error.type,
-            param: error.error.param,
-            code: error.error.code,
-            status: error.status,
-            statusText: error.statusText
-          });
+        if (score >= 12) {
+          console.log(`✅ [Service] Attempt ${attempt} got all required fields! Stopping.`);
+          break;
         }
-        
-        // Log the request that caused the error
-        console.error('🧪 [Service] Failed request details:', {
-          model: requestBody?.model || 'unknown',
-          messageCount: requestBody?.messages?.length || 0,
-          firstMessageContentTypes: requestBody?.messages?.[0]?.content?.map((c: any) => c.type) || []
-        });
-        
-        // If this is not the last attempt, wait before retrying
+
         if (attempt < maxRetries) {
-          const waitTime = attempt * 1000; // Exponential backoff: 1s, 2s, 3s
-          console.log(`🧪 [Service] Waiting ${waitTime}ms before retry...`);
+          const waitTime = attempt * 500;
+          console.log(`⏳ [Service] Waiting ${waitTime}ms before next attempt...`);
+          await new Promise(resolve => setTimeout(resolve, waitTime));
+        }
+      } catch (error: any) {
+        console.error(`❌ [Service] Extraction error (attempt ${attempt}/${maxRetries}):`, error);
+        if (attempt < maxRetries) {
+          const waitTime = attempt * 1000;
           await new Promise(resolve => setTimeout(resolve, waitTime));
         }
       }
     }
-    
-    // If we get here, all retries failed
-    console.error('🧪 [Service] All extraction attempts failed');
-    throw this.handleExtractionError(lastError);
+
+    if (allAttempts.length === 0) {
+      throw new Error('فشلت جميع المحاولات / All extraction attempts failed');
+    }
+
+    allAttempts.sort((a, b) => b.score - a.score);
+    const bestAttempt = allAttempts[0];
+    console.log(`🏆 [Service] Best result from attempt ${bestAttempt.attempt} with score ${bestAttempt.score}`);
+    console.log('📊 [Service] All attempts scores:', allAttempts.map(a => `Attempt ${a.attempt}: ${a.score} fields`));
+
+    const mergedData = this.mergeExtractedData(allAttempts);
+    if (!mergedData.country) {
+      mergedData.country = this.detectCountryFromData(mergedData);
+    }
+    return mergedData;
+  }
+
+  private calculateDataCompleteness(data: any): number {
+    let score = 0;
+    const requiredFields = [
+      'firstName', 'firstNameAR', 'tax', 'CustomerType', 
+      'ownerName', 'buildingNumber', 'street', 'country', 
+      'city', 'salesOrganization', 'distributionChannel', 'division'
+    ];
+    const optionalFields = [
+      'registrationNumber', 'commercialLicense', 'vatNumber', 
+      'establishmentDate', 'legalForm', 'capital', 'website', 
+      'poBox', 'fax', 'branch'
+    ];
+    requiredFields.forEach(field => {
+      if (data[field] && data[field].toString().trim() !== '') score++;
+    });
+    optionalFields.forEach(field => {
+      if (data[field] && data[field].toString().trim() !== '') score += 0.5;
+    });
+    return score;
+  }
+
+  private mergeExtractedData(attempts: Array<{ data: any; score: number; attempt: number }>): any {
+    const merged: any = {};
+    const allFields = [
+      'firstName', 'firstNameAR', 'tax', 'CustomerType', 
+      'ownerName', 'buildingNumber', 'street', 'country', 
+      'city', 'salesOrganization', 'distributionChannel', 'division',
+      'registrationNumber', 'commercialLicense', 'vatNumber', 
+      'establishmentDate', 'legalForm', 'capital', 'website', 
+      'poBox', 'fax', 'branch'
+    ];
+    allFields.forEach(field => {
+      for (const attempt of attempts) {
+        if (attempt.data[field] && attempt.data[field].toString().trim() !== '') {
+          merged[field] = attempt.data[field];
+          console.log(`📝 [Service] Field '${field}' taken from attempt ${attempt.attempt}`);
+          break;
+        }
+      }
+      if (!merged[field]) merged[field] = '';
+    });
+    console.log(`✨ [Service] Merged data from ${attempts.length} attempts`);
+    return merged;
   }
 
   private detectCountryFromData(data: any): string {

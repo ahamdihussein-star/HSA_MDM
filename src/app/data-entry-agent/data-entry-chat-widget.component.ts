@@ -459,6 +459,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   private async processDocumentsWithMetadata(files: File[], metadata: Array<{ country?: string; type: string; description: string }>): Promise<void> {
     try {
       console.log('🧪 [Chat] processDocumentsWithMetadata start. files =', files.map(f => f.name), ' metadata count =', metadata.length);
+      // Keep a local reference so they appear in unified modal documents section
+      this.uploadedFiles = files;
       // User message
       const fileNames = files.map(f => f.name).join(', ');
       this.addMessage({
@@ -534,41 +536,163 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   private generateConfirmationMessage(data: any): string {
-    return `
+    // Define all possible fields with their labels
+    const allFields = [
+      { key: 'firstName', label: 'Company Name', icon: '🏢' },
+      { key: 'firstNameAR', label: 'Company Name (Arabic)', icon: '🏢' },
+      { key: 'tax', label: 'Tax Number', icon: '📋' },
+      { key: 'CustomerType', label: 'Customer Type', icon: '👤' },
+      { key: 'ownerName', label: 'Owner Name', icon: '👨‍💼' },
+      { key: 'buildingNumber', label: 'Building Number', icon: '🏢' },
+      { key: 'street', label: 'Street', icon: '🛣️' },
+      { key: 'country', label: 'Country', icon: '🌍' },
+      { key: 'city', label: 'City', icon: '🏙️' },
+      { key: 'salesOrganization', label: 'Sales Organization', icon: '🏢' },
+      { key: 'distributionChannel', label: 'Distribution Channel', icon: '📦' },
+      { key: 'division', label: 'Division', icon: '🏬' },
+      { key: 'registrationNumber', label: 'Registration Number', icon: '📄' },
+      { key: 'commercialLicense', label: 'Commercial License', icon: '📜' },
+      { key: 'vatNumber', label: 'VAT Number', icon: '💰' },
+      { key: 'establishmentDate', label: 'Establishment Date', icon: '📅' },
+      { key: 'legalForm', label: 'Legal Form', icon: '⚖️' },
+      { key: 'capital', label: 'Capital', icon: '💵' },
+      { key: 'website', label: 'Website', icon: '🌐' },
+      { key: 'poBox', label: 'PO Box', icon: '📮' },
+      { key: 'fax', label: 'Fax', icon: '📠' },
+      { key: 'branch', label: 'Branch', icon: '🏢' }
+    ];
+
+    // Filter fields that have actual values
+    const extractedFields = allFields.filter(field => {
+      const value = data[field.key];
+      return value && value.toString().trim() !== '';
+    });
+
+    const missingFields = allFields.filter(field => {
+      const value = data[field.key];
+      return !value || value.toString().trim() === '';
+    });
+
+    // Group fields by category
+    const companyInfo = extractedFields.filter(f => 
+      ['firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName'].includes(f.key)
+    );
+    const addressInfo = extractedFields.filter(f => 
+      ['buildingNumber', 'street', 'country', 'city'].includes(f.key)
+    );
+    const businessInfo = extractedFields.filter(f => 
+      ['salesOrganization', 'distributionChannel', 'division'].includes(f.key)
+    );
+    const additionalInfo = extractedFields.filter(f => 
+      ['registrationNumber', 'commercialLicense', 'vatNumber', 'establishmentDate', 'legalForm', 'capital', 'website', 'poBox', 'fax', 'branch'].includes(f.key)
+    );
+
+    let html = `
 <div class="extraction-success-card">
   <div class="success-header">
     <span class="success-icon">✅</span>
     <h3>تم استخراج البيانات بنجاح / Data Extracted Successfully</h3>
+    <div class="extraction-stats">
+      <span class="extracted-count">${extractedFields.length} fields extracted</span>
+      ${missingFields.length > 0 ? `<span class="missing-count">${missingFields.length} fields missing</span>` : ''}
+    </div>
   </div>
-  <div class="data-preview">
+  <div class="data-preview">`;
+
+    // Company Information Section
+    if (companyInfo.length > 0) {
+      html += `
     <div class="data-section">
       <h4>🏢 معلومات الشركة / Company Information</h4>
-      <div class="data-grid">
+      <div class="data-grid">`;
+      companyInfo.forEach(field => {
+        html += `
         <div class="data-item">
-          <span class="label">Company Name:</span>
-          <span class="value">${data.firstName || 'N/A'}</span>
-        </div>
-        <div class="data-item">
-          <span class="label">Tax Number:</span>
-          <span class="value">${data.tax || 'N/A'}</span>
-        </div>
+          <span class="label">${field.icon} ${field.label}:</span>
+          <span class="value">${data[field.key]}</span>
+        </div>`;
+      });
+      html += `
       </div>
-    </div>
+    </div>`;
+    }
+
+    // Address Information Section
+    if (addressInfo.length > 0) {
+      html += `
     <div class="data-section">
       <h4>📍 العنوان / Address</h4>
-      <div class="data-grid">
+      <div class="data-grid">`;
+      addressInfo.forEach(field => {
+        html += `
         <div class="data-item">
-          <span class="label">Country:</span>
-          <span class="value">${data.country || 'N/A'}</span>
-        </div>
+          <span class="label">${field.icon} ${field.label}:</span>
+          <span class="value">${data[field.key]}</span>
+        </div>`;
+      });
+      html += `
+      </div>
+    </div>`;
+    }
+
+    // Business Information Section
+    if (businessInfo.length > 0) {
+      html += `
+    <div class="data-section">
+      <h4>💼 معلومات العمل / Business Information</h4>
+      <div class="data-grid">`;
+      businessInfo.forEach(field => {
+        html += `
         <div class="data-item">
-          <span class="label">City:</span>
-          <span class="value">${data.city || 'N/A'}</span>
+          <span class="label">${field.icon} ${field.label}:</span>
+          <span class="value">${data[field.key]}</span>
+        </div>`;
+      });
+      html += `
+      </div>
+    </div>`;
+    }
+
+    // Additional Information Section
+    if (additionalInfo.length > 0) {
+      html += `
+    <div class="data-section">
+      <h4>📋 معلومات إضافية / Additional Information</h4>
+      <div class="data-grid">`;
+      additionalInfo.forEach(field => {
+        html += `
+        <div class="data-item">
+          <span class="label">${field.icon} ${field.label}:</span>
+          <span class="value">${data[field.key]}</span>
+        </div>`;
+      });
+      html += `
+      </div>
+    </div>`;
+    }
+
+    // Missing Fields Section (if any)
+    if (missingFields.length > 0) {
+      html += `
+    <div class="data-section missing-section">
+      <h4>⚠️ البيانات الناقصة / Missing Fields</h4>
+      <div class="missing-fields-list">
+        <p>${missingFields.length} fields need to be completed:</p>
+        <div class="missing-tags">`;
+      missingFields.forEach(field => {
+        html += `<span class="missing-tag">${field.icon} ${field.label}</span>`;
+      });
+      html += `
         </div>
       </div>
-    </div>
+    </div>`;
+    }
+
+    html += `
   </div>
 </div>`;
+
+    return html;
   }
 
   private checkMissingFields(data: ExtractedData): string[] {
