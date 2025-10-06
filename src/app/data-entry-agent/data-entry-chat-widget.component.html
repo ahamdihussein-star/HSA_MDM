@@ -630,7 +630,7 @@
                   nz-button 
                   [nzType]="extractedDataReadOnly ? 'default' : 'primary'"
                   nzSize="small"
-                  (click)="toggleExtractedDataEdit(!extractedDataReadOnly)">
+                  (click)="toggleExtractedDataEdit(extractedDataReadOnly)">
             <span nz-icon [nzType]="extractedDataReadOnly ? 'edit' : 'save'"></span>
             {{ extractedDataReadOnly ? 'تعديل / Edit' : 'حفظ التعديلات / Save Changes' }}
           </button>
