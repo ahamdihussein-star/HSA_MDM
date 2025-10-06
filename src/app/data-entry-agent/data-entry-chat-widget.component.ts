@@ -535,162 +535,109 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     this.awaitingDataReview = true;
   }
 
-  private generateConfirmationMessage(data: any): string {
-    // Define all possible fields with their labels
-    const allFields = [
+  private generateConfirmationMessage(extractedData: any): string {
+    const fields = [
       { key: 'firstName', label: 'Company Name', icon: '🏢' },
-      { key: 'firstNameAR', label: 'Company Name (Arabic)', icon: '🏢' },
-      { key: 'tax', label: 'Tax Number', icon: '📋' },
-      { key: 'CustomerType', label: 'Customer Type', icon: '👤' },
-      { key: 'ownerName', label: 'Owner Name', icon: '👨‍💼' },
-      { key: 'buildingNumber', label: 'Building Number', icon: '🏢' },
-      { key: 'street', label: 'Street', icon: '🛣️' },
+      { key: 'firstNameAR', label: 'الاسم بالعربي', icon: '' },
+      { key: 'tax', label: 'Tax Number', icon: '📑' },
+      { key: 'CustomerType', label: 'Customer Type', icon: '' },
+      { key: 'ownerName', label: 'Owner Name', icon: '👤' },
+      { key: 'buildingNumber', label: 'Building', icon: '' },
+      { key: 'street', label: 'Street', icon: '' },
       { key: 'country', label: 'Country', icon: '🌍' },
-      { key: 'city', label: 'City', icon: '🏙️' },
-      { key: 'salesOrganization', label: 'Sales Organization', icon: '🏢' },
-      { key: 'distributionChannel', label: 'Distribution Channel', icon: '📦' },
-      { key: 'division', label: 'Division', icon: '🏬' },
-      { key: 'registrationNumber', label: 'Registration Number', icon: '📄' },
-      { key: 'commercialLicense', label: 'Commercial License', icon: '📜' },
-      { key: 'vatNumber', label: 'VAT Number', icon: '💰' },
-      { key: 'establishmentDate', label: 'Establishment Date', icon: '📅' },
-      { key: 'legalForm', label: 'Legal Form', icon: '⚖️' },
-      { key: 'capital', label: 'Capital', icon: '💵' },
-      { key: 'website', label: 'Website', icon: '🌐' },
-      { key: 'poBox', label: 'PO Box', icon: '📮' },
-      { key: 'fax', label: 'Fax', icon: '📠' },
-      { key: 'branch', label: 'Branch', icon: '🏢' }
+      { key: 'city', label: 'City', icon: '' },
+      { key: 'salesOrganization', label: 'Sales Org', icon: '' },
+      { key: 'distributionChannel', label: 'Distribution', icon: '' },
+      { key: 'division', label: 'Division', icon: '' }
     ];
 
-    // Filter fields that have actual values
-    const extractedFields = allFields.filter(field => {
-      const value = data[field.key];
-      return value && value.toString().trim() !== '';
-    });
+    const extractedFields = fields.filter(field => 
+      extractedData[field.key] && extractedData[field.key] !== ''
+    );
+    
+    const missingFields = fields.filter(field => 
+      !extractedData[field.key] || extractedData[field.key] === ''
+    );
 
-    const missingFields = allFields.filter(field => {
-      const value = data[field.key];
-      return !value || value.toString().trim() === '';
-    });
-
-    // Group fields by category
-    const companyInfo = extractedFields.filter(f => 
-      ['firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName'].includes(f.key)
-    );
-    const addressInfo = extractedFields.filter(f => 
-      ['buildingNumber', 'street', 'country', 'city'].includes(f.key)
-    );
-    const businessInfo = extractedFields.filter(f => 
-      ['salesOrganization', 'distributionChannel', 'division'].includes(f.key)
-    );
-    const additionalInfo = extractedFields.filter(f => 
-      ['registrationNumber', 'commercialLicense', 'vatNumber', 'establishmentDate', 'legalForm', 'capital', 'website', 'poBox', 'fax', 'branch'].includes(f.key)
-    );
+    const extractedCount = extractedFields.length;
+    const missingCount = missingFields.length;
+    const totalFields = fields.length;
+    const completionRate = Math.round((extractedCount / totalFields) * 100);
 
     let html = `
-<div class="extraction-success-card">
-  <div class="success-header">
-    <span class="success-icon">✅</span>
-    <h3>تم استخراج البيانات بنجاح / Data Extracted Successfully</h3>
-    <div class="extraction-stats">
-      <span class="extracted-count">${extractedFields.length} fields extracted</span>
-      ${missingFields.length > 0 ? `<span class="missing-count">${missingFields.length} fields missing</span>` : ''}
-    </div>
-  </div>
-  <div class="data-preview">`;
+    <style>
+      .review-container { font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif; max-width: 100%; margin: 0; }
+      .completion-bar { background: #f0f0f0; border-radius: 8px; height: 8px; overflow: hidden; margin: 12px 0; }
+      .completion-fill { background: linear-gradient(90deg, #4CAF50, #45a049); height: 100%; transition: width 0.3s ease; }
+      .stats-row { display: flex; justify-content: space-between; margin-bottom: 16px; font-size: 13px; color: #666; }
+      .section-title { font-size: 14px; font-weight: 600; color: #333; margin: 16px 0 8px 0; display: flex; align-items: center; gap: 6px; }
+      .fields-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; margin-bottom: 12px; }
+      .field-item { display: flex; align-items: flex-start; padding: 6px 10px; background: #f8f9fa; border-radius: 6px; min-height: 32px; border: 1px solid #e9ecef; }
+      .field-item.extracted { background: #e8f5e9; border-color: #c8e6c9; }
+      .field-item.missing { background: #fff3e0; border-color: #ffe0b2; }
+      .field-label { font-size: 11px; color: #666; margin-bottom: 2px; font-weight: 500; }
+      .field-value { font-size: 13px; color: #212529; font-weight: 600; word-break: break-word; line-height: 1.3; }
+      .field-content { flex: 1; min-width: 0; }
+      .missing-value { color: #ff6b6b; font-style: italic; font-size: 12px; }
+      .summary-box { background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); color: white; padding: 12px; border-radius: 8px; margin-bottom: 12px; }
+      .summary-text { font-size: 14px; font-weight: 500; }
+      @media (max-width: 480px) { .fields-grid { grid-template-columns: 1fr; } }
+    </style>
+    
+    <div class="review-container">
+      <div class="summary-box">
+        <div class="summary-text">✅ تم استخراج ${extractedCount} من ${totalFields} حقل بنجاح</div>
+        <div class="completion-bar"><div class="completion-fill" style="width: ${completionRate}%"></div></div>
+      </div>
+      <div class="stats-row">
+        <span>📊 معدل الاكتمال: ${completionRate}%</span>
+        <span>⏱️ ${missingCount > 0 ? `يتبقى ${missingCount} حقول` : 'اكتمل!'}</span>
+      </div>
+    `;
 
-    // Company Information Section
-    if (companyInfo.length > 0) {
+    if (extractedCount > 0) {
       html += `
-    <div class="data-section">
-      <h4>🏢 معلومات الشركة / Company Information</h4>
-      <div class="data-grid">`;
-      companyInfo.forEach(field => {
+      <div class="section-title"><span>✅</span><span>البيانات المستخرجة / Extracted Data</span><span style="color: #4CAF50; font-size: 12px;">(${extractedCount})</span></div>
+      <div class="fields-grid">`;
+      
+      extractedFields.forEach(field => {
+        const value = extractedData[field.key];
+        const displayValue = (value && value.length > 30) ? value.substring(0, 30) + '...' : value;
         html += `
-        <div class="data-item">
-          <span class="label">${field.icon} ${field.label}:</span>
-          <span class="value">${data[field.key]}</span>
+        <div class="field-item extracted">
+          <div class="field-content">
+            <div class="field-label">${field.label}</div>
+            <div class="field-value" title="${value}">${displayValue}</div>
+          </div>
         </div>`;
       });
-      html += `
-      </div>
-    </div>`;
+      
+      html += `</div>`;
     }
 
-    // Address Information Section
-    if (addressInfo.length > 0) {
+    if (missingCount > 0) {
       html += `
-    <div class="data-section">
-      <h4>📍 العنوان / Address</h4>
-      <div class="data-grid">`;
-      addressInfo.forEach(field => {
-        html += `
-        <div class="data-item">
-          <span class="label">${field.icon} ${field.label}:</span>
-          <span class="value">${data[field.key]}</span>
-        </div>`;
-      });
-      html += `
-      </div>
-    </div>`;
-    }
-
-    // Business Information Section
-    if (businessInfo.length > 0) {
-      html += `
-    <div class="data-section">
-      <h4>💼 معلومات العمل / Business Information</h4>
-      <div class="data-grid">`;
-      businessInfo.forEach(field => {
-        html += `
-        <div class="data-item">
-          <span class="label">${field.icon} ${field.label}:</span>
-          <span class="value">${data[field.key]}</span>
-        </div>`;
-      });
-      html += `
-      </div>
-    </div>`;
-    }
-
-    // Additional Information Section
-    if (additionalInfo.length > 0) {
-      html += `
-    <div class="data-section">
-      <h4>📋 معلومات إضافية / Additional Information</h4>
-      <div class="data-grid">`;
-      additionalInfo.forEach(field => {
-        html += `
-        <div class="data-item">
-          <span class="label">${field.icon} ${field.label}:</span>
-          <span class="value">${data[field.key]}</span>
-        </div>`;
-      });
-      html += `
-      </div>
-    </div>`;
-    }
-
-    // Missing Fields Section (if any)
-    if (missingFields.length > 0) {
-      html += `
-    <div class="data-section missing-section">
-      <h4>⚠️ البيانات الناقصة / Missing Fields</h4>
-      <div class="missing-fields-list">
-        <p>${missingFields.length} fields need to be completed:</p>
-        <div class="missing-tags">`;
+      <div class="section-title"><span>⚠️</span><span>البيانات الناقصة / Missing Data</span><span style=\"color: #ff9800; font-size: 12px;\">(${missingCount})</span></div>
+      <div class="fields-grid">`;
+      
       missingFields.forEach(field => {
-        html += `<span class="missing-tag">${field.icon} ${field.label}</span>`;
+        html += `
+        <div class="field-item missing">
+          <div class="field-content">
+            <div class="field-label">${field.label}</div>
+            <div class="missing-value">مطلوب / Required</div>
+          </div>
+        </div>`;
       });
-      html += `
-        </div>
-      </div>
-    </div>`;
+      
+      html += `</div>`;
     }
 
     html += `
-  </div>
-</div>`;
+      <div style="margin-top: 16px; padding: 10px; background: #e3f2fd; border-radius: 6px; border-left: 3px solid #2196F3;">
+        <p style="margin: 0; font-size: 13px; color: #1976D2;">${missingCount > 0 ? '💡 سيتم سؤالك عن البيانات الناقصة في الخطوة التالية' : '🎉 ممتاز! كل البيانات المطلوبة متوفرة'}</p>
+      </div>
+    </div>`;
 
     return html;
   }
