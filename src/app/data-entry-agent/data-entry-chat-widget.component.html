@@ -6,7 +6,7 @@
     (click)="toggleChat()"
     *ngIf="!isOpen"
     nz-tooltip
-    nzTooltipTitle="Data Entry AI Assistant"
+    nzTooltipTitle="{{ 'agent.title' | translate }}"
     nzTooltipPlacement="left">
     <span aria-hidden="true">🤖</span>
   </button>
@@ -16,7 +16,7 @@
     <!-- Header -->
     <div class="chat-header">
       <div class="header-content">
-        <h3>🤖 Data Entry AI Assistant</h3>
+        <h3>🤖 {{ 'agent.title' | translate }}</h3>
         <p class="user-greeting">{{ getCurrentUserName() }}</p>
       </div>
       <div class="header-actions">
@@ -24,14 +24,14 @@
           class="minimize-btn" 
           (click)="minimizeChat()"
           nz-tooltip
-          nzTooltipTitle="Minimize">
+          nzTooltipTitle="{{ 'agent.minimize' | translate }}">
           <span aria-hidden="true">–</span>
         </button>
         <button 
           class="close-btn" 
           (click)="closeChat()"
           nz-tooltip
-          nzTooltipTitle="Close">
+          nzTooltipTitle="{{ 'agent.close' | translate }}">
           <span aria-hidden="true">×</span>
         </button>
       </div>
@@ -165,9 +165,9 @@
     <div class="chat-footer">
       <!-- Inline fallback quick actions if message rendering fails -->
       <div class="inline-quick-actions" *ngIf="showInlineQuickActions">
-        <button class="action-btn" (click)="onButtonClick('upload')">📄 رفع مستند / Upload Document</button>
-        <button class="action-btn" (click)="onButtonClick('manual')">✍️ إدخال يدوي / Manual Entry</button>
-        <button class="action-btn" (click)="onButtonClick('help')">❓ مساعدة / Help</button>
+        <button class="action-btn" (click)="onButtonClick('upload')">{{ 'agent.uploadDocument' | translate }}</button>
+        <button class="action-btn" (click)="onButtonClick('manual')">{{ 'agent.manualEntry' | translate }}</button>
+        <button class="action-btn" (click)="onButtonClick('help')">{{ 'agent.help' | translate }}</button>
       </div>
       
       <!-- Debug info for inline actions -->
@@ -180,7 +180,7 @@
           class="attach-btn" 
           (click)="onButtonClick('upload')"
           nz-tooltip
-          nzTooltipTitle="رفع مستندات / Upload Documents"
+          nzTooltipTitle="{{ 'agent.uploadDocument' | translate }}"
           nzTooltipPlacement="top">
           <span aria-hidden="true">📎</span>
           <span *ngIf="accumulatedFiles.length > 0" class="file-count">{{ accumulatedFiles.length }}</span>
@@ -192,16 +192,15 @@
           type="text" 
           [(ngModel)]="newMessage" 
           (keydown)="onEnterKey($event)"
-          placeholder="اكتب رسالتك هنا... / Type your message here..."
-          [disabled]="loading"
-          aria-label="اكتب رسالتك هنا / Type your message here">
+          placeholder="{{ 'agent.inputPlaceholder' | translate }}"
+          [disabled]="loading">
         
         <button 
           class="send-btn" 
           (click)="sendMessage()"
           [disabled]="!newMessage.trim() || loading"
           nz-tooltip
-          nzTooltipTitle="إرسال / Send"
+          nzTooltipTitle="{{ 'agent.send' | translate }}"
           nzTooltipPlacement="top">
           <span aria-hidden="true">➤</span>
         </button>
@@ -215,12 +214,11 @@
   <div class="document-modal-content">
     <!-- File Upload Section -->
     <div class="file-upload-section">
-      <h4>📎 رفع المستندات / Upload Documents</h4>
+      <h4>📎 {{ 'agent.documentModal.uploadHeader' | translate }}</h4>
       <div class="upload-area" (click)="triggerFileUpload()" (dragover)="onDragOver($event)" (drop)="onFileDrop($event)">
         <div class="upload-content">
           <span class="upload-icon">📁</span>
-          <p>اضغط هنا لرفع الملفات أو اسحب الملفات هنا</p>
-          <p><em>Click here to upload files or drag files here</em></p>
+          <p>{{ 'agent.documentModal.clickToUpload' | translate }}</p>
           <input 
             type="file" 
             #fileInput
@@ -233,7 +231,7 @@
       
       <!-- Selected Files Preview -->
       <div *ngIf="pendingFiles.length > 0" class="selected-files">
-        <h5>الملفات المحددة / Selected Files ({{ pendingFiles.length }})</h5>
+        <h5>{{ 'agent.documentModal.selectedFiles' | translate }} ({{ pendingFiles.length }})</h5>
         <div class="files-list">
           <div *ngFor="let file of pendingFiles; let i = index" class="file-item">
             <span class="file-name">{{ file.name }}</span>
@@ -260,7 +258,7 @@
           <nz-card [nzTitle]="'مستند ' + (i + 1)" nzSize="small">
             <div class="form-row">
               <div class="form-group">
-                <label [for]="'fileName_' + i">اسم الملف / File Name:</label>
+                <label [for]="'fileName_' + i">{{ 'agent.documentModal.fileName' | translate }}:</label>
                 <input 
                   [id]="'fileName_' + i"
                   [name]="'fileName_' + i"
@@ -272,7 +270,7 @@
             
             <div class="form-row">
               <div class="form-group">
-                <label [for]="'country_' + i">البلد / Country:</label>
+                <label [for]="'country_' + i">{{ 'agent.documentModal.country' | translate }}:</label>
                 <nz-select 
                   [id]="'country_' + i"
                   formControlName="country" 
@@ -287,7 +285,7 @@
               </div>
               
               <div class="form-group">
-                <label [for]="'documentType_' + i">نوع المستند / Document Type:</label>
+                <label [for]="'documentType_' + i">{{ 'agent.documentModal.documentType' | translate }}:</label>
                 <nz-select 
                   [id]="'documentType_' + i"
                   formControlName="type"
@@ -303,7 +301,7 @@
             
             <div class="form-row">
               <div class="form-group full-width">
-                <label [for]="'description_' + i">الوصف / Description:</label>
+                <label [for]="'description_' + i">{{ 'agent.documentModal.description' | translate }}:</label>
                 <textarea 
                   [id]="'description_' + i"
                   [name]="'description_' + i"
@@ -319,10 +317,10 @@
   
   <div class="modal-footer">
     <button nz-button nzType="default" (click)="closeDocumentModal()">
-      إلغاء / Cancel
+      {{ 'agent.documentModal.cancel' | translate }}
     </button>
     <button nz-button nzType="primary" (click)="saveDocuments()" [disabled]="!isDocumentFormValid">
-      حفظ ومتابعة / Save & Continue
+      {{ 'agent.documentModal.saveAndContinue' | translate }}
     </button>
   </div>
   </div>
@@ -393,7 +391,7 @@
 <!-- Edit Form Modal -->
 <nz-modal 
   [(nzVisible)]="showEditForm" 
-  nzTitle="تعديل البيانات المستخرجة / Edit Extracted Data"
+  nzTitle="{{ 'agent.editForm.title' | translate }}"
   (nzOnCancel)="closeEditForm()"
   [nzFooter]="null"
   nzWidth="700px"
@@ -407,9 +405,9 @@
         
         <!-- ✅ Dynamic form fields based on extracted data -->
         <div class="form-section">
-          <h4>البيانات المستخرجة / Extracted Data</h4>
+          <h4>{{ 'agent.editForm.sectionTitle' | translate }}</h4>
           <p class="section-description">
-            تم استخراج {{currentExtractedFields.length}} حقل من المستند / {{currentExtractedFields.length}} fields extracted from document
+            {{ 'agent.editForm.description' | translate:{ count: currentExtractedFields.length } }}
           </p>
           
           <!-- Dynamic form fields -->
@@ -442,10 +440,10 @@
     <!-- ✅ Footer buttons -->
     <div class="modal-footer">
       <button nz-button nzType="default" (click)="closeEditForm()">
-        إلغاء / Cancel
+        {{ 'agent.editForm.cancel' | translate }}
       </button>
       <button nz-button nzType="primary" (click)="saveEditForm()">
-        حفظ التعديلات / Save Changes
+        {{ 'agent.editForm.saveChanges' | translate }}
       </button>
     </div>
   </div>
@@ -454,7 +452,7 @@
 <!-- Missing Fields Form Modal -->
 <nz-modal 
   [(nzVisible)]="showMissingFieldsForm" 
-  nzTitle="إكمال البيانات الناقصة / Complete Missing Data"
+  nzTitle="{{ 'agent.missingForm.title' | translate }}"
   (nzOnCancel)="closeMissingFieldsForm()"
   [nzFooter]="null"
   nzWidth="700px"
@@ -465,18 +463,17 @@
     <!-- ✅ Header with clear instructions -->
     <div class="missing-fields-header">
       <div class="instructions">
-        <h3>📝 إكمال البيانات الناقصة / Complete Missing Data</h3>
-        <p>الحقول المملوءة مسبقاً هي للمرجع فقط. يرجى ملء الحقول الناقصة.</p>
-        <p><em>Pre-filled fields are for reference only. Please fill the missing fields.</em></p>
+        <h3>📝 {{ 'agent.missingForm.headerTitle' | translate }}</h3>
+        <p>{{ 'agent.missingForm.prefilledNote' | translate }}</p>
       </div>
       <div class="field-status">
         <div class="status-item completed">
           <span class="icon">✅</span>
-          <span class="text">مكتملة / Complete</span>
+          <span class="text">{{ 'agent.missingForm.completed' | translate }}</span>
         </div>
         <div class="status-item missing">
           <span class="icon">❌</span>
-          <span class="text">ناقصة / Missing</span>
+          <span class="text">{{ 'agent.missingForm.missing' | translate }}</span>
         </div>
       </div>
     </div>
@@ -486,12 +483,12 @@
         
         <!-- ✅ MISSING FIELDS ONLY - Priority Section -->
         <div class="form-section missing-fields-section" *ngIf="currentMissingFields.length > 0">
-          <h4>🔴 البيانات المطلوبة / Required Fields</h4>
-          <p class="section-description">يرجى ملء الحقول التالية لإكمال الطلب / Please fill the following fields to complete the request:</p>
+          <h4>🔴 {{ 'agent.missingForm.requiredSectionTitle' | translate }}</h4>
+          <p class="section-description">{{ 'agent.missingForm.requiredInstructions' | translate }}</p>
           
           <!-- Missing Company Fields -->
           <div class="missing-fields-group" *ngIf="hasMissingField(['firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName'])">
-            <h5>معلومات الشركة / Company Information</h5>
+            <h5>{{ 'agent.missingForm.companyInfo' | translate }}</h5>
             <div class="form-row">
               <div class="form-group" *ngIf="currentMissingFields.includes('firstName')">
                 <label>اسم الشركة (إنجليزي) / Company Name (English): <span class="required">*</span></label>
@@ -526,7 +523,7 @@
 
           <!-- Missing Address Fields -->
           <div class="missing-fields-group" *ngIf="hasMissingField(['buildingNumber', 'street', 'country', 'city'])">
-            <h5>معلومات العنوان / Address Information</h5>
+            <h5>{{ 'agent.missingForm.addressInfo' | translate }}</h5>
             <div class="form-row">
               <div class="form-group" *ngIf="currentMissingFields.includes('buildingNumber')">
                 <label>رقم المبنى / Building Number:</label>
@@ -556,7 +553,7 @@
 
           <!-- Missing Sales Fields -->
           <div class="missing-fields-group" *ngIf="hasMissingField(['salesOrganization', 'distributionChannel', 'division'])">
-            <h5>معلومات المبيعات / Sales Information</h5>
+            <h5>{{ 'agent.missingForm.salesInfo' | translate }}</h5>
             <div class="form-row">
               <div class="form-group" *ngIf="currentMissingFields.includes('salesOrganization')">
                 <label>منظمة المبيعات / Sales Organization: <span class="required">*</span></label>
@@ -607,10 +604,10 @@
     
     <div class="modal-footer">
       <button nz-button nzType="default" (click)="closeMissingFieldsForm()">
-        إلغاء / Cancel
+        {{ 'agent.missingForm.cancel' | translate }}
       </button>
       <button nz-button nzType="primary" (click)="saveMissingFieldsForm()">
-        حفظ البيانات الناقصة / Save Missing Data
+        {{ 'agent.missingForm.save' | translate }}
       </button>
     </div>
   </div>
@@ -1015,9 +1012,7 @@
       </div>
     </div>
 
-    <div class="auto-fill-hint">
-      <nz-alert nzType="info" nzMessage="Tip: Double Space in any field to auto-fill with demo data" nzShowIcon [nzCloseable]="true"></nz-alert>
-    </div>
+    
   </div>
 </nz-modal>
 

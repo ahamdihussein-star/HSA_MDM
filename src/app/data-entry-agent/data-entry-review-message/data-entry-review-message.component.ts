@@ -5,19 +5,19 @@ import { Component, Input } from '@angular/core';
   template: `
     <div class="review-container">
       <div class="summary-box">
-        <div class="summary-text">✅ تم استخراج {{extractedCount}} من {{totalFields}} حقل بنجاح</div>
+        <div class="summary-text">✅ {{ 'agent.extractionSuccess' | translate:{ count: extractedCount, total: totalFields } }}</div>
         <div class="completion-bar">
           <div class="completion-fill" [style.width.%]="completionRate"></div>
         </div>
       </div>
       
       <div class="stats-row">
-        <span>📊 معدل الاكتمال: {{completionRate}}%</span>
-        <span>⏱️ {{missingCount > 0 ? 'يتبقى ' + missingCount + ' حقول' : 'اكتمل!'}}</span>
+        <span>📊 {{ 'agent.completionRate' | translate:{ rate: completionRate } }}</span>
+        <span>⏱️ {{ missingCount > 0 ? (('agent.fieldsRemaining' | translate:{ count: missingCount })) : ('agent.allFieldsComplete' | translate) }}</span>
       </div>
       
       <div class="section-title" *ngIf="extractedFields.length > 0">
-        ✅ البيانات المستخرجة ({{extractedFields.length}})
+        ✅ {{ 'agent.extractedFieldsTitle' | translate:{ count: extractedFields.length } }}
       </div>
       
       <div class="fields-grid" *ngIf="extractedFields.length > 0">
@@ -28,12 +28,12 @@ import { Component, Input } from '@angular/core';
       </div>
       
       <div class="section-title" *ngIf="missingFields.length > 0">
-        ⚠️ البيانات الناقصة ({{missingFields.length}})
+        ⚠️ {{ 'agent.missingFieldsTitle' | translate:{ count: missingFields.length } }}
       </div>
       <div class="fields-grid" *ngIf="missingFields.length > 0">
         <div class="field-item missing" *ngFor="let field of missingFields">
           <div class="field-label">{{field.label}}</div>
-          <div class="field-value">مطلوب / Required</div>
+          <div class="field-value">{{ 'agent.missingDataInfo' | translate }}</div>
         </div>
       </div>
     </div>
@@ -76,5 +76,6 @@ export class DataEntryReviewMessageComponent {
   get totalFields(): number { return this.fields.length; }
   get completionRate(): number { return this.totalFields === 0 ? 0 : Math.round((this.extractedCount / this.totalFields) * 100); }
 }
+
 
 

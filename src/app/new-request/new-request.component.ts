@@ -1499,6 +1499,39 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     this.goldenSummaryUrl = null;
   }
 
+  // Return from iframe view to basic duplicate info
+  backToDuplicateInfo(): void {
+    this.showGoldenSummaryInModal = false;
+    this.goldenSummaryUrl = null;
+  }
+
+  // Action: guide user to upload a different document
+  uploadDifferentDocument(): void {
+    this.closeDuplicateModal();
+    this.openUploadModal();
+  }
+
+  // Action: enable editing and focus on tax/CustomerType to make data unique
+  startFixDuplicateByEditing(): void {
+    this.closeDuplicateModal();
+    this.editPressed = true;
+    this.requestForm.enable();
+    // Prefer focusing Tax then CustomerType
+    setTimeout(() => {
+      const taxInput = document.getElementById('tax') as HTMLInputElement | null;
+      if (taxInput) {
+        taxInput.focus();
+        taxInput.scrollIntoView({ behavior: 'smooth', block: 'center' });
+        return;
+      }
+      const typeSelect = document.getElementById('CustomerType') as HTMLElement | null;
+      if (typeSelect) {
+        (typeSelect as HTMLElement).focus();
+        typeSelect.scrollIntoView({ behavior: 'smooth', block: 'center' });
+      }
+    }, 0);
+  }
+
   // Load Golden Summary in iframe
   loadGoldenSummaryInModal(): void {
     if (this.duplicateRecord?.id) {
@@ -1510,12 +1543,6 @@ export class NewRequestComponent implements OnInit, OnDestroy {
 
   // Back to basic view
   backToBasicView(): void {
-    this.showGoldenSummaryInModal = false;
-    this.goldenSummaryUrl = null;
-  }
-
-  // Back to duplicate info
-  backToDuplicateInfo(): void {
     this.showGoldenSummaryInModal = false;
     this.goldenSummaryUrl = null;
   }
@@ -2556,6 +2583,12 @@ export class NewRequestComponent implements OnInit, OnDestroy {
         this.msg.remove(loadingMsg.messageId);
         this.msg.success('Document uploaded');
         this.closeUploadModal();
+        // Immediately validate for duplicate after successful upload
+        await this.validateForDuplicateImmediate();
+        if (this.hasDuplicate) {
+          this.showDuplicateModal = true;
+          this.cdr.markForCheck();
+        }
         
       } catch (error) {
         console.error('Error:', error);

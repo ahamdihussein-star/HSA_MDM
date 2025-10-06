@@ -2,6 +2,7 @@ import { Component, OnInit, OnDestroy, ChangeDetectorRef, TemplateRef, ViewChild
 import { isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { DataEntryAgentService, ExtractedData } from '../services/data-entry-agent.service';
+import { TranslateService } from '@ngx-translate/core';
 import { DemoDataGeneratorService, DemoCompany } from '../services/demo-data-generator.service';
 import { Subject, Subscription } from 'rxjs';
 import { NzModalService } from 'ng-zorro-antd/modal';
@@ -50,6 +51,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   private currentMissingField: string | null = null;
   private awaitingConfirmation = false;
   private awaitingDataReview = false;
+  private currentLang: 'ar' | 'en' = 'en';
   
   // Document upload
   uploadedFiles: File[] = [];
@@ -129,6 +131,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private modalService: NzModalService,
     private demoDataGenerator: DemoDataGeneratorService,
+    private translate: TranslateService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.initializeForms();
@@ -138,6 +141,11 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     console.log('🧪 [Chat] ngOnInit called');
     console.log('🧪 [Chat] countriesList:', this.countriesList);
     console.log('🧪 [Chat] documentTypes:', this.documentTypes);
+    try {
+      const savedLang = sessionStorage.getItem('language');
+      this.currentLang = savedLang === 'ar' ? 'ar' : 'en';
+      console.log('🌐 [Chat] Initial language =', this.currentLang);
+    } catch {}
     this.initializeChat();
     // Open the chat automatically
       this.isOpen = true;
@@ -150,8 +158,15 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   ngOnDestroy(): void {
     this.cleanup();
     if (this.keyboardListener && isPlatformBrowser(this.platformId)) {
-      document.removeEventListener('keydown', this.keyboardListener);
+      document.removeEventListener('keydown', this.keyboardListener, true);
     }
+    // Remove modal listener if attached
+    try {
+      const modalContent = document.querySelector('.ant-modal-content');
+      if (modalContent && this.modalKeyboardListener) {
+        modalContent.removeEventListener('keydown', this.modalKeyboardListener as any);
+      }
+    } catch {}
   }
 
   private initializeForms(): void {
@@ -364,7 +379,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     }
 
     this.modalInstance = this.modalService.create({
-      nzTitle: 'إضافة معلومات المستندات / Add Document Information',
+      nzTitle: this.translate.instant('agent.documentModal.title'),
       nzContent: this.documentModalTemplate,
       nzWidth: '800px',
       nzFooter: null,
@@ -475,7 +490,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       const progressMessage = this.addMessage({
         id: `progress_${Date.now()}`,
         role: 'assistant',
-        content: '🔄 جاري معالجة المستندات / Processing documents...',
+        content: this.translate.instant('agent.processingDocuments'),
         timestamp: new Date(),
         type: 'loading'
       });
@@ -621,7 +636,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     }
 
     // Simple message without listing all options
-    const content = `📋 ${fieldLabel}\nاختر من القائمة / Select from list:`;
+    const content = this.t(`📋 ${fieldLabel}\nاختر من القائمة:`, `📋 ${fieldLabel}\nSelect from list:`);
 
     this.addMessage({
       id: `dropdown_${field}_${Date.now()}`,
@@ -740,9 +755,22 @@ Please fill the contact form in the popup window.`,
       const contact = this.contactForm.value;
       this.contactsAdded.push(contact);
       
-      // Update extracted data
+      // CRITICAL: Update extracted data
       const currentData = this.agentService.getExtractedData();
-      currentData.contacts.push(contact);
+      if (!currentData.contacts) {
+        (currentData as any).contacts = [];
+      }
+      (currentData as any).contacts.push({
+        name: contact.name,
+        nameAr: contact.nameAr || '',
+        jobTitle: contact.jobTitle,
+        email: contact.email,
+        mobile: contact.mobile,
+        landline: contact.landline || '',
+        preferredLanguage: contact.preferredLanguage || 'Arabic'
+      });
+      console.log('✅ [CONTACT] Contact added to extracted data:', contact);
+      console.log('✅ [CONTACT] Total contacts:', (currentData as any).contacts.length);
       
       this.addMessage({
         id: `contact_saved_${Date.now()}`,
@@ -781,18 +809,16 @@ Please fill the contact form in the popup window.`,
     this.addMessage({
       id: `confirm_${Date.now()}`,
       role: 'assistant',
-      content: `✅ **جميع البيانات مكتملة! / All data complete!**
-      
-سيتم الآن التحقق من عدم وجود تكرار ثم إرسال الطلب.
-Will now check for duplicates then submit the request.
-
-هل تريد المتابعة؟ / Do you want to proceed?`,
+      content: this.t(
+        '✅ جميع البيانات مكتملة!\nسيتم الآن التحقق من عدم وجود تكرار ثم إرسال الطلب.\nهل تريد المتابعة؟',
+        '✅ All data complete!\nWill now check for duplicates then submit the request.\nDo you want to proceed?'
+      ),
       timestamp: new Date(),
       type: 'confirmation',
       data: {
         buttons: [
-          { text: '✅ نعم، أرسل / Yes, submit', action: 'submit_request' },
-          { text: '✏️ مراجعة البيانات / Review data', action: 'review_data' }
+          { text: this.t('✅ نعم، أرسل', '✅ Yes, submit'), action: 'submit_request' },
+          { text: this.t('✏️ مراجعة البيانات', '✏️ Review data'), action: 'review_data' }
         ]
       }
     });
@@ -801,6 +827,14 @@ Will now check for duplicates then submit the request.
   async sendMessage(message?: string): Promise<void> {
     const userMessage = message || this.newMessage.trim();
     if (!userMessage) return;
+
+    // Auto-detect language from user input (no flow change)
+    try {
+      const detected = this.detectUserLanguage(userMessage);
+      if (detected && detected !== this.currentLang) {
+        this.setLang(detected);
+      }
+    } catch {}
 
     // Add user message
     this.addMessage({
@@ -829,7 +863,7 @@ Will now check for duplicates then submit the request.
       this.addMessage({
         id: `error_${Date.now()}`,
         role: 'assistant',
-        content: '❌ حدث خطأ / An error occurred',
+        content: this.t('❌ حدث خطأ', '❌ An error occurred'),
         timestamp: new Date(),
         type: 'text'
       });
@@ -854,7 +888,7 @@ Will now check for duplicates then submit the request.
         this.addMessage({
           id: `confirmed_${Date.now()}`,
           role: 'assistant',
-          content: `✅ تم اختيار / Selected: ${selected.label}`,
+          content: this.t(`✅ تم اختيار: ${selected.label}`, `✅ Selected: ${selected.label}`),
           timestamp: new Date(),
           type: 'text'
         });
@@ -870,7 +904,7 @@ Will now check for duplicates then submit the request.
           this.addMessage({
             id: `confirmed_${Date.now()}`,
             role: 'assistant',
-            content: `✅ تم اختيار / Selected: ${matched.label}`,
+            content: this.t(`✅ تم اختيار: ${matched.label}`, `✅ Selected: ${matched.label}`),
             timestamp: new Date(),
             type: 'text'
           });
@@ -887,7 +921,7 @@ Will now check for duplicates then submit the request.
       this.addMessage({
         id: `confirmed_${Date.now()}`,
         role: 'assistant',
-        content: `✅ تم حفظ / Saved: ${userMessage}`,
+        content: this.t(`✅ تم حفظ: ${userMessage}`, `✅ Saved: ${userMessage}`),
         timestamp: new Date(),
         type: 'text'
       });
@@ -1063,7 +1097,7 @@ Please fill the missing data to complete the request.`,
     const loadingMessage = this.addMessage({
       id: `loading_${Date.now()}`,
       role: 'assistant',
-      content: '🔄 جاري المعالجة / Processing...',
+      content: this.translate.instant('agent.processing'),
       timestamp: new Date(),
       type: 'loading'
     });
@@ -1093,6 +1127,31 @@ Please fill the missing data to complete the request.`,
 
   private async finalizeAndSubmit(): Promise<void> {
     try {
+      // Validate required fields before submission
+      const extractedData = this.agentService.getExtractedData();
+      const requiredFields = ['firstName', 'firstNameAR', 'tax', 'CustomerType', 'country', 'city'];
+      const missingRequired = requiredFields.filter(field => !(extractedData as any)[field]);
+      if (missingRequired.length > 0) {
+        this.addMessage({
+          id: `validation_error_${Date.now()}`,
+          role: 'assistant',
+          content: `❌ **Cannot submit - Missing required fields:**\n${missingRequired.map(f => `• ${f}`).join('\n')}\n\nPlease complete all required fields first.`,
+          timestamp: new Date(),
+          type: 'text'
+        });
+        return;
+      }
+      if (!extractedData.contacts || extractedData.contacts.length === 0) {
+        this.addMessage({
+          id: `contact_required_${Date.now()}`,
+          role: 'assistant',
+          content: `❌ **At least one contact is required**\n\nPlease add a contact before submitting.`,
+          timestamp: new Date(),
+          type: 'text'
+        });
+        this.askForContactForm();
+        return;
+      }
       // Check duplicates
       const duplicateCheck = await this.agentService.checkForDuplicates();
       
@@ -1142,12 +1201,24 @@ You can track the request in your task list.`,
           type: 'text'
         });
         
-        // Reset
+        // CRITICAL: Reset after success
         this.agentService.reset();
         this.uploadedFiles = [];
         this.contactsAdded = [];
         this.fieldAttempts = {} as any;
-        
+        this.currentMissingField = null;
+        this.awaitingConfirmation = false;
+        this.awaitingDataReview = false;
+        console.log('🔄 [RESET] All data reset after successful submission');
+        setTimeout(() => {
+          this.addMessage({
+            id: `ready_${Date.now()}`,
+            role: 'assistant',
+            content: '👋 Ready for the next customer! Upload documents or start manual entry.',
+            timestamp: new Date(),
+            type: 'text'
+          });
+        }, 2000);
         // Conversation completed successfully
       }
     } catch (error: any) {
@@ -1278,14 +1349,21 @@ I'll help you enter data step by step.
       return;
     }
     console.log('Setting up keyboard auto-fill for data entry');
+    // Generate initial demo company
     this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+    // Create keyboard listener using capture to beat modal handlers
     this.keyboardListener = (event: KeyboardEvent) => {
+      // Only work when unified modal is open
+      if (!this.showUnifiedModal) {
+        return;
+      }
       if (event.key === ' ' || event.code === 'Space') {
         const now = Date.now();
         if (now - this.lastSpaceTime < 500) {
           this.spaceClickCount++;
           if (this.spaceClickCount >= 2) {
             event.preventDefault();
+            event.stopPropagation();
             console.log('Double space detected - triggering auto-fill');
             this.handleAutoFillKeypress();
             this.spaceClickCount = 0;
@@ -1296,7 +1374,50 @@ I'll help you enter data step by step.
         this.lastSpaceTime = now;
       }
     };
-    document.addEventListener('keydown', this.keyboardListener);
+    // Attach with capture=true to intercept before modal consumes
+    document.addEventListener('keydown', this.keyboardListener, true);
+    console.log('✅ Keyboard auto-fill setup complete');
+  }
+
+  private modalKeyboardListener: ((event: KeyboardEvent) => void) | null = null;
+
+  private attachModalKeyboardListener(): void {
+    if (!isPlatformBrowser(this.platformId)) {
+      return;
+    }
+    // Wait for modal to render
+    setTimeout(() => {
+      const modalContent = document.querySelector('.ant-modal-content');
+      if (modalContent) {
+        console.log('Attaching keyboard listener to modal content');
+        // Remove existing listener if any
+        if (this.modalKeyboardListener) {
+          modalContent.removeEventListener('keydown', this.modalKeyboardListener as any);
+        }
+        this.modalKeyboardListener = (event: KeyboardEvent) => {
+          if (event.key === ' ' || event.code === 'Space') {
+            const now = Date.now();
+            if (now - this.lastSpaceTime < 500) {
+              this.spaceClickCount++;
+              if (this.spaceClickCount >= 2) {
+                event.preventDefault();
+                event.stopPropagation();
+                console.log('Double space detected in modal - triggering auto-fill');
+                this.handleAutoFillKeypress();
+                this.spaceClickCount = 0;
+              }
+    } else {
+              this.spaceClickCount = 1;
+            }
+            this.lastSpaceTime = now;
+          }
+        };
+        modalContent.addEventListener('keydown', this.modalKeyboardListener as any);
+        console.log('✅ Modal keyboard listener attached');
+      } else {
+        console.warn('Modal content not found');
+      }
+    }, 100);
   }
 
   private handleAutoFillKeypress(): void {
@@ -2245,6 +2366,25 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
     }
   }
 
+  // Language helpers (non-invasive)
+  private t(ar: string, en: string): string {
+    return this.currentLang === 'ar' ? ar : en;
+  }
+
+  private detectUserLanguage(text: string): 'ar' | 'en' | null {
+    const hasArabic = /[\u0600-\u06FF]/.test(text);
+    const hasLatin = /[A-Za-z]/.test(text);
+    if (hasArabic && !hasLatin) return 'ar';
+    if (hasLatin && !hasArabic) return 'en';
+    return null;
+  }
+
+  private setLang(lang: 'ar' | 'en'): void {
+    this.currentLang = lang;
+    try { sessionStorage.setItem('language', lang); } catch {}
+    console.log('🌐 [Chat] Switched language ->', lang);
+  }
+
   // Unified Modal Methods
   private openUnifiedModal(): void {
     console.log('🎯 [UNIFIED] Opening unified modal');
@@ -2332,6 +2472,8 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
       // Show modal
       this.showUnifiedModal = true;
       this.cdr.detectChanges();
+      // Attach keyboard listener directly to modal content
+      this.attachModalKeyboardListener();
       
       console.log('✅ [UNIFIED] Modal opened with data:', this.unifiedModalData);
       

@@ -16,6 +16,7 @@ import { NzProgressModule } from 'ng-zorro-antd/progress';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
+import { TranslateModule } from '@ngx-translate/core';
 
 // Components
 import { DataEntryAgentComponent } from './data-entry-agent.component';
@@ -44,7 +45,8 @@ import { DataEntryReviewMessageComponent } from './data-entry-review-message/dat
     NzProgressModule,
     NzDividerModule,
     NzSpinModule,
-    NzAlertModule
+    NzAlertModule,
+    TranslateModule
   ],
   exports: [
     DataEntryAgentComponent,

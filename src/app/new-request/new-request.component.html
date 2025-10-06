@@ -942,10 +942,16 @@
 
         <!-- Actions -->
         <div class="modal-actions">
-          <button nz-button (click)="closeDuplicateModal()">Close</button>
+          <button nz-button (click)="uploadDifferentDocument()">
+            <i nz-icon nzType="upload"></i> Upload a different document
+          </button>
+          <button nz-button nzType="default" (click)="startFixDuplicateByEditing()">
+            <i nz-icon nzType="edit"></i> Edit data to make unique
+          </button>
           <button nz-button nzType="primary" (click)="loadGoldenSummaryInModal()">
             <i nz-icon nzType="eye"></i> View Full Details
           </button>
+          <button nz-button nzType="link" (click)="closeDuplicateModal()">Close</button>
         </div>
       </div>
 

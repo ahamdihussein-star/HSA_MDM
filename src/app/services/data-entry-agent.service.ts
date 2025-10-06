@@ -15,24 +15,32 @@ import {
 import { SmartDropdownMatcherService } from './smart-dropdown-matcher.service';
 
 export interface ExtractedData {
+  // Company Information
   firstName: string;
   firstNameAR: string;
   tax: string;
   CustomerType: string;
   ownerName: string;
+  
+  // Address
   buildingNumber: string;
   street: string;
   country: string;
   city: string;
+  
+  // Sales
   salesOrganization: string;
   distributionChannel: string;
   division: string;
+  
+  // Related Data
   contacts: Array<{
     name: string;
+    nameAr?: string;
     jobTitle: string;
     email: string;
     mobile: string;
-    landline: string;
+    landline?: string;
     preferredLanguage: string;
   }>;
 }
@@ -573,18 +581,29 @@ For dropdown fields, provide numbered options.`;
     return this.extractedData;
   }
 
-  getDropdownOptions(fieldName: string): any[] {
-    const mapping: { [key: string]: any[] } = {
-      'CustomerType': CUSTOMER_TYPE_OPTIONS.map(opt => ({ value: opt, label: opt })),
-      'country': Object.keys(CITY_OPTIONS).map(c => ({ value: c, label: c })),
-      'city': getCitiesByCountry(this.extractedData.country).map(c => ({ value: c, label: c })),
-      'salesOrganization': this.getSalesOrgOptionsByCountry(this.extractedData.country),
-      'distributionChannel': (DISTRIBUTION_CHANNEL_OPTIONS as any[]).map(opt => ({ value: opt.value, label: opt.label })),
-      'division': (DIVISION_OPTIONS as any[]).map(opt => ({ value: opt.value, label: opt.label })),
-      'preferredLanguage': (PREFERRED_LANGUAGE_OPTIONS as any[]).map(opt => ({ value: opt, label: opt }))
-    };
-    
-    return mapping[fieldName] || [];
+  getDropdownOptions(fieldName: string): Array<{ label: string; value: string }> {
+    switch (fieldName) {
+      case 'CustomerType':
+        return (CUSTOMER_TYPE_OPTIONS as any[]).map((opt: any) => ({ label: opt, value: opt }));
+      case 'country':
+        return Object.keys(CITY_OPTIONS).map(c => ({ label: c, value: c }));
+      case 'city': {
+        const country = this.extractedData.country;
+        const cities = country ? getCitiesByCountry(country) : [];
+        return cities.map((c: any) => ({ label: c.label || c, value: c.value || c }));
+      }
+      case 'salesOrganization':
+        return this.getSalesOrgOptionsByCountry(this.extractedData.country);
+      case 'distributionChannel':
+        return (DISTRIBUTION_CHANNEL_OPTIONS as any[]).map(opt => ({ label: opt.label, value: opt.value }));
+      case 'division':
+        return (DIVISION_OPTIONS as any[]).map(opt => ({ label: opt.label, value: opt.value }));
+      case 'preferredLanguage':
+        return (PREFERRED_LANGUAGE_OPTIONS as any[]).map(opt => ({ label: opt, value: opt }));
+      default:
+        console.warn('Unknown dropdown field:', fieldName);
+        return [];
+    }
   }
 
   private getSalesOrgOptionsByCountry(country: string): any[] {
@@ -643,7 +662,8 @@ For dropdown fields, provide numbered options.`;
   async checkForDuplicates(): Promise<{ isDuplicate: boolean; existingRecord?: any; message?: string }> {
     try {
       if (!this.extractedData.tax || !this.extractedData.CustomerType) {
-        return { isDuplicate: false };
+        console.log('⚠️ [DUPLICATE] Missing required fields for duplicate check');
+        return { isDuplicate: false, message: 'Missing required fields' };
       }
 
       const response = await firstValueFrom(
@@ -653,61 +673,117 @@ For dropdown fields, provide numbered options.`;
         })
       );
 
-      return response;
+      if (response.isDuplicate && response.existingCustomers?.length > 0) {
+        return {
+          isDuplicate: true,
+          existingRecord: response.existingCustomers[0],
+          message: response.message || 'Duplicate record found'
+        };
+      }
+      return { isDuplicate: response.isDuplicate || false, message: response.message || 'No duplicates found' };
     } catch (error) {
-      console.error('Error checking for duplicates:', error);
-      return { isDuplicate: false };
+      console.error('❌ [DUPLICATE] Error checking for duplicates:', error);
+      return { isDuplicate: false, message: 'Duplicate check failed' };
     }
   }
 
   async submitCustomerRequest(): Promise<any> {
     try {
       const payload = this.buildRequestPayload();
-      
+
+      console.log('📤 [SUBMIT] Submitting request with payload:', payload);
+      console.log('📤 [SUBMIT] Contacts count:', payload.contacts?.length || 0);
+      console.log('📤 [SUBMIT] Documents count:', this.uploadedDocuments.length);
+
       const response = await firstValueFrom(
         this.http.post<any>(`${this.apiBase}/requests`, payload)
       );
 
+      console.log('✅ [SUBMIT] Request created:', response);
       this.requestId = response.id;
-      
-      // Upload documents if any
+
       if (this.uploadedDocuments.length > 0 && response.id) {
         await this.uploadDocumentsToRequest(response.id);
       }
-      
+
       return response;
     } catch (error: any) {
-      console.error('Error submitting request:', error);
-      throw error;
+      console.error('❌ [SUBMIT] Error submitting request:', error);
+      throw new Error(error?.error?.message || 'Failed to submit customer request');
     }
   }
 
   private buildRequestPayload(): any {
-    return {
-      // Correct field names matching new-request component
+    const payload: any = {
       firstName: this.extractedData.firstName,
-      firstNameAR: this.extractedData.firstNameAR,
+      firstNameAr: this.extractedData.firstNameAR,
       tax: this.extractedData.tax,
       CustomerType: this.extractedData.CustomerType,
-      CompanyOwner: this.extractedData.ownerName, // FIXED: was CompanyOwnerFullName
-      buildingNumber: this.extractedData.buildingNumber,
-      street: this.extractedData.street,
+      CompanyOwner: this.extractedData.ownerName,
+      buildingNumber: this.extractedData.buildingNumber || '',
+      street: this.extractedData.street || '',
       country: this.extractedData.country,
       city: this.extractedData.city,
-      salesOrganization: this.extractedData.salesOrganization, // FIXED: was SalesOrgOption
-      distributionChannel: this.extractedData.distributionChannel, // FIXED: was DistributionChannelOption
-      division: this.extractedData.division, // FIXED: was DivisionOption
+      SalesOrgOption: this.extractedData.salesOrganization,
+      DistributionChannelOption: this.extractedData.distributionChannel,
+      DivisionOption: this.extractedData.division,
       status: 'pending',
       created_at: new Date().toISOString(),
       created_by: this.currentUser?.username || 'data_entry',
-      contacts: this.extractedData.contacts || [],
+      requestType: 'New',
+      ComplianceStatus: 'Pending Review',
+      contacts: [],
       documents: []
     };
+
+    if (this.extractedData.contacts && this.extractedData.contacts.length > 0) {
+      payload.contacts = this.extractedData.contacts.map(c => ({
+        name: c.name,
+        nameAr: c.nameAr || '',
+        jobTitle: c.jobTitle,
+        email: c.email,
+        mobile: c.mobile,
+        landline: c.landline || '',
+        preferredLanguage: c.preferredLanguage || 'Arabic'
+      }));
+    }
+
+    return payload;
   }
 
   private async uploadDocumentsToRequest(requestId: string): Promise<void> {
-    // Implementation for document upload - if needed
-    console.log('Documents would be uploaded for request:', requestId);
+    try {
+      for (const doc of this.uploadedDocuments) {
+        const documentPayload = {
+          requestId,
+          fileName: doc.name,
+          fileType: doc.type,
+          fileSize: doc.size,
+          content: doc.content,
+          uploadedBy: this.currentUser?.username || 'data_entry',
+          uploadedAt: new Date().toISOString(),
+          description: `Document uploaded via AI Agent: ${doc.name}`
+        };
+
+        await firstValueFrom(
+          this.http.post<any>(`${this.apiBase}/requests/${requestId}/documents`, documentPayload)
+        );
+      }
+      console.log('✅ [DOCS] All documents uploaded for request:', requestId);
+    } catch (error) {
+      console.error('❌ [DOCS] Error uploading documents:', error);
+      console.warn('⚠️ [DOCS] Continuing despite document upload failure');
+    }
+  }
+
+  // Debug helper to log current state
+  debugCurrentState(): void {
+    console.log('🔍 [DEBUG] Current Extracted Data:', this.extractedData);
+    console.log('🔍 [DEBUG] Contacts:', this.extractedData.contacts);
+    console.log('🔍 [DEBUG] Documents:', this.uploadedDocuments.length);
+    console.log('🔍 [DEBUG] Current User:', this.currentUser);
+    console.log('🔍 [DEBUG] Session ID:', this.sessionId);
+    console.log('🔍 [DEBUG] Request ID:', this.requestId);
   }
 
   reset(): void {
