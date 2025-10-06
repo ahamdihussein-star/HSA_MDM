@@ -230,23 +230,54 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     this.isMinimized = false;
   }
 
-  onFileSelected(event: any): void {
+
+  // ✅ File upload methods for modal
+  triggerFileUpload(): void {
+    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    }
+  }
+
+  onModalFileSelected(event: any): void {
     const files: FileList = event?.target?.files;
-    console.log('🧪 [Chat] onFileSelected fired. files? =', !!files, 'count =', files?.length ?? 0);
+    console.log('🧪 [MODAL] Files selected:', files?.length ?? 0);
     if (!files || files.length === 0) return;
 
-    // ✅ Add to accumulated files (not process immediately)
+    // Add files to pending files
     for (let i = 0; i < files.length; i++) {
-      this.accumulatedFiles.push(files[i]);
+      this.pendingFiles.push(files[i]);
     }
     
-    // ✅ Show accumulated files panel
-    this.showAccumulatedFiles = true;
+    // Initialize document form with the selected files
+    this.initializeDocumentForm();
     
-    console.log('✅ [Chat] Files accumulated:', this.accumulatedFiles.length);
+    console.log('✅ [MODAL] Files added to pending:', this.pendingFiles.length);
+  }
+
+  onDragOver(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
+  }
+
+  onFileDrop(event: DragEvent): void {
+    event.preventDefault();
+    event.stopPropagation();
     
-    // Clear the input so user can add more files
-    event.target.value = '';
+    const files = event.dataTransfer?.files;
+    if (files && files.length > 0) {
+      for (let i = 0; i < files.length; i++) {
+        this.pendingFiles.push(files[i]);
+      }
+      this.initializeDocumentForm();
+    }
+  }
+
+  removePendingFile(index: number): void {
+    this.pendingFiles.splice(index, 1);
+    if (this.pendingFiles.length === 0) {
+      this.documentMetadataForm.reset();
+    }
   }
 
   private openDocumentModalWithService(): void {
@@ -1079,14 +1110,8 @@ You can track the request in your task list.`,
     
     switch(action) {
       case 'upload':
-        const input = document.getElementById('file-upload') as HTMLInputElement | null;
-        console.log('🎯 [BUTTON] file-upload element found =', !!input);
-        if (input) {
-          input.click();
-          console.log('🎯 [BUTTON] file-upload click triggered');
-        } else {
-          console.warn('⚠️ [BUTTON] file-upload element missing in DOM');
-        }
+        console.log('🎯 [BUTTON] Opening upload modal directly');
+        this.openDocumentModalWithService();
         break;
       case 'manual':
         this.startManualEntry();
@@ -1368,9 +1393,6 @@ Please review and edit the extracted data in the popup form.`,
     this.agentService.removeDocument(`doc_${index}`);
   }
 
-  getUploadedDocuments(): any[] {
-    return this.agentService.getDocuments();
-  }
 
   closeDocumentModal(): void {
     this.showDocumentModal = false;
@@ -1787,13 +1809,6 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
             'Trade License', 'Tax Certificate'];
   }
 
-  // Trigger file upload from accumulated files panel
-  triggerFileUpload(): void {
-    const fileInput = document.getElementById('file-upload') as HTMLInputElement;
-    if (fileInput) {
-      fileInput.click();
-    }
-  }
 
 
 

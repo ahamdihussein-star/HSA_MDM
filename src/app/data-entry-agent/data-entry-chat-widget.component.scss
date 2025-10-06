@@ -1027,3 +1027,107 @@
     }
   }
 }
+
+// File upload section styles
+.file-upload-section {
+  margin-bottom: 20px;
+  
+  h4 {
+    color: #1890ff;
+    margin-bottom: 15px;
+    font-size: 16px;
+  }
+  
+  .upload-area {
+    border: 2px dashed #d9d9d9;
+    border-radius: 8px;
+    padding: 40px 20px;
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fafafa;
+    
+    &:hover {
+      border-color: #1890ff;
+      background: #f0f8ff;
+    }
+    
+    .upload-content {
+      .upload-icon {
+        font-size: 48px;
+        display: block;
+        margin-bottom: 10px;
+      }
+      
+      p {
+        margin: 5px 0;
+        color: #666;
+        
+        em {
+          color: #999;
+          font-size: 12px;
+        }
+      }
+    }
+  }
+  
+  .selected-files {
+    margin-top: 20px;
+    
+    h5 {
+      color: #333;
+      margin-bottom: 10px;
+      font-size: 14px;
+    }
+    
+    .files-list {
+      max-height: 150px;
+      overflow-y: auto;
+      border: 1px solid #e8e8e8;
+      border-radius: 6px;
+      padding: 10px;
+      background: #f9f9f9;
+      
+      .file-item {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        padding: 8px 12px;
+        margin-bottom: 5px;
+        background: white;
+        border-radius: 4px;
+        border: 1px solid #e8e8e8;
+        
+        .file-name {
+          font-weight: 500;
+          color: #333;
+          flex: 1;
+        }
+        
+        .file-size {
+          color: #666;
+          font-size: 12px;
+          margin: 0 10px;
+        }
+        
+        .remove-file-btn {
+          background: #ff4d4f;
+          color: white;
+          border: none;
+          border-radius: 50%;
+          width: 20px;
+          height: 20px;
+          cursor: pointer;
+          font-size: 12px;
+          display: flex;
+          align-items: center;
+          justify-content: center;
+          
+          &:hover {
+            background: #ff7875;
+          }
+        }
+      }
+    }
+  }
+}

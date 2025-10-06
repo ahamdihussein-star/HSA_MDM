@@ -167,13 +167,6 @@
         Debug: Inline quick actions enabled ({{ showInlineQuickActions }})
       </div>
       <div class="input-container">
-        <input 
-          type="file" 
-          id="file-upload"
-          multiple 
-          accept="image/*" 
-          (change)="onFileSelected($event)"
-          style="display: none;">
         
         <button 
           class="attach-btn" 
@@ -212,12 +205,38 @@
 <!-- Document Upload Modal Template -->
 <ng-template #documentModalTemplate>
   <div class="document-modal-content">
-    <!-- Debug info -->
-    <div style="background: #f0f0f0; padding: 10px; margin-bottom: 10px; font-size: 12px;">
-      Debug: documentsFA.length = {{ documentsFA.length }}, pendingFiles.length = {{ pendingFiles.length }}
+    <!-- File Upload Section -->
+    <div class="file-upload-section">
+      <h4>📎 رفع المستندات / Upload Documents</h4>
+      <div class="upload-area" (click)="triggerFileUpload()" (dragover)="onDragOver($event)" (drop)="onFileDrop($event)">
+        <div class="upload-content">
+          <span class="upload-icon">📁</span>
+          <p>اضغط هنا لرفع الملفات أو اسحب الملفات هنا</p>
+          <p><em>Click here to upload files or drag files here</em></p>
+          <input 
+            type="file" 
+            #fileInput
+            multiple 
+            accept="image/*" 
+            (change)="onModalFileSelected($event)"
+            style="display: none">
+        </div>
+      </div>
+      
+      <!-- Selected Files Preview -->
+      <div *ngIf="pendingFiles.length > 0" class="selected-files">
+        <h5>الملفات المحددة / Selected Files ({{ pendingFiles.length }})</h5>
+        <div class="files-list">
+          <div *ngFor="let file of pendingFiles; let i = index" class="file-item">
+            <span class="file-name">{{ file.name }}</span>
+            <span class="file-size">({{ (file.size / 1024).toFixed(1) }}KB)</span>
+            <button type="button" class="remove-file-btn" (click)="removePendingFile(i)">×</button>
+          </div>
+        </div>
+      </div>
     </div>
     
-    <form [formGroup]="documentMetadataForm">
+    <form [formGroup]="documentMetadataForm" *ngIf="pendingFiles.length > 0">
       <div formArrayName="documents">
         <!-- Show message if no documents -->
         <div *ngIf="documentsFA.length === 0" style="text-align: center; padding: 20px; color: #666;">
@@ -301,14 +320,6 @@
   </div>
 </ng-template>
 
-<!-- Hidden file input for programmatic uploads (used by quick actions) -->
-<input 
-  type="file" 
-  id="file-upload"
-  style="display: none"
-  multiple
-  accept="image/*"
-  (change)="onFileSelected($event)">
 
 <!-- Contact Form Modal -->
 <nz-modal 
@@ -597,22 +608,3 @@
   </div>
 </nz-modal>
 
-<!-- Uploaded Documents Display -->
-<div *ngIf="getUploadedDocuments().length > 0" class="uploaded-documents">
-  <h4>المستندات المرفوعة / Uploaded Documents</h4>
-  <div class="documents-grid">
-    <div *ngFor="let doc of getUploadedDocuments(); let i = index" class="document-card">
-      <div class="document-info">
-        <h5>{{ doc.name }}</h5>
-        <p>{{ doc.type }} - {{ (doc.size / 1024).toFixed(2) }}KB</p>
-      </div>
-      <button 
-        nz-button 
-        nzType="text" 
-        nzDanger 
-        (click)="removeDocument(i)">
-        <i nz-icon nzType="delete" nzTheme="outline"></i>
-      </button>
-    </div>
-  </div>
-</div>
