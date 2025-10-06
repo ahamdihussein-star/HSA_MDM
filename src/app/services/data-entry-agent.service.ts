@@ -184,11 +184,12 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
       const extractedData = await this.extractDataFromDocuments(base64Files);
 
       // Smart match dropdowns to exact system values
+      let finalExtractedData = extractedData;
       try {
         const matchResult = await this.smartMatcher.matchExtractedToSystemValues(extractedData);
         if (matchResult?.matchedValues) {
           console.log('🎯 [Service] Smart matched values:', matchResult.matchedValues);
-          this.extractedData = { ...this.extractedData, ...matchResult.matchedValues } as ExtractedData;
+          finalExtractedData = { ...extractedData, ...matchResult.matchedValues };
           // Optionally: store reasoning/confidence if needed later
         }
       } catch (e) {
@@ -196,7 +197,7 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
       }
 
       // Merge with existing data
-      this.extractedData = { ...this.extractedData, ...extractedData };
+      this.extractedData = { ...this.extractedData, ...finalExtractedData };
 
       // Translate if needed
       await this.handleArabicTranslation();
