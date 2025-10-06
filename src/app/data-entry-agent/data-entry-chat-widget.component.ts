@@ -1334,64 +1334,85 @@ I'll help you enter data step by step.
       taxNumber: this.currentDemoCompany.taxNumber,
       SalesOrgOption: this.currentDemoCompany.salesOrg,
       DistributionChannelOption: this.currentDemoCompany.distributionChannel,
-      DivisionOption: this.currentDemoCompany.division
+      DivisionOption: this.currentDemoCompany.division,
+      // Contact field mappings (use first contact as default)
+      name: this.currentDemoCompany.contacts[0]?.name,
+      jobTitle: this.currentDemoCompany.contacts[0]?.jobTitle,
+      email: this.currentDemoCompany.contacts[0]?.email,
+      mobile: this.currentDemoCompany.contacts[0]?.mobile,
+      landline: this.currentDemoCompany.contacts[0]?.landline,
+      preferredLanguage: this.currentDemoCompany.contacts[0]?.preferredLanguage
     };
     return map[fieldName] || null;
   }
 
   private fillFieldWithValue(fieldName: string, demoValue: any): void {
+    // Unified Modal
     if (this.showUnifiedModal && this.unifiedModalForm) {
-      const contactFields = new Set(['name','jobTitle','email','mobile','landline','preferredLanguage']);
-      if (contactFields.has(fieldName)) {
-        const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
-        if (contactsArray && contactsArray.length > 0) {
-          // Determine which contact card is focused
-          const active = document.activeElement as HTMLElement | null;
-          let targetIndex = 0;
-          if (active) {
-            const cardEl = active.closest('.contact-card');
-            const cards = Array.from(document.querySelectorAll('.contact-card'));
-            const idx = cards.indexOf(cardEl as Element);
-            if (idx >= 0 && idx < contactsArray.length) {
-              targetIndex = idx;
-            }
-          }
-          const grp = contactsArray.at(targetIndex) as FormGroup;
-          const ctrl = grp.get(fieldName);
-          if (ctrl) {
-            ctrl.patchValue(demoValue);
-          }
-        }
-    } else {
-        const control = this.unifiedModalForm.get(fieldName);
-        if (control && control.enabled) {
-          control.patchValue(demoValue);
-          if (fieldName === 'country') this.updateCityOptions(demoValue);
+      const control = this.unifiedModalForm.get(fieldName);
+      if (control && control.enabled && !control.value) {
+        control.patchValue(demoValue);
+        control.markAsTouched();
+        control.updateValueAndValidity();
+        if (fieldName === 'country') {
+          this.updateCityOptions(demoValue);
         }
       }
-    } else if (this.showMissingFieldsForm && this.missingFieldsForm) {
+      // Contacts array
+      const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
+      if (contactsArray && contactsArray.length > 0) {
+        for (let i = 0; i < contactsArray.length; i++) {
+          const contactControl = contactsArray.at(i).get(fieldName);
+          if (contactControl && !contactControl.value) {
+            const contact = this.currentDemoCompany?.contacts[i] || this.currentDemoCompany?.contacts[0];
+            if (contact) {
+              const contactValue = (contact as any)[fieldName];
+              if (contactValue) {
+                contactControl.patchValue(contactValue);
+                contactControl.markAsTouched();
+                break;
+              }
+            }
+          }
+        }
+      }
+    }
+    // Missing Fields Form
+    else if (this.showMissingFieldsForm && this.missingFieldsForm) {
       const control = this.missingFieldsForm.get(fieldName);
-      if (control) control.patchValue(demoValue);
-    } else if (this.showContactForm && this.contactForm) {
-      const contact = this.currentDemoCompany?.contacts[0];
-      if (contact) {
-        const cmap: any = {
-          name: contact.name,
-          jobTitle: contact.jobTitle,
-          email: contact.email,
-          mobile: contact.mobile,
-          landline: contact.landline,
-          preferredLanguage: contact.preferredLanguage
-        };
-        const control = this.contactForm.get(fieldName);
-        if (control && cmap[fieldName] !== undefined) control.patchValue(cmap[fieldName]);
+      if (control && !control.value) {
+        control.patchValue(demoValue);
+        control.markAsTouched();
+      }
+    }
+    // Contact Form
+    else if (this.showContactForm && this.contactForm) {
+      const control = this.contactForm.get(fieldName);
+      if (control && !control.value) {
+        const contact = this.currentDemoCompany?.contacts[0];
+        if (contact) {
+          const contactValue = (contact as any)[fieldName];
+          if (contactValue) {
+            control.patchValue(contactValue);
+            control.markAsTouched();
+          }
+        }
       }
     }
   }
 
   private addVisualFeedback(element: HTMLElement): void {
-    element.classList.add('field-auto-filled');
-    setTimeout(() => element.classList.remove('field-auto-filled'), 1000);
+    if (element) {
+      element.style.transition = 'all 0.3s ease';
+      element.style.background = '#e6f7ff';
+      element.style.border = '2px solid #1890ff';
+      element.style.boxShadow = '0 0 8px rgba(24, 144, 255, 0.3)';
+      setTimeout(() => {
+        element.style.background = '';
+        element.style.border = '';
+        element.style.boxShadow = '';
+      }, 1500);
+    }
   }
 
   fillWithDemoData(): void {
