@@ -12,6 +12,7 @@ import {
   PREFERRED_LANGUAGE_OPTIONS,
   DOCUMENT_TYPE_OPTIONS
 } from '../shared/lookup-data';
+import { SmartDropdownMatcherService } from './smart-dropdown-matcher.service';
 
 export interface ExtractedData {
   firstName: string;
@@ -54,7 +55,7 @@ export class DataEntryAgentService {
   private readonly MAX_CONVERSATION_HISTORY = 10;
   private readonly MAX_DOCUMENTS = 5;
 
-  constructor(private http: HttpClient) {
+  constructor(private http: HttpClient, private smartMatcher: SmartDropdownMatcherService) {
     this.extractedData = this.initializeExtractedData();
     this.sessionId = this.generateSessionId();
     this.loadCurrentUser();
@@ -181,6 +182,18 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
 
       // Extract data using AI
       const extractedData = await this.extractDataFromDocuments(base64Files);
+
+      // Smart match dropdowns to exact system values
+      try {
+        const matchResult = await this.smartMatcher.matchExtractedToSystemValues(extractedData);
+        if (matchResult?.matchedValues) {
+          console.log('🎯 [Service] Smart matched values:', matchResult.matchedValues);
+          this.extractedData = { ...this.extractedData, ...matchResult.matchedValues } as ExtractedData;
+          // Optionally: store reasoning/confidence if needed later
+        }
+      } catch (e) {
+        console.warn('⚠️ [Service] Smart matching failed, proceeding with raw values.', e);
+      }
 
       // Merge with existing data
       this.extractedData = { ...this.extractedData, ...extractedData };
