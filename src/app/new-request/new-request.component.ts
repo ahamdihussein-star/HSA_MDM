@@ -1300,20 +1300,30 @@ export class NewRequestComponent implements OnInit, OnDestroy {
         break;
         
       case 'reviewer':
-        // FIXED: Reviewer should be able to review pending requests
-        this.canApproveReject = record.status === 'Pending' && 
-                               (record.assignedTo === 'reviewer' || !record.assignedTo);
+        // ✅ FIX: More flexible condition for canApproveReject
+        this.canApproveReject = (record.status === 'Pending' || record.status === 'pending') && 
+                               (record.assignedTo === 'reviewer' || 
+                                record.assignedTo === 'data_entry' ||
+                                !record.assignedTo);
         this.canView = true; // Reviewer can always view
         this.canEdit = false; // Reviewer cannot edit
         
         // CRITICAL: Ensure userType is set for template
-          this.userType = '2';
+        this.userType = '2';
         
         // CRITICAL: Disable the form for reviewer but keep it viewable
-        if (this.canApproveReject) {
+        if (this.canApproveReject || this.canView) {
           this.requestForm.disable();
           this.editPressed = false; // Make sure edit mode is off
         }
+        
+        // ✅ DEBUG: Log permissions for debugging
+        console.log('🔍 Reviewer Permissions:', {
+          canApproveReject: this.canApproveReject,
+          status: record.status,
+          assignedTo: record.assignedTo,
+          userType: this.userType
+        });
         break;
         
       case 'compliance':
@@ -3277,6 +3287,24 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     }
     
     return false;
+  }
+
+  /**
+   * ✅ Helper methods to get label for sales options (for reviewer display)
+   */
+  getSalesOrgLabel(value: string): string {
+    const option = this.SalesOrgOption.find(opt => opt.value === value);
+    return option?.label || value;
+  }
+
+  getDistributionChannelLabel(value: string): string {
+    const option = this.DistributionChannelOption.find(opt => opt.value === value);
+    return option?.label || value;
+  }
+
+  getDivisionLabel(value: string): string {
+    const option = this.DivisionOption.find(opt => opt.value === value);
+    return option?.label || value;
   }
 
   /**

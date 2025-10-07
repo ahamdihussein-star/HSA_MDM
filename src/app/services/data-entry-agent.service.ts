@@ -731,10 +731,11 @@ For dropdown fields, provide numbered options.`;
       street: this.extractedData.street || '',
       country: this.extractedData.country,
       city: this.extractedData.city,
-      SalesOrgOption: this.extractedData.salesOrganization,
-      DistributionChannelOption: this.extractedData.distributionChannel,
-      DivisionOption: this.extractedData.division,
-      status: 'pending',
+      SalesOrgOption: this.extractedData.salesOrganization || '',
+      DistributionChannelOption: this.extractedData.distributionChannel || '',
+      DivisionOption: this.extractedData.division || '',
+      status: 'Pending',  // ✅ FIX: Capital P for Pending
+      assignedTo: 'reviewer',  // ✅ FIX: Assign to reviewer automatically
       created_at: new Date().toISOString(),
       created_by: this.currentUser?.username || 'data_entry',
       requestType: 'New',
