@@ -270,26 +270,69 @@ export class NewRequestComponent implements OnInit, OnDestroy {
   // Minimal, non-breaking: direct API notification post to ensure recipient is honored
   private async postNotificationDirect(
     userId: string,
+    companyName: string,
     title: string,
     message: string,
     link: string,
     type: string
   ): Promise<void> {
     try {
-      await firstValueFrom(
-        this.http.post(`${this.apiBase}/notifications`, {
-          userId,
-          title,
-          message,
-          link,
-          type,
-          isRead: false,
-          timestamp: new Date().toISOString()
-        })
-      );
+      const status = this.mapTypeToStatus(type);
+      const userRole = this.mapUserIdToRole(userId);
+      const requestType = this.mapTypeToRequestType(type, status);
+      const taskId = this.extractTaskIdFromLink(link) || `task_${Date.now()}`;
+      const payload: any = {
+        userId,
+        companyName: 'Request',
+        status,
+        message,
+        taskId,
+        userRole,
+        requestType,
+        fromUser: 'System',
+        toUser: this.prettyRole(userRole)
+      };
+      await firstValueFrom(this.http.post(`${this.apiBase}/notifications`, payload));
     } catch (e) {
       // keep silent to avoid impacting UX; service-based path still exists
       console.warn('Direct notification POST failed (non-blocking):', e);
+    }
+  }
+
+  // Local helpers to mirror service-side mapping (kept private)
+  private mapTypeToStatus(type: string): 'rejected' | 'approved' | 'pending' | 'quarantine' {
+    switch ((type || '').toLowerCase()) {
+      case 'request_rejected': return 'rejected';
+      case 'compliance_review': return 'approved';
+      case 'quarantine': return 'quarantine';
+      default: return 'pending';
+    }
+  }
+  private mapUserIdToRole(userId: string): 'data-entry' | 'reviewer' | 'compliance' {
+    switch (userId) {
+      case '1': return 'data-entry';
+      case '2': return 'reviewer';
+      case '3': return 'compliance';
+      default: return 'data-entry';
+    }
+  }
+  private mapTypeToRequestType(type: string, status: string): 'new' | 'review' | 'compliance' {
+    const t = (type || '').toLowerCase();
+    if (t === 'request_rejected' || status === 'rejected') return 'new';
+    if (t === 'compliance_review' || status === 'approved') return 'compliance';
+    return 'review';
+  }
+  private extractTaskIdFromLink(link: string): string | null {
+    if (!link) return null;
+    const m = link.match(/new-request\/(\w+)/);
+    return m ? m[1] : null;
+  }
+  private prettyRole(role: string): string {
+    switch (role) {
+      case 'data-entry': return 'Data Entry';
+      case 'reviewer': return 'Reviewer';
+      case 'compliance': return 'Compliance';
+      default: return 'User';
     }
   }
 
@@ -1765,21 +1808,14 @@ export class NewRequestComponent implements OnInit, OnDestroy {
 
         // Notify reviewer: new task to review
         try {
-          this.appNotificationService.addNotification({
+          const companyName = this.requestForm.get('firstName')?.value || 'Request';
+          this.appNotificationService.sendTaskNotification({
             userId: '2',
-            title: 'New Request',
-            message: 'New request awaits your review',
+            companyName,
+            type: 'request_created',
             link: `/dashboard/new-request/${response.id}`,
-            type: 'request_created'
-          } as any);
-          // Direct API call (non-breaking) to ensure correct recipient
-          await this.postNotificationDirect(
-            '2',
-            'New Request',
-            'New request awaits your review',
-            `/dashboard/new-request/${response.id}`,
-            'request_created'
-          );
+            message: 'New request awaits your review'
+          });
         } catch (_) {}
         
         const message = await firstValueFrom(
@@ -2059,20 +2095,14 @@ export class NewRequestComponent implements OnInit, OnDestroy {
 
       // Notify compliance: approved request needs review
       try {
-        this.appNotificationService.addNotification({
+        const companyName = this.requestForm.get('firstName')?.value || 'Request';
+        this.appNotificationService.sendTaskNotification({
           userId: '3',
-          title: 'Compliance Review',
-          message: 'Approved request needs compliance review',
+          companyName,
+          type: 'compliance_review',
           link: `/dashboard/new-request/${id}?action=compliance-review`,
-          type: 'compliance_review'
-        } as any);
-        await this.postNotificationDirect(
-          '3',
-          'Compliance Review',
-          'Approved request needs compliance review',
-          `/dashboard/new-request/${id}?action=compliance-review`,
-          'compliance_review'
-        );
+          message: 'Approved request needs compliance review'
+        });
       } catch (_) {}
       this.navigateToTaskList();
     } catch (error) {
@@ -2104,20 +2134,14 @@ export class NewRequestComponent implements OnInit, OnDestroy {
 
       // Notify data entry: request rejected needs revision
       try {
-        this.appNotificationService.addNotification({
+        const companyName = this.requestForm.get('firstName')?.value || 'Request';
+        this.appNotificationService.sendTaskNotification({
           userId: '1',
-          title: 'Request Rejected',
-          message: 'Your request was rejected and needs revision',
+          companyName,
+          type: 'request_rejected',
           link: `/dashboard/new-request/${id}?from=my-task-list`,
-          type: 'request_rejected'
-        } as any);
-        await this.postNotificationDirect(
-          '1',
-          'Request Rejected',
-          'Your request was rejected and needs revision',
-          `/dashboard/new-request/${id}?from=my-task-list`,
-          'request_rejected'
-        );
+          message: 'Your request was rejected and needs revision'
+        });
       } catch (_) {}
       this.navigateToTaskList();
     } catch (error) {

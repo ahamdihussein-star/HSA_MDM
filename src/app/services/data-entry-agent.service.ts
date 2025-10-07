@@ -784,14 +784,15 @@ For dropdown fields, provide numbered options.`;
   // Helper: notify reviewer on new request creation
   private notifyReviewerOnCreation(requestId: string): void {
     try {
-      const message = `Request ${requestId} awaiting your review`;
-      this.notificationService.addNotification({
-        userId: '2', // reviewer user id
-        title: 'New Request Submitted',
-        message,
+      const companyName = this.extractedData?.firstName || 'Request';
+      const message = `New request for ${companyName} awaits your review`;
+      this.notificationService.sendTaskNotification({
+        userId: '2',
+        companyName,
+        type: 'request_created',
         link: `/dashboard/new-request/${requestId}`,
-        type: 'request_created'
-      } as any);
+        message
+      });
     } catch (_) {}
   }
 

@@ -86,12 +86,31 @@ export class NotificationService {
   addNotification(notification: Omit<Notification, 'id' | 'timestamp' | 'isRead'>): void {
     // Use provided recipient first; fallback to current user if not provided
     const userId = (notification as any).userId || localStorage.getItem('user') || '1';
+    // Map caller-friendly fields (title/link/type) to backend schema (companyName/status/...)
+    const n: any = notification as any;
+    const link: string = n.link || '';
+    const type: string = n.type || (n.status || 'pending');
+    const taskId: string = n.taskId || this.extractTaskIdFromLink(link) || `task_${Date.now()}`;
+    const status: string = n.status || this.mapTypeToStatus(type);
+    const userRole: 'data-entry' | 'reviewer' | 'compliance' = n.userRole || this.mapUserIdToRole(userId);
+    const requestType: 'new' | 'review' | 'compliance' = n.requestType || this.mapTypeToRequestType(type, status);
+    const companyName: string = n.companyName || 'Request';
+    const fromUser: string = n.fromUser || 'System';
+    const toUser: string = n.toUser || this.prettyRole(userRole);
+
     const newNotification = {
-      ...notification,
-      userId: userId,
+      userId,
+      companyName,
+      status,
+      message: n.message || 'You have a new task',
+      taskId,
+      userRole,
+      requestType,
+      fromUser,
+      toUser,
       timestamp: new Date().toISOString(),
       isRead: false
-    };
+    } as any;
 
     console.log(`➕ [NotificationService] Adding new notification for userId: ${userId}`, newNotification);
 
@@ -118,11 +137,79 @@ export class NotificationService {
     });
   }
 
+  // Thin shared wrapper to standardize task notifications across app
+  sendTaskNotification(opts: {
+    userId: string;
+    companyName: string;
+    type: 'request_created' | 'compliance_review' | 'request_rejected' | 'quarantine' | string;
+    link: string;
+    message?: string;
+  }): void {
+    const status = this.mapTypeToStatus(opts.type);
+    const userRole = this.mapUserIdToRole(opts.userId);
+    const requestType = this.mapTypeToRequestType(opts.type, status);
+    const taskId = this.extractTaskIdFromLink(opts.link) || `task_${Date.now()}`;
+
+    const payload: any = {
+      userId: opts.userId,
+      companyName: opts.companyName || 'Request',
+      status,
+      message: opts.message || this.getMessageForTask({ status, firstName: opts.companyName }, opts.userId),
+      taskId,
+      userRole,
+      requestType,
+      fromUser: 'System',
+      toUser: this.prettyRole(userRole)
+    };
+
+    this.addNotification(payload);
+  }
+
 
   private updateUnreadCount(): void {
     const notifications = this.notificationsSubject.value;
     const unreadCount = notifications.filter(n => !n.isRead).length;
     this.unreadCountSubject.next(unreadCount);
+  }
+
+  private extractTaskIdFromLink(link: string): string | null {
+    if (!link) return null;
+    const m = link.match(/new-request\/(\w+)/);
+    return m ? m[1] : null;
+  }
+
+  private mapTypeToStatus(type: string): 'rejected' | 'approved' | 'pending' | 'quarantine' {
+    switch ((type || '').toLowerCase()) {
+      case 'request_rejected': return 'rejected';
+      case 'compliance_review': return 'approved';
+      case 'quarantine': return 'quarantine';
+      default: return 'pending';
+    }
+  }
+
+  private mapUserIdToRole(userId: string): 'data-entry' | 'reviewer' | 'compliance' {
+    switch (userId) {
+      case '1': return 'data-entry';
+      case '2': return 'reviewer';
+      case '3': return 'compliance';
+      default: return 'data-entry';
+    }
+  }
+
+  private mapTypeToRequestType(type: string, status: string): 'new' | 'review' | 'compliance' {
+    const t = (type || '').toLowerCase();
+    if (t === 'request_rejected' || status === 'rejected') return 'new';
+    if (t === 'compliance_review' || status === 'approved') return 'compliance';
+    return 'review';
+  }
+
+  private prettyRole(role: string): string {
+    switch (role) {
+      case 'data-entry': return 'Data Entry';
+      case 'reviewer': return 'Reviewer';
+      case 'compliance': return 'Compliance';
+      default: return 'User';
+    }
   }
 
 

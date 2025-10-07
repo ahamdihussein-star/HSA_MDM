@@ -5,6 +5,7 @@ import { DomSanitizer, SafeResourceUrl } from '@angular/platform-browser';
 import { environment } from '../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
+import { NotificationService } from '../services/notification.service';
 
 // Import unified lookup data
 import {
@@ -184,7 +185,8 @@ export class DuplicateCustomerComponent implements OnInit, OnDestroy {
     private route: ActivatedRoute,
     private cdr: ChangeDetectorRef,
     private notification: NzNotificationService,
-    private sanitizer: DomSanitizer
+    private sanitizer: DomSanitizer,
+    private appNotificationService: NotificationService
   ) {}
 
   ngOnDestroy(): void {
@@ -402,6 +404,16 @@ export class DuplicateCustomerComponent implements OnInit, OnDestroy {
       
       if (response) {
         this.notification.success('Master record approved as Active Golden Record successfully!', '');
+        try {
+          const companyName = this.masterRecordData?.firstName || 'Request';
+          this.appNotificationService.sendTaskNotification({
+            userId: '3',
+            companyName,
+            type: 'compliance_review',
+            link: `/dashboard/new-request/${this.currentRecordId}?action=compliance-review`,
+            message: `Approved request for ${companyName} needs compliance review`
+          });
+        } catch (_) {}
         this.router.navigate(['/dashboard/compliance-task-list']);
       }
     } catch (error) {
@@ -866,6 +878,16 @@ export class DuplicateCustomerComponent implements OnInit, OnDestroy {
       if (response) {
         this.closeRejectModal();
         this.notification.success('Request rejected and returned to data entry', '');
+        try {
+          const companyName = this.masterRecordData?.firstName || 'Request';
+          this.appNotificationService.sendTaskNotification({
+            userId: '1',
+            companyName,
+            type: 'request_rejected',
+            link: `/dashboard/new-request/${this.currentRecordId}?from=my-task-list`,
+            message: `Your request for ${companyName} was rejected and needs revision`
+          });
+        } catch (_) {}
         this.router.navigate(['/dashboard/admin-task-list']);
       }
     } catch (error) {
@@ -1899,6 +1921,17 @@ export class DuplicateCustomerComponent implements OnInit, OnDestroy {
           
         // Use notification instead of modal
         this.notification.success(message, '');
+        try {
+          const companyName = masterData.firstName || 'Request';
+          // Notify reviewer for duplicate submission or resubmission
+          this.appNotificationService.sendTaskNotification({
+            userId: '2',
+            companyName,
+            type: 'request_created',
+            link: `/dashboard/new-request/${response.id || this.currentRecordId}`,
+            message: `New request for ${companyName} needs your review`
+          });
+        } catch (_) {}
         this.navigateToList();
       } else {
         this.buildError = response.error || 'Failed to build master record';
