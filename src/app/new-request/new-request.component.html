@@ -326,8 +326,8 @@
       </ng-template>
     </div>
 
-    <!-- ✅ Sales Information Display for Reviewer (Read-Only) -->
-    <div class="generalData" *ngIf="userType === '2' && hasRecord && !editPressed">
+    <!-- ✅ Sales Information Display for Reviewer (Read-Only) - FIXED -->
+    <div class="generalData" *ngIf="userType === '2' && hasRecord">
       <h3>{{ "SalesArea" | translate }}</h3>
       
       <div class="info-grid-readonly">

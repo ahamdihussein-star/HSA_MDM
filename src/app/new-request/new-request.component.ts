@@ -3290,21 +3290,36 @@ export class NewRequestComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * ✅ Helper methods to get label for sales options (for reviewer display)
+   * Get sales organization label for display
+   * Used by reviewer read-only view
    */
   getSalesOrgLabel(value: string): string {
+    if (!value) return '';
+    
     const option = this.SalesOrgOption.find(opt => opt.value === value);
-    return option?.label || value;
+    return option ? option.label : value;
   }
 
+  /**
+   * Get distribution channel label for display
+   * Used by reviewer read-only view
+   */
   getDistributionChannelLabel(value: string): string {
+    if (!value) return '';
+    
     const option = this.DistributionChannelOption.find(opt => opt.value === value);
-    return option?.label || value;
+    return option ? option.label : value;
   }
 
+  /**
+   * Get division label for display
+   * Used by reviewer read-only view
+   */
   getDivisionLabel(value: string): string {
+    if (!value) return '';
+    
     const option = this.DivisionOption.find(opt => opt.value === value);
-    return option?.label || value;
+    return option ? option.label : value;
   }
 
   /**
