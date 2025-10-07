@@ -267,6 +267,32 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     private appNotificationService: NotificationService
   ) {}
 
+  // Minimal, non-breaking: direct API notification post to ensure recipient is honored
+  private async postNotificationDirect(
+    userId: string,
+    title: string,
+    message: string,
+    link: string,
+    type: string
+  ): Promise<void> {
+    try {
+      await firstValueFrom(
+        this.http.post(`${this.apiBase}/notifications`, {
+          userId,
+          title,
+          message,
+          link,
+          type,
+          isRead: false,
+          timestamp: new Date().toISOString()
+        })
+      );
+    } catch (e) {
+      // keep silent to avoid impacting UX; service-based path still exists
+      console.warn('Direct notification POST failed (non-blocking):', e);
+    }
+  }
+
   async ngOnInit(): Promise<void> {
     // Protection against multiple calls
     this.initCount++;
@@ -1746,6 +1772,14 @@ export class NewRequestComponent implements OnInit, OnDestroy {
             link: `/dashboard/new-request/${response.id}`,
             type: 'request_created'
           } as any);
+          // Direct API call (non-breaking) to ensure correct recipient
+          await this.postNotificationDirect(
+            '2',
+            'New Request',
+            'New request awaits your review',
+            `/dashboard/new-request/${response.id}`,
+            'request_created'
+          );
         } catch (_) {}
         
         const message = await firstValueFrom(
@@ -2032,6 +2066,13 @@ export class NewRequestComponent implements OnInit, OnDestroy {
           link: `/dashboard/new-request/${id}?action=compliance-review`,
           type: 'compliance_review'
         } as any);
+        await this.postNotificationDirect(
+          '3',
+          'Compliance Review',
+          'Approved request needs compliance review',
+          `/dashboard/new-request/${id}?action=compliance-review`,
+          'compliance_review'
+        );
       } catch (_) {}
       this.navigateToTaskList();
     } catch (error) {
@@ -2070,6 +2111,13 @@ export class NewRequestComponent implements OnInit, OnDestroy {
           link: `/dashboard/new-request/${id}?from=my-task-list`,
           type: 'request_rejected'
         } as any);
+        await this.postNotificationDirect(
+          '1',
+          'Request Rejected',
+          'Your request was rejected and needs revision',
+          `/dashboard/new-request/${id}?from=my-task-list`,
+          'request_rejected'
+        );
       } catch (_) {}
       this.navigateToTaskList();
     } catch (error) {

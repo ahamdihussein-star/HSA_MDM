@@ -84,7 +84,8 @@ export class NotificationService {
 
 
   addNotification(notification: Omit<Notification, 'id' | 'timestamp' | 'isRead'>): void {
-    const userId = localStorage.getItem('user') || '1';
+    // Use provided recipient first; fallback to current user if not provided
+    const userId = (notification as any).userId || localStorage.getItem('user') || '1';
     const newNotification = {
       ...notification,
       userId: userId,
