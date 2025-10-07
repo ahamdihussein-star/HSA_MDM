@@ -693,7 +693,7 @@ For dropdown fields, provide numbered options.`;
 
       console.log('📤 [SUBMIT] Submitting request with payload:', payload);
       console.log('📤 [SUBMIT] Contacts count:', payload.contacts?.length || 0);
-      console.log('📤 [SUBMIT] Documents count:', this.uploadedDocuments.length);
+      console.log('📤 [SUBMIT] Documents count:', payload.documents?.length || 0);
 
       const response = await firstValueFrom(
         this.http.post<any>(`${this.apiBase}/requests`, payload)
@@ -702,9 +702,7 @@ For dropdown fields, provide numbered options.`;
       console.log('✅ [SUBMIT] Request created:', response);
       this.requestId = response.id;
 
-      if (this.uploadedDocuments.length > 0 && response.id) {
-        await this.uploadDocumentsToRequest(response.id);
-      }
+      // Documents are already included in payload and saved by backend
 
       return response;
     } catch (error: any) {
@@ -748,33 +746,25 @@ For dropdown fields, provide numbered options.`;
       }));
     }
 
+    // Include documents in initial payload so backend saves them
+    if (this.uploadedDocuments && this.uploadedDocuments.length > 0) {
+      payload.documents = this.uploadedDocuments.map(doc => ({
+        documentId: doc.id,
+        name: doc.name,
+        type: doc.type || 'other',
+        description: `Document uploaded via AI Agent: ${doc.name}`,
+        size: doc.size,
+        mime: doc.type,
+        contentBase64: doc.content,
+        source: 'Data Steward',
+        uploadedBy: this.currentUser?.username || 'data_entry'
+      }));
+      console.log('📎 [PAYLOAD] Including documents in payload:', payload.documents.length);
+    }
+
     return payload;
   }
 
-  private async uploadDocumentsToRequest(requestId: string): Promise<void> {
-    try {
-      for (const doc of this.uploadedDocuments) {
-        const documentPayload = {
-          requestId,
-          fileName: doc.name,
-          fileType: doc.type,
-          fileSize: doc.size,
-          content: doc.content,
-          uploadedBy: this.currentUser?.username || 'data_entry',
-          uploadedAt: new Date().toISOString(),
-          description: `Document uploaded via AI Agent: ${doc.name}`
-        };
-
-        await firstValueFrom(
-          this.http.post<any>(`${this.apiBase}/requests/${requestId}/documents`, documentPayload)
-        );
-      }
-      console.log('✅ [DOCS] All documents uploaded for request:', requestId);
-    } catch (error) {
-      console.error('❌ [DOCS] Error uploading documents:', error);
-      console.warn('⚠️ [DOCS] Continuing despite document upload failure');
-    }
-  }
 
   // Debug helper to log current state
   debugCurrentState(): void {
