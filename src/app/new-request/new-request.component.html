@@ -170,6 +170,8 @@
     </div>
   </div>
  
+  
+
   <!-- FORM - Hide for reviewer/compliance when viewing -->
   <form
     nz-form
@@ -277,6 +279,27 @@
       </div>
     </div>
  
+    <!-- Minimal Sales Area block (temporary, non-visual impact) -->
+    <ng-container *ngIf="userType === '2' && hasRecord">
+      <div class="generalData">
+        <h3>{{ 'SalesArea' | translate }}</h3>
+        <div class="info-grid-readonly">
+          <div class="info-item" *ngIf="requestForm.get('SalesOrgOption')?.value">
+            <label class="info-label">{{ 'SalesORG' | translate }}</label>
+            <div class="info-value">{{ getSalesOrgLabel(requestForm.get('SalesOrgOption')?.value) }}</div>
+          </div>
+          <div class="info-item" *ngIf="requestForm.get('DistributionChannelOption')?.value">
+            <label class="info-label">{{ 'DistributionChannel' | translate }}</label>
+            <div class="info-value">{{ getDistributionChannelLabel(requestForm.get('DistributionChannelOption')?.value) }}</div>
+          </div>
+          <div class="info-item" *ngIf="requestForm.get('DivisionOption')?.value">
+            <label class="info-label">{{ 'Division' | translate }}</label>
+            <div class="info-value">{{ getDivisionLabel(requestForm.get('DivisionOption')?.value) }}</div>
+          </div>
+        </div>
+      </div>
+    </ng-container>
+
     <!-- Contacts Section -->
     <div class="generalData">
       <div class="flex items-center justify-between" style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
@@ -326,79 +349,11 @@
       </ng-template>
     </div>
 
-    <!-- 🔍 DEBUG SECTION - Remove after troubleshooting -->
-    <div class="generalData" style="border: 3px solid red; padding: 20px; background: #fff3cd;" *ngIf="userType === '2'">
-      <h2 style="color: red;">🔍 DEBUG: Sales Fields Status</h2>
-      
-      <table style="width: 100%; border-collapse: collapse;">
-        <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 8px; font-weight: bold;">userType:</td>
-          <td style="padding: 8px;">{{ userType }}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 8px; font-weight: bold;">hasRecord:</td>
-          <td style="padding: 8px;">{{ hasRecord }}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 8px; font-weight: bold;">editPressed:</td>
-          <td style="padding: 8px;">{{ editPressed }}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 8px; font-weight: bold;">Form Control Exists?</td>
-          <td style="padding: 8px;">{{ requestForm.get('SalesOrgOption') ? 'YES' : 'NO' }}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 8px; font-weight: bold;">SalesOrgOption Value:</td>
-          <td style="padding: 8px; color: blue;">{{ requestForm.get('SalesOrgOption')?.value || 'EMPTY' }}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 8px; font-weight: bold;">DistributionChannelOption Value:</td>
-          <td style="padding: 8px; color: blue;">{{ requestForm.get('DistributionChannelOption')?.value || 'EMPTY' }}</td>
-        </tr>
-        <tr style="border-bottom: 1px solid #ddd;">
-          <td style="padding: 8px; font-weight: bold;">DivisionOption Value:</td>
-          <td style="padding: 8px; color: blue;">{{ requestForm.get('DivisionOption')?.value || 'EMPTY' }}</td>
-        </tr>
-      </table>
-    </div>
+    
 
-    <!-- ✅ Sales Information Display for Reviewer (Read-Only) - FIXED -->
-    <div class="generalData" *ngIf="userType === '2' && hasRecord">
-      <h3>{{ "SalesArea" | translate }}</h3>
-      
-      <div class="info-grid-readonly">
-        <div class="info-item" *ngIf="requestForm.get('SalesOrgOption')?.value">
-          <label class="info-label">{{ "SalesORG" | translate }}</label>
-          <div class="info-value">
-            {{ getSalesOrgLabel(requestForm.get('SalesOrgOption')?.value) | translate }}
-          </div>
-        </div>
-        
-        <div class="info-item" *ngIf="requestForm.get('DistributionChannelOption')?.value">
-          <label class="info-label">{{ "DistributionChannel" | translate }}</label>
-          <div class="info-value">
-            {{ getDistributionChannelLabel(requestForm.get('DistributionChannelOption')?.value) | translate }}
-          </div>
-        </div>
-        
-        <div class="info-item" *ngIf="requestForm.get('DivisionOption')?.value">
-          <label class="info-label">{{ "Division" | translate }}</label>
-          <div class="info-value">
-            {{ getDivisionLabel(requestForm.get('DivisionOption')?.value) | translate }}
-          </div>
-        </div>
-      </div>
-      
-      <!-- Show message if no sales info -->
-      <div class="no-data-message" *ngIf="!requestForm.get('SalesOrgOption')?.value && 
-                                          !requestForm.get('DistributionChannelOption')?.value && 
-                                          !requestForm.get('DivisionOption')?.value">
-        <span nz-icon nzType="info-circle" nzTheme="outline"></span>
-        <span>No sales area information provided</span>
-      </div>
-    </div>
+  
 
-    <!-- Documents Section - ENHANCED -->
+  <!-- Documents Section - ENHANCED -->
     <div class="generalData doc-card">
       <div class="doc-card__header">
         <h3 class="doc-title">
@@ -813,6 +768,20 @@
           <div class="info-item">
             <label>Company Owner</label>
             <div class="info-value">{{ requestForm.get('CompanyOwnerFullName')?.value || '-' }}</div>
+          </div>
+
+          <!-- Sales Details (added inline per request) -->
+          <div class="info-item" *ngIf="requestForm.get('SalesOrgOption')?.value">
+            <label>Sales Organization</label>
+            <div class="info-value">{{ getSalesOrgLabel(requestForm.get('SalesOrgOption')?.value) }}</div>
+          </div>
+          <div class="info-item" *ngIf="requestForm.get('DistributionChannelOption')?.value">
+            <label>Distribution Channel</label>
+            <div class="info-value">{{ getDistributionChannelLabel(requestForm.get('DistributionChannelOption')?.value) }}</div>
+          </div>
+          <div class="info-item" *ngIf="requestForm.get('DivisionOption')?.value">
+            <label>Division</label>
+            <div class="info-value">{{ getDivisionLabel(requestForm.get('DivisionOption')?.value) }}</div>
           </div>
         </div>
       </div>

@@ -16,6 +16,7 @@ import { TranslateService } from '@ngx-translate/core';
 import { NzI18nService, en_US } from 'ng-zorro-antd/i18n';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { NzMessageService } from 'ng-zorro-antd/message';
+import { NotificationService } from '../services/notification.service';
 import { NzUploadFile } from 'ng-zorro-antd/upload';
 import { Observable, firstValueFrom } from 'rxjs';
 import { DemoDataGeneratorService, DemoCompany } from '../services/demo-data-generator.service';
@@ -262,7 +263,8 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     private demoDataGenerator: DemoDataGeneratorService,
     private autoTranslate: AutoTranslateService,
     private sanitizer: DomSanitizer,
-    private cdr: ChangeDetectorRef
+    private cdr: ChangeDetectorRef,
+    private appNotificationService: NotificationService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -1734,6 +1736,17 @@ export class NewRequestComponent implements OnInit, OnDestroy {
         
         console.log('New request created:', response);
         this.currentRecordId = response.id;
+
+        // Notify reviewer: new task to review
+        try {
+          this.appNotificationService.addNotification({
+            userId: '2',
+            title: 'New Request',
+            message: 'New request awaits your review',
+            link: `/dashboard/new-request/${response.id}`,
+            type: 'request_created'
+          } as any);
+        } catch (_) {}
         
         const message = await firstValueFrom(
           this.translate.get('New request created successfully')
@@ -1958,6 +1971,13 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     console.log('📊 Contacts loaded:', this.contactsFA.length);
     console.log('📊 Documents loaded:', this.documentsFA.length);
     
+    // Ensure UI updates and stop loading spinner
+    this.isLoading = false;
+    // 🔥 CRITICAL FIX: Trigger change detection for OnPush strategy
+    this.cdr.detectChanges();
+    this.cdr.markForCheck?.();
+    console.log('✅ Change detection triggered after patch, loading=false');
+    
     this.suppressCityReset = false;
   }
 
@@ -2002,6 +2022,17 @@ export class NewRequestComponent implements OnInit, OnDestroy {
       );
 
       this.notification.success('Request approved and sent to compliance!', '');
+
+      // Notify compliance: approved request needs review
+      try {
+        this.appNotificationService.addNotification({
+          userId: '3',
+          title: 'Compliance Review',
+          message: 'Approved request needs compliance review',
+          link: `/dashboard/new-request/${id}?action=compliance-review`,
+          type: 'compliance_review'
+        } as any);
+      } catch (_) {}
       this.navigateToTaskList();
     } catch (error) {
       console.error('Error approving request:', error);
@@ -2029,6 +2060,17 @@ export class NewRequestComponent implements OnInit, OnDestroy {
       );
 
       this.notification.success('Request rejected and returned to data entry', '');
+
+      // Notify data entry: request rejected needs revision
+      try {
+        this.appNotificationService.addNotification({
+          userId: '1',
+          title: 'Request Rejected',
+          message: 'Your request was rejected and needs revision',
+          link: `/dashboard/new-request/${id}?from=my-task-list`,
+          type: 'request_rejected'
+        } as any);
+      } catch (_) {}
       this.navigateToTaskList();
     } catch (error) {
       console.error('Error rejecting request:', error);

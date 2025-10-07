@@ -13,6 +13,7 @@ import {
   DOCUMENT_TYPE_OPTIONS
 } from '../shared/lookup-data';
 import { SmartDropdownMatcherService } from './smart-dropdown-matcher.service';
+import { NotificationService } from './notification.service';
 
 export interface ExtractedData {
   // Company Information
@@ -63,7 +64,7 @@ export class DataEntryAgentService {
   private readonly MAX_CONVERSATION_HISTORY = 10;
   private readonly MAX_DOCUMENTS = 5;
 
-  constructor(private http: HttpClient, private smartMatcher: SmartDropdownMatcherService) {
+  constructor(private http: HttpClient, private smartMatcher: SmartDropdownMatcherService, private notificationService: NotificationService) {
     this.extractedData = this.initializeExtractedData();
     this.sessionId = this.generateSessionId();
     this.loadCurrentUser();
@@ -705,6 +706,11 @@ For dropdown fields, provide numbered options.`;
       console.log('✅ [SUBMIT] Documents included:', payload.documents?.length || 0);
       this.requestId = response.id;
 
+      // Notify reviewer on new request
+      if (response?.id) {
+        this.notifyReviewerOnCreation(response.id);
+      }
+
       // ✅ FIX: Clear document content from memory AFTER successful submission
       if (this.uploadedDocuments && this.uploadedDocuments.length > 0) {
         this.uploadedDocuments.forEach(doc => {
@@ -773,6 +779,20 @@ For dropdown fields, provide numbered options.`;
     }
 
     return payload;
+  }
+
+  // Helper: notify reviewer on new request creation
+  private notifyReviewerOnCreation(requestId: string): void {
+    try {
+      const message = `Request ${requestId} awaiting your review`;
+      this.notificationService.addNotification({
+        userId: '2', // reviewer user id
+        title: 'New Request Submitted',
+        message,
+        link: `/dashboard/new-request/${requestId}`,
+        type: 'request_created'
+      } as any);
+    } catch (_) {}
   }
 
 
