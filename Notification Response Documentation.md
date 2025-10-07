@@ -161,3 +161,78 @@ this.unreadCount$ = this.notificationService.getUnreadCount();
 - One task = one notification to the assigned owner.
 
 
+### Version History (Audit Snapshot)
+
+- First commit in Git history showing notification triggers in `new-request.component.ts`:
+  - Commit: `36b8a4f9f56aa704deb7384d732e50dba4673538` (2025‑10‑07 15:54:13 +0400)
+  - Calls detected in that version:
+    - Lines ~1742 (notify reviewer after create)
+    - Lines ~2028 (notify compliance after approve)
+    - Lines ~2066 (notify data entry after reject)
+
+- No earlier commits in the available history contain `addNotification(` for `src/app/new-request/new-request.component.ts`.
+
+- Current codebase preserves these triggers with the same logic and scope. No changes were made to the existing header/dropdown display logic, and no new APIs/services were added.
+
+
+### Current Implementation Confirmation (new-request.component.ts)
+
+The previous implementation from Git is present now in the codebase. Key call sites:
+
+1) New Request → notify reviewer (user=2)
+
+```1739:1748:src/app/new-request/new-request.component.ts
+// Notify reviewer: new task to review
+try {
+  this.appNotificationService.addNotification({
+    userId: '2',
+    title: 'New Request',
+    message: 'New request awaits your review',
+    link: `/dashboard/new-request/${response.id}`,
+    type: 'request_created'
+  } as any);
+} catch (_) {}
+```
+
+2) Approve → notify compliance (user=3)
+
+```2026:2035:src/app/new-request/new-request.component.ts
+// Notify compliance: approved request needs review
+try {
+  this.appNotificationService.addNotification({
+    userId: '3',
+    title: 'Compliance Review',
+    message: 'Approved request needs compliance review',
+    link: `/dashboard/new-request/${id}?action=compliance-review`,
+    type: 'compliance_review'
+  } as any);
+} catch (_) {}
+```
+
+3) Reject → notify data entry (user=1)
+
+```2064:2073:src/app/new-request/new-request.component.ts
+// Notify data entry: request rejected needs revision
+try {
+  this.appNotificationService.addNotification({
+    userId: '1',
+    title: 'Request Rejected',
+    message: 'Your request was rejected and needs revision',
+    link: `/dashboard/new-request/${id}?from=my-task-list`,
+    type: 'request_rejected'
+  } as any);
+} catch (_) {}
+```
+
+4) Dependency wiring (constructor includes the service)
+
+```252:268:src/app/new-request/new-request.component.ts
+constructor(
+  ...,
+  private appNotificationService: NotificationService
+) {}
+```
+
+These match the restored, minimal logic (one task = one notification to the assigned owner) while keeping UI/UX intact.
+
+
