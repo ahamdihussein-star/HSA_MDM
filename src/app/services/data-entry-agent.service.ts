@@ -210,8 +210,8 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
       // Translate if needed
       await this.handleArabicTranslation();
 
-      // Clean up memory
-      this.cleanupMemory(base64Files);
+      // ✅ FIX: Don't cleanup memory here - documents still needed for submission
+      // Memory will be cleaned up after successful submission in submitCustomerRequest()
 
       return this.extractedData;
     } catch (error: any) {
@@ -258,7 +258,9 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
   }
 
   private cleanupMemory(base64Files: any[]): void {
-    // Clear base64 content after processing
+    // ⚠️ NOTE: This method is no longer called during document processing
+    // Memory cleanup now happens in submitCustomerRequest() after successful submission
+    // Keeping this method for potential future use or manual cleanup
     base64Files.forEach(file => {
       file.content = '';
     });
@@ -700,9 +702,16 @@ For dropdown fields, provide numbered options.`;
       );
 
       console.log('✅ [SUBMIT] Request created:', response);
+      console.log('✅ [SUBMIT] Documents included:', payload.documents?.length || 0);
       this.requestId = response.id;
 
-      // Documents are already included in payload and saved by backend
+      // ✅ FIX: Clear document content from memory AFTER successful submission
+      if (this.uploadedDocuments && this.uploadedDocuments.length > 0) {
+        this.uploadedDocuments.forEach(doc => {
+          doc.content = '';  // Clear base64 content to free memory
+        });
+        console.log('🧹 [SUBMIT] Cleared document content from memory after successful submission');
+      }
 
       return response;
     } catch (error: any) {
