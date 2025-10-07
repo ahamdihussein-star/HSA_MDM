@@ -13,6 +13,7 @@ import {
   DOCUMENT_TYPE_OPTIONS
 } from '../shared/lookup-data';
 import { SmartDropdownMatcherService } from './smart-dropdown-matcher.service';
+import { TranslateService } from '@ngx-translate/core';
 import { NotificationService } from './notification.service';
 
 export interface ExtractedData {
@@ -64,7 +65,7 @@ export class DataEntryAgentService {
   private readonly MAX_CONVERSATION_HISTORY = 10;
   private readonly MAX_DOCUMENTS = 5;
 
-  constructor(private http: HttpClient, private smartMatcher: SmartDropdownMatcherService, private notificationService: NotificationService) {
+  constructor(private http: HttpClient, private smartMatcher: SmartDropdownMatcherService, private notificationService: NotificationService, private translate: TranslateService) {
     this.extractedData = this.initializeExtractedData();
     this.sessionId = this.generateSessionId();
     this.loadCurrentUser();
@@ -178,6 +179,8 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
     return 'مساء الخير / Good evening';
   }
 
+  private documentMetadata: Array<{ country: string; type: string; description: string }> | null = null;
+
   async uploadAndProcessDocuments(files: File[], documentsMetadata?: Array<{ country?: string; type: string; description: string }>): Promise<ExtractedData> {
     try {
       // Validate files
@@ -205,6 +208,29 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
         console.warn('⚠️ [Service] Smart matching failed, proceeding with raw values.', e);
       }
 
+      // Auto-detect metadata when not provided
+      if (!documentsMetadata || documentsMetadata.length === 0) {
+        const autoMeta = this.smartDetectDocumentMetadata(files, extractedData as any);
+        this.documentMetadata = autoMeta;
+        // If country detected and not set, map key to label value
+        if (autoMeta[0]?.country && !extractedData.country) {
+          const countryMap: { [key: string]: string } = {
+            'egypt': 'Egypt',
+            'saudiArabia': 'Saudi Arabia',
+            'uae': 'United Arab Emirates',
+            'yemen': 'Yemen'
+          };
+          (extractedData as any).country = countryMap[autoMeta[0].country] || 'Egypt';
+        }
+      } else {
+        // Normalize provided metadata to expected structure and store
+        this.documentMetadata = (documentsMetadata || []).map(m => ({
+          country: (m.country as any) || 'egypt',
+          type: m.type,
+          description: m.description
+        }));
+      }
+
       // Merge with existing data
       this.extractedData = { ...this.extractedData, ...finalExtractedData };
 
@@ -219,6 +245,157 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
       console.error('Error processing documents:', error);
       throw this.handleDocumentError(error);
     }
+  }
+
+  getDocumentMetadata(): Array<{ country: string; type: string; description: string }> | null {
+    return this.documentMetadata;
+  }
+
+  private smartDetectDocumentMetadata(
+    files: File[],
+    extractedData?: any
+  ): Array<{ country: string; type: string; description: string }> {
+    return files.map((file) => {
+      const filename = file.name.toLowerCase();
+      let type = 'generalDocument';
+      let country = 'egypt';
+
+      if (extractedData) {
+        const dataStr = JSON.stringify(extractedData).toLowerCase();
+        const arabicDataStr = JSON.stringify(extractedData);
+
+        if (
+          dataStr.includes('commercial registration') ||
+          dataStr.includes('commercial register') ||
+          arabicDataStr.includes('سجل تجاري') ||
+          arabicDataStr.includes('السجل التجاري') ||
+          dataStr.includes('chamber of commerce') ||
+          arabicDataStr.includes('غرفة التجارة') ||
+          arabicDataStr.includes('وزارة التجارة') ||
+          dataStr.includes('ministry of commerce') ||
+          (extractedData.registrationNumber && extractedData.registrationNumber.toString().length > 10)
+        ) {
+          type = 'commercialRegistration';
+        } else if (
+          dataStr.includes('tax card') ||
+          dataStr.includes('tax registration') ||
+          arabicDataStr.includes('البطاقة الضريبية') ||
+          arabicDataStr.includes('بطاقة ضريبية') ||
+          arabicDataStr.includes('مصلحة الضرائب') ||
+          arabicDataStr.includes('مأمورية الضرائب') ||
+          dataStr.includes('tax authority') ||
+          dataStr.includes('tax office') ||
+          dataStr.includes('tin') ||
+          (extractedData.tax && extractedData.tax.toString().match(/^\d{9}$/))
+        ) {
+          type = 'taxCard';
+        } else if (
+          dataStr.includes('vat certificate') ||
+          dataStr.includes('value added tax') ||
+          arabicDataStr.includes('شهادة ضريبة القيمة المضافة') ||
+          arabicDataStr.includes('ضريبة القيمة المضافة') ||
+          dataStr.includes('vat number') ||
+          dataStr.includes('vat registration') ||
+          (extractedData.vatNumber && extractedData.vatNumber.length > 0)
+        ) {
+          type = 'vatCertificate';
+        } else if (
+          dataStr.includes('business license') ||
+          dataStr.includes('trade license') ||
+          arabicDataStr.includes('رخصة تجارية') ||
+          arabicDataStr.includes('رخصة مزاولة') ||
+          arabicDataStr.includes('ترخيص') ||
+          dataStr.includes('license number') ||
+          (extractedData.commercialLicense && extractedData.commercialLicense.length > 0)
+        ) {
+          type = 'businessLicense';
+        } else if (
+          dataStr.includes('tax certificate') ||
+          arabicDataStr.includes('شهادة ضريبية') ||
+          arabicDataStr.includes('إفادة ضريبية')
+        ) {
+          type = 'taxCertificate';
+        } else if (
+          dataStr.includes('identity') ||
+          dataStr.includes('identification') ||
+          arabicDataStr.includes('هوية') ||
+          arabicDataStr.includes('بطاقة شخصية')
+        ) {
+          type = 'idDocument';
+        } else if (
+          dataStr.includes('contract') ||
+          dataStr.includes('agreement') ||
+          arabicDataStr.includes('عقد') ||
+          arabicDataStr.includes('اتفاقية')
+        ) {
+          type = 'contract';
+        } else if (
+          dataStr.includes('articles of association') ||
+          arabicDataStr.includes('عقد التأسيس') ||
+          arabicDataStr.includes('النظام الأساسي')
+        ) {
+          type = 'articlesOfAssociation';
+        } else {
+          // Filename fallback
+          if (filename.includes('commercial') || filename.includes('تجاري') || filename.includes('سجل')) {
+            type = 'commercialRegistration';
+          } else if (filename.includes('tax') || filename.includes('ضريب') || filename.includes('بطاقة')) {
+            type = 'taxCard';
+          } else if (filename.includes('vat') || filename.includes('قيمة')) {
+            type = 'vatCertificate';
+          } else if (filename.includes('license') || filename.includes('رخصة')) {
+            type = 'businessLicense';
+          }
+        }
+
+        // Country detection
+        if (extractedData.country) {
+          const countryLower = extractedData.country.toLowerCase();
+          if (countryLower.includes('saudi')) country = 'saudiArabia';
+          else if (countryLower.includes('emirates') || countryLower.includes('uae')) country = 'uae';
+          else if (countryLower.includes('yemen')) country = 'yemen';
+          else if (countryLower.includes('egypt')) country = 'egypt';
+        } else {
+          if (
+            dataStr.includes('saudi') ||
+            arabicDataStr.includes('السعودية') ||
+            dataStr.includes('ksa') ||
+            dataStr.includes('riyadh')
+          ) {
+            country = 'saudiArabia';
+          } else if (
+            dataStr.includes('emirates') ||
+            arabicDataStr.includes('الإمارات') ||
+            dataStr.includes('uae') ||
+            dataStr.includes('dubai') ||
+            dataStr.includes('abu dhabi')
+          ) {
+            country = 'uae';
+          } else if (dataStr.includes('yemen') || arabicDataStr.includes('اليمن') || dataStr.includes('sana')) {
+            country = 'yemen';
+          } else if (
+            dataStr.includes('egypt') ||
+            arabicDataStr.includes('مصر') ||
+            dataStr.includes('cairo') ||
+            arabicDataStr.includes('القاهرة')
+          ) {
+            country = 'egypt';
+          }
+
+          if (extractedData.tax) {
+            const taxStr = extractedData.tax.toString();
+            if (taxStr.match(/^\d{9}$/)) country = 'egypt';
+            else if (taxStr.startsWith('3')) country = 'saudiArabia';
+          }
+        }
+      }
+
+      return {
+        country,
+        type,
+        description: 'Auto-detected from OCR'
+      };
+    });
   }
 
   private validateFiles(files: File[]): void {

@@ -1014,6 +1014,38 @@
       "salesInfo": "معلومات المبيعات",
       "cancel": "إلغاء",
       "save": "حفظ البيانات الناقصة"
+    },
+    "autoProcessing": {
+      "processing": "جاري المعالجة الذكية التلقائية...",
+      "detecting": "سيتم تحديد نوع المستند والبلد تلقائياً",
+      "uploadSuccess": "تم رفع {{count}} مستند",
+      "detectionComplete": "تم الاكتشاف الذكي",
+      "documentDetected": "المستند {{index}}",
+      "type": "النوع",
+      "country": "البلد",
+      "detectedFrom": "تم الاكتشاف من: محتوى OCR",
+      "autoAnalysis": "تم تحليل المحتوى وتحديد نوع المستندات تلقائياً",
+      "processingFailed": "فشلت المعالجة التلقائية",
+      "tryAgain": "الرجاء المحاولة مرة أخرى أو التأكد من وضوح الصور",
+      "fileNotImage": "{{filename}} يجب أن يكون صورة",
+      "fileTooLarge": "{{filename}} أكبر من 10MB"
+    },
+    "documentTypes": {
+      "commercialRegistration": "سجل تجاري",
+      "taxCard": "بطاقة ضريبية",
+      "vatCertificate": "شهادة ضريبة القيمة المضافة",
+      "businessLicense": "رخصة تجارية",
+      "taxCertificate": "شهادة ضريبية",
+      "idDocument": "وثيقة هوية",
+      "contract": "عقد",
+      "articlesOfAssociation": "عقد التأسيس",
+      "generalDocument": "مستند عام"
+    },
+    "countries": {
+      "egypt": "مصر",
+      "saudiArabia": "المملكة العربية السعودية",
+      "uae": "الإمارات العربية المتحدة",
+      "yemen": "اليمن"
     }
   }
 }

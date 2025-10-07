@@ -1108,6 +1108,38 @@
       "salesInfo": "Sales Information",
       "cancel": "Cancel",
       "save": "Save Missing Data"
+    },
+    "autoProcessing": {
+      "processing": "Auto-processing with smart detection...",
+      "detecting": "Document type and country will be auto-detected",
+      "uploadSuccess": "Uploaded {{count}} document(s)",
+      "detectionComplete": "Smart Detection Complete",
+      "documentDetected": "Document {{index}}",
+      "type": "Type",
+      "country": "Country",
+      "detectedFrom": "Detected from: OCR content",
+      "autoAnalysis": "Document types detected from OCR content analysis",
+      "processingFailed": "Auto-processing failed",
+      "tryAgain": "Please try again or ensure images are clear",
+      "fileNotImage": "{{filename}} must be an image",
+      "fileTooLarge": "{{filename}} exceeds 10MB"
+    },
+    "documentTypes": {
+      "commercialRegistration": "Commercial Registration",
+      "taxCard": "Tax Card",
+      "vatCertificate": "VAT Certificate",
+      "businessLicense": "Business License",
+      "taxCertificate": "Tax Certificate",
+      "idDocument": "ID Document",
+      "contract": "Contract",
+      "articlesOfAssociation": "Articles of Association",
+      "generalDocument": "General Document"
+    },
+    "countries": {
+      "egypt": "Egypt",
+      "saudiArabia": "Saudi Arabia",
+      "uae": "United Arab Emirates",
+      "yemen": "Yemen"
     }
   }
 }

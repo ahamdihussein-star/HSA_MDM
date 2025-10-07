@@ -333,6 +333,142 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     }
   }
 
+  // Direct file selection handler with localization and auto-processing
+  onFileSelected(event: any): void {
+    if (!event?.target?.files || event.target.files.length === 0) {
+      console.warn('No files selected');
+      return;
+    }
+
+    const files = Array.from(event.target.files) as File[];
+
+    const validFiles = files.filter(file => {
+      const isValidType = file.type.startsWith('image/');
+      const isValidSize = file.size <= 10 * 1024 * 1024;
+
+      if (!isValidType) {
+        this.addMessage({
+          id: `error_${Date.now()}`,
+          role: 'assistant',
+          content: this.translate.instant('agent.autoProcessing.fileNotImage', { filename: file.name }),
+          timestamp: new Date(),
+          type: 'text'
+        });
+        return false;
+      }
+
+      if (!isValidSize) {
+        this.addMessage({
+          id: `error_${Date.now()}`,
+          role: 'assistant',
+          content: this.translate.instant('agent.autoProcessing.fileTooLarge', { filename: file.name }),
+          timestamp: new Date(),
+          type: 'text'
+        });
+        return false;
+      }
+
+      return true;
+    });
+
+    if (validFiles.length > 0) {
+      this.processDocumentsDirectly(validFiles);
+    }
+
+    // Clear input
+    try { event.target.value = ''; } catch {}
+  }
+
+  private async processDocumentsDirectly(files: File[]): Promise<void> {
+    try {
+      console.log('⚡ Processing documents automatically...');
+      this.uploadedFiles = files;
+
+      const fileNames = files.map(f => f.name).join(', ');
+      this.addMessage({
+        id: `upload_${Date.now()}`,
+        role: 'user',
+        content: `📤 ${this.translate.instant('agent.autoProcessing.uploadSuccess', { count: files.length })}: ${fileNames}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+
+      const progressMessage = this.addMessage({
+        id: `progress_${Date.now()}`,
+        role: 'assistant',
+        content: `🤖 ${this.translate.instant('agent.autoProcessing.processing')}
+
+⚡ ${this.translate.instant('agent.autoProcessing.detecting')}`,
+        timestamp: new Date(),
+        type: 'loading'
+      });
+
+      const extractedData = await Promise.race([
+        this.agentService.uploadAndProcessDocuments(files),
+        new Promise<ExtractedData>((_, reject) => setTimeout(() => reject(new Error('Processing timeout')), 60000))
+      ]);
+
+      // Remove loading message
+      this.messages = this.messages.filter(m => m.id !== progressMessage.id);
+
+      const metadata = this.agentService.getDocumentMetadata();
+      if (metadata && metadata.length > 0) {
+        const detectionMessages = metadata.map((m, i) => {
+          const typeKey = `agent.documentTypes.${m.type}`;
+          const translatedType = this.translate.instant(typeKey);
+          const countryKey = `agent.countries.${m.country}`;
+          const translatedCountry = this.translate.instant(countryKey);
+
+          let icon = '📄';
+          const t = (m.type || '').toLowerCase();
+          if (t.includes('commercial')) icon = '🏢';
+          else if (t.includes('tax')) icon = '💰';
+          else if (t.includes('vat')) icon = '📊';
+          else if (t.includes('license')) icon = '📜';
+          else if (t.includes('id')) icon = '🆔';
+          else if (t.includes('contract')) icon = '📝';
+
+          return `${icon} **${this.translate.instant('agent.autoProcessing.documentDetected', { index: i + 1 })}:**
+   • ${this.translate.instant('agent.autoProcessing.type')}: ${translatedType}
+   • ${this.translate.instant('agent.autoProcessing.country')}: ${translatedCountry}
+   • ${this.translate.instant('agent.autoProcessing.detectedFrom')}`;
+        }).join('\n\n');
+
+        this.addMessage({
+          id: `detected_${Date.now()}`,
+          role: 'assistant',
+          content: `✅ ${this.translate.instant('agent.autoProcessing.detectionComplete')}:
+        
+${detectionMessages}
+
+🤖 ${this.translate.instant('agent.autoProcessing.autoAnalysis')}`,
+          timestamp: new Date(),
+          type: 'text'
+        });
+      }
+
+      this.displayExtractedDataWithLabels(extractedData);
+
+      const missingFields = this.checkMissingFields(extractedData);
+      if (missingFields.length > 0) {
+        this.askForMissingField(missingFields[0]);
+      } else {
+        this.proceedAfterExtraction();
+      }
+    } catch (error: any) {
+      console.error('❌ Auto-processing error:', error);
+      this.addMessage({
+        id: `error_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ ${this.translate.instant('agent.autoProcessing.processingFailed')}
+      
+${this.translate.instant('agent.autoProcessing.tryAgain')}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
+  }
+
   onModalFileSelected(event: any): void {
     const files: FileList = event?.target?.files;
     console.log('🧪 [MODAL] Files selected:', files?.length ?? 0);
@@ -1246,8 +1382,8 @@ You can track the request in your task list.`,
     
     switch(action) {
       case 'upload':
-        console.log('🎯 [BUTTON] Opening upload modal directly');
-        this.openDocumentModalWithService();
+        // Trigger file input directly (no modal)
+        this.triggerFileUpload();
         break;
       case 'manual':
         this.startManualEntry();
