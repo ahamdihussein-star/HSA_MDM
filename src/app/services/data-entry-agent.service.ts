@@ -257,26 +257,29 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
   ): Array<{ country: string; type: string; description: string }> {
     return files.map((file) => {
       const filename = file.name.toLowerCase();
-      let type = 'generalDocument';
-      let country = 'egypt';
+      let type = 'generalDocument'; // default translation key
+      let country = 'egypt'; // default translation key
 
       if (extractedData) {
         const dataStr = JSON.stringify(extractedData).toLowerCase();
         const arabicDataStr = JSON.stringify(extractedData);
 
+        // Commercial Registration
         if (
           dataStr.includes('commercial registration') ||
           dataStr.includes('commercial register') ||
           arabicDataStr.includes('سجل تجاري') ||
           arabicDataStr.includes('السجل التجاري') ||
-          dataStr.includes('chamber of commerce') ||
-          arabicDataStr.includes('غرفة التجارة') ||
           arabicDataStr.includes('وزارة التجارة') ||
           dataStr.includes('ministry of commerce') ||
-          (extractedData.registrationNumber && extractedData.registrationNumber.toString().length > 10)
+          arabicDataStr.includes('غرفة التجارة') ||
+          dataStr.includes('chamber of commerce') ||
+          (extractedData.registrationNumber && String(extractedData.registrationNumber).length > 10)
         ) {
           type = 'commercialRegistration';
-        } else if (
+        }
+        // Tax Card
+        else if (
           dataStr.includes('tax card') ||
           dataStr.includes('tax registration') ||
           arabicDataStr.includes('البطاقة الضريبية') ||
@@ -286,20 +289,25 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
           dataStr.includes('tax authority') ||
           dataStr.includes('tax office') ||
           dataStr.includes('tin') ||
-          (extractedData.tax && extractedData.tax.toString().match(/^\d{9}$/))
+          (extractedData.tax && String(extractedData.tax).match(/^\d{9}$/))
         ) {
           type = 'taxCard';
-        } else if (
+        }
+        // VAT Certificate
+        else if (
           dataStr.includes('vat certificate') ||
           dataStr.includes('value added tax') ||
           arabicDataStr.includes('شهادة ضريبة القيمة المضافة') ||
           arabicDataStr.includes('ضريبة القيمة المضافة') ||
+          arabicDataStr.includes('ضريبة مضافة') ||
           dataStr.includes('vat number') ||
           dataStr.includes('vat registration') ||
           (extractedData.vatNumber && extractedData.vatNumber.length > 0)
         ) {
           type = 'vatCertificate';
-        } else if (
+        }
+        // Business License
+        else if (
           dataStr.includes('business license') ||
           dataStr.includes('trade license') ||
           arabicDataStr.includes('رخصة تجارية') ||
@@ -309,34 +317,43 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
           (extractedData.commercialLicense && extractedData.commercialLicense.length > 0)
         ) {
           type = 'businessLicense';
-        } else if (
+        }
+        // Tax Certificate
+        else if (
           dataStr.includes('tax certificate') ||
           arabicDataStr.includes('شهادة ضريبية') ||
           arabicDataStr.includes('إفادة ضريبية')
         ) {
           type = 'taxCertificate';
-        } else if (
-          dataStr.includes('identity') ||
-          dataStr.includes('identification') ||
-          arabicDataStr.includes('هوية') ||
-          arabicDataStr.includes('بطاقة شخصية')
-        ) {
-          type = 'idDocument';
-        } else if (
+        }
+        // Contract
+        else if (
           dataStr.includes('contract') ||
           dataStr.includes('agreement') ||
           arabicDataStr.includes('عقد') ||
           arabicDataStr.includes('اتفاقية')
         ) {
           type = 'contract';
-        } else if (
+        }
+        // Articles of Association
+        else if (
           dataStr.includes('articles of association') ||
           arabicDataStr.includes('عقد التأسيس') ||
           arabicDataStr.includes('النظام الأساسي')
         ) {
           type = 'articlesOfAssociation';
-        } else {
-          // Filename fallback
+        }
+        // ID Document
+        else if (
+          dataStr.includes('identity') ||
+          dataStr.includes('identification') ||
+          arabicDataStr.includes('هوية') ||
+          arabicDataStr.includes('بطاقة شخصية')
+        ) {
+          type = 'idDocument';
+        }
+        // Filename fallback
+        else {
           if (filename.includes('commercial') || filename.includes('تجاري') || filename.includes('سجل')) {
             type = 'commercialRegistration';
           } else if (filename.includes('tax') || filename.includes('ضريب') || filename.includes('بطاقة')) {
@@ -350,7 +367,7 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
 
         // Country detection
         if (extractedData.country) {
-          const countryLower = extractedData.country.toLowerCase();
+          const countryLower = String(extractedData.country).toLowerCase();
           if (countryLower.includes('saudi')) country = 'saudiArabia';
           else if (countryLower.includes('emirates') || countryLower.includes('uae')) country = 'uae';
           else if (countryLower.includes('yemen')) country = 'yemen';
@@ -360,7 +377,8 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
             dataStr.includes('saudi') ||
             arabicDataStr.includes('السعودية') ||
             dataStr.includes('ksa') ||
-            dataStr.includes('riyadh')
+            dataStr.includes('riyadh') ||
+            arabicDataStr.includes('الرياض')
           ) {
             country = 'saudiArabia';
           } else if (
@@ -368,10 +386,15 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
             arabicDataStr.includes('الإمارات') ||
             dataStr.includes('uae') ||
             dataStr.includes('dubai') ||
-            dataStr.includes('abu dhabi')
+            arabicDataStr.includes('دبي')
           ) {
             country = 'uae';
-          } else if (dataStr.includes('yemen') || arabicDataStr.includes('اليمن') || dataStr.includes('sana')) {
+          } else if (
+            dataStr.includes('yemen') ||
+            arabicDataStr.includes('اليمن') ||
+            dataStr.includes('sana') ||
+            arabicDataStr.includes('صنعاء')
+          ) {
             country = 'yemen';
           } else if (
             dataStr.includes('egypt') ||
@@ -383,17 +406,32 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
           }
 
           if (extractedData.tax) {
-            const taxStr = extractedData.tax.toString();
+            const taxStr = String(extractedData.tax);
             if (taxStr.match(/^\d{9}$/)) country = 'egypt';
             else if (taxStr.startsWith('3')) country = 'saudiArabia';
           }
         }
+      } else {
+        // No OCR data: filename-based fallback
+        if (filename.includes('commercial') || filename.includes('تجاري') || filename.includes('سجل')) {
+          type = 'commercialRegistration';
+        } else if (filename.includes('tax') || filename.includes('ضريب') || filename.includes('بطاقة')) {
+          type = 'taxCard';
+        } else if (filename.includes('vat') || filename.includes('قيمة')) {
+          type = 'vatCertificate';
+        } else if (filename.includes('license') || filename.includes('رخصة')) {
+          type = 'businessLicense';
+        }
       }
+
+      console.log(`🔍 Smart Detection for ${file.name}:`);
+      console.log(`   📄 Type: ${type} (will be translated)`);
+      console.log(`   🌍 Country: ${country} (will be translated)`);
 
       return {
         country,
         type,
-        description: 'Auto-detected from OCR'
+        description: 'Auto-detected'
       };
     });
   }
