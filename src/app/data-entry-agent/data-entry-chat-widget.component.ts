@@ -34,7 +34,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   @ViewChild('documentModalTemplate', { static: false }) documentModalTemplate!: TemplateRef<any>;
   
   isOpen = false;
-  isMinimized = false;
+  isMinimized = true;
   messages: ChatMessage[] = [];
   newMessage = '';
   loading = false;
@@ -147,9 +147,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       console.log('🌐 [Chat] Initial language =', this.currentLang);
     } catch {}
     this.initializeChat();
-    // Open the chat automatically
-      this.isOpen = true;
-      this.isMinimized = false;
+    // Chat starts minimized by default - user needs to click to open
 
     // Setup keyboard auto-fill
     this.setupKeyboardAutoFill();
@@ -306,9 +304,13 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   toggleChat(): void {
-    this.isOpen = !this.isOpen;
-    if (this.isOpen) {
+    if (this.isMinimized) {
+      // Open from minimized state
       this.isMinimized = false;
+      this.isOpen = true;
+    } else {
+      // Toggle open/close when not minimized
+      this.isOpen = !this.isOpen;
     }
   }
 

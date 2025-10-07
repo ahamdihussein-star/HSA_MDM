@@ -181,11 +181,12 @@ export class PdfBulkGeneratorComponent implements OnInit {
         // Create company folder
         const companyFolder = countryFolder!.folder(this.sanitizeFolderName(company.name));
         
+        // ⭐ Create PDF and Images subfolders
+        const pdfFolder = companyFolder!.folder('PDF');
+        const imagesFolder = companyFolder!.folder('Images');
+        
         // Generate each selected document type
         for (const docType of this.selectedDocumentTypes) {
-          // Create document type folder
-          const docFolder = companyFolder!.folder(this.getDocumentFolderName(docType));
-          
           // Generate PDF if needed
           if (this.outputFormat === 'pdf' || this.outputFormat === 'both') {
             const doc = this.docGeneratorService.generateDocument(
@@ -196,8 +197,9 @@ export class PdfBulkGeneratorComponent implements OnInit {
             );
             
             if (doc) {
+              const documentName = this.getCleanDocumentName(docType);
               const pdfContent = this.base64ToBlob(doc.contentBase64, 'application/pdf');
-              docFolder!.file(`${doc.name}.pdf`, pdfContent);
+              pdfFolder!.file(`${documentName}.pdf`, pdfContent);
             }
           }
           
@@ -212,10 +214,11 @@ export class PdfBulkGeneratorComponent implements OnInit {
             );
             
             if (imageDoc) {
+              const documentName = this.getCleanDocumentName(docType);
               const imageMime = this.imageFormat === 'png' ? 'image/png' : 'image/jpeg';
               const imageContent = this.base64ToBlob(imageDoc.contentBase64, imageMime);
               const imageExt = this.imageFormat === 'png' ? 'png' : 'jpg';
-              docFolder!.file(`${imageDoc.name}.${imageExt}`, imageContent);
+              imagesFolder!.file(`${documentName}.${imageExt}`, imageContent);
             }
           }
         }
@@ -320,21 +323,46 @@ export class PdfBulkGeneratorComponent implements OnInit {
   }
   
   previewStructure(): string {
+    const sampleDocs = this.selectedDocumentTypes.slice(0, 2).map(docType => 
+      `│   │   │   ├── ${this.getCleanDocumentName(docType)}`
+    ).join('.pdf\n') + '.pdf';
+    
+    const moreDocsIndicator = this.selectedDocumentTypes.length > 2 
+      ? `\n│   │   │   └── ... (${this.selectedDocumentTypes.length - 2} more documents)` 
+      : '';
+    
     const structure = `
 MDM_Documents_${new Date().toISOString().split('T')[0]}.zip
 │
-${this.selectedCountries.map(country => `
+${this.selectedCountries.slice(0, 2).map(country => `
 ├── ${this.sanitizeFolderName(country)}/
 │   ├── Company_1/
-${this.selectedDocumentTypes.map((docType, idx) => 
-  `│   │   ├── ${this.getDocumentFolderName(docType)}/
-│   │   │   └── Document.pdf`
-).join('\n')}
-│   ├── Company_2/
-│   └── ...
+│   │   ├── PDF/
+${sampleDocs}
+${moreDocsIndicator}
+│   │   └── Images/
+│   │       ├── ${this.getCleanDocumentName(this.selectedDocumentTypes[0])}.png
+│   │       └── ... (all documents as images)
+│   └── ... (more companies)
 `).join('')}
+${this.selectedCountries.length > 2 ? '└── ... (more countries)' : ''}
     `.trim();
     
     return structure;
+  }
+  
+  private getCleanDocumentName(docType: string): string {
+    const nameMap: { [key: string]: string } = {
+      'commercial_registration': 'Commercial_Registration',
+      'tax_certificate': 'Tax_Certificate',
+      'vat_certificate': 'VAT_Certificate',
+      'chamber_certificate': 'Chamber_Certificate',
+      'trade_license': 'Trade_License',
+      'authorization_letter': 'Authorization_Letter',
+      'bank_letter': 'Bank_Letter',
+      'utility_bill': 'Utility_Bill',
+      'company_profile': 'Company_Profile'
+    };
+    return nameMap[docType] || docType;
   }
 }

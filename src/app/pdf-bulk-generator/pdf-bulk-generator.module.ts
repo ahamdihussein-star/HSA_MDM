@@ -5,6 +5,8 @@ import { FormsModule } from '@angular/forms';
 import { PdfBulkGeneratorRoutingModule } from './pdf-bulk-generator-routing.module';
 import { PdfBulkGeneratorComponent } from './pdf-bulk-generator.component';
 import { DocumentImageGeneratorService } from '../services/document-image-generator.service';
+import { DemoDataGeneratorService } from '../services/demo-data-generator.service';
+import { RealisticDocumentGeneratorService } from '../services/realistic-document-generator.service';
 
 // Ng-Zorro imports
 import { NzCardModule } from 'ng-zorro-antd/card';
@@ -34,7 +36,9 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
     NzIconModule
   ],
   providers: [
-    DocumentImageGeneratorService
+    DocumentImageGeneratorService,
+    DemoDataGeneratorService,
+    RealisticDocumentGeneratorService
   ]
 })
 export class PdfBulkGeneratorModule { }
