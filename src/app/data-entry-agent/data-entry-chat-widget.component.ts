@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy, ChangeDetectorRef, TemplateRef, ViewChild, Inject, PLATFORM_ID } from '@angular/core';
+import { Component, OnInit, OnDestroy, ChangeDetectorRef, TemplateRef, ViewChild, ElementRef, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { DataEntryAgentService, ExtractedData } from '../services/data-entry-agent.service';
@@ -32,6 +32,7 @@ export interface ChatMessage {
 })
 export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   @ViewChild('documentModalTemplate', { static: false }) documentModalTemplate!: TemplateRef<any>;
+  @ViewChild('directFileInput', { static: false }) directFileInput!: ElementRef<HTMLInputElement>;
   
   isOpen = false;
   isMinimized = true;
@@ -327,9 +328,36 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
 
   // ✅ File upload methods for modal
   triggerFileUpload(): void {
-    const fileInput = document.querySelector('input[type="file"]') as HTMLInputElement;
+    console.log('📎 [Upload] Triggering file upload...');
+    if (this.directFileInput && this.directFileInput.nativeElement) {
+      console.log('✅ Using ViewChild reference');
+      this.directFileInput.nativeElement.click();
+      return;
+    }
+    const fileInput = document.getElementById('directFileInput') as HTMLInputElement;
     if (fileInput) {
+      console.log('✅ Using getElementById fallback');
       fileInput.click();
+      return;
+    }
+    // Absolute fallback: create a temporary input and trigger it
+    try {
+      console.warn('⚠️ Falling back to dynamic input creation');
+      const tempInput = document.createElement('input');
+      tempInput.type = 'file';
+      tempInput.accept = 'image/*';
+      (tempInput as any).multiple = true;
+      tempInput.style.display = 'none';
+      tempInput.addEventListener('change', (e) => this.onFileSelected(e));
+      document.body.appendChild(tempInput);
+      tempInput.click();
+      // Clean up after a short delay
+      setTimeout(() => {
+        try { document.body.removeChild(tempInput); } catch {}
+      }, 1000);
+      return;
+    } catch {
+      console.error('❌ Could not find file input element');
     }
   }
 

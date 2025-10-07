@@ -437,6 +437,15 @@
           </div>
         </div>
         
+  <!-- Hidden file input for direct upload (outside modal) -->
+  <input 
+    type="file" 
+    #directFileInput
+    id="directFileInput"
+    multiple 
+    accept="image/*" 
+    (change)="onFileSelected($event)"
+    style="display: none;">
       </div>
     </form>
     
