@@ -1943,6 +1943,21 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     }
     
     console.log('=== PATCH COMPLETED ===');
+    
+    // 🔍 CRITICAL DEBUG LOGS - Added for troubleshooting sales fields
+    console.log('📊 Form values after patch:', this.requestForm.value);
+    console.log('📊 Sales fields in form:');
+    console.log('  - SalesOrgOption:', this.requestForm.get('SalesOrgOption')?.value);
+    console.log('  - DistributionChannelOption:', this.requestForm.get('DistributionChannelOption')?.value);
+    console.log('  - DivisionOption:', this.requestForm.get('DivisionOption')?.value);
+    console.log('📊 Record sales fields:');
+    console.log('  - rec.SalesOrgOption:', rec.SalesOrgOption);
+    console.log('  - rec.DistributionChannelOption:', rec.DistributionChannelOption);
+    console.log('  - rec.DivisionOption:', rec.DivisionOption);
+    console.log('📊 Form disabled status:', this.requestForm.disabled);
+    console.log('📊 Contacts loaded:', this.contactsFA.length);
+    console.log('📊 Documents loaded:', this.documentsFA.length);
+    
     this.suppressCityReset = false;
   }
 
