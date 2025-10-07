@@ -91,6 +91,64 @@
       </div>
     </div>
 
+    <nz-divider></nz-divider>
+
+    <!-- Output Format Section -->
+    <div class="config-section">
+      <div class="section-header">
+        <h3>
+          <i nz-icon nzType="file-image" nzTheme="outline"></i>
+          Select Output Format
+          <nz-tag [nzColor]="'purple'" class="count-badge">
+            {{ outputFormat }}
+          </nz-tag>
+        </h3>
+      </div>
+
+      <div class="checkbox-grid">
+        <div *ngFor="let format of availableOutputFormats" 
+             class="country-checkbox"
+             [class.selected]="outputFormat === format.value">
+          <label nz-checkbox 
+                 [nzChecked]="outputFormat === format.value"
+                 (ngModelChange)="outputFormat = format.value">
+            <div class="checkbox-content">
+              <span class="checkbox-label">{{ format.label }}</span>
+              <span class="ar-label">{{ format.labelAr }}</span>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+
+    <!-- Image Format Section (Only show if images selected) -->
+    <div class="config-section" *ngIf="outputFormat === 'images' || outputFormat === 'both'">
+      <div class="section-header">
+        <h3>
+          <i nz-icon nzType="picture" nzTheme="outline"></i>
+          Image Format
+          <nz-tag [nzColor]="'cyan'" class="count-badge">
+            {{ imageFormat }}
+          </nz-tag>
+        </h3>
+      </div>
+
+      <div class="checkbox-grid">
+        <div *ngFor="let format of availableImageFormats" 
+             class="country-checkbox"
+             [class.selected]="imageFormat === format.value">
+          <label nz-checkbox 
+                 [nzChecked]="imageFormat === format.value"
+                 (ngModelChange)="imageFormat = format.value">
+            <div class="checkbox-content">
+              <span class="checkbox-label">{{ format.label }}</span>
+              <span class="ar-label">{{ format.labelAr }}</span>
+            </div>
+          </label>
+        </div>
+      </div>
+    </div>
+
     <!-- Generate Button -->
     <div class="generate-section">
       <button nz-button 

@@ -7,6 +7,7 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DemoDataGeneratorService } from '../services/demo-data-generator.service';
 import { RealisticDocumentGeneratorService, RealisticDocument, DocumentType } from '../services/realistic-document-generator.service';
+import { DocumentImageGeneratorService, ImageFormat, DocumentImage } from '../services/document-image-generator.service';
 import JSZip from 'jszip';
 import { saveAs } from 'file-saver';
 
@@ -44,6 +45,21 @@ export class PdfBulkGeneratorComponent implements OnInit {
   selectedCountries: string[] = [];
   selectedDocumentTypes: string[] = [];
   
+  // Output Format Options
+  outputFormat: any = 'both';
+  imageFormat: any = 'png';
+  
+  availableOutputFormats = [
+    { value: 'pdf', label: 'PDF Only', labelAr: 'PDF فقط' },
+    { value: 'images', label: 'Images Only', labelAr: 'صور فقط' },
+    { value: 'both', label: 'PDF + Images', labelAr: 'PDF + صور' }
+  ];
+  
+  availableImageFormats = [
+    { value: 'png', label: 'PNG (High Quality)', labelAr: 'PNG (جودة عالية)' },
+    { value: 'jpeg', label: 'JPEG (Smaller Size)', labelAr: 'JPEG (حجم أصغر)' }
+  ];
+  
   // Generation States
   isGenerating: boolean = false;
   downloadReady: boolean = false;
@@ -59,7 +75,8 @@ export class PdfBulkGeneratorComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private demoDataService: DemoDataGeneratorService,
-    private docGeneratorService: RealisticDocumentGeneratorService
+    private docGeneratorService: RealisticDocumentGeneratorService,
+    private imageGeneratorService: DocumentImageGeneratorService
   ) {}
   
   ngOnInit(): void {
@@ -166,20 +183,40 @@ export class PdfBulkGeneratorComponent implements OnInit {
         
         // Generate each selected document type
         for (const docType of this.selectedDocumentTypes) {
-          const doc = this.docGeneratorService.generateDocument(
-            docType as DocumentType,
-            company.name,
-            company.country,
-            company
-          );
+          // Create document type folder
+          const docFolder = companyFolder!.folder(this.getDocumentFolderName(docType));
           
-          if (doc) {
-            // Create document type folder
-            const docFolder = companyFolder!.folder(this.getDocumentFolderName(docType));
+          // Generate PDF if needed
+          if (this.outputFormat === 'pdf' || this.outputFormat === 'both') {
+            const doc = this.docGeneratorService.generateDocument(
+              docType as DocumentType,
+              company.name,
+              company.country,
+              company
+            );
             
-            // Add PDF to folder
-            const pdfContent = this.base64ToBlob(doc.contentBase64, 'application/pdf');
-            docFolder!.file(`${doc.name}.pdf`, pdfContent);
+            if (doc) {
+              const pdfContent = this.base64ToBlob(doc.contentBase64, 'application/pdf');
+              docFolder!.file(`${doc.name}.pdf`, pdfContent);
+            }
+          }
+          
+          // Generate Image if needed
+          if (this.outputFormat === 'images' || this.outputFormat === 'both') {
+            const imageDoc = await this.imageGeneratorService.generateDocumentImage(
+              docType,
+              company.name,
+              company.country,
+              company,
+              this.imageFormat
+            );
+            
+            if (imageDoc) {
+              const imageMime = this.imageFormat === 'png' ? 'image/png' : 'image/jpeg';
+              const imageContent = this.base64ToBlob(imageDoc.contentBase64, imageMime);
+              const imageExt = this.imageFormat === 'png' ? 'png' : 'jpg';
+              docFolder!.file(`${imageDoc.name}.${imageExt}`, imageContent);
+            }
           }
         }
         
@@ -201,7 +238,9 @@ export class PdfBulkGeneratorComponent implements OnInit {
       this.isGenerating = false;
       this.currentStep = 'Generation complete!';
       
-      alert(`Successfully generated documents for ${this.generatedCount} companies!`);
+      const formatText = this.outputFormat === 'both' ? 'PDFs and Images' : 
+                         this.outputFormat === 'pdf' ? 'PDFs' : 'Images';
+      alert(`Successfully generated ${formatText} for ${this.generatedCount} companies!`);
       
     } catch (error) {
       console.error('Error generating documents:', error);
