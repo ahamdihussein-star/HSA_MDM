@@ -97,6 +97,19 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   isReprocessingDocuments = false;
   originalExtractedData: any = {};
 
+  // Document preview properties (similar to new-request.component.ts)
+  showDocumentPreviewModal = false;
+  previewDocumentUrl: string | null = null;
+  previewDocumentType: 'pdf' | 'image' | 'other' = 'other';
+  currentPreviewDocument: any = null;
+
+  // Contact modal properties (Innovative Design)
+  showContactModal = false;
+  contactModalForm!: FormGroup;
+  contactModalTitle = 'إضافة جهة اتصال / Add Contact';
+  isEditingContact = false;
+  editingContactIndex = -1;
+
   // Lookup data for dropdowns
   customerTypeOptions = CUSTOMER_TYPE_OPTIONS;
   countryOptions = COUNTRY_OPTIONS;
@@ -178,6 +191,16 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
 
     // Contact form with proper validation
     this.contactForm = this.fb.group({
+      name: ['', Validators.required],
+      jobTitle: ['', Validators.required],
+      email: ['', [Validators.required, Validators.email]],
+      mobile: ['', [Validators.required, Validators.pattern(/^\+?[0-9]{10,15}$/)]],
+      landline: ['', Validators.pattern(/^\+?[0-9]{7,15}$/)],
+      preferredLanguage: ['Arabic', Validators.required]
+    });
+
+    // Contact modal form (Innovative Design)
+    this.contactModalForm = this.fb.group({
       name: ['', Validators.required],
       jobTitle: ['', Validators.required],
       email: ['', [Validators.required, Validators.email]],
@@ -481,7 +504,7 @@ ${detectionMessages}
       if (missingFields.length > 0) {
         this.askForMissingField(missingFields[0]);
       } else {
-        this.proceedAfterExtraction();
+        // Do not push extra review message here; the structured review message is already shown
       }
     } catch (error: any) {
       console.error('❌ Auto-processing error:', error);
@@ -697,7 +720,7 @@ ${this.translate.instant('agent.autoProcessing.tryAgain')}`,
     // Structured review component message
     const fields = [
       { key: 'firstName', label: 'Company Name' },
-      { key: 'firstNameAR', label: 'الاسم بالعربي' },
+      // Skip Arabic name field to avoid RTL display issues
       { key: 'tax', label: 'Tax Number' },
       { key: 'CustomerType', label: 'Customer Type' },
       { key: 'ownerName', label: 'Owner Name' },
@@ -752,11 +775,7 @@ ${this.translate.instant('agent.autoProcessing.tryAgain')}`,
       return isEmpty;
     });
 
-    // Check contacts
-    if (!data.contacts || data.contacts.length === 0) {
-      missing.push('contacts');
-      console.log('🧪 [Chat] Contacts field is missing');
-    }
+    // Contacts optional: don't include in missing list
 
     console.log('🧪 [Chat] Missing fields result:', missing);
     return missing;
@@ -782,7 +801,8 @@ ${this.translate.instant('agent.autoProcessing.tryAgain')}`,
     if (this.isDropdownField(field)) {
       this.askForDropdownSelection(field, fieldLabel);
     } else if (field === 'contacts') {
-      this.askForContactForm();
+      // Skip contacts - optional
+      this.skipToNextField(field);
     } else {
       this.askForTextInput(field, fieldLabel);
     }
@@ -1307,17 +1327,7 @@ Please fill the missing data to complete the request.`,
         });
         return;
       }
-      if (!extractedData.contacts || extractedData.contacts.length === 0) {
-        this.addMessage({
-          id: `contact_required_${Date.now()}`,
-          role: 'assistant',
-          content: `❌ **At least one contact is required**\n\nPlease add a contact before submitting.`,
-          timestamp: new Date(),
-          type: 'text'
-        });
-        this.askForContactForm();
-        return;
-      }
+      // Contacts are optional now – no validation required
       // Check duplicates
       const duplicateCheck = await this.agentService.checkForDuplicates();
       
@@ -1325,14 +1335,12 @@ Please fill the missing data to complete the request.`,
         this.addMessage({
           id: `duplicate_${Date.now()}`,
           role: 'assistant',
-          content: `⚠️ **تم العثور على سجل مكرر! / Duplicate found!**
-          
-السجل الموجود / Existing record:
-• الاسم / Name: ${duplicateCheck.existingRecord.firstName}
-• الرقم الضريبي / Tax: ${duplicateCheck.existingRecord.tax}
-• الحالة / Status: ${duplicateCheck.existingRecord.status}
-
-لا يمكن إنشاء سجل مكرر. / Cannot create duplicate record.`,
+          content: this.translate.instant('agent.duplicateFound.message', {
+            name: duplicateCheck.existingRecord.firstName || duplicateCheck.existingRecord.name || 'N/A',
+            tax: duplicateCheck.existingRecord.tax || 'N/A',
+            type: duplicateCheck.existingRecord.CustomerType || duplicateCheck.existingRecord.customerType || 'N/A',
+            status: duplicateCheck.existingRecord.status || 'Active'
+          }),
           timestamp: new Date(),
           type: 'text'
         });
@@ -2016,12 +2024,6 @@ Please review and edit the extracted data in the popup form.`,
       .replace(/\n/g, '<br>');
   }
 
-  removeDocument(index: number): void {
-    this.uploadedFiles.splice(index, 1);
-    this.agentService.removeDocument(`doc_${index}`);
-  }
-
-
   closeDocumentModal(): void {
     this.showDocumentModal = false;
     this.pendingFiles = [];
@@ -2576,6 +2578,11 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
         division: extractedData.division || ''
       };
       
+      // ✅ Update country options if extracted country not in predefined list
+      if (formData.country) {
+        this.updateCountryOptions(formData.country);
+      }
+      
       // Patch form values
       this.unifiedModalForm.patchValue(formData);
       
@@ -2643,16 +2650,47 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
     }
   }
 
+  private updateCountryOptions(country: string): void {
+    if (country) {
+      // Check if extracted country exists in predefined list
+      const countryExists = this.countryOptions.some((c: any) => 
+        c.value === country || c.label === country || 
+        (typeof c === 'string' && c === country)
+      );
+      
+      // If extracted country not in predefined list, add it as a custom option
+      if (!countryExists && country.trim() !== '') {
+        console.log(`🌍 [COUNTRY] Adding custom country: "${country}"`);
+        this.countryOptions = [
+          { label: country, value: country },
+          ...COUNTRY_OPTIONS
+        ];
+      } else {
+        // Reset to original list
+        this.countryOptions = COUNTRY_OPTIONS;
+      }
+    }
+  }
+
   private updateCityOptions(country: string): void {
     if (country) {
       const cities = getCitiesByCountry(country);
       this.cityOptions = cities;
       
-      // Reset city if not in new options
+      // ✅ DON'T reset city if extracted from OCR - allow custom cities
+      // Only reset if user manually changes country (not on initial load)
       const currentCity = this.unifiedModalForm.get('city')?.value;
-      const cityExists = cities.some((c: any) => c.value === currentCity);
-      if (!cityExists) {
-        this.unifiedModalForm.get('city')?.setValue('');
+      if (currentCity) {
+        const cityExists = cities.some((c: any) => c.value === currentCity || c.label === currentCity);
+        
+        // If extracted city not in predefined list, add it as a custom option
+        if (!cityExists && currentCity.trim() !== '') {
+          console.log(`📍 [CITY] Adding custom city: "${currentCity}"`);
+          this.cityOptions = [
+            { label: currentCity, value: currentCity },
+            ...cities
+          ];
+        }
       }
     } else {
       this.cityOptions = [];
@@ -2926,6 +2964,528 @@ Will now check for duplicates then submit the request.`,
   // Helper method to check if field was extracted
   isFieldExtracted(field: string): boolean {
     return this.unifiedModalData.extractedFields.includes(field);
+  }
+
+  // ====== Document Preview & Download (From new-request.component.ts) ======
+
+  /**
+   * Check if document can be previewed
+   */
+  canPreview(doc: any): boolean {
+    const documentData = doc.value || doc;
+    if (!documentData || !documentData.mime) return false;
+    
+    const mime = documentData.mime.toLowerCase();
+    return mime === 'application/pdf' || 
+           mime.startsWith('image/');
+  }
+
+  /**
+   * Check if document is PDF
+   */
+  isPdf(doc: any): boolean {
+    const documentData = doc.value || doc;
+    return documentData?.mime?.toLowerCase() === 'application/pdf';
+  }
+
+  /**
+   * Check if document is an image
+   */
+  isImage(doc: any): boolean {
+    const documentData = doc.value || doc;
+    return documentData?.mime?.toLowerCase().startsWith('image/');
+  }
+
+  /**
+   * Opens document preview modal
+   */
+  previewDocument(doc: any): void {
+    const documentData = doc.value || doc;
+    
+    console.log('=== PREVIEW DOCUMENT ===');
+    console.log('Document data:', documentData);
+    console.log('MIME type:', documentData?.mime);
+
+    if (!documentData || !documentData.contentBase64) {
+      console.error('❌ Document data or content missing');
+      return;
+    }
+
+    this.currentPreviewDocument = documentData;
+
+    // Determine document type
+    const mime = documentData.mime?.toLowerCase() || '';
+    
+    if (mime === 'application/pdf') {
+      this.previewDocumentType = 'pdf';
+      // For PDF: use data URL directly
+      this.previewDocumentUrl = documentData.contentBase64.startsWith('data:') 
+        ? documentData.contentBase64 
+        : `data:application/pdf;base64,${documentData.contentBase64}`;
+    } else if (mime.startsWith('image/')) {
+      this.previewDocumentType = 'image';
+      // For Image: use data URL directly
+      this.previewDocumentUrl = documentData.contentBase64.startsWith('data:') 
+        ? documentData.contentBase64 
+        : `data:${mime};base64,${documentData.contentBase64}`;
+    } else {
+      this.previewDocumentType = 'other';
+      this.previewDocumentUrl = null;
+      console.warn('⚠️ Unsupported file type for preview:', mime);
+      return;
+    }
+
+    console.log('✅ Preview URL created:', this.previewDocumentUrl?.substring(0, 50) + '...');
+    console.log('✅ Preview type:', this.previewDocumentType);
+
+    // Show modal
+    this.showDocumentPreviewModal = true;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Handles document click - preview for supported types, download for others
+   */
+  handleDocumentClick(doc: any): void {
+    const docData = doc.value || doc;
+    
+    console.log('=== HANDLE DOCUMENT CLICK ===');
+    console.log('Raw doc:', doc);
+    console.log('Doc data:', docData);
+    console.log('MIME:', docData.mime);
+    console.log('Can preview:', this.canPreview(docData));
+    
+    if (this.canPreview(docData)) {
+      this.previewDocument(docData);
+    } else {
+      this.downloadDocument(docData);
+    }
+  }
+
+  /**
+   * Download document
+   */
+  downloadDocument(doc: any): void {
+    try {
+      const documentData = doc.value || doc;
+      
+      if (!documentData || !documentData.contentBase64) {
+        console.error('❌ Cannot download: missing document data');
+        return;
+      }
+
+      console.log('📥 Downloading document:', documentData.name);
+
+      // Extract base64 content (remove data URL prefix if present)
+      let base64Content = documentData.contentBase64;
+      if (base64Content.includes(',')) {
+        base64Content = base64Content.split(',')[1];
+      }
+
+      // Convert base64 to blob
+      const byteCharacters = atob(base64Content);
+      const byteNumbers = new Array(byteCharacters.length);
+      for (let i = 0; i < byteCharacters.length; i++) {
+        byteNumbers[i] = byteCharacters.charCodeAt(i);
+      }
+      const byteArray = new Uint8Array(byteNumbers);
+      const blob = new Blob([byteArray], { type: documentData.mime || 'application/octet-stream' });
+
+      // Create download link
+      const url = window.URL.createObjectURL(blob);
+      const link = document.createElement('a');
+      link.href = url;
+      link.download = documentData.name || 'download';
+      document.body.appendChild(link);
+      link.click();
+      document.body.removeChild(link);
+      window.URL.revokeObjectURL(url);
+
+      console.log('✅ Download triggered:', documentData.name);
+    } catch (error) {
+      console.error('❌ Download error:', error);
+    }
+  }
+
+  /**
+   * Close document preview modal
+   */
+  closeDocumentPreview(): void {
+    this.showDocumentPreviewModal = false;
+    this.previewDocumentUrl = null;
+    this.currentPreviewDocument = null;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Get documents count
+   */
+  getDocumentsCount(): number {
+    const serviceDocuments = this.agentService.getDocuments();
+    if (serviceDocuments && serviceDocuments.length > 0) {
+      return serviceDocuments.length;
+    }
+    return this.uploadedFiles?.length || 0;
+  }
+
+  /**
+   * Get documents list for display
+   */
+  getDocumentsList(): any[] {
+    // Get documents from service (they have base64 content)
+    const serviceDocuments = this.agentService.getDocuments();
+    
+    if (!serviceDocuments || serviceDocuments.length === 0) {
+      // Fallback to uploadedFiles if service documents not available
+      if (!this.uploadedFiles || this.uploadedFiles.length === 0) return [];
+      
+      return this.uploadedFiles.map((file: any, index: number) => ({
+        value: {
+          id: file.id || `doc-${index}`,
+          name: file.name,
+          type: this.getDocumentType(file),
+          mime: file.type,
+          size: file.size,
+          uploadedAt: file.uploadedAt || new Date().toISOString(),
+          contentBase64: file.contentBase64 || file.content || ''
+        }
+      }));
+    }
+    
+    // Convert service documents to display format
+    return serviceDocuments.map((doc: any, index: number) => ({
+      value: {
+        id: doc.id || `doc-${index}`,
+        name: doc.name,
+        type: this.getDocumentType({ type: doc.type || '' }),
+        mime: this.getMimeType(doc.name, doc.type),
+        size: doc.size,
+        uploadedAt: doc.uploadedAt || new Date().toISOString(),
+        contentBase64: doc.content || ''
+      }
+    }));
+  }
+  
+  /**
+   * Get MIME type from document name and type
+   */
+  private getMimeType(name: string, type?: string): string {
+    const ext = name.split('.').pop()?.toLowerCase();
+    
+    // Check by extension
+    if (ext === 'pdf') return 'application/pdf';
+    if (['jpg', 'jpeg'].includes(ext!)) return 'image/jpeg';
+    if (ext === 'png') return 'image/png';
+    if (ext === 'gif') return 'image/gif';
+    if (ext === 'webp') return 'image/webp';
+    
+    // Check by type
+    if (type?.toLowerCase().includes('pdf')) return 'application/pdf';
+    if (type?.toLowerCase().includes('image')) return 'image/jpeg';
+    
+    return 'application/octet-stream';
+  }
+
+  /**
+   * Get document type label
+   */
+  getDocumentType(file: any): string {
+    const type = file.type || file.mime || '';
+    if (type.includes('pdf')) return 'PDF Document';
+    if (type.includes('image')) return 'Image';
+    if (type.includes('word')) return 'Word Document';
+    if (type.includes('excel')) return 'Excel Document';
+    return 'Document';
+  }
+
+  /**
+   * Get document type label (Commercial Registration, Tax Card, etc.)
+   */
+  getDocumentTypeLabel(doc: any): string {
+    if (!doc) return 'Unknown';
+    
+    const metadata = this.agentService.getDocumentMetadata();
+    if (metadata && metadata.length > 0) {
+      // Try to find metadata for this document
+      const docIndex = this.agentService.getDocuments().findIndex(d => d.id === doc.id || d.name === doc.name);
+      if (docIndex >= 0 && metadata[docIndex]) {
+        const typeKey = metadata[docIndex].type;
+        const translatedType = this.translate.instant(`agent.documentTypes.${typeKey}`);
+        return translatedType !== `agent.documentTypes.${typeKey}` ? translatedType : this.formatDocumentType(typeKey);
+      }
+    }
+    
+    // Fallback: Try to detect from filename
+    const name = (doc.name || '').toLowerCase();
+    if (name.includes('commercial') || name.includes('تجاري')) return 'Commercial Registration';
+    if (name.includes('tax') || name.includes('ضريب')) return 'Tax Card';
+    if (name.includes('vat') || name.includes('قيمة')) return 'VAT Certificate';
+    if (name.includes('license') || name.includes('رخصة')) return 'Business License';
+    
+    return 'General Document';
+  }
+
+  /**
+   * Format document type key to readable label
+   */
+  private formatDocumentType(typeKey: string): string {
+    // Convert camelCase or snake_case to readable format
+    return typeKey
+      .replace(/([A-Z])/g, ' $1')
+      .replace(/_/g, ' ')
+      .replace(/^./, str => str.toUpperCase())
+      .trim();
+  }
+
+  /**
+   * Format file size
+   */
+  formatFileSize(bytes: number): string {
+    if (!bytes || bytes === 0) return '0 B';
+    const k = 1024;
+    const sizes = ['B', 'KB', 'MB', 'GB'];
+    const i = Math.floor(Math.log(bytes) / Math.log(k));
+    return Math.round(bytes / Math.pow(k, i) * 100) / 100 + ' ' + sizes[i];
+  }
+
+  /**
+   * Track by index for ngFor
+   */
+  trackByIndex(index: number): number {
+    return index;
+  }
+
+  // ====== Contact Modal Methods (Table Design) ======
+
+  /**
+   * Check if contact has valid data (no null/empty required fields)
+   */
+  isValidContact(contact: any): boolean {
+    const name = contact.get('name')?.value;
+    const jobTitle = contact.get('jobTitle')?.value;
+    const email = contact.get('email')?.value;
+    const mobile = contact.get('mobile')?.value;
+    
+    return !!(name && jobTitle && email && mobile);
+  }
+
+  /**
+   * Get count of valid contacts (excluding empty/null ones)
+   */
+  getValidContactsCount(): number {
+    return this.unifiedContactsArray.controls.filter(contact => this.isValidContact(contact)).length;
+  }
+
+  /**
+   * Open modal to add new contact
+   */
+  openAddContactModal(): void {
+    this.isEditingContact = false;
+    this.editingContactIndex = -1;
+    this.contactModalTitle = 'إضافة جهة اتصال / Add Contact';
+    this.contactModalForm.reset({
+      name: '',
+      jobTitle: '',
+      email: '',
+      mobile: '',
+      landline: '',
+      preferredLanguage: 'Arabic'
+    });
+    this.showContactModal = true;
+    
+    // Enable demo data generation in modal
+    this.setupModalDemoDataListener();
+    
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Setup demo data generation for modal (Double Space)
+   */
+  private setupModalDemoDataListener(): void {
+    // Remove any existing listener
+    if (this.modalKeyboardListener) {
+      try {
+        const modalContent = document.querySelector('.contact-modal .ant-modal-content');
+        if (modalContent) {
+          modalContent.removeEventListener('keydown', this.modalKeyboardListener as any);
+        }
+      } catch {}
+    }
+
+    // Add new listener
+    setTimeout(() => {
+      const modalContent = document.querySelector('.contact-modal .ant-modal-content');
+      if (modalContent) {
+        this.modalKeyboardListener = (event: KeyboardEvent) => {
+          if (event.code === 'Space') {
+            const now = Date.now();
+            if (now - this.lastSpaceTime < 500) {
+              this.spaceClickCount++;
+              if (this.spaceClickCount >= 2) {
+                console.log('🎯 Double space detected in contact modal - generating demo contact');
+                this.generateDemoContactData();
+                this.spaceClickCount = 0;
+              }
+            } else {
+              this.spaceClickCount = 1;
+            }
+            this.lastSpaceTime = now;
+          }
+        };
+        modalContent.addEventListener('keydown', this.modalKeyboardListener as any);
+        console.log('✅ Demo data listener attached to contact modal');
+      }
+    }, 300);
+  }
+
+  /**
+   * Generate demo contact data
+   */
+  private generateDemoContactData(): void {
+    const demoCompany = this.demoDataGenerator.generateDemoData();
+    const demoContact = demoCompany.contacts[0];
+    
+    this.contactModalForm.patchValue({
+      name: demoContact.name || 'Ahmed Mohamed',
+      jobTitle: demoContact.jobTitle || 'Sales Manager',
+      email: demoContact.email || 'ahmed@company.com',
+      mobile: demoContact.mobile || '+201234567890',
+      landline: demoContact.landline || '',
+      preferredLanguage: demoContact.preferredLanguage || 'Arabic'
+    });
+    
+    this.cdr.detectChanges();
+    console.log('✅ Demo contact data generated:', this.contactModalForm.value);
+  }
+
+  /**
+   * Open modal to edit existing contact
+   */
+  editContactInModal(index: number): void {
+    this.isEditingContact = true;
+    this.editingContactIndex = index;
+    this.contactModalTitle = 'تعديل جهة اتصال / Edit Contact';
+    
+    const contact = this.unifiedContactsArray.at(index);
+    this.contactModalForm.patchValue({
+      name: contact.get('name')?.value,
+      jobTitle: contact.get('jobTitle')?.value,
+      email: contact.get('email')?.value,
+      mobile: contact.get('mobile')?.value,
+      landline: contact.get('landline')?.value,
+      preferredLanguage: contact.get('preferredLanguage')?.value || 'Arabic'
+    });
+    
+    this.showContactModal = true;
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Save contact from modal (Add or Update)
+   */
+  saveContactFromModal(): void {
+    if (this.contactModalForm.invalid) {
+      Object.keys(this.contactModalForm.controls).forEach(key => {
+        this.contactModalForm.get(key)?.markAsTouched();
+      });
+      return;
+    }
+
+    const contactData = this.contactModalForm.value;
+
+    if (this.isEditingContact && this.editingContactIndex >= 0) {
+      // Update existing contact
+      const contactGroup = this.unifiedContactsArray.at(this.editingContactIndex);
+      contactGroup.patchValue(contactData);
+      console.log('✅ Contact updated at index:', this.editingContactIndex);
+    } else {
+      // Add new contact
+      this.addContactToUnifiedForm();
+      const newIndex = this.unifiedContactsArray.length - 1;
+      const newContactGroup = this.unifiedContactsArray.at(newIndex);
+      newContactGroup.patchValue(contactData);
+      console.log('✅ New contact added');
+    }
+
+    this.closeContactModal();
+    this.cdr.detectChanges();
+  }
+
+  /**
+   * Close contact modal
+   */
+  closeContactModal(): void {
+    this.showContactModal = false;
+    this.isEditingContact = false;
+    this.editingContactIndex = -1;
+    this.contactModalForm.reset();
+    this.cdr.detectChanges();
+  }
+
+  // ====== Document Management Methods ======
+
+  /**
+   * Trigger add document file input
+   */
+  triggerAddDocument(): void {
+    const input = document.getElementById('addDocumentInput') as HTMLInputElement;
+    if (input) {
+      input.click();
+    }
+  }
+
+  /**
+   * Handle adding new documents
+   */
+  async onAddDocument(event: any): Promise<void> {
+    const files = event.target.files;
+    if (!files || files.length === 0) return;
+
+    try {
+      console.log('📎 Adding new documents:', files.length);
+      
+      // Convert files to array
+      const newFiles = Array.from(files) as File[];
+      
+      // Add to uploaded files
+      this.uploadedFiles.push(...newFiles);
+      
+      // Process with service
+      await this.agentService.uploadAndProcessDocuments(newFiles);
+      
+      this.cdr.detectChanges();
+      console.log('✅ Documents added successfully');
+    } catch (error) {
+      console.error('❌ Error adding documents:', error);
+    }
+
+    // Clear input
+    event.target.value = '';
+  }
+
+  /**
+   * Remove document by index
+   */
+  removeDocument(index: number): void {
+    if (confirm('هل تريد حذف هذا المستند؟ / Delete this document?')) {
+      // Get service documents
+      const serviceDocuments = this.agentService.getDocuments();
+      
+      if (serviceDocuments && serviceDocuments.length > index) {
+        // Remove from service
+        const docId = serviceDocuments[index].id;
+        this.agentService.removeDocument(docId);
+      }
+      
+      // Remove from uploaded files
+      if (this.uploadedFiles && this.uploadedFiles.length > index) {
+        this.uploadedFiles.splice(index, 1);
+      }
+      
+      this.cdr.detectChanges();
+      console.log('✅ Document removed at index:', index);
+    }
   }
 }
 

@@ -1140,6 +1140,9 @@
       "saudiArabia": "Saudi Arabia",
       "uae": "United Arab Emirates",
       "yemen": "Yemen"
+    },
+    "duplicateFound": {
+      "message": "⚠️ **Duplicate Record Found!**\n\n📋 **Existing Record:**\n• **Name:** {{name}}\n• **Tax Number:** {{tax}}\n• **Company Type:** {{type}}\n• **Status:** {{status}}\n\n❌ **Cannot create duplicate record**\n\n💡 **Available Options:**\n1. Verify the entered data\n2. Modify tax number if incorrect\n3. Cancel the operation"
     }
   }
 }

@@ -507,13 +507,18 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
                 
                 CRITICAL EXTRACTION RULES:
                 1. SCAN EVERY PIXEL - examine headers, footers, margins, stamps, logos, watermarks
-                2. For Arabic text, provide both Arabic and transliterated English versions
-                3. Find ALL numbers - tax IDs, VAT numbers, registration numbers, license numbers
-                4. Look for company names in headers, logos, stamps, or anywhere
-                5. Extract complete addresses including building numbers, streets, districts
-                6. Find owner/CEO/manager names in signatures or official sections
-                7. Extract ALL dates in any format
-                8. Double-check for fields you might have missed in previous attempts
+                2. **COMPANY NAME IS THE MOST IMPORTANT FIELD** - Look for:
+                   - Company/Establishment name in document header
+                   - Name field in registration documents (اسم المنشأة، اسم الشركة)
+                   - Name in logos or stamps
+                   - Any prominent business name anywhere in the document
+                3. For Arabic text, provide both Arabic (in firstNameAR) and English versions (in firstName)
+                4. Find ALL numbers - tax IDs, VAT numbers, registration numbers, license numbers
+                5. **CITY/LOCATION** - Look for city name near address, registration location, or branch
+                6. Extract complete addresses including building numbers, streets, districts, cities
+                7. Find owner/CEO/manager names in signatures or official sections
+                8. Extract ALL dates in any format
+                9. Double-check for fields you might have missed in previous attempts
                 
                 Return ONLY valid JSON with these fields (leave empty string "" if not found):
                 {
@@ -961,7 +966,7 @@ For dropdown fields, provide numbered options.`;
       created_by: this.currentUser?.username || 'data_entry',
       requestType: 'New',
       ComplianceStatus: 'Pending Review',
-      contacts: [],
+      contacts: this.extractedData.contacts || [],
       documents: []
     };
 

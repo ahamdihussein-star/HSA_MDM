@@ -68,19 +68,24 @@
           </ng-container>
           
           <!-- Confirmation Messages -->
-          <div *ngIf="message.type === 'confirmation'" class="confirmation-message">
-            <ng-container *ngIf="message.data?.component === 'review'; else legacyConfirmation">
-              <app-data-entry-review-message
-                [extractedData]="message.data?.extractedData"
-                [fields]="message.data?.fields">
-              </app-data-entry-review-message>
-            </ng-container>
-            <ng-template #legacyConfirmation>
-              <div [innerHTML]="formatMessage(message.content)"></div>
-            </ng-template>
-            <div class="modern-action-buttons" *ngIf="message.data?.buttons">
+          <div *ngIf="message.type === 'confirmation'" class="confirmation-wrapper">
+            <div class="confirmation-message">
+              <ng-container *ngIf="message.data?.component === 'review'; else legacyConfirmation">
+                <div class="message-content">
+                  <app-data-entry-review-message
+                    [extractedData]="message.data?.extractedData"
+                    [fields]="message.data?.fields">
+                  </app-data-entry-review-message>
+                </div>
+              </ng-container>
+              <ng-template #legacyConfirmation>
+                <div [innerHTML]="formatMessage(message.content)"></div>
+              </ng-template>
+            </div>
+            <!-- Button OUTSIDE the message bubble - floating below -->
+            <div class="floating-action-buttons" *ngIf="message.data?.buttons">
               <button *ngFor="let button of message.data?.buttons"
-                      class="modern-btn"
+                      class="floating-action-btn"
                       [ngClass]="button.className"
                       (click)="onButtonClick(button.action, button.data)">
                 <span>{{ button.text }}</span>
@@ -628,7 +633,6 @@
 <!-- Unified Review & Complete Modal -->
 <nz-modal 
   [(nzVisible)]="showUnifiedModal" 
-  nzTitle="📝 مراجعة وإكمال البيانات / Review & Complete Data"
   (nzOnCancel)="showUnifiedModal = false"
   [nzFooter]="null"
   nzWidth="1000px"
@@ -638,16 +642,6 @@
   
   <div *nzModalContent>
     <form *ngIf="unifiedModalForm" [formGroup]="unifiedModalForm">
-      <div class="modal-section-header" style="display:flex;justify-content:space-between;align-items:center;padding:12px 16px;border-bottom:1px solid #f0f0f0;">
-        <h3 style="margin:0;">📝 مراجعة وإكمال البيانات / Review & Complete Data</h3>
-        <div class="header-actions">
-          <button type="button" nz-button nzType="dashed" (click)="fillWithDemoData()">
-            <i nz-icon nzType="experiment"></i>
-            Demo Fill
-          </button>
-          <span class="demo-info">{{ getRemainingDemoCompanies() }} companies remaining</span>
-        </div>
-      </div>
       
       <!-- Section 1: Extracted Data -->
       <div class="modal-section extracted-section" *ngIf="unifiedModalData.extractedFields.length > 0">
@@ -714,7 +708,10 @@
           <div class="form-row" *ngIf="isFieldExtracted('country') || isFieldExtracted('city')">
             <div class="form-group" *ngIf="isFieldExtracted('country')">
               <label>Country:</label>
-              <nz-select formControlName="country">
+              <nz-select formControlName="country" 
+                         nzShowSearch 
+                         nzAllowClear
+                         [nzPlaceHolder]="'Select or enter country'">
                 <nz-option *ngFor="let option of countryOptions" 
                           [nzValue]="option.value" 
                           [nzLabel]="option.label">
@@ -723,7 +720,10 @@
             </div>
             <div class="form-group" *ngIf="isFieldExtracted('city')">
               <label>City:</label>
-              <nz-select formControlName="city">
+              <nz-select formControlName="city" 
+                         nzShowSearch 
+                         nzAllowClear
+                         [nzPlaceHolder]="'Select or enter city'">
                 <nz-option *ngFor="let option of cityOptions" 
                           [nzValue]="option.value" 
                           [nzLabel]="option.label">
@@ -826,7 +826,10 @@
           <div class="form-row" *ngIf="isFieldMissing('country') || isFieldMissing('city')">
             <div class="form-group" *ngIf="isFieldMissing('country')">
               <label class="required">Country:</label>
-              <nz-select formControlName="country" nzPlaceHolder="Select country">
+              <nz-select formControlName="country" 
+                         nzPlaceHolder="Select or enter country"
+                         nzShowSearch 
+                         nzAllowClear>
                 <nz-option *ngFor="let option of countryOptions" 
                           [nzValue]="option.value" 
                           [nzLabel]="option.label">
@@ -835,7 +838,10 @@
             </div>
             <div class="form-group" *ngIf="isFieldMissing('city')">
               <label class="required">City:</label>
-              <nz-select formControlName="city" nzPlaceHolder="Select city">
+              <nz-select formControlName="city" 
+                         nzPlaceHolder="Select or enter city"
+                         nzShowSearch 
+                         nzAllowClear>
                 <nz-option *ngFor="let option of cityOptions" 
                           [nzValue]="option.value" 
                           [nzLabel]="option.label">
@@ -880,121 +886,219 @@
         </div>
       </div>
       
-      <!-- Section 3: Documents -->
-      <div class="modal-section documents-section">
-        <div class="section-header">
-          <h3>📄 المستندات المرفوعة / Uploaded Documents</h3>
-          <button type="button" 
-                  nz-button 
-                  nzType="default"
-                  nzSize="small"
-                  (click)="triggerDocumentReplacement()"
-                  [disabled]="isReprocessingDocuments">
-            <span nz-icon nzType="upload"></span>
-            استبدال المستندات / Replace Documents
-          </button>
-        </div>
-        <input type="file" id="unifiedFileInput" multiple accept="image/*,.pdf" (change)="onUnifiedDocumentSelected($event)" style="display: none;">
-        <div *ngIf="isReprocessingDocuments" class="reprocessing-indicator">
-          <nz-spin nzSimple [nzSize]="'large'"></nz-spin>
-          <p>جاري إعادة معالجة المستندات بتقنية OCR...</p>
-          <p>Reprocessing documents with OCR...</p>
-        </div>
-        <div class="documents-list" *ngIf="!isReprocessingDocuments">
-          <div class="document-item" *ngFor="let doc of unifiedModalDocuments; let i = index">
-            <div class="document-info">
-              <span nz-icon nzType="file-pdf" *ngIf="doc.type?.includes('pdf')"></span>
-              <span nz-icon nzType="file-image" *ngIf="doc.type?.includes('image')"></span>
-              <span nz-icon nzType="file" *ngIf="!doc.type?.includes('pdf') && !doc.type?.includes('image')"></span>
-              <span class="document-name">{{ doc.name }}</span>
-              <span class="document-size">{{ (doc.size / 1024).toFixed(2) }} KB</span>
-            </div>
-            <button type="button" nz-button nzType="text" nzDanger nzSize="small" (click)="removeDocumentFromUnified(i)">
-              <span nz-icon nzType="delete"></span>
-            </button>
-          </div>
-          <div *ngIf="unifiedModalDocuments.length === 0" class="no-documents">
-            <p>لا توجد مستندات مرفوعة / No documents uploaded</p>
-          </div>
-        </div>
-      </div>
-
-      <!-- Section 4: Contacts -->
+      <!-- Section 3: Contacts (Table Design) -->
       <div class="modal-section contacts-section">
         <div class="section-header">
-          <h3>👥 جهات الاتصال (اختياري) / Contacts (Optional)</h3>
+          <h3>👥 جهات الاتصال (اختياري) / Contacts (Optional) 
+            <span class="contact-count-badge" *ngIf="getValidContactsCount() > 0">{{ getValidContactsCount() }}</span>
+          </h3>
           <button type="button" 
                   nz-button 
                   nzType="primary" 
                   nzSize="small" 
-                  (click)="addContactToUnifiedForm()">
-            <span nz-icon nzType="plus"></span> Add Contact
+                  (click)="openAddContactModal()">
+            <span nz-icon nzType="plus"></span> 
+            إضافة جهة اتصال / Add Contact
           </button>
         </div>
         
-        <div formArrayName="contacts" class="contacts-grid">
-          <div *ngFor="let contact of unifiedContactsArray.controls; let i = index" 
-               [formGroupName]="i" 
-               class="contact-card">
-            
-            <div class="contact-header">
-              <h4>Contact {{ i + 1 }}</h4>
-              <button type="button" 
-                      *ngIf="unifiedContactsArray.length > 1"
-                      nz-button 
-                      nzType="text" 
-                      nzDanger 
-                      nzSize="small"
-                      (click)="removeContactFromUnifiedForm(i)">
-                <span nz-icon nzType="delete"></span>
-              </button>
-            </div>
-            
-            <div class="form-row">
-              <div class="form-group">
-                <label class="required">Name:</label>
-                <input formControlName="name" placeholder="Full name">
-              </div>
-              <div class="form-group">
-                <label class="required">Job Title:</label>
-                <input formControlName="jobTitle" placeholder="Job position">
-              </div>
-            </div>
-            
-            <div class="form-row">
-              <div class="form-group">
-                <label class="required">Email:</label>
-                <input formControlName="email" type="email" placeholder="email@company.com">
-              </div>
-              <div class="form-group">
-                <label class="required">Mobile:</label>
-                <input formControlName="mobile" placeholder="+201234567890">
-              </div>
-            </div>
-            
-            <div class="form-row">
-              <div class="form-group">
-                <label>Landline:</label>
-                <input formControlName="landline" placeholder="Optional">
-              </div>
-              <div class="form-group">
-                <label class="required">Language:</label>
-                <nz-select formControlName="preferredLanguage">
-                  <nz-option nzValue="Arabic" nzLabel="Arabic"></nz-option>
-                  <nz-option nzValue="English" nzLabel="English"></nz-option>
-                </nz-select>
-              </div>
-            </div>
-          </div>
+        <!-- Contacts Table -->
+        <div class="contacts-table-container" *ngIf="getValidContactsCount() > 0">
+          <table class="contacts-table">
+            <thead>
+              <tr>
+                <th class="col-name">Name</th>
+                <th class="col-job">Job Title</th>
+                <th class="col-email">Email</th>
+                <th class="col-mobile">Mobile</th>
+                <th class="col-language">Language</th>
+                <th class="col-actions">Actions</th>
+              </tr>
+            </thead>
+            <tbody>
+              <tr *ngFor="let contact of unifiedContactsArray.controls; let i = index" 
+                  class="contact-row"
+                  [class.hidden-row]="!isValidContact(contact)">
+                <ng-container *ngIf="isValidContact(contact)">
+                  <td class="col-name">
+                    <span class="contact-name">{{ contact.get('name')?.value }}</span>
+                  </td>
+                  <td class="col-job">
+                    <span class="contact-job">{{ contact.get('jobTitle')?.value }}</span>
+                  </td>
+                  <td class="col-email">
+                    <span class="contact-email">{{ contact.get('email')?.value }}</span>
+                  </td>
+                  <td class="col-mobile">
+                    <span class="contact-mobile">{{ contact.get('mobile')?.value }}</span>
+                  </td>
+                  <td class="col-language">
+                    <span class="contact-language-badge">{{ contact.get('preferredLanguage')?.value }}</span>
+                  </td>
+                  <td class="col-actions">
+                    <div class="action-buttons">
+                      <button type="button" 
+                              nz-button 
+                              nzType="text" 
+                              nzSize="small"
+                              class="action-btn edit-btn"
+                              (click)="editContactInModal(i)"
+                              title="Edit">
+                        <span nz-icon nzType="edit"></span>
+                      </button>
+                      <button type="button" 
+                              nz-button 
+                              nzType="text" 
+                              nzDanger
+                              nzSize="small"
+                              class="action-btn delete-btn"
+                              (click)="removeContactFromUnifiedForm(i)"
+                              title="Delete">
+                        <span nz-icon nzType="delete"></span>
+                      </button>
+                    </div>
+                  </td>
+                </ng-container>
+              </tr>
+            </tbody>
+          </table>
         </div>
         
-        <div class="contacts-hint" *ngIf="unifiedContactsArray.length === 0">
-          <span nz-icon nzType="info-circle" nzTheme="outline" style="color: #1890ff;"></span>
-          جهات الاتصال اختيارية / Contacts are optional
+        <!-- Empty State -->
+        <div class="contacts-empty-state" *ngIf="getValidContactsCount() === 0">
+          <nz-empty
+            nzNotFoundImage="simple"
+            [nzNotFoundContent]="emptyContactsTemplate">
+          </nz-empty>
+          <ng-template #emptyContactsTemplate>
+            <p class="empty-text">لم يتم إضافة جهات اتصال بعد</p>
+            <p class="empty-hint">No contacts added yet - They are optional</p>
+          </ng-template>
         </div>
       </div>
       
     </form>
+    
+    <!-- Documents Section -->
+    <div class="unified-section documents-section">
+      <div class="section-header">
+        <h4>📎 المستندات المرفقة / Attached Documents ({{ getDocumentsCount() }})</h4>
+        <button type="button" 
+                nz-button 
+                nzType="primary"
+                nzSize="small"
+                (click)="triggerAddDocument()">
+          <span nz-icon nzType="plus"></span>
+          إضافة مستند / Add Document
+        </button>
+      </div>
+      
+      <!-- Hidden file input for adding documents -->
+      <input type="file" 
+             #addDocumentInput 
+             id="addDocumentInput" 
+             multiple 
+             accept="image/*,.pdf" 
+             (change)="onAddDocument($event)" 
+             style="display: none;">
+
+      <!-- Documents Table - Professional Design (from new-request.component.html) -->
+      <div class="documents-table-container" *ngIf="getDocumentsCount() > 0">
+        <table class="documents-table">
+          <thead>
+            <tr>
+              <th class="col-icon">Type</th>
+              <th class="col-name">Document Name</th>
+              <th class="col-doc-type">Document Type</th>
+              <th class="col-size">Size</th>
+              <th class="col-date">Upload Date</th>
+              <th class="col-actions">Actions</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr *ngFor="let doc of getDocumentsList(); let i = index; trackBy: trackByIndex" 
+                class="document-row" 
+                [class.clickable]="canPreview(doc)"
+                (click)="handleDocumentClick(doc); $event.stopPropagation(); $event.preventDefault()">
+              
+              <!-- File Type Icon -->
+              <td class="col-icon">
+                <div class="file-type-icon" [attr.data-type]="isPdf(doc) ? 'pdf' : isImage(doc) ? 'image' : 'other'">
+                  <span *ngIf="isPdf(doc)" class="pdf-icon">📄</span>
+                  <span *ngIf="isImage(doc)" class="image-icon">🖼️</span>
+                  <span *ngIf="!isPdf(doc) && !isImage(doc)" class="other-icon">📁</span>
+                </div>
+              </td>
+              
+              <!-- Document Name -->
+              <td class="col-name">
+                <div class="doc-name-cell">
+                  <span class="doc-name" [title]="doc.value?.name">{{ doc.value?.name }}</span>
+                </div>
+              </td>
+              
+              <!-- Document Type (Commercial Registration, Tax Card, etc.) -->
+              <td class="col-doc-type">
+                <span class="doc-type-badge">{{ getDocumentTypeLabel(doc.value) }}</span>
+              </td>
+              
+              <!-- File Size -->
+              <td class="col-size">
+                <span class="doc-size">{{ formatFileSize(doc.value?.size) }}</span>
+              </td>
+              
+              <!-- Upload Date -->
+              <td class="col-date">
+                <span class="doc-date">{{ doc.value?.uploadedAt | date: 'short' }}</span>
+              </td>
+              
+              <!-- Actions -->
+              <td class="col-actions" (click)="$event.stopPropagation(); $event.preventDefault()">
+                <div class="action-buttons">
+                  <!-- Preview Button -->
+                  <button 
+                          type="button"
+                          nz-button 
+                          nzType="text" 
+                          nzSize="small"
+                          class="action-btn preview-btn"
+                          (click)="previewDocument(doc); $event.stopPropagation(); $event.preventDefault()" 
+                          *ngIf="canPreview(doc)"
+                          title="Preview">
+                    <span nz-icon nzType="eye"></span>
+                  </button>
+                  
+                  <!-- Download Button -->
+                  <button 
+                          type="button"
+                          nz-button 
+                          nzType="text" 
+                          nzSize="small"
+                          class="action-btn download-btn"
+                          (click)="downloadDocument(doc); $event.stopPropagation(); $event.preventDefault()"
+                          title="Download">
+                    <span nz-icon nzType="download"></span>
+                  </button>
+                  
+                  <!-- Delete Button -->
+                  <button 
+                          type="button"
+                          nz-button 
+                          nzType="text" 
+                          nzDanger
+                          nzSize="small"
+                          class="action-btn delete-btn"
+                          (click)="removeDocument(i); $event.stopPropagation(); $event.preventDefault()"
+                          title="Delete">
+                    <span nz-icon nzType="delete"></span>
+                  </button>
+                </div>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
     
     <!-- Modal Footer -->
     <div class="modal-footer unified-footer">
@@ -1026,5 +1130,161 @@
 
     
   </div>
+</nz-modal>
+
+<!-- Document Preview Modal (from new-request.component.html) -->
+<nz-modal
+  [(nzVisible)]="showDocumentPreviewModal"
+  [nzTitle]="'معاينة المستند / Document Preview'"
+  (nzOnCancel)="closeDocumentPreview()"
+  [nzFooter]="previewFooterTemplate"
+  nzWidth="900px"
+  nzClassName="document-preview-modal">
+  
+  <ng-container *nzModalContent>
+    <div class="preview-container">
+      <!-- PDF Preview -->
+      <div *ngIf="previewDocumentType === 'pdf'" class="pdf-preview">
+        <iframe 
+          [src]="previewDocumentUrl" 
+          frameborder="0" 
+          width="100%" 
+          height="600px"
+          style="border-radius: 8px;">
+        </iframe>
+      </div>
+
+      <!-- Image Preview -->
+      <div *ngIf="previewDocumentType === 'image'" class="image-preview">
+        <img 
+          [src]="previewDocumentUrl" 
+          alt="Document Preview"
+          style="max-width: 100%; height: auto; border-radius: 8px; display: block; margin: 0 auto;">
+      </div>
+
+      <!-- Unsupported Type -->
+      <div *ngIf="previewDocumentType === 'other'" class="unsupported-preview">
+        <nz-empty
+          nzNotFoundImage="simple"
+          [nzNotFoundContent]="'Preview not available for this file type. Please download to view.'">
+        </nz-empty>
+      </div>
+    </div>
+  </ng-container>
+
+  <!-- Footer Template -->
+  <ng-template #previewFooterTemplate>
+    <div class="preview-footer">
+      <button nz-button nzType="default" (click)="closeDocumentPreview()">
+        <span nz-icon nzType="close"></span>
+        إغلاق / Close
+      </button>
+      <button nz-button nzType="primary" (click)="downloadDocument(currentPreviewDocument)">
+        <span nz-icon nzType="download"></span>
+        تحميل / Download
+      </button>
+    </div>
+  </ng-template>
+</nz-modal>
+
+<!-- Add/Edit Contact Modal (Innovative Design) -->
+<nz-modal
+  [(nzVisible)]="showContactModal"
+  [nzTitle]="contactModalTitle"
+  (nzOnCancel)="closeContactModal()"
+  [nzFooter]="contactModalFooter"
+  nzWidth="600px"
+  nzClassName="contact-modal">
+  
+  <ng-container *nzModalContent>
+    <form [formGroup]="contactModalForm" class="contact-form">
+      <!-- Row 1: Name & Job Title -->
+      <div class="modal-form-row">
+        <div class="modal-form-group">
+          <label class="required">
+            <span nz-icon nzType="user"></span>
+            الاسم / Name
+          </label>
+          <input nz-input 
+                 formControlName="name" 
+                 placeholder="Ahmed Mohamed">
+        </div>
+        <div class="modal-form-group">
+          <label class="required">
+            <span nz-icon nzType="idcard"></span>
+            المسمى الوظيفي / Job Title
+          </label>
+          <input nz-input 
+                 formControlName="jobTitle" 
+                 placeholder="Sales Manager">
+        </div>
+      </div>
+
+      <!-- Row 2: Email & Mobile -->
+      <div class="modal-form-row">
+        <div class="modal-form-group">
+          <label class="required">
+            <span nz-icon nzType="mail"></span>
+            البريد الإلكتروني / Email
+          </label>
+          <input nz-input 
+                 type="email"
+                 formControlName="email" 
+                 placeholder="ahmed@company.com">
+        </div>
+        <div class="modal-form-group">
+          <label class="required">
+            <span nz-icon nzType="phone"></span>
+            الجوال / Mobile
+          </label>
+          <input nz-input 
+                 formControlName="mobile" 
+                 placeholder="+201234567890">
+        </div>
+      </div>
+
+      <!-- Row 3: Landline & Language -->
+      <div class="modal-form-row">
+        <div class="modal-form-group">
+          <label>
+            <span nz-icon nzType="phone"></span>
+            الهاتف الأرضي / Landline
+            <span class="optional-badge">Optional</span>
+          </label>
+          <input nz-input 
+                 formControlName="landline" 
+                 placeholder="02-1234567">
+        </div>
+        <div class="modal-form-group">
+          <label class="required">
+            <span nz-icon nzType="global"></span>
+            اللغة المفضلة / Language
+          </label>
+          <nz-select formControlName="preferredLanguage" 
+                     nzPlaceHolder="Select language">
+            <nz-option nzValue="Arabic" nzLabel="العربية / Arabic"></nz-option>
+            <nz-option nzValue="English" nzLabel="English / الإنجليزية"></nz-option>
+          </nz-select>
+        </div>
+      </div>
+    </form>
+  </ng-container>
+
+  <!-- Footer Template -->
+  <ng-template #contactModalFooter>
+    <div class="contact-modal-footer">
+      <button nz-button nzType="default" (click)="closeContactModal()">
+        <span nz-icon nzType="close"></span>
+        إلغاء / Cancel
+      </button>
+      <button nz-button 
+              nzType="primary" 
+              (click)="saveContactFromModal()"
+              [disabled]="contactModalForm.invalid">
+        <span nz-icon nzType="check"></span>
+        {{ isEditingContact ? 'تحديث / Update' : 'إضافة / Add' }}
+      </button>
+    </div>
+  </ng-template>
 </nz-modal>
 

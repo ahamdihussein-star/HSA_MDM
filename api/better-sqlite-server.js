@@ -3837,26 +3837,44 @@ app.delete('/api/requests/admin/clear-all', (req, res) => {
     console.log('[ADMIN] DELETE /api/requests/admin/clear-all - CLEARING ALL DATA');
     
     const transaction = db.transaction(() => {
-      // حذف كل البيانات بالترتيب الصحيح
+      // حذف كل البيانات بالترتيب الصحيح (من الأبعد إلى الأقرب لتجنب foreign key errors)
+      // 1. Sync records (references sync_operations and requests)
+      db.prepare('DELETE FROM sync_records').run();
+      
+      // 2. Sync operations (references sync_rules)
+      db.prepare('DELETE FROM sync_operations').run();
+      
+      // 3. Notifications (no foreign keys)
+      db.prepare('DELETE FROM notifications').run();
+      
+      // 4. Workflow history (references requests)
       db.prepare('DELETE FROM workflow_history').run();
+      
+      // 5. Issues (references requests)
       db.prepare('DELETE FROM issues').run();
+      
+      // 6. Documents (references requests)
       db.prepare('DELETE FROM documents').run();
+      
+      // 7. Contacts (references requests)
       db.prepare('DELETE FROM contacts').run();
+      
+      // 8. Requests (parent table - delete last)
       db.prepare('DELETE FROM requests').run();
       
-      console.log('[ADMIN] All data tables cleared');
+      console.log('[ADMIN] All data tables cleared (users and sync_rules retained)');
     });
     
     transaction();
     
     res.json({ 
       success: true, 
-      message: 'All data cleared successfully (users retained)'
+      message: 'All data cleared successfully (users and sync rules retained)'
     });
     
   } catch (error) {
     console.error('[ADMIN] Error clearing data:', error);
-    res.status(500).json({ error: 'Failed to clear data' });
+    res.status(500).json({ error: error.message || 'Failed to clear data' });
   }
 });
 

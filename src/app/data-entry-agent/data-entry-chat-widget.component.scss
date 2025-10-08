@@ -555,6 +555,27 @@
   }
 }
 
+// Ensure review confirmation content is left-aligned and wraps correctly inside white container
+.chat-body .messages-container .message .confirmation-message .message-content {
+  text-align: left;
+  line-height: 1.4;
+}
+
+:host ::ng-deep .confirmation-message .review-container {
+  text-align: left;
+}
+
+:host ::ng-deep .confirmation-message .review-container .field-label,
+:host ::ng-deep .confirmation-message .review-container .field-value {
+  display: block;
+  white-space: normal;
+}
+
+:host ::ng-deep .confirmation-message .review-container .field-value {
+  word-break: break-word;
+  overflow-wrap: break-word;
+}
+
 /* Temporary debug outline - comment out later */
 /*.chat-body .messages-container .message .action-buttons { outline: 1px dashed #764ba2; }*/
 
@@ -1568,42 +1589,212 @@
   }
 }
 
-// Modern button styling
-.modern-action-buttons {
+// 🚀 INNOVATIVE SOLUTION: Confirmation Wrapper with Floating Button
+.confirmation-wrapper {
   display: flex;
-  gap: 12px;
-  padding: 12px 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  max-width: 90%;
+  width: 100%;
+}
+
+// Message bubble without button
+.confirmation-message {
+  background: white;
+  color: #333;
+  border: 1px solid #e8e8e8;
+  border-bottom-left-radius: 4px;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+  padding: 12px 16px;
+  border-radius: 18px;
+  width: 100%;
   
-  .modern-btn {
-    flex: 1;
-    padding: 10px 16px;
-    border-radius: 6px;
-    font-size: 14px;
-    font-weight: 600;
+  .message-content {
+    width: 100%;
+  }
+}
+
+// 🎨 Floating Action Button - Outside Message Bubble
+.floating-action-buttons {
+  width: 100%;
+  margin-top: 12px;
+  display: flex;
+  flex-direction: column;
+  animation: slideUp 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+  
+  .floating-action-btn {
+    width: 100%;
+    padding: 18px 28px;
+    border-radius: 16px;
+    font-size: 16px;
+    font-weight: 700;
     border: none;
     cursor: pointer;
-    transition: all 0.2s;
+    transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+    position: relative;
+    overflow: visible;
+    text-shadow: 0 2px 4px rgba(0, 0, 0, 0.2);
     
+    // Add a subtle floating effect
+    transform: translateZ(0);
+    backface-visibility: hidden;
+    
+    // 3D Effect: Multiple shadows for depth
+    box-shadow: 
+      0 1px 0 0 #8b7dc3,
+      0 2px 0 0 #7968b5,
+      0 3px 0 0 #6753a7,
+      0 4px 0 0 #553e99,
+      0 5px 0 0 #43298b,
+      0 6px 1px rgba(0, 0, 0, 0.1),
+      0 0 8px rgba(102, 126, 234, 0.2),
+      0 8px 20px rgba(102, 126, 234, 0.3),
+      inset 0 1px 0 rgba(255, 255, 255, 0.3),
+      inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    
+    // Animated gradient background with 3D appearance
+    background: linear-gradient(180deg, #7c6fd6 0%, #667eea 50%, #5a6dd8 100%);
+    color: white;
+    
+    // Top highlight for 3D effect
+    &::after {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 50%;
+      background: linear-gradient(180deg, rgba(255, 255, 255, 0.25) 0%, transparent 100%);
+      border-radius: 16px 16px 0 0;
+      pointer-events: none;
+    }
+    
+    // Shine effect on hover
+    &::before {
+      content: '';
+      position: absolute;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.4) 50%,
+        transparent 70%
+      );
+      transform: translateX(-100%) translateY(-100%) rotate(45deg);
+      transition: transform 0.6s;
+      pointer-events: none;
+      z-index: 1;
+    }
+    
+    &:hover::before {
+      transform: translateX(100%) translateY(100%) rotate(45deg);
+    }
+    
+    &:hover {
+      transform: translateY(-2px);
+      box-shadow: 
+        0 1px 0 0 #8b7dc3,
+        0 2px 0 0 #7968b5,
+        0 3px 0 0 #6753a7,
+        0 4px 0 0 #553e99,
+        0 5px 0 0 #43298b,
+        0 6px 0 0 #31147d,
+        0 8px 2px rgba(0, 0, 0, 0.1),
+        0 0 12px rgba(102, 126, 234, 0.3),
+        0 12px 30px rgba(102, 126, 234, 0.4),
+        inset 0 1px 0 rgba(255, 255, 255, 0.4),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
+    }
+    
+    &:active {
+      transform: translateY(3px);
+      box-shadow: 
+        0 1px 0 0 #6753a7,
+        0 2px 0 0 #553e99,
+        0 2px 2px rgba(0, 0, 0, 0.2),
+        0 0 8px rgba(102, 126, 234, 0.2),
+        inset 0 1px 0 rgba(255, 255, 255, 0.2),
+        inset 0 2px 6px rgba(0, 0, 0, 0.3);
+    }
+    
+    // Icon/text container to ensure proper z-index above effects
+    span {
+      position: relative;
+      z-index: 2;
+    }
+    
+    // Icon spacing
+    i, svg {
+      margin-right: 8px;
+      vertical-align: middle;
+    }
+    
+    // Alternative color schemes with 3D effect
     &.btn-confirm {
-      background: #10b981;
-      color: white;
+      background: linear-gradient(180deg, #34d399 0%, #10b981 50%, #059669 100%);
+      box-shadow: 
+        0 1px 0 0 #0ea371,
+        0 2px 0 0 #0d9163,
+        0 3px 0 0 #0b7f55,
+        0 4px 0 0 #096d47,
+        0 5px 0 0 #075b39,
+        0 6px 1px rgba(0, 0, 0, 0.1),
+        0 0 8px rgba(16, 185, 129, 0.2),
+        0 8px 20px rgba(16, 185, 129, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
       
       &:hover {
-        background: #059669;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(16, 185, 129, 0.3);
+        box-shadow: 
+          0 1px 0 0 #0ea371,
+          0 2px 0 0 #0d9163,
+          0 3px 0 0 #0b7f55,
+          0 4px 0 0 #096d47,
+          0 5px 0 0 #075b39,
+          0 6px 0 0 #05492b,
+          0 8px 2px rgba(0, 0, 0, 0.1),
+          0 0 12px rgba(16, 185, 129, 0.3),
+          0 12px 30px rgba(16, 185, 129, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.2);
       }
     }
     
     &.btn-edit {
-      background: #f59e0b;
-      color: white;
+      background: linear-gradient(180deg, #fbbf24 0%, #f59e0b 50%, #d97706 100%);
+      box-shadow: 
+        0 1px 0 0 #d18005,
+        0 2px 0 0 #b97104,
+        0 3px 0 0 #a16204,
+        0 4px 0 0 #895303,
+        0 5px 0 0 #714402,
+        0 6px 1px rgba(0, 0, 0, 0.1),
+        0 0 8px rgba(245, 158, 11, 0.2),
+        0 8px 20px rgba(245, 158, 11, 0.3),
+        inset 0 1px 0 rgba(255, 255, 255, 0.3),
+        inset 0 -1px 0 rgba(0, 0, 0, 0.2);
       
       &:hover {
-        background: #d97706;
-        transform: translateY(-1px);
-        box-shadow: 0 4px 12px rgba(245, 158, 11, 0.3);
+        box-shadow: 
+          0 1px 0 0 #d18005,
+          0 2px 0 0 #b97104,
+          0 3px 0 0 #a16204,
+          0 4px 0 0 #895303,
+          0 5px 0 0 #714402,
+          0 6px 0 0 #593501,
+          0 8px 2px rgba(0, 0, 0, 0.1),
+          0 0 12px rgba(245, 158, 11, 0.3),
+          0 12px 30px rgba(245, 158, 11, 0.4),
+          inset 0 1px 0 rgba(255, 255, 255, 0.4),
+          inset 0 -1px 0 rgba(0, 0, 0, 0.2);
       }
+    }
+    
+    &.btn-primary {
+      background: linear-gradient(180deg, #7c6fd6 0%, #667eea 50%, #5a6dd8 100%);
     }
   }
 }
@@ -2110,5 +2301,555 @@
     font-weight: 600;
     // Ensure badge doesn't cause overflow
     white-space: nowrap;
+  }
+}
+
+/* ============================================================
+   DOCUMENTS TABLE STYLING (from new-request.component.scss)
+   ============================================================ */
+
+.documents-table-container {
+  margin: 20px 0;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  background: white;
+}
+
+.documents-table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    
+    th {
+      padding: 16px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 14px;
+      border: none;
+      
+      &.col-icon { width: 60px; text-align: center; }
+      &.col-name { width: 35%; }
+      &.col-category { width: 20%; }
+      &.col-size { width: 10%; text-align: center; }
+      &.col-date { width: 15%; }
+      &.col-actions { width: 15%; text-align: center; }
+    }
+  }
+  
+  tbody {
+    tr.document-row {
+      border-bottom: 1px solid #f0f0f0;
+      transition: all 0.2s ease;
+      
+      &:hover {
+        background: #f8f9fa;
+        transform: translateX(2px);
+        box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+      }
+      
+      &.clickable {
+        cursor: pointer;
+      }
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      td {
+        padding: 16px 12px;
+        vertical-align: middle;
+        border: none;
+      }
+    }
+  }
+}
+
+/* Table Columns Styling */
+.col-icon {
+  text-align: center;
+  
+  .file-type-icon {
+    width: 40px;
+    height: 40px;
+    border-radius: 8px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    margin: 0 auto;
+    
+    &[data-type="pdf"] {
+      background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+      color: white;
+    }
+    
+    &[data-type="image"] {
+      background: linear-gradient(135deg, #4834d4, #686de0);
+      color: white;
+    }
+    
+    &[data-type="other"] {
+      background: linear-gradient(135deg, #a29bfe, #d1ccc0);
+      color: white;
+    }
+    
+    span {
+      font-size: 18px;
+    }
+  }
+}
+
+.col-name {
+  .doc-name-cell {
+    .doc-name {
+      font-weight: 600;
+      color: #262626;
+      font-size: 15px;
+      display: block;
+      margin-bottom: 4px;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+}
+
+.col-category {
+  .doc-category-badge {
+    background: #e6f7ff;
+    color: #0958d9;
+    padding: 4px 12px;
+    border-radius: 6px;
+    font-weight: 500;
+    font-size: 13px;
+  }
+}
+
+.col-size {
+  text-align: center;
+  
+  .doc-size {
+    font-weight: 500;
+    color: #595959;
+    background: #f5f5f5;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-size: 12px;
+  }
+}
+
+.col-date {
+  .doc-date {
+    color: #8c8c8c;
+    font-size: 13px;
+  }
+}
+
+.col-actions {
+  text-align: center;
+  
+  .action-buttons {
+    display: flex;
+    gap: 4px;
+    justify-content: center;
+    
+    .action-btn {
+      width: 32px;
+      height: 32px;
+      border-radius: 6px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.2s ease;
+      
+      &.preview-btn {
+        background: #f0f9ff;
+        color: #0284c7;
+        border: 1px solid #e0f2fe;
+        
+        &:hover {
+          background: #0284c7;
+          color: white;
+          transform: scale(1.1);
+        }
+      }
+      
+      &.download-btn {
+        background: #f0fdf4;
+        color: #15803d;
+        border: 1px solid #dcfce7;
+        
+        &:hover {
+          background: #15803d;
+          color: white;
+          transform: scale(1.1);
+        }
+      }
+    }
+  }
+}
+
+/* Document Preview Modal */
+.preview-container {
+  padding: 16px;
+  background: #f5f5f5;
+  border-radius: 8px;
+  min-height: 400px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  
+  .pdf-preview,
+  .image-preview {
+    width: 100%;
+  }
+  
+  .unsupported-preview {
+    padding: 60px 20px;
+  }
+}
+
+.preview-footer {
+  display: flex;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* Document Type Column */
+.col-doc-type {
+  text-align: center;
+  
+  .doc-type-badge {
+    background: linear-gradient(135deg, #f093fb 0%, #f5576c 100%);
+    color: white;
+    padding: 6px 12px;
+    border-radius: 6px;
+    font-weight: 600;
+    font-size: 12px;
+    display: inline-block;
+    box-shadow: 0 2px 4px rgba(245, 87, 108, 0.3);
+  }
+}
+
+/* Delete Button Styling */
+.action-btn.delete-btn {
+  background: #fef2f2;
+  color: #dc2626;
+  border: 1px solid #fecaca;
+  
+  &:hover {
+    background: #dc2626;
+    color: white;
+    transform: scale(1.1);
+  }
+}
+
+/* Responsive Table */
+@media (max-width: 768px) {
+  .documents-table-container {
+    overflow-x: auto;
+  }
+  
+  .documents-table {
+    min-width: 800px;
+    
+    th, td {
+      padding: 12px 8px;
+      font-size: 12px;
+    }
+    
+    .col-name { width: 25%; }
+    .col-doc-type { width: 20%; }
+    
+    .action-buttons {
+      flex-direction: column;
+      gap: 2px;
+    }
+  }
+}
+
+/* ============================================================
+   CONTACTS TABLE DESIGN
+   ============================================================ */
+
+.contacts-section {
+  .section-header {
+    h3 {
+      display: flex;
+      align-items: center;
+      gap: 8px;
+      
+      .contact-count-badge {
+        background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+        color: white;
+        padding: 2px 10px;
+        border-radius: 12px;
+        font-size: 13px;
+        font-weight: 600;
+        min-width: 24px;
+        text-align: center;
+      }
+    }
+  }
+}
+
+/* Contacts Table */
+.contacts-table-container {
+  margin-top: 16px;
+  border-radius: 12px;
+  overflow: hidden;
+  box-shadow: 0 4px 12px rgba(0,0,0,0.08);
+  background: white;
+}
+
+.contacts-table {
+  width: 100%;
+  border-collapse: collapse;
+  
+  thead {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    
+    th {
+      padding: 14px 12px;
+      text-align: left;
+      font-weight: 600;
+      font-size: 13px;
+      border: none;
+      
+      &.col-name { width: 20%; }
+      &.col-job { width: 20%; }
+      &.col-email { width: 25%; }
+      &.col-mobile { width: 15%; }
+      &.col-language { width: 10%; text-align: center; }
+      &.col-actions { width: 10%; text-align: center; }
+    }
+  }
+  
+  tbody {
+    tr.contact-row {
+      border-bottom: 1px solid #f0f0f0;
+      transition: all 0.2s ease;
+      
+      &.hidden-row {
+        display: none;
+      }
+      
+      &:hover {
+        background: #f8f9fa;
+        transform: translateX(2px);
+      }
+      
+      &:last-child {
+        border-bottom: none;
+      }
+      
+      td {
+        padding: 14px 12px;
+        vertical-align: middle;
+        border: none;
+        font-size: 14px;
+        color: #262626;
+        
+        &.col-name {
+          .contact-name {
+            font-weight: 600;
+            color: #262626;
+          }
+        }
+        
+        &.col-job {
+          .contact-job {
+            color: #595959;
+          }
+        }
+        
+        &.col-email {
+          .contact-email {
+            color: #1890ff;
+            text-decoration: none;
+            
+            &:hover {
+              text-decoration: underline;
+            }
+          }
+        }
+        
+        &.col-mobile {
+          .contact-mobile {
+            font-family: monospace;
+            color: #52c41a;
+            font-weight: 500;
+          }
+        }
+        
+        &.col-language {
+          text-align: center;
+          
+          .contact-language-badge {
+            background: #f0f0f0;
+            color: #595959;
+            padding: 4px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            font-weight: 500;
+            display: inline-block;
+          }
+        }
+        
+        &.col-actions {
+          text-align: center;
+          
+          .action-buttons {
+            display: flex;
+            gap: 4px;
+            justify-content: center;
+            
+            .action-btn {
+              width: 32px;
+              height: 32px;
+              border-radius: 6px;
+              display: flex;
+              align-items: center;
+              justify-content: center;
+              transition: all 0.2s ease;
+              
+              &.edit-btn {
+                background: #e6f7ff;
+                color: #1890ff;
+                border: 1px solid #91d5ff;
+                
+                &:hover {
+                  background: #1890ff;
+                  color: white;
+                  transform: scale(1.1);
+                }
+              }
+              
+              &.delete-btn {
+                background: #fff1f0;
+                color: #ff4d4f;
+                border: 1px solid #ffccc7;
+                
+                &:hover {
+                  background: #ff4d4f;
+                  color: white;
+                  transform: scale(1.1);
+                }
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}
+
+/* Empty State */
+.contacts-empty-state {
+  text-align: center;
+  padding: 60px 20px;
+  margin-top: 16px;
+  
+  .empty-text {
+    font-size: 16px;
+    font-weight: 600;
+    color: #595959;
+    margin: 16px 0 8px 0;
+  }
+  
+  .empty-hint {
+    font-size: 14px;
+    color: #8c8c8c;
+    margin: 0;
+  }
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+  .contacts-table-container {
+    overflow-x: auto;
+  }
+  
+  .contacts-table {
+    min-width: 700px;
+    
+    th, td {
+      padding: 10px 8px;
+      font-size: 12px;
+    }
+  }
+}
+
+/* ============================================================
+   CONTACT MODAL STYLING
+   ============================================================ */
+
+.contact-modal {
+  .contact-form {
+    padding: 20px 0;
+  }
+  
+  .modal-form-row {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 20px;
+  }
+  
+  .modal-form-group {
+    label {
+      display: flex;
+      align-items: center;
+      gap: 6px;
+      font-weight: 600;
+      color: #262626;
+      margin-bottom: 8px;
+      font-size: 14px;
+      
+      &.required::after {
+        content: '*';
+        color: #ff4d4f;
+        margin-left: 4px;
+      }
+      
+      [nz-icon] {
+        color: #667eea;
+        font-size: 16px;
+      }
+      
+      .optional-badge {
+        background: #f0f0f0;
+        color: #8c8c8c;
+        padding: 2px 8px;
+        border-radius: 10px;
+        font-size: 11px;
+        font-weight: 500;
+        margin-left: auto;
+      }
+    }
+    
+    input, nz-select {
+      width: 100%;
+    }
+  }
+  
+  .contact-modal-footer {
+    display: flex;
+    justify-content: flex-end;
+    gap: 8px;
+  }
+}
+
+@media (max-width: 600px) {
+  .modal-form-row {
+    grid-template-columns: 1fr !important;
+  }
+  
+  .contacts-cards-display {
+    grid-template-columns: 1fr !important;
   }
 }
