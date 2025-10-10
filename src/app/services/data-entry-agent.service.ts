@@ -485,6 +485,8 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
   private async extractDataFromDocuments(documents: Array<{content: string, name: string, type: string, size: number}>): Promise<Partial<ExtractedData>> {
     const maxRetries = 3;
     const allAttempts: Array<{ data: any; score: number; attempt: number }> = [];
+    let lastError: any = null;
+    let networkIssueEncountered = false;
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       let requestBody: any = null;
@@ -592,6 +594,15 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
         }
       } catch (error: any) {
         console.error(`❌ [Service] Extraction error (attempt ${attempt}/${maxRetries}):`, error);
+        lastError = error;
+        // Detect likely internet/network issues from browser/network context
+        const offline = typeof navigator !== 'undefined' && navigator && (navigator as any).onLine === false;
+        const statusZero = error?.status === 0;
+        const messageLooksNetwork = typeof error?.message === 'string' && /(ECONN|ENOTFOUND|ETIMEDOUT|ECONNRESET|EAI_AGAIN|network|offline|Failed to fetch)/i.test(error.message);
+        if (offline || statusZero || messageLooksNetwork) {
+          networkIssueEncountered = true;
+        }
+
         if (attempt < maxRetries) {
           const waitTime = attempt * 1000;
           await new Promise(resolve => setTimeout(resolve, waitTime));
@@ -600,6 +611,11 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
     }
 
     if (allAttempts.length === 0) {
+      // Gate internet error message: only show if extracted fields < 2
+      // Since no attempts succeeded, extracted fields count is 0
+      if (networkIssueEncountered) {
+        throw new Error('⚠️ تعذر الاتصال بخدمة الذكاء الاصطناعي. تحقق من اتصال الإنترنت ثم حاول مرة أخرى.\nAI service unreachable. Please check your internet connection and try again.');
+      }
       throw new Error('فشلت جميع المحاولات / All extraction attempts failed');
     }
 
@@ -609,6 +625,23 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
     console.log('📊 [Service] All attempts scores:', allAttempts.map(a => `Attempt ${a.attempt}: ${a.score} fields`));
 
     const mergedData = this.mergeExtractedData(allAttempts);
+    // If a network issue happened during attempts, only surface an internet message
+    // when the number of non-empty extracted fields is less than 2
+    if (networkIssueEncountered) {
+      const fieldsForCount = [
+        'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
+        'buildingNumber', 'street', 'country', 'city',
+        'salesOrganization', 'distributionChannel', 'division'
+      ];
+      const extractedCount = fieldsForCount.reduce((count, key) => {
+        const value = (mergedData as any)[key];
+        return value && value.toString().trim() !== '' ? count + 1 : count;
+      }, 0);
+      if (extractedCount < 2) {
+        throw new Error('⚠️ تعذر الاتصال بخدمة الذكاء الاصطناعي. تحقق من اتصال الإنترنت ثم حاول مرة أخرى.\nAI service unreachable. Please check your internet connection and try again.');
+      }
+    }
+
     if (!mergedData.country) {
       mergedData.country = this.detectCountryFromData(mergedData);
     }
@@ -1069,8 +1102,9 @@ For dropdown fields, provide numbered options.`;
       return new Error('خطأ في البيانات المرسلة / Bad request - check image format');
     } else if (error.status === 413) {
       return new Error('الصورة كبيرة جداً / Image too large');
-    } else if (error.status === 0 || !navigator.onLine) {
-      return new Error('لا يوجد اتصال بالإنترنت / No internet connection');
+    } else if (error.status === 0 || (typeof navigator !== 'undefined' && (navigator as any).onLine === false)) {
+      // Use clearer wording, actual surfacing is gated where we have field counts
+      return new Error('⚠️ تعذر الاتصال بالإنترنت / Internet connectivity issue');
     } else if (error.message?.includes('JSON')) {
       return new Error('خطأ في تحليل البيانات المستخرجة / Error parsing extracted data');
     }

@@ -52,7 +52,7 @@
       </div>
 
       <!-- Button Options - منفصل تحت السؤال -->
-      <div class="buttons-container" *ngIf="m.from==='bot' && m.isButtons && m.buttons">
+      <div class="buttons-container" *ngIf="m.from==='bot' && m.isButtons && m.buttons && m.buttons.length > 0">
         <button 
           *ngFor="let button of m.buttons" 
           class="action-button"
