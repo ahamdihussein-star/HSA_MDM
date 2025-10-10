@@ -4,6 +4,7 @@
 // ============================================================================
 
 import { Injectable } from '@angular/core';
+import { CUSTOMER_TYPE_OPTIONS } from '../shared/lookup-data';
 
 export type ImageFormat = 'png' | 'jpeg';
 
@@ -94,7 +95,7 @@ export class DocumentImageGeneratorService {
     ctx.font = 'bold 20px Arial';
     ctx.fillText('Registration No:', 50, y);
     ctx.font = '20px Arial';
-    ctx.fillText(this.generateRegNumber(country), 300, y);
+    ctx.fillText(data?.registrationNumber || this.generateRegNumber(country, companyName), 300, y);
     
     y += 50;
     ctx.font = 'bold 18px Arial';
@@ -110,8 +111,9 @@ export class DocumentImageGeneratorService {
     ctx.fillText(country, 250, y);
     
     y += 30;
-    ctx.fillText('Legal Status:', 70, y);
-    ctx.fillText(data?.customerType || data?.CustomerType || 'Private Company', 250, y);
+    ctx.fillText('Company Type:', 70, y);
+    const customerTypeLabel = this.getCustomerTypeLabel(data?.customerType || data?.CustomerType);
+    ctx.fillText(customerTypeLabel, 250, y);
     
     y += 30;
     ctx.fillText('Company Owner:', 70, y);
@@ -119,7 +121,7 @@ export class DocumentImageGeneratorService {
     
     y += 30;
     ctx.fillText('Tax Number:', 70, y);
-    ctx.fillText(data?.tax || this.generateTaxNumber(country), 250, y);
+    ctx.fillText(data?.tax || data?.taxNumber || this.generateTaxNumber(country, companyName), 250, y);
     
     y += 30;
     ctx.fillText('Address:', 70, y);
@@ -188,7 +190,8 @@ export class DocumentImageGeneratorService {
     
     ctx.fillStyle = '#000000';
     ctx.font = 'bold 22px Arial';
-    ctx.fillText(`Certificate No: ${this.generateTaxNumber(country)}`, this.A4_WIDTH / 2, 217);
+    const taxNum = data?.tax || data?.taxNumber || this.generateTaxNumber(country, companyName);
+    ctx.fillText(`Certificate No: ${taxNum}`, this.A4_WIDTH / 2, 217);
     
     // Main Content
     let y = 270;
@@ -210,7 +213,7 @@ export class DocumentImageGeneratorService {
     ctx.font = '16px Arial';
     
     const details = [
-      ['Tax Registration Number:', this.generateTaxNumber(country)],
+      ['Tax Registration Number:', taxNum],
       ['Registration Date:', this.formatDate(new Date())],
       ['Tax Type:', 'Corporate Income Tax'],
       ['Company Owner:', data?.ownerName || 'N/A'],
@@ -295,18 +298,61 @@ export class DocumentImageGeneratorService {
     return authorities[country]?.[type] || 'Government Authority';
   }
   
-  private generateRegNumber(country: string): string {
+  /**
+   * Get customer type label from value (using CUSTOMER_TYPE_OPTIONS)
+   */
+  private getCustomerTypeLabel(customerTypeValue: string): string {
+    if (!customerTypeValue) return 'Private Company';
+    
+    const option = CUSTOMER_TYPE_OPTIONS.find(opt => opt.value === customerTypeValue);
+    return option ? option.label : customerTypeValue;
+  }
+
+  /**
+   * Generate consistent registration number based on company name (seed-based)
+   * Same company name will always generate same registration number
+   */
+  private generateRegNumber(country: string, companyName?: string): string {
     const prefix: any = {
       'Saudi Arabia': 'CR',
       'Egypt': 'EG',
       'United Arab Emirates': 'UAE',
       'Kuwait': 'KW'
     };
-    return `${prefix[country] || 'XX'}-${Math.floor(Math.random() * 9000000) + 1000000}`;
+    
+    // Use company name as seed for consistent generation
+    const seed = companyName ? this.hashString(companyName) : 1000000;
+    const regNumber = 1000000 + (seed % 9000000);
+    
+    return `${prefix[country] || 'XX'}-${regNumber}`;
   }
   
-  private generateTaxNumber(country: string): string {
-    return `${Math.floor(Math.random() * 900) + 100}${Math.floor(Math.random() * 900000000) + 100000000}${Math.floor(Math.random() * 900) + 100}`;
+  /**
+   * Generate consistent tax number based on company name (seed-based)
+   * Same company name will always generate same tax number
+   */
+  private generateTaxNumber(country: string, companyName?: string): string {
+    // Use company name as seed for consistent generation
+    const seed = companyName ? this.hashString(companyName) : 100;
+    
+    const part1 = 100 + (seed % 900);
+    const part2 = 100000000 + ((seed >> 8) % 900000000);
+    const part3 = 100 + ((seed >> 16) % 900);
+    
+    return `${part1}${part2}${part3}`;
+  }
+  
+  /**
+   * Hash string to create consistent seed
+   */
+  private hashString(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
   }
   
   private formatDate(date: Date): string {

@@ -1192,8 +1192,7 @@
       "tryAgainLater": "If the problem persists, please try again later or contact support"
     },
     "confirmations": {
-      "deleteDocument": "Are you sure you want to delete this document?",
-      "addDocuments": "⚠️ All documents ({{count}} total) will be reprocessed and data will be re-extracted.\n\nDo you want to continue?"
+      "deleteDocument": "Are you sure you want to delete this document?"
     },
     "contact": {
       "addTitle": "Add Contact",

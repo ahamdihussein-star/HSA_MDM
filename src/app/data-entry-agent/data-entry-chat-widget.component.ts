@@ -5,6 +5,7 @@ import { DataEntryAgentService, ExtractedData } from '../services/data-entry-age
 import { TranslateService } from '@ngx-translate/core';
 import { DemoDataGeneratorService, DemoCompany } from '../services/demo-data-generator.service';
 import { SessionStagingService } from '../services/session-staging.service';
+import { AutoTranslateService } from '../services/auto-translate.service';
 import { Subject, Subscription } from 'rxjs';
 import { NzModalService } from 'ng-zorro-antd/modal';
 import { 
@@ -174,6 +175,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     private demoDataGenerator: DemoDataGeneratorService,
     private translate: TranslateService,
     private sessionStaging: SessionStagingService,
+    private autoTranslate: AutoTranslateService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.initializeForms();
@@ -515,11 +517,47 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
         extractedData.city
       );
       
+      // ✅ Calculate how many required fields were extracted
+      const requiredFields = [
+        'firstName', 'firstNameAR', 'tax', 'CustomerType', 
+        'ownerName', 'buildingNumber', 'street', 'country', 
+        'city', 'salesOrganization', 'distributionChannel', 'division'
+      ];
+      
+      const extractedFieldsCount = requiredFields.filter(field => {
+        const value = (extractedData as any)?.[field];
+        return value && value.toString().trim() !== '';
+      }).length;
+      
+      const extractionSuccessRate = extractedFieldsCount / requiredFields.length;
+      
       console.log('🔍 [ERROR RECOVERY] Checking for partial data:', {
         hasPartialData,
+        extractedFieldsCount,
+        totalRequired: requiredFields.length,
+        successRate: `${(extractionSuccessRate * 100).toFixed(1)}%`,
         extractedFields: hasPartialData ? Object.keys(extractedData).filter(k => (extractedData as any)[k]) : []
       });
       
+      // ✅ If we extracted 8+ fields (66%+), consider it successful even if there was an error
+      // This prevents showing internet error when OpenAI actually succeeded in extracting most data
+      if (extractedFieldsCount >= 8) {
+        console.log('✅ [ERROR RECOVERY] Extracted enough fields, treating as success');
+        
+        this.addMessage({
+          id: `partial_success_${Date.now()}`,
+          role: 'assistant',
+          content: `✅ تم استخراج معظم البيانات بنجاح!\nMost data extracted successfully!\n\n📊 تم استخراج ${extractedFieldsCount} من ${requiredFields.length} حقل\nExtracted ${extractedFieldsCount} out of ${requiredFields.length} fields`,
+          timestamp: new Date(),
+          type: 'text'
+        });
+        
+        // ✅ Continue with the modal as if it was successful
+        await this.showUnifiedModalFromDatabase(extractedData);
+        return;
+      }
+      
+      // ✅ If less than 8 fields extracted, show error message
       // Check if it's a CORS or network error
       const isCorsOrNetworkError = 
         error?.status === 0 || 
@@ -529,8 +567,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
         error?.name === 'HttpErrorResponse';
       
       let errorMessage = isCorsOrNetworkError
-        ? `❌ ${this.translate.instant('agent.errors.aiCommunicationError')}\n\n🌐 ${this.translate.instant('agent.errors.checkInternetConnection')}`
-        : `❌ ${this.translate.instant('agent.autoProcessing.processingFailed')}`;
+        ? `❌ حدث خطأ في التواصل مع نموذج الذكاء الاصطناعي\nAI communication error occurred\n\n🌐 يرجى التحقق من اتصال الإنترنت\nPlease check your internet connection`
+        : `❌ فشلت معالجة المستندات\nDocument processing failed`;
       
       // ✅ If we have partial data, show it
       if (hasPartialData) {
@@ -539,34 +577,34 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
           .map(k => `• ${k}: ${(extractedData as any)[k]}`)
           .join('\n');
         
-        errorMessage += `\n\n📋 **Partial Data Extracted:**\n${extractedFields}\n\n💡 **Options:**`;
+        errorMessage += `\n\n📋 بيانات جزئية تم استخراجها:\nPartial Data Extracted:\n${extractedFields}\n\n💡 الخيارات المتاحة:\nAvailable Options:`;
       }
       
-      // ✅ Add error message with smart options
+      // ✅ Add error message with smart options (using 'text' instead of 'label' for buttons)
       const buttons = hasPartialData ? [
         {
-          label: this.translate.instant('agent.buttons.tryAgain') || '🔄 Try Again to Extract More',
+          text: '🔄 إعادة المحاولة لاستخراج المزيد\n🔄 Try Again to Extract More',
           action: 'retry_upload',
           style: 'primary'
         },
         {
-          label: this.translate.instant('agent.buttons.continueWithPartialData') || '✅ Continue with Partial Data',
+          text: '✅ المتابعة بالبيانات الجزئية\n✅ Continue with Partial Data',
           action: 'continue_with_partial_data',
           style: 'default'
         },
         {
-          label: this.translate.instant('agent.buttons.cancel') || '❌ Cancel',
+          text: '❌ إلغاء\n❌ Cancel',
           action: 'cancel_upload',
           style: 'default'
         }
       ] : [
         {
-          label: this.translate.instant('agent.buttons.tryAgain') || '🔄 Try Again',
+          text: '🔄 إعادة المحاولة\n🔄 Try Again',
           action: 'retry_upload',
           style: 'primary'
         },
         {
-          label: this.translate.instant('agent.buttons.cancel') || '❌ Cancel',
+          text: '❌ إلغاء\n❌ Cancel',
           action: 'cancel_upload',
           style: 'default'
         }
@@ -666,7 +704,31 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       
       console.log('📊 [DB FLOW] Built extracted data from DB:', extractedDataFromDB);
       
-      // ✅ Calculate extracted and missing fields
+      // ✅ Auto-translate Arabic name if missing
+      if (extractedDataFromDB.firstName && !extractedDataFromDB.firstNameAR) {
+        console.log('🔤 [AUTO-TRANSLATE] Translating company name to Arabic...');
+        const arabicName = this.autoTranslate.translateCompanyName(extractedDataFromDB.firstName);
+        if (arabicName && arabicName !== extractedDataFromDB.firstName) {
+          extractedDataFromDB.firstNameAR = arabicName; // ✅ Update the object for missing fields check
+          console.log('✅ [AUTO-TRANSLATE] Company name translated:', { 
+            english: extractedDataFromDB.firstName, 
+            arabic: arabicName 
+          });
+        }
+      }
+      
+      // ✅ Smart detection of CustomerType if missing
+      if (!extractedDataFromDB.CustomerType && extractedDataFromDB.legalForm) {
+        const detectedType = this.detectCustomerType(extractedDataFromDB.legalForm, extractedDataFromDB.firstName);
+        if (detectedType) {
+          extractedDataFromDB.CustomerType = detectedType; // ✅ Update the object for missing fields check
+          console.log('✅ [SMART-DETECT] Customer type detected:', detectedType);
+        }
+      }
+      
+      // ✅ Calculate extracted and missing fields using checkMissingFields method
+      console.log('🔍 [DEBUG] showUnifiedModalFromDatabase: extractedDataFromDB after auto-translate/smart-detect:', extractedDataFromDB);
+      
       const allFields = [
         'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
         'buildingNumber', 'street', 'country', 'city', 'salesOrganization',
@@ -678,13 +740,11 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
         return value && value !== '';
       });
       
-      const missingFields = allFields.filter(field => {
-        const value = (extractedDataFromDB as any)[field];
-        return !value || value === '';
-      });
+      // ✅ Use checkMissingFields method for consistent missing fields calculation
+      const missingFields = this.checkMissingFields(extractedDataFromDB);
       
       console.log('📊 [DB FLOW] Extracted fields:', extractedFields);
-      console.log('📊 [DB FLOW] Missing fields:', missingFields);
+      console.log('📊 [DB FLOW] Missing fields (from checkMissingFields):', missingFields);
       
       // ✅ Update unifiedModalData with extracted/missing fields
       this.unifiedModalData.extractedFields = extractedFields.map(f => ({ field: f, value: (extractedDataFromDB as any)[f] }));
@@ -693,23 +753,55 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       
       console.log('📊 [DB FLOW] Final unifiedModalData.extractedFields:', this.unifiedModalData.extractedFields.length);
       console.log('📊 [DB FLOW] Final unifiedModalData.missingFields:', this.unifiedModalData.missingFields.length);
+      console.log('📊 [DB FLOW] Final unifiedModalData.missingFields array:', this.unifiedModalData.missingFields);
       console.log('📊 [DB FLOW] Final unifiedModalData:', this.unifiedModalData);
       
-      // ✅ Fill form with database data
+      // ✅ Fill form with extracted data (use extractedDataFromDB which has correct field names)
+      console.log('📝 [DB FLOW] Patching form with extracted data:', extractedDataFromDB);
       this.unifiedModalForm.patchValue({
-        firstName: companyData.first_name || '',
-        firstNameAr: companyData.first_name_ar || '',
-        tax: companyData.tax_number || '',
-        CustomerType: companyData.customer_type || '',
-        CompanyOwner: companyData.company_owner || '',
-        buildingNumber: companyData.building_number || '',
-        street: companyData.street || '',
-        country: companyData.country || '',
-        city: companyData.city || '',
-        SalesOrgOption: companyData.sales_org || '',
-        DistributionChannelOption: companyData.distribution_channel || '',
-        DivisionOption: companyData.division || ''
+        firstName: extractedDataFromDB.firstName || '',
+        firstNameAR: extractedDataFromDB.firstNameAR || '',  // ✅ Fixed: AR not Ar
+        tax: extractedDataFromDB.tax || '',
+        CustomerType: extractedDataFromDB.CustomerType || '',
+        ownerName: extractedDataFromDB.ownerName || extractedDataFromDB.CompanyOwner || '',  // ✅ Fixed: ownerName not CompanyOwner
+        buildingNumber: extractedDataFromDB.buildingNumber || '',
+        street: extractedDataFromDB.street || '',
+        country: extractedDataFromDB.country || '',
+        city: extractedDataFromDB.city || '',
+        salesOrganization: extractedDataFromDB.salesOrganization || '',  // ✅ Fixed: salesOrganization not SalesOrgOption
+        distributionChannel: extractedDataFromDB.distributionChannel || '',  // ✅ Fixed: distributionChannel not DistributionChannelOption
+        division: extractedDataFromDB.division || ''  // ✅ Fixed: division not DivisionOption
       });
+      
+      console.log('✅ [DB FLOW] Form patched. Current form value:', this.unifiedModalForm.value);
+      
+      // ✅ Update dropdown options based on country
+      if (extractedDataFromDB.country) {
+        console.log('🌍 [DB FLOW] Updating city options for country:', extractedDataFromDB.country);
+        this.updateCityOptions(extractedDataFromDB.country);
+      }
+      
+      // ✅ Auto-translate company name to Arabic if missing
+      if (extractedDataFromDB.firstName && !extractedDataFromDB.firstNameAR) {
+        console.log('🔤 [AUTO-TRANSLATE] Translating company name to Arabic...');
+        const arabicName = this.autoTranslate.translateCompanyName(extractedDataFromDB.firstName);
+        if (arabicName && arabicName !== extractedDataFromDB.firstName) {
+          this.unifiedModalForm.patchValue({ firstNameAR: arabicName }, { emitEvent: false });
+          console.log('✅ [AUTO-TRANSLATE] Company name translated:', { 
+            english: extractedDataFromDB.firstName, 
+            arabic: arabicName 
+          });
+        }
+      }
+      
+      // ✅ Smart detection of CustomerType if missing
+      if (!extractedDataFromDB.CustomerType && extractedDataFromDB.legalForm) {
+        const detectedType = this.detectCustomerType(extractedDataFromDB.legalForm, extractedDataFromDB.firstName);
+        if (detectedType) {
+          this.unifiedModalForm.patchValue({ CustomerType: detectedType }, { emitEvent: false });
+          console.log('✅ [SMART-DETECT] Customer type detected:', detectedType);
+        }
+      }
       
       // ✅ Set fields as read-only (extracted data should be locked)
       this.extractedDataReadOnly = true;
@@ -878,9 +970,32 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       await this.animateProgressBar();
       console.log('📊 [PROGRESS] Progress bar animation completed');
       
-      // Process new documents with OCR
-      const extractedData = await this.agentService.uploadAndProcessDocuments(newFiles);
-      console.log('🔍 [NEW FLOW] New documents processed, extracted data:', extractedData);
+      // Process new documents with OCR (LIGHTWEIGHT mode - we already have form data)
+      // Get existing form data to pass to extraction
+      const existingFormData = this.unifiedModalForm?.value ? {
+        firstName: this.unifiedModalForm.value.firstName || '',
+        firstNameAR: this.unifiedModalForm.value.firstNameAR || '',
+        tax: this.unifiedModalForm.value.tax || '',
+        CustomerType: this.unifiedModalForm.value.CustomerType || '',
+        ownerName: this.unifiedModalForm.value.ownerName || '',
+        buildingNumber: this.unifiedModalForm.value.buildingNumber || '',
+        street: this.unifiedModalForm.value.street || '',
+        country: this.unifiedModalForm.value.country || '',
+        city: this.unifiedModalForm.value.city || '',
+        salesOrganization: this.unifiedModalForm.value.salesOrganization || '',
+        distributionChannel: this.unifiedModalForm.value.distributionChannel || '',
+        division: this.unifiedModalForm.value.division || ''
+      } : undefined;
+      
+      console.log('📋 [NEW FLOW] Existing form data for extraction:', existingFormData);
+      
+      // Set existing data in service
+      if (existingFormData) {
+        this.agentService['extractedData'] = existingFormData as any;
+      }
+      
+      const extractedData = await this.agentService.uploadAndProcessDocuments(newFiles, undefined, true); // ✅ lightweight mode
+      console.log('🔍 [NEW FLOW] New documents processed (LIGHTWEIGHT), extracted data:', extractedData);
       
       // ✅ Hide progress bar
       this.showProgressBar = false;
@@ -901,6 +1016,40 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       this.showProgressBar = false;
       this.cdr.detectChanges();
       
+      // ✅ Check if we have partial extracted data from the new documents
+      const extractedData = this.agentService.getExtractedData();
+      const requiredFields = [
+        'firstName', 'firstNameAR', 'tax', 'CustomerType', 
+        'ownerName', 'buildingNumber', 'street', 'country', 
+        'city', 'salesOrganization', 'distributionChannel', 'division'
+      ];
+      
+      const extractedFieldsCount = requiredFields.filter(field => {
+        const value = (extractedData as any)?.[field];
+        return value && value.toString().trim() !== '';
+      }).length;
+      
+      console.log('🔍 [NEW FLOW ERROR RECOVERY] Extracted fields count:', extractedFieldsCount);
+      
+      // ✅ If we extracted 8+ fields (66%+), consider it successful even if there was an error
+      if (extractedFieldsCount >= 8) {
+        console.log('✅ [NEW FLOW ERROR RECOVERY] Extracted enough fields, treating as success');
+        
+        this.addMessage({
+          id: `addition_partial_success_${Date.now()}`,
+          role: 'assistant',
+          content: `✅ تم استخراج معظم البيانات بنجاح!\nMost data extracted successfully!\n\n📊 تم استخراج ${extractedFieldsCount} من ${requiredFields.length} حقل\nExtracted ${extractedFieldsCount} out of ${requiredFields.length} fields`,
+          timestamp: new Date(),
+          type: 'text'
+        });
+        
+        // Save and reload modal
+        await this.saveToSessionStaging(extractedData, newFiles);
+        await this.showUnifiedModalFromDatabase(extractedData);
+        return;
+      }
+      
+      // ✅ If less than 8 fields extracted, show error message
       // Check if it's a CORS or network error
       const isCorsOrNetworkError = 
         error?.status === 0 || 
@@ -910,8 +1059,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
         error?.name === 'HttpErrorResponse';
       
       const errorMessage = isCorsOrNetworkError
-        ? `❌ ${this.translate.instant('agent.errors.aiCommunicationError')}\n\n🌐 ${this.translate.instant('agent.errors.checkInternetConnection')}\n\n💡 ${this.translate.instant('agent.errors.tryAgainLater')}`
-        : `❌ ${this.translate.instant('agent.errors.reprocessingFailed')}`;
+        ? `❌ حدث خطأ في التواصل مع نموذج الذكاء الاصطناعي\nAI communication error occurred\n\n🌐 يرجى التحقق من اتصال الإنترنت\nPlease check your internet connection\n\n💡 يرجى المحاولة مرة أخرى\nPlease try again later`
+        : `❌ فشلت إعادة معالجة المستندات. يرجى المحاولة مرة أخرى.\nReprocessing failed. Please try again.`;
       
       this.addMessage({
         id: `addition_error_${Date.now()}`,
@@ -1172,24 +1321,23 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   private generateConfirmationMessage(_extractedData: any): string { return ''; }
 
   private checkMissingFields(data: ExtractedData): string[] {
-    console.log('🧪 [Chat] checkMissingFields called with data:', data);
+    console.log('🔍 [DEBUG] checkMissingFields called with data:', data);
     
     const required = [
       'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
-      'buildingNumber', 'street', 'country', 'city',
-      'salesOrganization', 'distributionChannel', 'division'
+      'buildingNumber', 'street', 'country', 'city'
     ];
+    console.log('🔍 [DEBUG] checkMissingFields: Required fields:', required);
     
     const missing = required.filter(field => {
       const value = (data as any)[field];
       const isEmpty = !value || (typeof value === 'string' && value.trim() === '');
-      console.log(`🧪 [Chat] Field ${field}: value="${value}", isEmpty=${isEmpty}`);
+      console.log(`🔍 [DEBUG] checkMissingFields: Field ${field}: value="${value}", isEmpty=${isEmpty}`);
       return isEmpty;
     });
 
     // Contacts optional: don't include in missing list
-
-    console.log('🧪 [Chat] Missing fields result:', missing);
+    console.log('🔍 [DEBUG] checkMissingFields: Final missing fields array:', missing);
     return missing;
   }
 
@@ -2051,8 +2199,8 @@ Please fill the missing data to complete the request.`,
       return;
     }
     console.log('Setting up keyboard auto-fill for data entry');
-    // Generate initial demo company
-    this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+    // Don't generate initial demo company - it will be set from the form company name
+    // this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
     // Create keyboard listener using capture to beat modal handlers
     this.keyboardListener = (event: KeyboardEvent) => {
       // Only work when unified modal is open
@@ -3424,7 +3572,9 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
 
   removeContactFromUnifiedForm(index: number): void {
     const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
-    if (contactsArray.length > 1) {
+    
+    // ✅ Allow removing all contacts (contacts are optional)
+    if (contactsArray && contactsArray.length > 0) {
       contactsArray.removeAt(index);
     }
   }
@@ -3975,6 +4125,40 @@ Would you like to:
     } catch (error: any) {
       console.error('❌ [MODAL] Document processing error:', error);
       
+      // ✅ Check if we have partial extracted data from the new documents
+      const extractedData = this.agentService.getExtractedData();
+      const requiredFields = [
+        'firstName', 'firstNameAR', 'tax', 'CustomerType', 
+        'ownerName', 'buildingNumber', 'street', 'country', 
+        'city', 'salesOrganization', 'distributionChannel', 'division'
+      ];
+      
+      const extractedFieldsCount = requiredFields.filter(field => {
+        const value = (extractedData as any)?.[field];
+        return value && value.toString().trim() !== '';
+      }).length;
+      
+      console.log('🔍 [MODAL ERROR RECOVERY] Extracted fields count:', extractedFieldsCount);
+      
+      // ✅ If we extracted 8+ fields (66%+), consider it successful even if there was an error
+      if (extractedFieldsCount >= 8) {
+        console.log('✅ [MODAL ERROR RECOVERY] Extracted enough fields, treating as success');
+        
+        this.addMessage({
+          id: `modal_partial_success_${Date.now()}`,
+          role: 'assistant',
+          content: `✅ تم استخراج معظم البيانات بنجاح!\nMost data extracted successfully!\n\n📊 تم استخراج ${extractedFieldsCount} من ${requiredFields.length} حقل\nExtracted ${extractedFieldsCount} out of ${requiredFields.length} fields`,
+          timestamp: new Date(),
+          type: 'text'
+        });
+        
+        // Merge and update the form
+        this.mergeNewDataWithExisting(extractedData);
+        this.updateUnifiedModalWithNewData(extractedData);
+        return;
+      }
+      
+      // ✅ If less than 8 fields extracted, show error message
       // Check if it's a CORS or network error
       const isCorsOrNetworkError = 
         error?.status === 0 || 
@@ -3984,8 +4168,8 @@ Would you like to:
         error?.name === 'HttpErrorResponse';
       
       const errorMessage = isCorsOrNetworkError
-        ? `❌ ${this.translate.instant('agent.errors.aiCommunicationError')}\n\n🌐 ${this.translate.instant('agent.errors.checkInternetConnection')}\n\n💡 ${this.translate.instant('agent.errors.tryAgainLater')}`
-        : `❌ Failed to process additional documents. Please try again.`;
+        ? `❌ حدث خطأ في التواصل مع نموذج الذكاء الاصطناعي\nAI communication error occurred\n\n🌐 يرجى التحقق من اتصال الإنترنت\nPlease check your internet connection\n\n💡 يرجى المحاولة مرة أخرى\nPlease try again later`
+        : `❌ فشلت معالجة المستندات الإضافية. يرجى المحاولة مرة أخرى.\nFailed to process additional documents. Please try again.`;
       
       this.addMessage({
         id: `modal_error_${Date.now()}`,
@@ -4225,12 +4409,14 @@ Would you like to:
 
   // Helper method to check if field is missing
   isFieldMissing(field: string): boolean {
-    return this.unifiedModalData.missingFields.includes(field);
+    const isMissing = this.unifiedModalData.missingFields.includes(field);
+    console.log(`🔍 [DEBUG] isFieldMissing(${field}): missingFields=[${this.unifiedModalData.missingFields.join(', ')}], result=${isMissing}`);
+    return isMissing;
   }
 
   // Helper method to check if field was extracted
   isFieldExtracted(field: string): boolean {
-    return this.unifiedModalData.extractedFields.includes(field);
+    return this.unifiedModalData.extractedFields.some((item: any) => item.field === field);
   }
 
   // ====== Document Preview & Download (From new-request.component.ts) ======
@@ -4595,38 +4781,283 @@ Would you like to:
   }
 
   /**
+   * Detect customer type from legal form or company name
+   */
+  private detectCustomerType(legalForm: string, companyName: string): string {
+    const text = `${legalForm} ${companyName}`.toLowerCase();
+    
+    // Match against CUSTOMER_TYPE_OPTIONS values
+    if (text.includes('joint stock') || text.includes('public company') || text.includes('plc')) {
+      return 'joint_stock';
+    }
+    if (text.includes('limited liability') || text.includes('llc') || text.includes('l.l.c')) {
+      return 'limited_liability';
+    }
+    if (text.includes('sole proprietor') || text.includes('individual') || text.includes('establishment')) {
+      return 'sole_proprietorship';
+    }
+    if (text.includes('sme') || text.includes('small') || text.includes('medium')) {
+      return 'SME';
+    }
+    if (text.includes('retail chain') || text.includes('chain')) {
+      return 'Retail Chain';
+    }
+    if (text.includes('corporate') || text.includes('corporation') || text.includes('company')) {
+      return 'Corporate';
+    }
+    
+    // Default fallback
+    return 'Corporate';
+  }
+
+  /**
+   * Generate fallback static contacts for companies not in demo pool
+   */
+  private generateFallbackStaticContacts(companyName: string, country: string, count: number): any[] {
+    // Get country-specific data
+    const countryData = this.getCountryDataForContacts(country);
+    
+    // Generate email domain from company name
+    const cleanName = companyName
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/[^a-z0-9]/g, '')
+      .substring(0, 15);
+    
+    const emailDomain = `${cleanName}.com.${countryData.extension}`;
+    
+    // Generate seed from company name for consistency
+    const seed = this.hashStringForContacts(companyName);
+    
+    const jobTitles = [
+      "Chief Executive Officer",
+      "Operations Manager",
+      "Sales Manager", 
+      "Finance Manager",
+      "Marketing Director",
+      "Procurement Manager",
+      "Quality Control Manager",
+      "Supply Chain Director",
+      "Production Manager",
+      "Logistics Manager"
+    ];
+    
+    const contacts = [];
+    
+    for (let i = 0; i < count; i++) {
+      const contactSeed = seed + (i * 1000);
+      
+      const firstNameIndex = contactSeed % countryData.firstNames.length;
+      const lastNameIndex = (contactSeed >> 4) % countryData.lastNames.length;
+      const jobTitleIndex = (contactSeed >> 8) % jobTitles.length;
+      
+      const firstName = countryData.firstNames[firstNameIndex];
+      const lastName = countryData.lastNames[lastNameIndex];
+      const jobTitle = jobTitles[jobTitleIndex];
+      
+      // Generate consistent phone numbers
+      const mobileBase = countryData.phoneFormat.mobile.replace(/X/g, '');
+      const mobileSuffix = (contactSeed % 1000000000).toString().padStart(9, '0');
+      const mobile = mobileBase + mobileSuffix;
+      
+      const landlineBase = countryData.phoneFormat.landline.replace(/X/g, '');
+      const landlineSuffix = ((contactSeed >> 2) % 1000000000).toString().padStart(9, '0');
+      const landline = landlineBase + landlineSuffix;
+      
+      contacts.push({
+        name: `${firstName} ${lastName}`,
+        jobTitle: jobTitle,
+        email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace('al-', '')}@${emailDomain}`,
+        mobile: mobile,
+        landline: landline,
+        preferredLanguage: i % 2 === 0 ? "Arabic" : "English"
+      });
+    }
+    
+    return contacts;
+  }
+  
+  /**
+   * Hash string for contacts (simple hash function)
+   */
+  private hashStringForContacts(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash;
+    }
+    return Math.abs(hash);
+  }
+  
+  /**
+   * Get country-specific data for contact generation
+   */
+  private getCountryDataForContacts(country: string): any {
+    const countryData: { [key: string]: any } = {
+      'Saudi Arabia': {
+        firstNames: ["Ahmed", "Mohammed", "Omar", "Khalid", "Saud", "Fahad", "Abdullah", "Yousef"],
+        lastNames: ["Al-Rashid", "Al-Shehri", "Al-Mansouri", "Al-Zahrani", "Al-Dosari", "Al-Mutairi"],
+        phoneFormat: { mobile: "+9665", landline: "+9661" },
+        extension: "sa"
+      },
+      'Egypt': {
+        firstNames: ["Ahmed", "Mohammed", "Omar", "Hassan", "Mahmoud", "Youssef"],
+        lastNames: ["Hassan", "Ali", "Zaki", "Mansour", "Fahmy", "Ismail"],
+        phoneFormat: { mobile: "+201", landline: "+202" },
+        extension: "eg"
+      },
+      'United Arab Emirates': {
+        firstNames: ["Ahmed", "Mohammed", "Omar", "Rashid", "Salem", "Hamdan"],
+        lastNames: ["Al-Maktoum", "Al-Nahyan", "Al-Qassimi", "Al-Sharqi", "Al-Mualla"],
+        phoneFormat: { mobile: "+9715", landline: "+9714" },
+        extension: "ae"
+      },
+      'Yemen': {
+        firstNames: ["Ahmed", "Mohammed", "Ali", "Abdullah", "Saleh"],
+        lastNames: ["Al-Houthi", "Al-Saleh", "Al-Yamani", "Al-Hadrami"],
+        phoneFormat: { mobile: "+9677", landline: "+9671" },
+        extension: "ye"
+      },
+      'Oman': {
+        firstNames: ["Ahmed", "Mohammed", "Khalid", "Said", "Hamad"],
+        lastNames: ["Al-Habsi", "Al-Lawati", "Al-Balushi", "Al-Maamari"],
+        phoneFormat: { mobile: "+9689", landline: "+9682" },
+        extension: "om"
+      },
+      'Kuwait': {
+        firstNames: ["Ahmed", "Mohammed", "Khalid", "Fahad"],
+        lastNames: ["Al-Sabah", "Al-Ghanim", "Al-Kharafi", "Al-Sager"],
+        phoneFormat: { mobile: "+9656", landline: "+9652" },
+        extension: "kw"
+      },
+      'Qatar': {
+        firstNames: ["Ahmed", "Mohammed", "Hamad", "Abdullah"],
+        lastNames: ["Al-Thani", "Al-Attiyah", "Al-Kuwari", "Al-Emadi"],
+        phoneFormat: { mobile: "+9745", landline: "+9744" },
+        extension: "qa"
+      },
+      'Bahrain': {
+        firstNames: ["Ahmed", "Mohammed", "Khalid", "Hamad"],
+        lastNames: ["Al-Khalifa", "Al-Zayani", "Al-Arrayedh", "Kanoo"],
+        phoneFormat: { mobile: "+9733", landline: "+9731" },
+        extension: "bh"
+      }
+    };
+    
+    return countryData[country] || countryData['Saudi Arabia'];
+  }
+
+  /**
    * Generate demo contact data
    */
   private generateDemoContactData(): void {
+    console.log('🎯 [CONTACT MODAL] generateDemoContactData() called');
+    
     // Get company name from form to find matching company
     const companyName = this.unifiedModalForm?.get('firstName')?.value;
+    console.log('🎯 [CONTACT MODAL] Company name from form:', companyName);
     
-    // Use current demo company or find by name
-    if (!this.currentDemoCompany && companyName) {
-      this.currentDemoCompany = this.demoDataGenerator.findCompanyByName(companyName);
+    // ALWAYS try to find company by name from the form (priority #1)
+    if (companyName) {
+      console.log('🎯 [CONTACT MODAL] Finding company by name:', companyName);
+      const foundCompany = this.demoDataGenerator.findCompanyByName(companyName);
+      if (foundCompany) {
+        this.currentDemoCompany = foundCompany;
+        console.log('✅ [CONTACT MODAL] Found and updated to company:', foundCompany.name);
+      } else {
+        console.log('⚠️ [CONTACT MODAL] Company not found in demo pool:', companyName);
+        
+        // Create a temporary demo company from the extracted data in the form
+        const country = this.unifiedModalForm?.get('country')?.value || 'Saudi Arabia';
+        console.log('🎯 [CONTACT MODAL] Creating temporary company for:', companyName, 'in', country);
+        
+        this.currentDemoCompany = {
+          id: companyName.toLowerCase().replace(/\s+/g, '_'),
+          name: companyName,
+          nameAr: this.unifiedModalForm?.get('firstNameAR')?.value || '',
+          customerType: this.unifiedModalForm?.get('CustomerType')?.value || 'Private Company',
+          ownerName: this.unifiedModalForm?.get('ownerName')?.value || '',
+          taxNumber: this.unifiedModalForm?.get('tax')?.value || '',
+          buildingNumber: this.unifiedModalForm?.get('buildingNumber')?.value || '',
+          street: this.unifiedModalForm?.get('street')?.value || '',
+          country: country,
+          city: this.unifiedModalForm?.get('city')?.value || '',
+          industry: 'General',
+          contacts: [], // Will be generated below
+          salesOrg: this.unifiedModalForm?.get('salesOrganization')?.value || '',
+          distributionChannel: this.unifiedModalForm?.get('distributionChannel')?.value || '',
+          division: this.unifiedModalForm?.get('division')?.value || ''
+        };
+        
+        console.log('✅ [CONTACT MODAL] Created temporary company:', this.currentDemoCompany.name);
+      }
     }
     
-    // If still no company, generate new one
+    // If still no company, generate new one from pool
     if (!this.currentDemoCompany) {
+      console.log('🎯 [CONTACT MODAL] No company name in form, generating from pool');
       this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+      console.log('🎯 [CONTACT MODAL] Generated company:', this.currentDemoCompany?.name);
     }
     
-    // Get next contact from the company (not always first one for variety)
+    console.log('🎯 [CONTACT MODAL] Current demo company:', {
+      name: this.currentDemoCompany.name,
+      country: this.currentDemoCompany.country,
+      contactsCount: this.currentDemoCompany.contacts?.length || 0
+    });
+    
+    // Get next contact from the company
     const contactsArray = this.unifiedModalForm?.get('contacts') as any;
     const currentContactCount = contactsArray?.length || 0;
+    console.log('🎯 [CONTACT MODAL] Current contact count in form:', currentContactCount);
+    console.log('🎯 [CONTACT MODAL] Need contact at index:', currentContactCount);
     
-    // Generate additional contacts if needed
-    let allContacts = [...this.currentDemoCompany.contacts];
-    while (allContacts.length <= currentContactCount) {
-      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(
-        1, 
+    // Generate contacts if the company doesn't have any (temporary company)
+    let allContacts = [...(this.currentDemoCompany.contacts || [])];
+    console.log('🎯 [CONTACT MODAL] Initial contacts count:', allContacts.length);
+    
+    if (allContacts.length === 0 || allContacts.length <= currentContactCount) {
+      console.log('🎯 [CONTACT MODAL] Need to generate contacts!');
+      const contactsNeeded = Math.max(currentContactCount + 1, 5); // At least 5 contacts
+      console.log('🎯 [CONTACT MODAL] Contacts needed:', contactsNeeded);
+      
+      const generatedContacts = this.demoDataGenerator.generateAdditionalContacts(
+        contactsNeeded,
         this.currentDemoCompany.country,
         this.currentDemoCompany.name
       );
-      allContacts.push(...additionalContacts);
+      
+      console.log('🎯 [CONTACT MODAL] Generated contacts:', generatedContacts.length);
+      
+      // If no contacts generated (company not in pool), generate using static method directly
+      if (generatedContacts.length === 0) {
+        console.log('🎯 [CONTACT MODAL] Using fallback static contact generation');
+        allContacts = this.generateFallbackStaticContacts(
+          this.currentDemoCompany.name,
+          this.currentDemoCompany.country,
+          contactsNeeded
+        );
+        console.log('🎯 [CONTACT MODAL] Fallback contacts generated:', allContacts.length);
+      } else {
+        allContacts = generatedContacts;
+        // Update the company's contacts for future use
+        this.currentDemoCompany.contacts = allContacts;
+      }
     }
     
     const demoContact = allContacts[currentContactCount] || allContacts[0];
+    console.log('🎯 [CONTACT MODAL] Selected contact:', {
+      index: currentContactCount,
+      name: demoContact?.name,
+      email: demoContact?.email,
+      mobile: demoContact?.mobile
+    });
+    
+    if (!demoContact) {
+      console.error('❌ [CONTACT MODAL] No demo contact available!');
+      return;
+    }
     
     this.contactModalForm.patchValue({
       name: demoContact.name || 'Ahmed Mohamed',
@@ -4637,6 +5068,7 @@ Would you like to:
       preferredLanguage: demoContact.preferredLanguage || 'Arabic'
     });
     
+    console.log('✅ [CONTACT MODAL] Contact modal form filled successfully');
     this.cdr.detectChanges();
   }
 
@@ -4752,86 +5184,13 @@ Would you like to:
       console.log('🔍 [DEBUG] New files count:', allFiles.length);
       console.log('🔍 [DEBUG] All files names:', allFiles.map(f => f.name));
       
-      // Show confirmation
-      const confirmMsg = this.translate.instant('agent.confirmations.addDocuments', { count: allFiles.length });
-      console.log('🔍 [DEBUG] Showing confirmation dialog:', confirmMsg);
-      const userConfirmed = confirm(confirmMsg);
-      console.log('🔍 [DEBUG] User confirmed:', userConfirmed);
+      // ✅ Automatically process new documents with governance check
+      console.log('🔍 [DEBUG] Auto-processing new documents with governance check');
       
-      if (!userConfirmed) {
-        console.log('🔍 [DEBUG] User cancelled, clearing input and returning');
-        event.target.value = '';
-        return;
-      }
+      // ✅ MANDATORY GOVERNANCE CHECK - Compare new documents with current company
+      await this.performGovernanceCheck(allFiles);
       
-      console.log('🔍 [DEBUG] Setting reprocessing flag to true');
-      // Reprocess all documents (old + new)
-      this.isReprocessingDocuments = true;
-      this.unifiedModalDocuments = allFiles;
-      
-      console.log('🔍 [DEBUG] Setting pendingFiles and showing document modal');
-      // Reset progress indicators
-      this.showMetadataExtractionProgress = false;
-      this.metadataExtractionProgress = 0;
-      this.metadataExtractionStatus = '';
-      
-      // Prepare metadata form for all files
-      this.pendingFiles = allFiles;
-      this.showDocumentModal = true;
-      
-      console.log('🔍 [DEBUG] Creating document metadata form');
-      this.documentMetadataForm = this.fb.group({
-        documents: this.fb.array([])
-      });
-      console.log('🔍 [DEBUG] documentMetadataForm created:', !!this.documentMetadataForm);
-      console.log('🔍 [DEBUG] documents FormArray created:', !!this.documentMetadataForm.get('documents'));
-      
-      const documentsArray = this.documentMetadataForm.get('documents') as FormArray;
-      console.log('🔍 [DEBUG] Processing', allFiles.length, 'files for metadata form');
-      
-      // Process files with smart detection
-      for (let index = 0; index < allFiles.length; index++) {
-        const file = allFiles[index];
-        console.log(`🔍 [DEBUG] Processing file ${index + 1}:`, file.name);
-        
-        // Use smart detection with 3 attempts
-        const smartDetectedInfo = await this.detectDocumentMetadataSmart(file);
-        console.log(`🔍 [DEBUG] Smart detection result for ${file.name}:`, smartDetectedInfo);
-        
-        // Fallback to filename-based detection if smart detection fails
-        const fallbackInfo = this.detectDocumentInfo(file.name);
-        const finalInfo = {
-          country: smartDetectedInfo.country || fallbackInfo?.country || '',
-          type: smartDetectedInfo.type || fallbackInfo?.type || ''
-        };
-        
-        console.log(`🔍 [DEBUG] Final detected info for ${file.name}:`, finalInfo);
-        console.log(`🔍 [DEBUG] Country: "${finalInfo.country}" (will be missing data if empty)`);
-        console.log(`🔍 [DEBUG] Type: "${finalInfo.type}" (will be missing data if empty)`);
-        
-        const documentGroup = this.fb.group({
-          name: [file.name],
-          country: [finalInfo.country], // Will be in missing data if empty
-          type: [finalInfo.type], // Will be in missing data if empty
-          description: [this.generateSmartDescription(file.name, finalInfo)]
-        });
-        
-        console.log(`🔍 [DEBUG] Form group created for ${file.name}:`, documentGroup.value);
-        documentsArray.push(documentGroup);
-        console.log(`🔍 [DEBUG] Added form group for ${file.name}`);
-        console.log(`🔍 [DEBUG] documentsArray length after adding:`, documentsArray.length);
-      }
-      
-      console.log('🔍 [DEBUG] Document metadata form created with', documentsArray.length, 'entries');
-      console.log('🔍 [DEBUG] Document modal should be visible:', this.showDocumentModal);
-      console.log('🔍 [DEBUG] Form valid after creation:', this.documentMetadataForm.valid);
-      console.log('✅ Prepared metadata form for reprocessing all documents');
-      
-      // Ensure progress indicators are hidden
-      this.showMetadataExtractionProgress = false;
-      this.metadataExtractionProgress = 0;
-      this.metadataExtractionStatus = '';
-      this.cdr.detectChanges();
+      event.target.value = '';
     } catch (error) {
       console.error('❌ Error adding documents:', error);
       console.error('🔍 [DEBUG] Error stack:', (error as Error).stack);
@@ -5019,18 +5378,43 @@ Respond with JSON only:
       console.log('📊 [GOVERNANCE] Starting progress bar animation');
       this.animateProgressBar(); // Don't await, let it run in background
       
-      // Step 3: Extract data from new documents using public method
-      console.log('🔍 [GOVERNANCE] Extracting data from new documents...');
-      const newExtractedData = await this.agentService.uploadAndProcessDocuments(newFiles);
+      // Step 3: Get current form data first (for lightweight extraction)
+      const currentFormData = this.getCurrentFormData();
+      console.log('📋 [GOVERNANCE] Current form data (before extraction):', currentFormData);
       
-      // Step 3.5: Hide progress bar and remove loading message
+      // Step 3.5: Prepare existing data for lightweight extraction
+      const existingData = this.unifiedModalForm?.value ? {
+        firstName: this.unifiedModalForm.value.firstName || '',
+        firstNameAR: this.unifiedModalForm.value.firstNameAR || '',
+        tax: this.unifiedModalForm.value.tax || '',
+        CustomerType: this.unifiedModalForm.value.CustomerType || '',
+        ownerName: this.unifiedModalForm.value.ownerName || '',
+        buildingNumber: this.unifiedModalForm.value.buildingNumber || '',
+        street: this.unifiedModalForm.value.street || '',
+        country: this.unifiedModalForm.value.country || '',
+        city: this.unifiedModalForm.value.city || '',
+        salesOrganization: this.unifiedModalForm.value.salesOrganization || '',
+        distributionChannel: this.unifiedModalForm.value.distributionChannel || '',
+        division: this.unifiedModalForm.value.division || ''
+      } : undefined;
+      
+      console.log('📋 [GOVERNANCE] Existing form data for extraction:', existingData);
+      
+      // Step 4: Extract data from new documents using LIGHTWEIGHT mode
+      console.log('🔍 [GOVERNANCE] Extracting data from new documents (LIGHTWEIGHT MODE - company name + missing fields only)...');
+      
+      // Pass existing data to agentService so it knows what's already filled
+      if (existingData) {
+        this.agentService['extractedData'] = existingData as any;
+      }
+      
+      const newExtractedData = await this.agentService.uploadAndProcessDocuments(newFiles, undefined, true); // ✅ lightweight mode = true
+      
+      // Step 4.5: Hide progress bar and remove loading message
       console.log('📊 [GOVERNANCE] Hiding progress bar');
       this.showProgressBar = false;
       this.messages = this.messages.filter(m => m.id !== progressMessage.id);
       this.cdr.detectChanges();
-      
-      // Step 4: Get current form data (current company)
-      const currentFormData = this.getCurrentFormData();
       console.log('📋 [GOVERNANCE] Current form data:', currentFormData);
       console.log('📋 [GOVERNANCE] New extracted data:', newExtractedData);
       
@@ -5080,25 +5464,96 @@ Respond with JSON only:
         console.log('⚠️ [GOVERNANCE] Different company detected - using existing choice dialog');
         this.showCompanyChoiceDialog(newExtractedData as ExtractedData, newFiles);
       } else {
-        // Step 7: Same company - save to session staging and add documents
-        console.log('✅ [GOVERNANCE] Same company detected - saving to session staging');
+        // Step 7: Same company - merge new data with existing data and save
+        console.log('✅ [GOVERNANCE] Same company detected - merging data');
         
-        // ✅ Try to save to session staging (optional - don't block on failure)
+        // ✅ Merge new extracted data with existing form data
+        const mergedData = {
+          ...existingData, // Start with existing data (all fields)
+          ...newExtractedData // Overlay with new data (only non-empty fields)
+        };
+        
+        // ✅ Clean up empty fields from merged data (preserve existing values)
+        Object.keys(mergedData).forEach(key => {
+          if (key === 'contacts') return; // Skip contacts array
+          const typedKey = key as keyof typeof existingData;
+          if (mergedData[typedKey] === '' && existingData && existingData[typedKey]) {
+            (mergedData as any)[typedKey] = (existingData as any)[typedKey]; // Keep existing value if new is empty
+          }
+        });
+        
+        console.log('🔀 [GOVERNANCE] Merged data:', {
+          existing: existingData,
+          new: newExtractedData,
+          merged: mergedData
+        });
+        
+        // ✅ Try to save merged data to session staging (optional - don't block on failure)
         try {
-          await this.saveToSessionStaging(newExtractedData, newFiles);
+          await this.saveToSessionStaging(mergedData, newFiles);
         } catch (error) {
           console.warn('⚠️ [SESSION] Session staging failed (non-critical):', error);
           // Continue anyway - session staging is optional
         }
         
-        // Step 8: Continue with existing flow
-        this.handleDocumentAddition(newFiles);
+        // Step 8: Reload modal from database (skip handleDocumentAddition - we already did extraction!)
+        console.log('🔄 [GOVERNANCE] Reloading modal from database after same company detection...');
+        await this.showUnifiedModalFromDatabase(mergedData);
       }
       
     } catch (error) {
       console.error('❌ [GOVERNANCE] Error in governance check:', error);
-      // Fallback to existing behavior
-      this.handleDocumentAddition(newFiles);
+      // Fallback to existing behavior (but still use lightweight mode)
+      console.log('⚠️ [GOVERNANCE] Falling back to handleDocumentAddition due to error');
+      
+      // Set existing data from form before fallback
+      const existingFormData = this.unifiedModalForm?.value ? {
+        firstName: this.unifiedModalForm.value.firstName || '',
+        firstNameAR: this.unifiedModalForm.value.firstNameAR || '',
+        tax: this.unifiedModalForm.value.tax || '',
+        CustomerType: this.unifiedModalForm.value.CustomerType || '',
+        ownerName: this.unifiedModalForm.value.ownerName || '',
+        buildingNumber: this.unifiedModalForm.value.buildingNumber || '',
+        street: this.unifiedModalForm.value.street || '',
+        country: this.unifiedModalForm.value.country || '',
+        city: this.unifiedModalForm.value.city || '',
+        salesOrganization: this.unifiedModalForm.value.salesOrganization || '',
+        distributionChannel: this.unifiedModalForm.value.distributionChannel || '',
+        division: this.unifiedModalForm.value.division || ''
+      } : undefined;
+      
+      if (existingFormData) {
+        this.agentService['extractedData'] = existingFormData as any;
+      }
+      
+      this.handleDocumentAdditionLightweight(newFiles);
+    }
+  }
+  
+  /**
+   * Handle document addition in lightweight mode (skip redundant extraction)
+   */
+  private async handleDocumentAdditionLightweight(newFiles: File[]): Promise<void> {
+    console.log('📄 [LIGHTWEIGHT] Handling document addition (no re-extraction needed)');
+    
+    try {
+      // Just reload from database - extraction already done in governance check
+      console.log('🔄 [LIGHTWEIGHT] Reloading modal from database...');
+      
+      // Get current extracted data from service
+      const extractedData = this.agentService.getExtractedData();
+      
+      await this.showUnifiedModalFromDatabase(extractedData);
+      
+    } catch (error: any) {
+      console.error('❌ [LIGHTWEIGHT] Error reloading modal:', error);
+      this.addMessage({
+        id: `error_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ Error: ${error.message}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
     }
   }
 
@@ -5109,6 +5564,14 @@ Respond with JSON only:
     
     console.log('💾 [SESSION] Saving to session staging:', { companyId, companyName, documentsCount: documents.length });
     console.log('💾 [SESSION] Full extracted data:', extractedData);
+    
+    // ✅ Map contacts to match backend expectations
+    const mappedContacts = (extractedData.contacts || []).map((contact: any) => ({
+      name: contact.name,
+      email: contact.email,
+      phone: contact.mobile || contact.phone,  // ✅ Backend expects 'phone', frontend has 'mobile'
+      position: contact.jobTitle || contact.position  // ✅ Backend expects 'position', frontend has 'jobTitle'
+    }));
     
     await this.sessionStaging.saveCompany({
       companyId,
@@ -5128,7 +5591,7 @@ Respond with JSON only:
       registrationNumber: extractedData.registrationNumber,
       legalForm: extractedData.legalForm,
       documents,
-      contacts: extractedData.contacts || []
+      contacts: mappedContacts  // ✅ Use mapped contacts
     });
     
     console.log('✅ [SESSION] Data saved to session staging successfully');
@@ -5136,9 +5599,10 @@ Respond with JSON only:
 
   // ✅ Background governance helper methods
   private generateCompanyId(extractedData: any): string {
+    // ✅ Use ONLY company name for ID (not tax number)
+    // This ensures same company gets same ID even if tax number changes
     const name = extractedData.firstName || extractedData.name || 'unknown';
-    const tax = extractedData.tax || 'notax';
-    return `${name.replace(/\s+/g, '_')}_${tax}`.toLowerCase();
+    return `${name.replace(/\s+/g, '_')}`.toLowerCase();
   }
   
   private getCurrentFormData(): any {

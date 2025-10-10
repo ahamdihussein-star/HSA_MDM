@@ -189,23 +189,27 @@ export class DemoDataGeneratorService {
       
       companies.forEach((company, index) => {
         const city = cities[index % cities.length];
+        const companyId = `${country.toLowerCase().replace(/\s+/g, '_')}_${index + 1}`;
+        
+        // Generate static, consistent data for each company
+        const staticData = this.generateStaticCompanyData(companyId, company.name, country, city, company.industry, company.type, index);
         
         allCompanies.push({
-          id: `${country.toLowerCase().replace(/\s+/g, '_')}_${index + 1}`,
+          id: companyId,
           name: company.name,
           nameAr: company.nameAr,
-          customerType: company.type,
-          ownerName: this.generateOwnerName(country),
-          taxNumber: this.generateTaxNumber(country, index + 1),
-          buildingNumber: `${1000 + index}`,
-          street: this.generateStreet(city, index),
+          customerType: staticData.customerType, // ✅ Use mapped customer type from staticData
+          ownerName: staticData.ownerName,
+          taxNumber: staticData.taxNumber,
+          buildingNumber: staticData.buildingNumber,
+          street: staticData.street,
           country: country,
           city: city,
           industry: company.industry,
-          contacts: this.generateContactsForCompany(country, 2, company.name),
-          salesOrg: this.getSalesOrgByCountry(country, index),
-          distributionChannel: this.getDistributionChannel(index),
-          division: this.getDivision(company.industry)
+          contacts: staticData.contacts, // Now static with 5 contacts
+          salesOrg: staticData.salesOrg,
+          distributionChannel: staticData.distributionChannel,
+          division: staticData.division
         });
         
         globalIndex++;
@@ -230,10 +234,10 @@ export class DemoDataGeneratorService {
       this.resetPoolForCategory(useCase);
     }
 
-    // Select companies from available pool
+    // Select companies from available pool (always take first ones for consistency)
     for (let i = 0; i < count && this.companyPool.available.length > 0; i++) {
-      const randomIndex = Math.floor(Math.random() * this.companyPool.available.length);
-      const company = this.companyPool.available.splice(randomIndex, 1)[0];
+      // Always take from the beginning for consistent order
+      const company = this.companyPool.available.shift()!;
       
       // Mark where it's used
       company.usedIn = useCase;
@@ -257,11 +261,19 @@ export class DemoDataGeneratorService {
       this.usedCompanies.clear();
     }
 
-    // Find next unused company from pool
-    let selectedIndex: number;
-    do {
-      selectedIndex = Math.floor(Math.random() * this.companyPool.all.length);
-    } while (this.usedCompanies.has(selectedIndex) && this.usedCompanies.size < this.companyPool.all.length);
+    // Find next unused company from pool (sequential for consistency)
+    let selectedIndex: number = 0;
+    
+    // Find the first unused index
+    while (this.usedCompanies.has(selectedIndex) && selectedIndex < this.companyPool.all.length) {
+      selectedIndex++;
+    }
+    
+    // If all used, reset and start from 0
+    if (selectedIndex >= this.companyPool.all.length) {
+      this.usedCompanies.clear();
+      selectedIndex = 0;
+    }
 
     this.usedCompanies.add(selectedIndex);
     this.lastUsedIndex = selectedIndex;
@@ -310,13 +322,47 @@ export class DemoDataGeneratorService {
 
     const searchName = name.trim().toLowerCase();
     
-    // Search in all companies
-    const found = this.companyPool.all.find(company => 
-      company.name.toLowerCase() === searchName || 
-      company.name.toLowerCase().includes(searchName) ||
-      company.nameAr === name ||
-      company.nameAr.includes(name)
-    );
+    // Normalize Arabic text (remove spaces, diacritics, etc.)
+    const normalizeArabic = (text: string): string => {
+      return text
+        .replace(/\s+/g, '') // Remove all spaces
+        .replace(/[ًٌٍَُِّْ]/g, '') // Remove diacritics
+        .trim()
+        .toLowerCase();
+    };
+    
+    const searchNameAr = normalizeArabic(name);
+    
+    // Search in all companies with improved matching
+    const found = this.companyPool.all.find(company => {
+      const companyNameEn = company.name.toLowerCase();
+      const companyNameAr = normalizeArabic(company.nameAr);
+      
+      // More flexible matching
+      return companyNameEn === searchName || 
+             companyNameEn.includes(searchName) ||
+             searchName.includes(companyNameEn) ||
+             companyNameAr === searchNameAr ||
+             companyNameAr.includes(searchNameAr) ||
+             searchNameAr.includes(companyNameAr) ||
+             // Additional fuzzy matching for common variations
+             companyNameEn.replace(/[^a-z]/g, '') === searchName.replace(/[^a-z]/g, '') ||
+             companyNameAr.replace(/[^a-z]/g, '') === searchNameAr.replace(/[^a-z]/g, '');
+    });
+
+    console.log('🔍 [DEMO DATA] Finding company by name:', name);
+    console.log('🔍 [DEMO DATA] Search name (EN):', searchName);
+    console.log('🔍 [DEMO DATA] Search name (AR):', searchNameAr);
+    console.log('🔍 [DEMO DATA] Found company:', found?.name || 'Not found');
+    
+    if (found) {
+      console.log('🔍 [DEMO DATA] Company details:', {
+        name: found.name,
+        nameAr: found.nameAr,
+        country: found.country,
+        contactsCount: found.contacts?.length || 0
+      });
+    }
 
     return found ? this.deepClone(found) : null;
   }
@@ -333,15 +379,7 @@ export class DemoDataGeneratorService {
     console.log(`🔄 Reset pool for category: ${category}`);
   }
 
-  /**
-   * Generate owner name for a country
-   */
-  private generateOwnerName(country: string): string {
-    const countryData = this.getCountryData(country);
-    const firstName = countryData.firstNames[Math.floor(Math.random() * countryData.firstNames.length)];
-    const lastName = countryData.lastNames[Math.floor(Math.random() * countryData.lastNames.length)];
-    return `${firstName} ${lastName}`;
-  }
+  // Removed generateOwnerName - now using generateStaticOwnerName
 
   /**
    * Generate tax number for a country
@@ -410,7 +448,177 @@ export class DemoDataGeneratorService {
   }
 
   /**
-   * Generate contacts for a company
+   * Generate static, consistent data for a company
+   */
+  private generateStaticCompanyData(companyId: string, companyName: string, country: string, city: string, industry: string, customerType: string, index: number): any {
+    // Use company ID as seed for consistent generation
+    const seed = this.hashString(companyId);
+    
+    // Map company type to CUSTOMER_TYPE_OPTIONS values
+    const mappedCustomerType = this.mapToSystemCustomerType(customerType);
+    
+    return {
+      ownerName: this.generateStaticOwnerName(country, seed),
+      taxNumber: this.generateStaticTaxNumber(country, index, seed),
+      buildingNumber: this.generateStaticBuildingNumber(index, seed),
+      street: this.generateStaticStreet(city, index, seed),
+      customerType: mappedCustomerType, // Use mapped type
+      contacts: this.generateStaticContacts(companyName, country, seed), // 5 static contacts
+      salesOrg: this.getSalesOrgByCountry(country, index),
+      distributionChannel: this.getDistributionChannel(index),
+      division: this.getDivision(industry)
+    };
+  }
+  
+  /**
+   * Map company type to system CUSTOMER_TYPE_OPTIONS values
+   */
+  private mapToSystemCustomerType(type: string): string {
+    const lowerType = type.toLowerCase();
+    
+    if (lowerType.includes('public')) return 'joint_stock';
+    if (lowerType.includes('private')) return 'limited_liability';
+    if (lowerType.includes('llc')) return 'limited_liability';
+    if (lowerType.includes('sole')) return 'sole_proprietorship';
+    if (lowerType.includes('sme')) return 'SME';
+    if (lowerType.includes('retail')) return 'Retail Chain';
+    
+    return 'Corporate'; // Default
+  }
+
+  /**
+   * Hash string to create consistent seed
+   */
+  private hashString(str: string): number {
+    let hash = 0;
+    for (let i = 0; i < str.length; i++) {
+      const char = str.charCodeAt(i);
+      hash = ((hash << 5) - hash) + char;
+      hash = hash & hash; // Convert to 32-bit integer
+    }
+    return Math.abs(hash);
+  }
+
+  /**
+   * Generate static owner name based on seed
+   */
+  private generateStaticOwnerName(country: string, seed: number): string {
+    const countryData = this.getCountryData(country);
+    const firstNames = countryData.firstNames;
+    const lastNames = countryData.lastNames;
+    
+    const firstNameIndex = seed % firstNames.length;
+    const lastNameIndex = (seed >> 4) % lastNames.length;
+    
+    return `${firstNames[firstNameIndex]} ${lastNames[lastNameIndex]}`;
+  }
+
+  /**
+   * Generate static tax number based on seed
+   */
+  private generateStaticTaxNumber(country: string, index: number, seed: number): string {
+    const countryPrefixes: { [key: string]: string } = {
+      'Egypt': '3',
+      'Saudi Arabia': '3',
+      'United Arab Emirates': '7',
+      'Yemen': '2',
+      'Kuwait': '2',
+      'Qatar': '3',
+      'Bahrain': '1',
+      'Oman': '1'
+    };
+    
+    const prefix = countryPrefixes[country] || '3';
+    const baseNumber = (seed % 1000000000).toString().padStart(9, '0');
+    return `${prefix}${baseNumber}`;
+  }
+
+  /**
+   * Generate static building number
+   */
+  private generateStaticBuildingNumber(index: number, seed: number): string {
+    return `${1000 + index + (seed % 100)}`;
+  }
+
+  /**
+   * Generate static street name
+   */
+  private generateStaticStreet(city: string, index: number, seed: number): string {
+    const streets = [
+      'King Fahd Road', 'Tahrir Square', 'Sheikh Zayed Road', 'Al-Qasr Street',
+      'Corniche Road', 'Airport Road', 'Main Street', 'Business District',
+      'Industrial Area', 'Commercial Zone', 'Downtown', 'Financial Center'
+    ];
+    
+    const streetIndex = (seed + index) % streets.length;
+    return streets[streetIndex];
+  }
+
+  /**
+   * Generate 5 static contacts for each company
+   */
+  private generateStaticContacts(companyName: string, country: string, seed: number): DemoContact[] {
+    const countryData = this.getCountryData(country);
+    const firstNames = countryData.firstNames;
+    const lastNames = countryData.lastNames;
+    const phoneFormat = countryData.phoneFormat;
+    
+    const jobTitles = [
+      "Chief Executive Officer",
+      "Operations Manager", 
+      "Sales Manager",
+      "Finance Manager",
+      "Marketing Director"
+    ];
+    
+    // Generate email domain from company name
+    const cleanName = companyName
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/[^a-z0-9]/g, '')
+      .substring(0, 15);
+    
+    const countryExt = countryData.domains[0].split('.').pop();
+    const emailDomain = `${cleanName}.com.${countryExt}`;
+    
+    const contacts: DemoContact[] = [];
+    
+    for (let i = 0; i < 5; i++) {
+      // Use seed + i to ensure consistent but different contacts
+      const contactSeed = seed + (i * 1000);
+      
+      const firstNameIndex = contactSeed % firstNames.length;
+      const lastNameIndex = (contactSeed >> 4) % lastNames.length;
+      const jobTitleIndex = (contactSeed >> 8) % jobTitles.length;
+      
+      const firstName = firstNames[firstNameIndex];
+      const lastName = lastNames[lastNameIndex];
+      const jobTitle = jobTitles[jobTitleIndex];
+      
+      // Generate consistent phone numbers
+      const mobileBase = phoneFormat.mobile.replace(/X/g, '');
+      const mobileSuffix = (contactSeed % 1000000000).toString().padStart(9, '0');
+      const mobile = mobileBase + mobileSuffix;
+      
+      const landlineBase = phoneFormat.landline.replace(/X/g, '');
+      const landlineSuffix = ((contactSeed >> 2) % 1000000000).toString().padStart(9, '0');
+      const landline = landlineBase + landlineSuffix;
+      
+      contacts.push({
+        name: `${firstName} ${lastName}`,
+        jobTitle: jobTitle,
+        email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace('al-', '')}@${emailDomain}`,
+        mobile: mobile,
+        landline: landline,
+        preferredLanguage: i % 2 === 0 ? "Arabic" : "English"
+      });
+    }
+    
+    return contacts;
+  }
+
+  /**
+   * Generate contacts for a company (kept for backward compatibility)
    */
   private generateContactsForCompany(country: string, count: number = 2, companyName?: string): DemoContact[] {
     return this.generateAdditionalContacts(count, country, companyName);
@@ -424,61 +632,100 @@ export class DemoDataGeneratorService {
   }
 
   /**
-   * Generates random additional contacts for variety
+   * Generate additional contacts for a company (used when more contacts are needed)
+   * Returns static contacts from the company's predefined list
+   * Can generate more than 5 contacts by using seed-based generation
    */
   generateAdditionalContacts(count: number = 1, country?: string, companyName?: string): DemoContact[] {
-    const jobTitles = [
-      "Procurement Manager",
-      "Operations Director", 
-      "Quality Control Manager",
-      "Food Safety Manager",
-      "Supply Chain Director",
-      "Production Manager",
-      "Logistics Manager",
-      "Sales Manager",
-      "Marketing Manager",
-      "Retail Operations Manager",
-      "Store Manager",
-      "Distribution Manager",
-      "Warehouse Manager",
-      "Customer Service Manager",
-      "Business Development Manager"
-    ];
-
-    // Get country-specific names and phone formats
-    const countryData = this.getCountryData(country || 'Saudi Arabia');
+    // If we have a company name, try to find the company
+    if (companyName) {
+      const foundCompany = this.findCompanyByName(companyName);
+      if (foundCompany) {
+        // If we need more contacts than the company has (5), generate more using same seed
+        const existingContacts = foundCompany.contacts || [];
+        
+        if (count <= existingContacts.length) {
+          // Return existing contacts
+          console.log(`✅ [DEMO DATA] Returning ${count} static contacts for company: ${companyName}`);
+          return existingContacts.slice(0, count);
+        } else {
+          // Need more than 5 - generate additional ones using static seed
+          const seed = this.hashString(foundCompany.id || companyName);
+          const additionalNeeded = count - existingContacts.length;
+          const moreContacts = this.generateStaticContactsWithOffset(
+            companyName, 
+            foundCompany.country, 
+            seed, 
+            existingContacts.length, // Start from contact 6, 7, 8, etc.
+            additionalNeeded
+          );
+          
+          console.log(`✅ [DEMO DATA] Returning ${existingContacts.length} existing + ${moreContacts.length} generated contacts for company: ${companyName}`);
+          return [...existingContacts, ...moreContacts];
+        }
+      }
+    }
+    
+    // Fallback: return empty array to maintain consistency
+    console.log('⚠️ [DEMO DATA] No company found, returning empty array for consistency');
+    return [];
+  }
+  
+  /**
+   * Generate additional static contacts with offset (for contacts 6+)
+   */
+  private generateStaticContactsWithOffset(companyName: string, country: string, seed: number, offset: number, count: number): DemoContact[] {
+    const countryData = this.getCountryData(country);
     const firstNames = countryData.firstNames;
     const lastNames = countryData.lastNames;
     const phoneFormat = countryData.phoneFormat;
-    const domains = countryData.domains;
-
+    
+    const jobTitles = [
+      "Chief Executive Officer",
+      "Operations Manager", 
+      "Sales Manager",
+      "Finance Manager",
+      "Marketing Director",
+      "Procurement Manager",
+      "Quality Control Manager",
+      "Supply Chain Director",
+      "Production Manager",
+      "Logistics Manager"
+    ];
+    
+    // Generate email domain from company name
+    const cleanName = companyName
+      .toLowerCase()
+      .replace(/\s+/g, '')
+      .replace(/[^a-z0-9]/g, '')
+      .substring(0, 15);
+    
+    const countryExt = countryData.domains[0].split('.').pop();
+    const emailDomain = `${cleanName}.com.${countryExt}`;
+    
     const contacts: DemoContact[] = [];
-
+    
     for (let i = 0; i < count; i++) {
-      const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
-      const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
-      const jobTitle = jobTitles[Math.floor(Math.random() * jobTitles.length)];
+      // Use seed + offset + i to ensure consistent but different contacts
+      const contactIndex = offset + i;
+      const contactSeed = seed + (contactIndex * 1000);
       
-      // Generate country-specific phone numbers
-      const mobile = this.generatePhoneNumber(phoneFormat.mobile);
-      const landline = this.generatePhoneNumber(phoneFormat.landline);
+      const firstNameIndex = contactSeed % firstNames.length;
+      const lastNameIndex = (contactSeed >> 4) % lastNames.length;
+      const jobTitleIndex = (contactSeed >> 8) % jobTitles.length;
       
-      // Generate email domain based on company name or use default
-      let emailDomain: string;
-      if (companyName) {
-        // Convert company name to domain format
-        const cleanName = companyName
-          .toLowerCase()
-          .replace(/\s+/g, '')           // Remove spaces
-          .replace(/[^a-z0-9]/g, '')     // Remove special chars
-          .substring(0, 20);              // Limit length
-        
-        // Get country extension
-        const countryExt = countryData.domains[0].split('.').pop(); // e.g., 'sa' from 'company.com.sa'
-        emailDomain = `${cleanName}.com.${countryExt}`;
-      } else {
-        emailDomain = domains[Math.floor(Math.random() * domains.length)];
-      }
+      const firstName = firstNames[firstNameIndex];
+      const lastName = lastNames[lastNameIndex];
+      const jobTitle = jobTitles[jobTitleIndex];
+      
+      // Generate consistent phone numbers
+      const mobileBase = phoneFormat.mobile.replace(/X/g, '');
+      const mobileSuffix = (contactSeed % 1000000000).toString().padStart(9, '0');
+      const mobile = mobileBase + mobileSuffix;
+      
+      const landlineBase = phoneFormat.landline.replace(/X/g, '');
+      const landlineSuffix = ((contactSeed >> 2) % 1000000000).toString().padStart(9, '0');
+      const landline = landlineBase + landlineSuffix;
       
       contacts.push({
         name: `${firstName} ${lastName}`,
@@ -486,10 +733,10 @@ export class DemoDataGeneratorService {
         email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace('al-', '')}@${emailDomain}`,
         mobile: mobile,
         landline: landline,
-        preferredLanguage: Math.random() > 0.5 ? "Arabic" : "English"
+        preferredLanguage: i % 2 === 0 ? "Arabic" : "English"
       });
     }
-
+    
     return contacts;
   }
 
@@ -625,10 +872,16 @@ export class DemoDataGeneratorService {
   }
 
   /**
-   * Generate phone number based on format
+   * Generate phone number based on format (legacy - now uses seed-based generation)
+   * Kept for backward compatibility
    */
-  private generatePhoneNumber(format: string): string {
-    return format.replace(/X/g, () => Math.floor(Math.random() * 10).toString());
+  private generatePhoneNumber(format: string, seed: number = 12345): string {
+    // Use seed to generate consistent digits
+    let currentSeed = seed;
+    return format.replace(/X/g, () => {
+      currentSeed = (currentSeed * 1103515245 + 12345) & 0x7fffffff;
+      return (currentSeed % 10).toString();
+    });
   }
 
   /**
@@ -665,8 +918,8 @@ export class DemoDataGeneratorService {
       }
     ];
 
-    const numDocs = Math.floor(Math.random() * 2) + 2;
-    return documents.slice(0, numDocs);
+    // Always return all 3 documents for consistency
+    return documents;
   }
 
   /**
@@ -789,7 +1042,8 @@ startxref
         record.assignedTo = 'data_entry';
         record.rejectReason = `Incomplete record - missing ${variant === 0 ? 'address details' : variant === 1 ? 'city' : variant === 2 ? 'building number' : 'street'}`;
         record.source = sourceSystems[variant % 3];
-        record.confidence = 60 + Math.random() * 20; // 60-80% confidence
+        // Static confidence based on variant (consistent)
+        record.confidence = 60 + (variant * 5); // 60, 65, 70, 75 for each variant
         
         quarantineRecords.push(record);
       }
@@ -834,7 +1088,8 @@ startxref
         record.masterId = masterId;
         const sourceSystems = ['Oracle Forms', 'SAP S/4HANA', 'SAP ByDesign'];
         record.source = sourceSystems[i % 3];
-        record.confidence = 85 + Math.random() * 10; // 85-95% confidence
+        // Static confidence based on index (consistent)
+        record.confidence = 85 + (i % 3) * 3; // 85, 88, 91 for each duplicate
         
         duplicateRecords.push(record);
       }

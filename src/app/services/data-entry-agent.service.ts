@@ -184,9 +184,14 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
 
   private documentMetadata: Array<{ country: string; type: string; description: string }> | null = null;
 
-  async uploadAndProcessDocuments(files: File[], documentsMetadata?: Array<{ country?: string; type: string; description: string }>): Promise<ExtractedData> {
+  async uploadAndProcessDocuments(
+    files: File[], 
+    documentsMetadata?: Array<{ country?: string; type: string; description: string }>,
+    lightweightMode: boolean = false  // ✅ NEW: Lightweight mode for additional documents
+  ): Promise<ExtractedData> {
     try {
       console.log(`🚀 [SERVICE] uploadAndProcessDocuments called with ${files.length} files`);
+      console.log(`🚀 [SERVICE] Lightweight mode: ${lightweightMode}`);
       
       // Validate files
       this.validateFiles(files);
@@ -201,7 +206,7 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
 
       // ✅ Extract data using AI with intelligent form filling
       console.log('🤖 [SERVICE] Starting AI extraction with multiple attempts...');
-      const extractedData = await this.extractDataFromDocuments(base64Files, this.extractedData);
+      const extractedData = await this.extractDataFromDocuments(base64Files, this.extractedData, lightweightMode);
 
       // Smart match dropdowns to exact system values
       let finalExtractedData = extractedData;
@@ -517,9 +522,16 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
     });
   }
 
-  private async extractDataFromDocuments(documents: Array<{content: string, name: string, type: string, size: number}>, existingFormData?: Partial<ExtractedData>): Promise<Partial<ExtractedData>> {
-    const maxRetries = 3;
+  private async extractDataFromDocuments(
+    documents: Array<{content: string, name: string, type: string, size: number}>, 
+    existingFormData?: Partial<ExtractedData>,
+    lightweightMode: boolean = false
+  ): Promise<Partial<ExtractedData>> {
+    const maxRetries = lightweightMode ? 1 : 3; // ✅ Only 1 attempt in lightweight mode
     const allAttempts: Array<{ data: any; score: number; attempt: number }> = [];
+    
+    console.log(`🔍 [EXTRACTION] Mode: ${lightweightMode ? 'LIGHTWEIGHT (company name + missing fields only)' : 'FULL (all fields)'}`);
+    console.log(`🔍 [EXTRACTION] Max retries: ${maxRetries}`);
 
     // ✅ CRITICAL: Check for duplicates BEFORE sending to OpenAI using SHA-256 Content Hash
     console.log('🔍 [OPENAI INPUT] Total documents to process:', documents.length);
@@ -575,8 +587,32 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
         }
 
         // Build intelligent prompt with existing data context
-        const existingDataContext = existingFormData && Object.keys(existingFormData).length > 0
-          ? `\n\n**EXISTING FORM DATA (already filled):**
+        let existingDataContext = '';
+        
+        if (lightweightMode && existingFormData && Object.keys(existingFormData).length > 0) {
+          // ✅ LIGHTWEIGHT MODE: Focus on company name + missing fields only
+          const filledFields = Object.keys(existingFormData).filter(key => {
+            const value = existingFormData[key as keyof ExtractedData];
+            return value && value.toString().trim() !== '';
+          });
+          const missingFields = ['firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName', 
+            'buildingNumber', 'street', 'country', 'city', 'salesOrganization', 
+            'distributionChannel', 'division'].filter(f => !filledFields.includes(f));
+          
+          existingDataContext = `\n\n**LIGHTWEIGHT EXTRACTION MODE**
+**Form already has ${filledFields.length} fields filled.**
+
+**YOUR TASK:** Extract ONLY these fields:
+1. **COMPANY NAME** (firstName, firstNameAR) - MOST IMPORTANT for verification
+2. **MISSING FIELDS**: ${missingFields.length > 0 ? missingFields.join(', ') : 'None - all fields filled!'}
+
+**DO NOT extract fields that are already filled** - this saves time and processing!
+
+**EXISTING FORM DATA:**
+${JSON.stringify(existingFormData, null, 2)}`;
+        } else if (existingFormData && Object.keys(existingFormData).length > 0) {
+          // FULL MODE with existing data
+          existingDataContext = `\n\n**EXISTING FORM DATA (already filled):**
 ${JSON.stringify(existingFormData, null, 2)}
 
 **INTELLIGENT FORM FILLING RULES:**
@@ -586,8 +622,11 @@ ${JSON.stringify(existingFormData, null, 2)}
 4. **CONSISTENCY CHECK** - If you extract a company name that is DIFFERENT from the existing one, you MUST still extract it accurately (the system will handle conflicts)
 5. **SMART MERGING** - Combine information from the new document with existing data intelligently
 
-**YOUR TASK:** Extract data from the NEW document and intelligently decide which fields to fill/update based on the existing form data above.`
-          : `\n\n**FIRST DOCUMENT** - This is the first document being processed, so extract ALL possible fields.`;
+**YOUR TASK:** Extract data from the NEW document and intelligently decide which fields to fill/update based on the existing form data above.`;
+        } else {
+          // FULL MODE - first document
+          existingDataContext = `\n\n**FIRST DOCUMENT** - This is the first document being processed, so extract ALL possible fields.`;
+        }
 
         const messages = [
           {
@@ -759,9 +798,36 @@ ${existingDataContext}
         console.log(`🧪 [Service] Attempt ${attempt} extracted ${score} fields`);
         allAttempts.push({ data: extractedData, score, attempt });
 
-        if (score >= 12) {
-          console.log(`✅ [Service] Attempt ${attempt} got all required fields! Stopping.`);
+        // Check if current attempt has all core required fields (9 fields)
+        if (score >= 9) {
+          console.log(`✅ [Service] Attempt ${attempt} got all core required fields! Stopping.`);
           break;
+        }
+        
+        // ✅ NEW: Check if merged data from all attempts so far has all core required fields
+        if (attempt >= 2) {
+          const mergedSoFar = this.mergeExtractedData(allAttempts);
+          
+          // Try smart matching to fill sales org, distribution channel, division
+          let mergedWithSmartMatch = mergedSoFar;
+          try {
+            console.log(`🎯 [Service] Trying smart matching after ${attempt} attempts...`);
+            const matchResult = await this.smartMatcher.matchExtractedToSystemValues(mergedSoFar);
+            if (matchResult?.matchedValues) {
+              mergedWithSmartMatch = { ...mergedSoFar, ...matchResult.matchedValues };
+              console.log(`✅ [Service] Smart matching completed after ${attempt} attempts`);
+            }
+          } catch (e) {
+            console.warn(`⚠️ [Service] Smart matching failed after attempt ${attempt}, continuing...`);
+          }
+          
+          const mergedScore = this.calculateDataCompleteness(mergedWithSmartMatch);
+          console.log(`🔍 [Service] Merged score (with smart matching) after ${attempt} attempts: ${mergedScore}`);
+          
+          if (mergedScore >= 9) {
+            console.log(`✅ [Service] Merged data (with smart matching) has all core required fields after ${attempt} attempts! Stopping early.`);
+            break;
+          }
         }
 
         if (attempt < maxRetries) {
@@ -796,12 +862,14 @@ ${existingDataContext}
 
   private calculateDataCompleteness(data: any): number {
     let score = 0;
+    // ✅ Core required fields (9 fields only - removed sales fields)
     const requiredFields = [
       'firstName', 'firstNameAR', 'tax', 'CustomerType', 
-      'ownerName', 'buildingNumber', 'street', 'country', 
-      'city', 'salesOrganization', 'distributionChannel', 'division'
+      'ownerName', 'buildingNumber', 'street', 'country', 'city'
     ];
+    // ✅ Sales fields moved to optional (smart matching will fill them)
     const optionalFields = [
+      'salesOrganization', 'distributionChannel', 'division',
       'registrationNumber', 'commercialLicense', 'vatNumber', 
       'establishmentDate', 'legalForm', 'capital', 'website', 
       'poBox', 'fax', 'branch'

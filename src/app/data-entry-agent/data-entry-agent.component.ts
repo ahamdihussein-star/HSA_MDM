@@ -288,16 +288,14 @@ export class DataEntryAgentComponent implements OnInit {
   }
 
   private checkMissingFields(data: any): string[] {
+    // ✅ Contacts are OPTIONAL - removed from required fields
     const requiredFields = [
       'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
       'buildingNumber', 'street', 'country', 'city',
-      'salesOrganization', 'distributionChannel', 'division', 'contacts'
+      'salesOrganization', 'distributionChannel', 'division'
     ];
     
     return requiredFields.filter(field => {
-      if (field === 'contacts') {
-        return !data[field] || data[field].length === 0;
-      }
       return !data[field] || data[field].trim() === '';
     });
   }

@@ -1197,6 +1197,13 @@ app.post('/api/session/save-company', (req, res) => {
       contactsCount: contacts?.length || 0
     });
     
+    console.log('🏛️ [SESSION] Full request body keys:', Object.keys(req.body));
+    console.log('🏛️ [SESSION] Extracted values:', {
+      sessionId, companyId, companyName, firstName, firstNameAr, taxNumber, 
+      customerType, companyOwner, buildingNumber, street, country, city,
+      salesOrg, distributionChannel, division, registrationNumber, legalForm
+    });
+    
     // Save company data (upsert) - ✅ better-sqlite3 synchronous method
     const stmt = db.prepare(`
       INSERT OR REPLACE INTO session_staging 
@@ -1207,10 +1214,12 @@ app.post('/api/session/save-company', (req, res) => {
       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `);
     
+    console.log('🏛️ [SESSION] About to execute INSERT with values...');
     stmt.run(sessionId, companyId, companyName, firstName, firstNameAr, 
         taxNumber, customerType, companyOwner, buildingNumber, street, 
         country, city, salesOrg, distributionChannel, division,
         registrationNumber, legalForm);
+    console.log('🏛️ [SESSION] INSERT successful');
     
     console.log('✅ [SESSION] Company data saved to session_staging');
     

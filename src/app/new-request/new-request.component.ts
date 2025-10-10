@@ -2420,7 +2420,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
         });
       });
 
-      // Add some additional random contacts for variety
+      // Add additional contacts from the same company (static, consistent)
       const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(2, this.currentDemoCompany.country, this.currentDemoCompany.name);
       additionalContacts.forEach(contact => {
         this.addContact();
