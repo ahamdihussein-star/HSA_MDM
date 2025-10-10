@@ -169,18 +169,22 @@ export class AiAssistantComponent implements AfterViewChecked, OnInit {
   }
 
   private bot(txt: string, dropdownOptions?: DropdownOption[], buttons?: ButtonOption[], showDocumentForm?: boolean) { 
+    // Sanitize dropdown options and buttons to prevent empty renders
+    const safeDropdown = Array.isArray(dropdownOptions) ? dropdownOptions.filter(opt => !!opt && !!opt.label && !!opt.value) : undefined;
+    const safeButtons = Array.isArray(buttons) ? buttons.filter(btn => !!btn && typeof btn.text === 'string' && btn.text.trim() !== '' && typeof btn.value === 'string' && btn.value.trim() !== '') : undefined;
+
     this.messages.push({
       from: 'bot',
       text: txt,
-      dropdownOptions: dropdownOptions,
-      isDropdown: !!dropdownOptions,
-      buttons: buttons,
-      isButtons: !!buttons,
+      dropdownOptions: safeDropdown,
+      isDropdown: !!(safeDropdown && safeDropdown.length > 0),
+      buttons: safeButtons,
+      isButtons: !!(safeButtons && safeButtons.length > 0),
       showDocumentForm: !!showDocumentForm
     });
 
     // Track dropdown state
-    this.isDropdownOpen = !!dropdownOptions;
+    this.isDropdownOpen = !!(safeDropdown && safeDropdown.length > 0);
   }
 
   /* ───── Button Handling ───── */
