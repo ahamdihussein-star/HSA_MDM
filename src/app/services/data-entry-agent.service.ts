@@ -201,6 +201,22 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
       // Convert to base64 with optimization
       console.log('🔄 [SERVICE] Converting files to base64...');
       const base64Files = await this.convertFilesToBase64(files);
+      
+      // ✅ FIX 2: Validate Base64 content before processing
+      base64Files.forEach((doc, index) => {
+        console.log(`📄 [VALIDATION] Document ${index + 1}:`, {
+          name: doc.name,
+          type: doc.type,
+          size: doc.size,
+          contentLength: doc.content?.length || 0,
+          contentPreview: doc.content?.substring(0, 50) + '...'
+        });
+        
+        if (!doc.content || doc.content.length < 100) {
+          throw new Error(`Document ${index + 1} (${doc.name}) has invalid Base64 content!`);
+        }
+        console.log(`✅ [VALIDATION] Document ${index + 1} has valid Base64`);
+      });
 
       // Store documents with cleanup
       console.log('💾 [SERVICE] Storing documents...');
@@ -525,9 +541,26 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
     console.log(`📄 [EXTRACTION] Documents: ${documents.length}`);
     console.log(`🎯 [EXTRACTION] Mode: ${lightweightMode ? 'LIGHTWEIGHT' : 'FULL'}`);
     
+    // ✅ FIX 3: Validate documents before processing
+    const validDocuments = documents.filter((doc, index) => {
+      const isValid = doc.content && doc.content.length > 100;
+      if (!isValid) {
+        console.error(`❌ [EXTRACTION] Invalid document ${index + 1}: ${doc.name}`);
+      } else {
+        console.log(`✅ [EXTRACTION] Valid document ${index + 1}: ${doc.name} (${doc.content.length} chars)`);
+      }
+      return isValid;
+    });
+    
+    if (validDocuments.length === 0) {
+      throw new Error('No valid documents to process!');
+    }
+    
+    console.log(`✅ [EXTRACTION] Valid documents: ${validDocuments.length}/${documents.length}`);
+    
     // SHA-256 deduplication
     const documentsWithHashes = await Promise.all(
-      documents.map(async (doc) => {
+      validDocuments.map(async (doc) => {
         const encoder = new TextEncoder();
         const data = encoder.encode(doc.content);
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
@@ -546,7 +579,7 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
       return !isDuplicate;
     });
     
-    console.log(`✅ [DEDUP] Unique documents: ${uniqueDocuments.length}/${documents.length}`);
+    console.log(`✅ [DEDUP] Unique documents: ${uniqueDocuments.length}/${validDocuments.length}`);
     
     // Build context for lightweight mode
     let extractionContext = '';
@@ -568,14 +601,26 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
       try {
         console.log(`🤖 [OPENAI] Attempt ${attempt}/${maxRetries}`);
         
+        // ✅ FIX 4: Log documents being sent to OpenAI
+        console.log(`📤 [OPENAI] Sending ${uniqueDocuments.length} documents to OpenAI:`);
+        uniqueDocuments.forEach((doc, index) => {
+          console.log(`📄 [OPENAI] Document ${index + 1}:`, {
+            name: doc.name,
+            type: doc.type,
+            contentLength: doc.content.length,
+            contentHash: doc.contentHash?.substring(0, 16),
+            contentPreview: doc.content.substring(0, 100) + '...'
+          });
+        });
+        
         const requestBody = {
           model: environment.openaiModel || 'gpt-4o',
           messages: [
-          {
-            role: 'user',
-            content: [
-              {
-                type: 'text',
+            {
+              role: 'user',
+              content: [
+                {
+                  type: 'text',
                   text: `You are a business document data extractor. Extract EXACTLY these 8 fields from the document image.
 
 ${extractionContext}

@@ -1212,47 +1212,62 @@ app.post('/api/session/save-company', (req, res) => {
       INSERT OR REPLACE INTO session_staging 
       (session_id, company_id, company_name, first_name, first_name_ar, 
        tax_number, customer_type, company_owner, building_number, street, 
-       country, city, document_content, sales_org, distribution_channel, division, 
+       country, city, sales_org, distribution_channel, division, 
        registration_number, legal_form, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `);
     
     console.log('🏛️ [SESSION] About to execute INSERT with values...');
     stmt.run(sessionId, companyId, companyName, firstName, firstNameAr, 
         taxNumber, customerType, companyOwner, buildingNumber, street, 
-        country, city, documentContent, salesOrg, distributionChannel, division,
+        country, city, salesOrg, distributionChannel, division,
         registrationNumber, legalForm);
     console.log('🏛️ [SESSION] INSERT successful');
     
     console.log('✅ [SESSION] Company data saved to session_staging');
     
-    // Save documents (prevent duplicates)
+    // Save documents
     if (documents && documents.length > 0) {
-      // Get existing document names for this company
-      const existingDocs = db.prepare(`
-        SELECT document_name FROM session_documents 
+      console.log('📄 [SESSION] Saving documents:', documents.length);
+      console.log('📄 [SESSION] Document names:', documents.map(d => d.name));
+      console.log('📄 [SESSION] Document sizes:', documents.map(d => d.size));
+      
+      // ✅ CRITICAL FIX: Clear ALL existing documents for this company first
+      // This ensures we always store the LATEST uploaded documents
+      const deleteStmt = db.prepare(`
+        DELETE FROM session_documents 
         WHERE session_id = ? AND company_id = ?
-      `).all(sessionId, companyId);
+      `);
+      const deleteResult = deleteStmt.run(sessionId, companyId);
+      console.log(`🗑️ [SESSION] Cleared ${deleteResult.changes} existing documents`);
       
-      const existingNames = existingDocs.map(d => d.document_name);
-      console.log('📄 [SESSION] Existing documents:', existingNames);
-      
+      // Now insert the new documents
       const docStmt = db.prepare(`
         INSERT INTO session_documents 
         (session_id, company_id, document_name, document_content, document_type, document_size)
         VALUES (?, ?, ?, ?, ?, ?)
       `);
       
+      let savedCount = 0;
       for (const doc of documents) {
-        // Skip if document already exists
-        if (existingNames.includes(doc.name)) {
-          console.log('⏭️ [SESSION] Skipping duplicate document:', doc.name);
+        // Validate document has content
+        if (!doc.content || doc.content.trim() === '') {
+          console.warn(`⚠️ [SESSION] Skipping document with empty content: ${doc.name}`);
           continue;
         }
         
+        // Log first 100 chars of base64 content for verification
+        const contentPreview = doc.content.substring(0, 100);
+        console.log(`📄 [SESSION] Saving document "${doc.name}" (${doc.size} bytes, content starts with: ${contentPreview}...)`);
+        
         docStmt.run(sessionId, companyId, doc.name, doc.content, doc.type, doc.size);
-        console.log('✅ [SESSION] Document saved:', doc.name);
+        savedCount++;
+        console.log(`✅ [SESSION] Document saved: ${doc.name}`);
       }
+      
+      console.log(`✅ [SESSION] Total documents saved: ${savedCount}/${documents.length}`);
+    } else {
+      console.log('⚠️ [SESSION] No documents provided to save');
     }
     
     // Save contacts
@@ -1309,6 +1324,8 @@ app.get('/api/session/companies/:sessionId', (req, res) => {
 // Get company data and documents
 app.get('/api/session/company/:sessionId/:companyId', (req, res) => {
   try {
+    console.log('📋 [GET SESSION] Request params:', req.params);
+    
     // Get company data
     const company = db.prepare(`
       SELECT * FROM session_staging 
@@ -1316,8 +1333,11 @@ app.get('/api/session/company/:sessionId/:companyId', (req, res) => {
     `).get(req.params.sessionId, req.params.companyId);
     
     if (!company) {
+      console.log('❌ [GET SESSION] Company not found:', req.params.companyId);
       return res.status(404).json({ error: 'Company not found' });
     }
+    
+    console.log('✅ [GET SESSION] Company data found:', company.company_name);
     
     // Get documents
     const documents = db.prepare(`
@@ -1326,6 +1346,13 @@ app.get('/api/session/company/:sessionId/:companyId', (req, res) => {
       WHERE session_id = ? AND company_id = ?
     `).all(req.params.sessionId, req.params.companyId);
     
+    console.log('📄 [GET SESSION] Documents found:', documents.length);
+    documents.forEach((doc, index) => {
+      const contentLength = doc.document_content ? doc.document_content.length : 0;
+      const contentPreview = doc.document_content ? doc.document_content.substring(0, 50) : 'empty';
+      console.log(`📄 [GET SESSION] Document ${index + 1}: ${doc.document_name} (${contentLength} chars, starts with: ${contentPreview}...)`);
+    });
+    
     // Get contacts
     const contacts = db.prepare(`
       SELECT contact_name, contact_email, contact_phone, contact_position
@@ -1333,18 +1360,23 @@ app.get('/api/session/company/:sessionId/:companyId', (req, res) => {
       WHERE session_id = ? AND company_id = ?
     `).all(req.params.sessionId, req.params.companyId);
     
-    res.json({
+    console.log('👥 [GET SESSION] Contacts found:', contacts.length);
+    
+    const response = {
       ...company,
       documents,
       contacts
-    });
+    };
+    
+    console.log('✅ [GET SESSION] Sending response with', documents.length, 'documents and', contacts.length, 'contacts');
+    res.json(response);
   } catch (error) {
-    console.error('Error getting company data:', error);
+    console.error('❌ [GET SESSION] Error getting company data:', error);
     res.status(500).json({ error: error.message });
   }
 });
 
-// Clear session data
+// Clear session data by session ID
 app.delete('/api/session/:sessionId', (req, res) => {
   try {
     db.prepare(`DELETE FROM session_staging WHERE session_id = ?`).run(req.params.sessionId);
@@ -1354,6 +1386,35 @@ app.delete('/api/session/:sessionId', (req, res) => {
     res.json({ success: true });
   } catch (error) {
     console.error('Error clearing session:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Clear ALL session data (for testing)
+app.delete('/api/session/admin/clear-all', (req, res) => {
+  try {
+    console.log('🗑️ [ADMIN] Clearing ALL session data...');
+    
+    const stagingResult = db.prepare(`DELETE FROM session_staging`).run();
+    const documentsResult = db.prepare(`DELETE FROM session_documents`).run();
+    const contactsResult = db.prepare(`DELETE FROM session_contacts`).run();
+    
+    console.log('✅ [ADMIN] Session data cleared:', {
+      staging: stagingResult.changes,
+      documents: documentsResult.changes,
+      contacts: contactsResult.changes
+    });
+    
+    res.json({ 
+      success: true,
+      deleted: {
+        staging: stagingResult.changes,
+        documents: documentsResult.changes,
+        contacts: contactsResult.changes
+      }
+    });
+  } catch (error) {
+    console.error('❌ [ADMIN] Error clearing all session data:', error);
     res.status(500).json({ error: error.message });
   }
 });

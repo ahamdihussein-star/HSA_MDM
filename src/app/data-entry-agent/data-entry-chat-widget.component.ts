@@ -386,6 +386,17 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   // ✅ File upload methods for modal
   triggerFileUpload(): void {
     console.log('📎 [Upload] Triggering file upload...');
+    
+    // ✅ FIX 1: Clear ALL document arrays before new upload
+    console.log('🧹 [Upload] Clearing all previous documents...');
+    this.agentService.clearAllDocuments();
+    this.uploadedFiles = [];
+    this.unifiedModalDocuments = [];
+    if (this.unifiedModalData) {
+      this.unifiedModalData.documents = [];
+    }
+    console.log('✅ [Upload] All document arrays cleared');
+    
     if (this.directFileInput && this.directFileInput.nativeElement) {
       console.log('✅ Using ViewChild reference');
       this.directFileInput.nativeElement.click();
@@ -517,37 +528,37 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
         extractedData.city
       );
       
-      // ✅ Calculate how many required fields were extracted
-      const requiredFields = [
-        'firstName', 'firstNameAR', 'tax', 'CustomerType', 
-        'ownerName', 'buildingNumber', 'street', 'country', 
-        'city', 'salesOrganization', 'distributionChannel', 'division'
+      // ✅ Calculate how many CORE fields were extracted (only fields OpenAI extracts)
+      // Note: firstNameAR, salesOrganization, distributionChannel, division are filled manually
+      const coreFields = [
+        'firstName', 'tax', 'CustomerType', 
+        'ownerName', 'buildingNumber', 'street', 'country', 'city'
       ];
       
-      const extractedFieldsCount = requiredFields.filter(field => {
+      const extractedFieldsCount = coreFields.filter(field => {
         const value = (extractedData as any)?.[field];
         return value && value.toString().trim() !== '';
       }).length;
       
-      const extractionSuccessRate = extractedFieldsCount / requiredFields.length;
+      const extractionSuccessRate = extractedFieldsCount / coreFields.length;
       
       console.log('🔍 [ERROR RECOVERY] Checking for partial data:', {
         hasPartialData,
         extractedFieldsCount,
-        totalRequired: requiredFields.length,
+        totalCoreFields: coreFields.length,
         successRate: `${(extractionSuccessRate * 100).toFixed(1)}%`,
         extractedFields: hasPartialData ? Object.keys(extractedData).filter(k => (extractedData as any)[k]) : []
       });
       
-      // ✅ If we extracted 8+ fields (66%+), consider it successful even if there was an error
+      // ✅ If we extracted 6+ fields (75%+), consider it successful even if there was an error
       // This prevents showing internet error when OpenAI actually succeeded in extracting most data
-      if (extractedFieldsCount >= 8) {
+      if (extractedFieldsCount >= 6) {
         console.log('✅ [ERROR RECOVERY] Extracted enough fields, treating as success');
         
         this.addMessage({
           id: `partial_success_${Date.now()}`,
           role: 'assistant',
-          content: `✅ تم استخراج معظم البيانات بنجاح!\nMost data extracted successfully!\n\n📊 تم استخراج ${extractedFieldsCount} من ${requiredFields.length} حقل\nExtracted ${extractedFieldsCount} out of ${requiredFields.length} fields`,
+          content: `✅ تم استخراج البيانات بنجاح!\nData extracted successfully!\n\n📊 تم استخراج ${extractedFieldsCount} من ${coreFields.length} حقل أساسي\nExtracted ${extractedFieldsCount} out of ${coreFields.length} core fields`,
           timestamp: new Date(),
           type: 'text'
         });
@@ -1013,27 +1024,26 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       
       // ✅ Check if we have partial extracted data from the new documents
       const extractedData = this.agentService.getExtractedData();
-      const requiredFields = [
-        'firstName', 'firstNameAR', 'tax', 'CustomerType', 
-        'ownerName', 'buildingNumber', 'street', 'country', 
-        'city', 'salesOrganization', 'distributionChannel', 'division'
+      const coreFields = [
+        'firstName', 'tax', 'CustomerType', 
+        'ownerName', 'buildingNumber', 'street', 'country', 'city'
       ];
       
-      const extractedFieldsCount = requiredFields.filter(field => {
+      const extractedFieldsCount = coreFields.filter(field => {
         const value = (extractedData as any)?.[field];
         return value && value.toString().trim() !== '';
       }).length;
       
       console.log('🔍 [NEW FLOW ERROR RECOVERY] Extracted fields count:', extractedFieldsCount);
       
-      // ✅ If we extracted 8+ fields (66%+), consider it successful even if there was an error
-      if (extractedFieldsCount >= 8) {
+      // ✅ If we extracted 6+ fields (75%+), consider it successful even if there was an error
+      if (extractedFieldsCount >= 6) {
         console.log('✅ [NEW FLOW ERROR RECOVERY] Extracted enough fields, treating as success');
         
         this.addMessage({
           id: `addition_partial_success_${Date.now()}`,
           role: 'assistant',
-          content: `✅ تم استخراج معظم البيانات بنجاح!\nMost data extracted successfully!\n\n📊 تم استخراج ${extractedFieldsCount} من ${requiredFields.length} حقل\nExtracted ${extractedFieldsCount} out of ${requiredFields.length} fields`,
+          content: `✅ تم استخراج البيانات بنجاح!\nData extracted successfully!\n\n📊 تم استخراج ${extractedFieldsCount} من ${coreFields.length} حقل أساسي\nExtracted ${extractedFieldsCount} out of ${coreFields.length} core fields`,
           timestamp: new Date(),
           type: 'text'
         });
@@ -1044,7 +1054,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
         return;
       }
       
-      // ✅ If less than 8 fields extracted, show error message
+      // ✅ If less than 6 fields extracted, show error message
       // Check if it's a CORS or network error
       const isCorsOrNetworkError = 
         error?.status === 0 || 
@@ -4133,27 +4143,26 @@ Would you like to:
       
       // ✅ Check if we have partial extracted data from the new documents
       const extractedData = this.agentService.getExtractedData();
-      const requiredFields = [
-        'firstName', 'firstNameAR', 'tax', 'CustomerType', 
-        'ownerName', 'buildingNumber', 'street', 'country', 
-        'city', 'salesOrganization', 'distributionChannel', 'division'
+      const coreFields = [
+        'firstName', 'tax', 'CustomerType', 
+        'ownerName', 'buildingNumber', 'street', 'country', 'city'
       ];
       
-      const extractedFieldsCount = requiredFields.filter(field => {
+      const extractedFieldsCount = coreFields.filter(field => {
         const value = (extractedData as any)?.[field];
         return value && value.toString().trim() !== '';
       }).length;
       
       console.log('🔍 [MODAL ERROR RECOVERY] Extracted fields count:', extractedFieldsCount);
       
-      // ✅ If we extracted 8+ fields (66%+), consider it successful even if there was an error
-      if (extractedFieldsCount >= 8) {
+      // ✅ If we extracted 6+ fields (75%+), consider it successful even if there was an error
+      if (extractedFieldsCount >= 6) {
         console.log('✅ [MODAL ERROR RECOVERY] Extracted enough fields, treating as success');
         
         this.addMessage({
           id: `modal_partial_success_${Date.now()}`,
           role: 'assistant',
-          content: `✅ تم استخراج معظم البيانات بنجاح!\nMost data extracted successfully!\n\n📊 تم استخراج ${extractedFieldsCount} من ${requiredFields.length} حقل\nExtracted ${extractedFieldsCount} out of ${requiredFields.length} fields`,
+          content: `✅ تم استخراج البيانات بنجاح!\nData extracted successfully!\n\n📊 تم استخراج ${extractedFieldsCount} من ${coreFields.length} حقل أساسي\nExtracted ${extractedFieldsCount} out of ${coreFields.length} core fields`,
           timestamp: new Date(),
           type: 'text'
         });
@@ -4164,7 +4173,7 @@ Would you like to:
         return;
       }
       
-      // ✅ If less than 8 fields extracted, show error message
+      // ✅ If less than 6 fields extracted, show error message
       // Check if it's a CORS or network error
       const isCorsOrNetworkError = 
         error?.status === 0 || 
