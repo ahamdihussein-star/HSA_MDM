@@ -26,6 +26,7 @@ export class SessionStagingService {
     street?: string;
     country?: string;
     city?: string;
+    documentContent?: string;
     salesOrg?: string;
     distributionChannel?: string;
     division?: string;
@@ -55,6 +56,8 @@ export class SessionStagingService {
       ...companyData,
       documents: documentsForSave
     }).toPromise();
+    
+    console.log('📄 [SESSION] Document content included:', companyData.documentContent ? `${companyData.documentContent.length} chars` : 'none');
     
     console.log('✅ [SESSION] Company data saved successfully');
   }

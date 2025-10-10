@@ -965,7 +965,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       await this.animateProgressBar();
       console.log('📊 [PROGRESS] Progress bar animation completed');
       
-      // Process new documents with OCR (LIGHTWEIGHT mode - we already have form data)
+      // Process new documents with OCR (FULL mode - extract fresh data from new documents)
       // Get existing form data to pass to extraction
       const existingFormData = this.unifiedModalForm?.value ? {
         firstName: this.unifiedModalForm.value.firstName || '',
@@ -989,8 +989,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
         this.agentService['extractedData'] = existingFormData as any;
       }
       
-      const extractedData = await this.agentService.uploadAndProcessDocuments(newFiles, undefined, true); // ✅ lightweight mode
-      console.log('🔍 [NEW FLOW] New documents processed (LIGHTWEIGHT), extracted data:', extractedData);
+      const extractedData = await this.agentService.uploadAndProcessDocuments(newFiles, undefined, false); // ✅ FULL mode for new documents
+      console.log('🔍 [NEW FLOW] New documents processed (FULL MODE), extracted data:', extractedData);
       
       // ✅ Hide progress bar
       this.showProgressBar = false;
@@ -5599,6 +5599,7 @@ Respond with JSON only:
       street: extractedData.street,
       country: extractedData.country,
       city: extractedData.city,
+      documentContent: (extractedData as any).documentContent || '',  // Include document content
       salesOrg: extractedData.salesOrganization || extractedData.SalesOrgOption,  // ✅ Try both
       distributionChannel: extractedData.distributionChannel || extractedData.DistributionChannelOption,  // ✅ Try both
       division: extractedData.division || extractedData.DivisionOption,  // ✅ Try both

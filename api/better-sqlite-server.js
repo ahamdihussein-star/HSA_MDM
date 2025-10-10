@@ -730,6 +730,9 @@ function insertSampleData() {
       country TEXT,
       city TEXT,
       
+      -- Document Content for parsing
+      document_content TEXT,
+      
       -- Sales Info
       sales_org TEXT,
       distribution_channel TEXT,
@@ -1182,7 +1185,7 @@ app.post('/api/session/save-company', (req, res) => {
   const { 
     sessionId, companyId, companyName,
     firstName, firstNameAr, taxNumber, customerType, companyOwner,
-    buildingNumber, street, country, city,
+    buildingNumber, street, country, city, documentContent,
     salesOrg, distributionChannel, division,
     registrationNumber, legalForm,
     documents, contacts
@@ -1200,7 +1203,7 @@ app.post('/api/session/save-company', (req, res) => {
     console.log('🏛️ [SESSION] Full request body keys:', Object.keys(req.body));
     console.log('🏛️ [SESSION] Extracted values:', {
       sessionId, companyId, companyName, firstName, firstNameAr, taxNumber, 
-      customerType, companyOwner, buildingNumber, street, country, city,
+      customerType, companyOwner, buildingNumber, street, country, city, documentContent,
       salesOrg, distributionChannel, division, registrationNumber, legalForm
     });
     
@@ -1209,15 +1212,15 @@ app.post('/api/session/save-company', (req, res) => {
       INSERT OR REPLACE INTO session_staging 
       (session_id, company_id, company_name, first_name, first_name_ar, 
        tax_number, customer_type, company_owner, building_number, street, 
-       country, city, sales_org, distribution_channel, division, 
+       country, city, document_content, sales_org, distribution_channel, division, 
        registration_number, legal_form, updated_at)
-      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
     `);
     
     console.log('🏛️ [SESSION] About to execute INSERT with values...');
     stmt.run(sessionId, companyId, companyName, firstName, firstNameAr, 
         taxNumber, customerType, companyOwner, buildingNumber, street, 
-        country, city, salesOrg, distributionChannel, division,
+        country, city, documentContent, salesOrg, distributionChannel, division,
         registrationNumber, legalForm);
     console.log('🏛️ [SESSION] INSERT successful');
     

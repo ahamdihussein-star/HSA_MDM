@@ -34,6 +34,9 @@ export interface ExtractedData {
   distributionChannel: string;
   division: string;
   
+  // Document Content for parsing
+  documentContent?: string;
+  
   // Related Data
   contacts: Array<{
     name: string;
@@ -233,8 +236,14 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
         }));
       }
 
-      // Merge with existing data
+      // Merge with existing data and store document content
       this.extractedData = { ...this.extractedData, ...finalExtractedData };
+      
+      // Store document content for later parsing if needed
+      if (finalExtractedData.documentContent) {
+        this.extractedData.documentContent = finalExtractedData.documentContent;
+        console.log(`💾 [Service] Stored document content (${finalExtractedData.documentContent.length} chars) for later parsing`);
+      }
 
       // Translate if needed
       await this.handleArabicTranslation();
@@ -631,19 +640,17 @@ ${existingDataContext}
 **CRITICAL EXTRACTION RULES:**
 1. SCAN EVERY PIXEL - examine headers, footers, margins, stamps, logos, watermarks
 2. **COMPANY NAME** - Look for "Company Name:" field in the document and return the EXACT text you see
-3. **COMPANY TYPE** - Look for "Company Type:" field in the document and return the EXACT text you see
-4. Find ALL numbers - tax IDs, VAT numbers, registration numbers, license numbers
-5. **CITY/LOCATION IS CRITICAL** - Look for city name near address, registration location, or branch. Examples: "Riyadh", "Cairo", "Dubai", "Jeddah", "Kuwait City"
-6. Extract complete addresses including building numbers, streets, districts, cities
-7. Find owner/CEO/manager names in signatures or official sections (store in "ownerName" or "CompanyOwner")
-8. Extract ALL dates in any format
-11. Extract contact information if available (name, jobTitle, email, mobile, landline, preferredLanguage)
+3. Find ALL numbers - tax IDs, VAT numbers, registration numbers, license numbers
+4. **CITY/LOCATION IS CRITICAL** - Look for city name near address, registration location, or branch. Examples: "Riyadh", "Cairo", "Dubai", "Jeddah", "Kuwait City"
+5. Extract complete addresses including building numbers, streets, districts, cities
+6. Find owner/CEO/manager names in signatures or official sections (store in "ownerName" or "CompanyOwner")
+7. Extract ALL dates in any format
+8. Extract contact information if available (name, jobTitle, email, mobile, landline, preferredLanguage)
 
 **RETURN FORMAT:** Return ONLY valid JSON with ALL form fields. For fields not found in the document, use empty string "".
 
 {
   "companyName": "",
-  "companyType": "",
   "tax": "",
   "ownerName": "",
   "CompanyOwner": "",
@@ -661,9 +668,9 @@ ${existingDataContext}
   "fax": "",
   "branch": "",
   "contacts": [],
+  "documentContent": "",
   "confidence": {
     "companyName": 0.0-1.0,
-    "companyType": 0.0-1.0,
     "tax": 0.0-1.0,
     "country": 0.0-1.0,
     "city": 0.0-1.0,
@@ -671,7 +678,6 @@ ${existingDataContext}
   },
   "dataSource": {
     "companyName": "exact location in document where found (e.g., 'Company Name section') or 'not found'",
-    "companyType": "exact location or 'not found'",
     "tax": "exact location or 'not found'",
     "country": "exact location or 'not found'"
   }
@@ -694,7 +700,10 @@ ${existingDataContext}
    - Fill fields with "typical" or "common" values
 6. **If existing form data shows a different company, still extract the NEW document's data accurately** - the system will handle conflicts
 
-**IMPORTANT:** Your response should be a JSON object that can directly fill the form. Think intelligently about what data to include based on the existing form context, but NEVER hallucinate or guess data.`
+**IMPORTANT:** 
+1. Your response should be a JSON object that can directly fill the form
+2. For "documentContent" field, extract and return ALL visible text content from the document as a single string
+3. Think intelligently about what data to include based on the existing form context, but NEVER hallucinate or guess data.`
               },
               ...uniqueDocuments.map(doc => ({
                 type: 'image_url' as const,
@@ -759,12 +768,15 @@ ${existingDataContext}
           console.log(`⚠️ [CompanyName Debug] Company name not found`);
         }
         
-        if (extractedData.companyType) {
-          console.log(`🔍 [CustomerType Debug] Raw extracted: "${extractedData.companyType}"`);
-          extractedData.CustomerType = this.mapCustomerType(extractedData.companyType);
-          console.log(`🔍 [CustomerType Debug] Mapped to CustomerType: "${extractedData.CustomerType}"`);
+        // Parse company type from document content
+        if (extractedData.documentContent) {
+          console.log(`🔍 [CustomerType Debug] Parsing from document content`);
+          console.log(`📄 [Document Content] Length: ${extractedData.documentContent.length} chars`);
+          console.log(`📄 [Document Content] Preview: ${extractedData.documentContent.substring(0, 200)}...`);
+          extractedData.CustomerType = this.parseCompanyTypeFromContent(extractedData.documentContent);
+          console.log(`🔍 [CustomerType Debug] Parsed CustomerType: "${extractedData.CustomerType}"`);
         } else {
-          console.log(`⚠️ [CustomerType Debug] Company type not found`);
+          console.log(`⚠️ [CustomerType Debug] Document content not found`);
         }
 
         // ✅ Validate confidence scores to prevent hallucination
@@ -925,6 +937,56 @@ ${existingDataContext}
   }
 
   /**
+   * Parse company type from document content
+   */
+  private parseCompanyTypeFromContent(documentContent: string): string {
+    if (!documentContent) {
+      console.log(`⚠️ [CompanyType Parser] No document content provided`);
+      return '';
+    }
+    
+    console.log(`🔍 [CompanyType Parser] Starting parsing of document content (${documentContent.length} chars)`);
+    const content = documentContent.toLowerCase();
+    
+    // Look for "Company Type:" pattern
+    console.log(`🔍 [CompanyType Parser] Looking for "Company Type:" pattern...`);
+    const companyTypeMatch = content.match(/company\s*type\s*:?\s*([^\n\r,]+)/i);
+    if (companyTypeMatch) {
+      const extractedType = companyTypeMatch[1].trim();
+      console.log(`✅ [CompanyType Parser] Found "Company Type:" in document: "${extractedType}"`);
+      const mappedType = this.mapCustomerType(extractedType);
+      console.log(`✅ [CompanyType Parser] Final mapped type: "${mappedType}"`);
+      return mappedType;
+    }
+    
+    // Look for common company type patterns
+    console.log(`🔍 [CompanyType Parser] Looking for common company type patterns...`);
+    const patterns = [
+      { pattern: /joint\s*stock/i, value: 'joint_stock' },
+      { pattern: /limited\s*liability/i, value: 'limited_liability' },
+      { pattern: /llc/i, value: 'limited_liability' },
+      { pattern: /sole\s*proprietorship/i, value: 'sole_proprietorship' },
+      { pattern: /partnership/i, value: 'partnership' },
+      { pattern: /corporate/i, value: 'Corporate' },
+      { pattern: /corporation/i, value: 'Corporate' },
+      { pattern: /sme|small\s*medium\s*enterprise/i, value: 'SME' },
+      { pattern: /retail\s*chain/i, value: 'Retail Chain' },
+      { pattern: /public\s*company/i, value: 'Public Company' }
+    ];
+    
+    for (const { pattern, value } of patterns) {
+      if (pattern.test(content)) {
+        console.log(`✅ [CompanyType Parser] Found pattern "${pattern}" in document: "${value}"`);
+        return value;
+      }
+    }
+    
+    console.warn(`⚠️ [CompanyType Parser] No company type patterns found in document content`);
+    console.log(`📄 [CompanyType Parser] Content sample: "${content.substring(0, 300)}..."`);
+    return '';
+  }
+
+  /**
    * Map raw company type text to system values
    */
   private mapCustomerType(rawText: string): string {
@@ -934,34 +996,36 @@ ${existingDataContext}
     
     // Mapping table
     const mapping: { [key: string]: string } = {
-      'joint stock': 'joint_stock',
       'limited liability': 'limited_liability',
+      'llc': 'limited_liability',
+      'joint stock': 'joint_stock',
       'sole proprietorship': 'sole_proprietorship',
       'partnership': 'partnership',
-      'holding company': 'holding_company',
-      'branch': 'branch',
-      'non-profit': 'non_profit',
-      'non profit': 'non_profit',
-      'government entity': 'government_entity',
       'corporate': 'Corporate',
-      'private company': 'Corporate'
+      'corporation': 'Corporate',
+      'sme': 'SME',
+      'small medium enterprise': 'SME',
+      'retail chain': 'Retail Chain',
+      'public company': 'Public Company'
     };
     
     // Check for exact match
     if (mapping[normalizedText]) {
+      console.log(`✅ [CustomerType] "${rawText}" → "${mapping[normalizedText]}"`);
       return mapping[normalizedText];
     }
     
     // Check for partial match (contains)
     for (const [key, value] of Object.entries(mapping)) {
       if (normalizedText.includes(key)) {
+        console.log(`✅ [CustomerType] "${rawText}" → "${value}" (partial match: "${key}")`);
         return value;
       }
     }
     
-    // Default fallback
-    console.warn(`⚠️ [CustomerType Mapping] Unknown company type: "${rawText}", using default`);
-    return 'Corporate';
+    // Default fallback - return cleaned original
+    console.warn(`⚠️ [CustomerType] Unknown company type: "${rawText}", using as-is`);
+    return rawText.trim();
   }
 
   private async translateToArabic(text: string): Promise<string> {
@@ -1208,9 +1272,11 @@ For dropdown fields, provide numbered options.`;
     try {
       const payload = this.buildRequestPayload();
 
-      console.log('📤 [SUBMIT] Submitting request with payload:', payload);
-      console.log('📤 [SUBMIT] Contacts count:', payload.contacts?.length || 0);
-      console.log('📤 [SUBMIT] Documents count:', payload.documents?.length || 0);
+    console.log('📤 [SUBMIT] Submitting request with payload:', payload);
+    console.log('📤 [SUBMIT] Contacts count:', payload.contacts?.length || 0);
+    console.log('📤 [SUBMIT] Documents count:', payload.documents?.length || 0);
+    console.log('📤 [SUBMIT] Document content length:', payload.documentContent?.length || 0);
+    console.log('📤 [SUBMIT] CustomerType from parser:', payload.CustomerType);
 
       const response = await firstValueFrom(
         this.http.post<any>(`${this.apiBase}/requests`, payload)
@@ -1254,6 +1320,7 @@ For dropdown fields, provide numbered options.`;
       SalesOrgOption: this.extractedData.salesOrganization || '',
       DistributionChannelOption: this.extractedData.distributionChannel || '',
       DivisionOption: this.extractedData.division || '',
+      documentContent: this.extractedData.documentContent || '',  // Include document content
       status: 'Pending',  // ✅ FIX: Capital P for Pending
       assignedTo: 'reviewer',  // ✅ FIX: Assign to reviewer automatically
       created_at: new Date().toISOString(),
