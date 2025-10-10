@@ -430,7 +430,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   }
 
   // Direct file selection handler with localization and auto-processing
-  onFileSelected(event: any): void {
+  async onFileSelected(event: any): Promise<void> {
     if (!event?.target?.files || event.target.files.length === 0) {
       console.warn('No files selected');
       return;
@@ -468,11 +468,98 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     });
 
     if (validFiles.length > 0) {
-      this.processDocumentsDirectly(validFiles);
+      await this.processDocumentsWithDatabaseFirst(validFiles);
     }
-
+    
     // Clear input
     try { event.target.value = ''; } catch {}
+  }
+
+  /**
+   * ✅ NEW: Process documents with Database-First approach
+   */
+  private async processDocumentsWithDatabaseFirst(files: File[]): Promise<void> {
+    try {
+      console.log('🚀 [DB-FIRST] Starting Database-First upload flow...');
+      console.log('🚀 [DB-FIRST] Files:', files.map(f => f.name));
+      
+      // Step 1: Show upload message
+      this.addMessage({
+        id: `upload_${Date.now()}`,
+        role: 'user',
+        content: `📤 Uploading ${files.length} document(s): ${files.map(f => f.name).join(', ')}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+      
+      // Step 2: Save documents to database FIRST
+      console.log('💾 [DB-FIRST] Saving documents to database...');
+      const saveResponse = await this.sessionStaging.saveDocumentsOnly(files);
+      console.log('✅ [DB-FIRST] Documents saved:', saveResponse);
+      
+      // Step 3: Show success message
+      this.addMessage({
+        id: `saved_${Date.now()}`,
+        role: 'assistant',
+        content: `✅ **Documents Saved Successfully!**
+
+📄 ${files.length} document(s) have been securely saved to the database.
+
+🤖 **Now Processing with AI...**
+Please wait while I extract the data from your documents.`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+      
+      // Step 4: Show progress
+      this.showProgressBar = true;
+      this.progressValue = 0;
+      this.progressStatus = 'Processing documents with AI...';
+      this.cdr.detectChanges();
+      
+      await this.animateProgressBar();
+      
+      // Step 5: Process documents from database (not from memory!)
+      console.log('🤖 [DB-FIRST] Starting AI processing from database...');
+      const extractedData = await this.agentService.processDocumentsFromDatabase(
+        saveResponse.sessionId,
+        saveResponse.documentIds.map((d: any) => d.documentId)
+      );
+      
+      console.log('✅ [DB-FIRST] AI processing complete:', extractedData);
+      
+      // Step 6: Hide progress
+      this.showProgressBar = false;
+      this.cdr.detectChanges();
+      
+      // Step 7: Save extracted data to database
+      console.log('💾 [DB-FIRST] Saving extracted data to database...');
+      await this.saveToSessionStaging(extractedData, files);
+      
+      // Step 8: Show modal with data from database
+      console.log('📋 [DB-FIRST] Loading modal from database...');
+      await this.showUnifiedModalFromDatabase(extractedData as any);
+      
+      console.log('✅ [DB-FIRST] Complete flow finished successfully!');
+      
+    } catch (error: any) {
+      console.error('❌ [DB-FIRST] Error in Database-First flow:', error);
+      
+      this.showProgressBar = false;
+      this.cdr.detectChanges();
+      
+      this.addMessage({
+        id: `error_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ **Error Processing Documents**
+
+${error.message || 'Unknown error occurred'}
+
+Please try uploading again.`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
   }
 
   private async processDocumentsDirectly(files: File[]): Promise<void> {

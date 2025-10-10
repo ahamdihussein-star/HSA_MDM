@@ -772,6 +772,19 @@ function insertSampleData() {
       contact_position TEXT,
       created_at DATETIME DEFAULT CURRENT_TIMESTAMP
     );
+    
+    CREATE TABLE IF NOT EXISTS session_documents_temp (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      document_id TEXT NOT NULL,
+      document_name TEXT NOT NULL,
+      document_content TEXT NOT NULL,
+      document_type TEXT NOT NULL,
+      document_size INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      
+      UNIQUE(session_id, document_id)
+    );
   `);
   console.log('Session staging tables ready');
 }
@@ -1179,6 +1192,104 @@ app.post('/api/login', (req, res) => {
 });
 
 // ✅ Session Staging API Endpoints
+
+// ✅ NEW: Save documents FIRST without company data
+app.post('/api/session/save-documents-only', (req, res) => {
+  const { sessionId, documents } = req.body;
+  
+  try {
+    console.log('📄 [DOCS ONLY] Saving documents without extraction...');
+    console.log('📄 [DOCS ONLY] Session ID:', sessionId);
+    console.log('📄 [DOCS ONLY] Documents count:', documents?.length || 0);
+    
+    if (!documents || documents.length === 0) {
+      return res.status(400).json({ error: 'No documents provided' });
+    }
+    
+    // Generate document IDs
+    const documentIds = [];
+    
+    const stmt = db.prepare(`
+      INSERT INTO session_documents_temp 
+      (session_id, document_id, document_name, document_content, document_type, document_size, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `);
+    
+    for (const doc of documents) {
+      const documentId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+      
+      console.log(`📄 [DOCS ONLY] Saving document: ${doc.name}`, {
+        documentId,
+        size: doc.size,
+        type: doc.type,
+        contentLength: doc.content?.length || 0,
+        contentPreview: doc.content?.substring(0, 50)
+      });
+      
+      stmt.run(sessionId, documentId, doc.name, doc.content, doc.type, doc.size);
+      
+      documentIds.push({
+        documentId,
+        name: doc.name,
+        type: doc.type,
+        size: doc.size
+      });
+    }
+    
+    console.log('✅ [DOCS ONLY] All documents saved successfully');
+    
+    res.json({
+      success: true,
+      sessionId,
+      documentIds,
+      message: 'Documents saved successfully. Ready for AI processing.'
+    });
+    
+  } catch (error) {
+    console.error('❌ [DOCS ONLY] Error saving documents:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ NEW: Get documents for AI processing
+app.post('/api/session/get-documents-for-processing', (req, res) => {
+  const { sessionId, documentIds } = req.body;
+  
+  try {
+    console.log('📥 [GET DOCS] Retrieving documents for AI processing...');
+    console.log('📥 [GET DOCS] Session ID:', sessionId);
+    console.log('📥 [GET DOCS] Document IDs:', documentIds);
+    
+    const placeholders = documentIds.map(() => '?').join(',');
+    const documents = db.prepare(`
+      SELECT document_id, document_name, document_content, document_type, document_size
+      FROM session_documents_temp
+      WHERE session_id = ? AND document_id IN (${placeholders})
+    `).all(sessionId, ...documentIds);
+    
+    console.log('✅ [GET DOCS] Retrieved documents:', documents.length);
+    
+    documents.forEach((doc, index) => {
+      console.log(`📄 [GET DOCS] Document ${index + 1}:`, {
+        id: doc.document_id,
+        name: doc.document_name,
+        type: doc.document_type,
+        size: doc.document_size,
+        contentLength: doc.document_content?.length || 0,
+        contentPreview: doc.document_content?.substring(0, 50)
+      });
+    });
+    
+    res.json({
+      success: true,
+      documents
+    });
+    
+  } catch (error) {
+    console.error('❌ [GET DOCS] Error retrieving documents:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
 
 // Save company data and documents
 app.post('/api/session/save-company', (req, res) => {

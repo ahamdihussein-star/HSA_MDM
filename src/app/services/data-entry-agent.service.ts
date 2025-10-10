@@ -254,7 +254,7 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
 
       // Merge with existing data and store document content
       this.extractedData = { ...this.extractedData, ...finalExtractedData };
-      
+
       // Note: firstNameAR will be filled manually by user
 
       // ✅ FIX: Don't cleanup memory here - documents still needed for submission
@@ -616,11 +616,11 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
         const requestBody = {
           model: environment.openaiModel || 'gpt-4o',
           messages: [
-            {
-              role: 'user',
-              content: [
-                {
-                  type: 'text',
+          {
+            role: 'user',
+            content: [
+              {
+                type: 'text',
                   text: `You are a business document data extractor. Extract EXACTLY these 8 fields from the document image.
 
 ${extractionContext}
@@ -1114,6 +1114,66 @@ For dropdown fields, provide numbered options.`;
     } catch (error) {
       console.error('❌ [DUPLICATE] Error checking for duplicates:', error);
       return { isDuplicate: false, message: 'Duplicate check failed' };
+    }
+  }
+
+  /**
+   * ✅ NEW: Process documents from database (not from memory)
+   */
+  async processDocumentsFromDatabase(sessionId: string, documentIds: string[]): Promise<Partial<ExtractedData>> {
+    try {
+      console.log('🤖 [AI PROCESSING] Starting AI processing from database...');
+      console.log('🤖 [AI PROCESSING] Session ID:', sessionId);
+      console.log('🤖 [AI PROCESSING] Document IDs:', documentIds);
+      
+      // ✅ Step 1: Retrieve documents from database
+      const response = await firstValueFrom(
+        this.http.post<any>(`${this.apiBase}/session/get-documents-for-processing`, {
+          sessionId,
+          documentIds
+        })
+      );
+      
+      const documentsFromDB = response.documents;
+      console.log('📥 [AI PROCESSING] Retrieved documents from DB:', documentsFromDB.length);
+      
+      // ✅ Step 2: Convert database format to processing format
+      const documentsForAI = documentsFromDB.map((doc: any, index: number) => {
+        console.log(`📄 [AI PROCESSING] Preparing document ${index + 1}:`, {
+          id: doc.document_id,
+          name: doc.document_name,
+          type: doc.document_type,
+          contentLength: doc.document_content?.length || 0
+        });
+        
+        return {
+          id: doc.document_id,
+          name: doc.document_name,
+          type: doc.document_type,
+          size: doc.document_size,
+          content: doc.document_content
+        };
+      });
+      
+      console.log('🤖 [AI PROCESSING] Documents prepared for OpenAI:', documentsForAI.length);
+      
+      // ✅ Step 3: Send to OpenAI for extraction
+      const extractedData = await this.extractDataFromDocuments(documentsForAI, undefined, false);
+      
+      console.log('✅ [AI PROCESSING] Extraction complete:', extractedData);
+      
+      // ✅ Step 4: Store extracted data in service
+      this.extractedData = { ...this.extractedData, ...extractedData };
+      
+      // ✅ Step 5: Clear memory arrays (database is source of truth!)
+      this.uploadedDocuments = [];
+      console.log('🧹 [AI PROCESSING] Memory cleared - using database only');
+      
+      return extractedData;
+      
+    } catch (error: any) {
+      console.error('❌ [AI PROCESSING] Error processing from database:', error);
+      throw error;
     }
   }
 

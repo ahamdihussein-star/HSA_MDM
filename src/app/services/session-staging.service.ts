@@ -118,6 +118,52 @@ export class SessionStagingService {
     return this.sessionId;
   }
   
+  /**
+   * ✅ NEW: Save documents ONLY (without extraction)
+   */
+  async saveDocumentsOnly(documents: File[]): Promise<any> {
+    console.log('📄 [SESSION] Saving documents only (no extraction)...');
+    console.log('📄 [SESSION] Documents count:', documents.length);
+    
+    const documentsForSave = await Promise.all(
+      documents.map(async (file, index) => {
+        console.log(`📄 [SESSION] Converting document ${index + 1}: ${file.name}`);
+        const base64 = await this.fileToBase64(file);
+        console.log(`✅ [SESSION] Document ${index + 1} converted: ${base64.length} chars`);
+        return {
+          name: file.name,
+          content: base64,
+          type: file.type,
+          size: file.size
+        };
+      })
+    );
+    
+    const response = await this.http.post<any>(`${this.apiBase}/session/save-documents-only`, {
+      sessionId: this.sessionId,
+      documents: documentsForSave
+    }).toPromise();
+    
+    console.log('✅ [SESSION] Documents saved successfully:', response);
+    return response;
+  }
+  
+  /**
+   * ✅ NEW: Get documents for AI processing
+   */
+  async getDocumentsForProcessing(documentIds: string[]): Promise<any> {
+    console.log('📥 [SESSION] Getting documents for AI processing...');
+    console.log('📥 [SESSION] Document IDs:', documentIds);
+    
+    const response = await this.http.post<any>(`${this.apiBase}/session/get-documents-for-processing`, {
+      sessionId: this.sessionId,
+      documentIds
+    }).toPromise();
+    
+    console.log('✅ [SESSION] Documents retrieved:', response.documents?.length || 0);
+    return response;
+  }
+  
   private async fileToBase64(file: File): Promise<string> {
     return new Promise((resolve, reject) => {
       const reader = new FileReader();
