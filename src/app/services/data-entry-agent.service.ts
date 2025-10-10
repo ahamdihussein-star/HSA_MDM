@@ -239,14 +239,7 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
       // Merge with existing data and store document content
       this.extractedData = { ...this.extractedData, ...finalExtractedData };
       
-      // Store document content for later parsing if needed
-      if (finalExtractedData.documentContent) {
-        this.extractedData.documentContent = finalExtractedData.documentContent;
-        console.log(`💾 [Service] Stored document content (${finalExtractedData.documentContent.length} chars) for later parsing`);
-      }
-
-      // Translate if needed
-      await this.handleArabicTranslation();
+      // Note: firstNameAR will be filled manually by user
 
       // ✅ FIX: Don't cleanup memory here - documents still needed for submission
       // Memory will be cleaned up after successful submission in submitCustomerRequest()
@@ -525,17 +518,14 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
     existingFormData?: Partial<ExtractedData>,
     lightweightMode: boolean = false
   ): Promise<Partial<ExtractedData>> {
-    const maxRetries = lightweightMode ? 1 : 3; // ✅ Only 1 attempt in lightweight mode
-    const allAttempts: Array<{ data: any; score: number; attempt: number }> = [];
     
-    console.log(`🔍 [EXTRACTION] Mode: ${lightweightMode ? 'LIGHTWEIGHT (company name + missing fields only)' : 'FULL (all fields)'}`);
-    console.log(`🔍 [EXTRACTION] Max retries: ${maxRetries}`);
-
-    // ✅ CRITICAL: Check for duplicates BEFORE sending to OpenAI using SHA-256 Content Hash
-    console.log('🔍 [OPENAI INPUT] Total documents to process:', documents.length);
-    console.log('🔍 [OPENAI INPUT] Document names:', documents.map(d => d.name));
+    const maxRetries = lightweightMode ? 1 : 3;
     
-    // ✅ Calculate SHA-256 hash for each document's content
+    console.log(`🔍 [EXTRACTION] Starting extraction`);
+    console.log(`📄 [EXTRACTION] Documents: ${documents.length}`);
+    console.log(`🎯 [EXTRACTION] Mode: ${lightweightMode ? 'LIGHTWEIGHT' : 'FULL'}`);
+    
+    // SHA-256 deduplication
     const documentsWithHashes = await Promise.all(
       documents.map(async (doc) => {
         const encoder = new TextEncoder();
@@ -543,167 +533,98 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
         const hashBuffer = await crypto.subtle.digest('SHA-256', data);
         const hashArray = Array.from(new Uint8Array(hashBuffer));
         const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
-        
-        return {
-          ...doc,
-          contentHash: hashHex
-        };
+        return { ...doc, contentHash: hashHex };
       })
     );
     
-    console.log('🔐 [OPENAI INPUT] Content hashes calculated for all documents');
-    
-    // ✅ Deduplicate by content hash (most accurate) + name as secondary check
     const uniqueDocuments = documentsWithHashes.filter((doc, index, self) => {
       const firstIndex = self.findIndex(d => d.contentHash === doc.contentHash);
       const isDuplicate = firstIndex !== index;
-      
       if (isDuplicate) {
-        console.log(`⏭️ [OPENAI INPUT] Skipping duplicate: "${doc.name}" (hash: ${doc.contentHash.substring(0, 16)}...)`);
+        console.log(`⏭️ [DEDUP] Skipping duplicate: "${doc.name}"`);
       }
-      
       return !isDuplicate;
     });
     
-    if (uniqueDocuments.length < documents.length) {
-      console.warn(`⚠️ [OPENAI INPUT] Removed ${documents.length - uniqueDocuments.length} duplicate documents using SHA-256 hash!`);
-      console.warn(`⚠️ [OPENAI INPUT] Original: ${documents.length}, Unique: ${uniqueDocuments.length}`);
-    }
+    console.log(`✅ [DEDUP] Unique documents: ${uniqueDocuments.length}/${documents.length}`);
     
-    console.log('✅ [OPENAI INPUT] Unique documents to send to OpenAI:', uniqueDocuments.length);
-    console.log('✅ [OPENAI INPUT] Unique document names:', uniqueDocuments.map(d => d.name));
-    console.log('✅ [OPENAI INPUT] Content hashes:', uniqueDocuments.map(d => d.contentHash.substring(0, 16) + '...'));
+    // Build context for lightweight mode
+    let extractionContext = '';
+    if (lightweightMode && existingFormData) {
+      const missing = this.getMissingFields(existingFormData);
+      extractionContext = `
+**CONTEXT:** Additional document for existing company.
+**Current company name:** "${existingFormData.firstName || 'Unknown'}"
+**Missing fields (${missing.length}):** ${missing.join(', ') || 'None'}
+
+**YOUR TASK:**
+1. Extract company name to VERIFY this is the same company
+2. Focus on filling the ${missing.length} missing fields
+3. If all fields are filled, just extract company name for verification
+`;
+    }
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
-      let requestBody: any = null;
       try {
-        console.log(`🧪 [Service] Starting intelligent document extraction (attempt ${attempt}/${maxRetries})...`);
-        console.log(`🧪 [Service] Existing form data:`, existingFormData);
-
-        if (!environment.openaiApiKey) {
-          throw new Error('OpenAI API key not configured');
-        }
-
-        // Build intelligent prompt with existing data context
-        let existingDataContext = '';
+        console.log(`🤖 [OPENAI] Attempt ${attempt}/${maxRetries}`);
         
-        if (lightweightMode && existingFormData && Object.keys(existingFormData).length > 0) {
-          // ✅ LIGHTWEIGHT MODE: Focus on company name + missing fields only
-          const filledFields = Object.keys(existingFormData).filter(key => {
-            const value = existingFormData[key as keyof ExtractedData];
-            return value && value.toString().trim() !== '';
-          });
-          const missingFields = ['companyName', 'companyType', 'tax', 'ownerName', 
-            'buildingNumber', 'street', 'country', 'city', 'salesOrganization', 
-            'distributionChannel', 'division'].filter(f => !filledFields.includes(f));
-          
-          existingDataContext = `\n\n**LIGHTWEIGHT EXTRACTION MODE**
-**Form already has ${filledFields.length} fields filled.**
-
-**YOUR TASK:** Extract ONLY these fields:
-1. **COMPANY NAME** - MOST IMPORTANT for verification
-2. **MISSING FIELDS**: ${missingFields.length > 0 ? missingFields.join(', ') : 'None - all fields filled!'}
-
-**DO NOT extract fields that are already filled** - this saves time and processing!
-
-**EXISTING FORM DATA:**
-${JSON.stringify(existingFormData, null, 2)}`;
-        } else if (existingFormData && Object.keys(existingFormData).length > 0) {
-          // FULL MODE with existing data
-          existingDataContext = `\n\n**EXISTING FORM DATA (already filled):**
-${JSON.stringify(existingFormData, null, 2)}
-
-**INTELLIGENT FORM FILLING RULES:**
-1. **KEEP existing values** - DO NOT overwrite fields that are already filled UNLESS the new document provides MORE ACCURATE or MORE COMPLETE information
-2. **FILL MISSING fields** - Focus on extracting data for fields that are currently empty ("")
-3. **ENHANCE incomplete data** - If existing data is partial (e.g., only building number without street), complete it from the new document
-4. **CONSISTENCY CHECK** - If you extract a company name that is DIFFERENT from the existing one, you MUST still extract it accurately (the system will handle conflicts)
-5. **SMART MERGING** - Combine information from the new document with existing data intelligently
-
-**YOUR TASK:** Extract data from the NEW document and intelligently decide which fields to fill/update based on the existing form data above.`;
-        } else {
-          // FULL MODE - first document
-          existingDataContext = `\n\n**FIRST DOCUMENT** - This is the first document being processed, so extract ALL possible fields.`;
-        }
-
-        const messages = [
+        const requestBody = {
+          model: environment.openaiModel || 'gpt-4o',
+          messages: [
           {
             role: 'user',
             content: [
               {
                 type: 'text',
-                text: `You are an intelligent document processing AI. Extract customer data from these business documents and intelligently fill form fields.
+                  text: `You are a business document data extractor. Extract EXACTLY these 8 fields from the document image.
 
-Attempt ${attempt}/${maxRetries} - Focus on extracting ALL possible fields with MAXIMUM PRECISION.
-${existingDataContext}
+${extractionContext}
 
-**CRITICAL EXTRACTION RULES:**
-1. SCAN EVERY PIXEL - examine headers, footers, margins, stamps, logos, watermarks
-2. **COMPANY NAME** - Look for "Company Name:" field in the document and return the EXACT text you see
-3. Find ALL numbers - tax IDs, VAT numbers, registration numbers, license numbers
-4. **CITY/LOCATION IS CRITICAL** - Look for city name near address, registration location, or branch. Examples: "Riyadh", "Cairo", "Dubai", "Jeddah", "Kuwait City"
-5. Extract complete addresses including building numbers, streets, districts, cities
-6. Find owner/CEO/manager names in signatures or official sections (store in "ownerName" or "CompanyOwner")
-7. Extract ALL dates in any format
-8. Extract contact information if available (name, jobTitle, email, mobile, landline, preferredLanguage)
+**EXTRACTION RULES:**
+1. Look for field labels in the document (e.g., "Company Name:", "Tax Number:")
+2. Extract ONLY what you SEE - don't guess or infer
+3. If a field is not visible, return empty string ""
+4. Return clean values without labels or formatting
 
-**RETURN FORMAT:** Return ONLY valid JSON with ALL form fields. For fields not found in the document, use empty string "".
+**FIELD MAPPING (Document → Output):**
 
+Document says "Company Name:" → Extract to: "companyName"
+Document says "Company Type:" → Extract to: "customerType"  
+Document says "Tax Number:" or "Registration No:" → Extract to: "taxNumber"
+Document says "Company Owner:" or "Owner:" → Extract to: "ownerName"
+Document says "Address:" → Parse and extract:
+  - Building/house number → "buildingNumber"
+  - Street name → "street"
+  - City name → "city"
+Document says "Country:" → Extract to: "country"
+
+**IMPORTANT ADDRESS PARSING:**
+If you see "Address: 1075 Al-Qasr Street, Luxor, Egypt"
+- buildingNumber: "1075"
+- street: "Al-Qasr Street"
+- city: "Luxor"
+- country: "Egypt"
+
+**OUTPUT FORMAT - JSON ONLY (no markdown, no comments):**
 {
-  "companyName": "",
-  "tax": "",
-  "ownerName": "",
-  "CompanyOwner": "",
-  "buildingNumber": "",
-  "street": "",
-  "country": "",
-  "city": "",
-  "registrationNumber": "",
-  "commercialLicense": "",
-  "vatNumber": "",
-  "establishmentDate": "",
-  "capital": "",
-  "website": "",
-  "poBox": "",
-  "fax": "",
-  "branch": "",
-  "contacts": [],
-  "documentContent": "",
-  "confidence": {
-    "companyName": 0.0-1.0,
-    "tax": 0.0-1.0,
-    "country": 0.0-1.0,
-    "city": 0.0-1.0,
-    "overall": 0.0-1.0
-  },
-  "dataSource": {
-    "companyName": "exact location in document where found (e.g., 'Company Name section') or 'not found'",
-    "tax": "exact location or 'not found'",
-    "country": "exact location or 'not found'"
-  }
+  "companyName": "exact company name from document",
+  "customerType": "company type (Joint Stock, LLC, etc.)",
+  "taxNumber": "tax or registration number",
+  "ownerName": "owner/CEO name",
+  "buildingNumber": "building number only",
+  "street": "street name only",
+  "city": "city name",
+  "country": "country name"
 }
 
-**CRITICAL ANTI-HALLUCINATION RULES:**
-1. **ONLY extract data that is CLEARLY VISIBLE in the document** - DO NOT guess, infer, or make up data
-2. **If a field is not found, leave it as empty string ""** - DO NOT fill it with assumed or typical values
-3. **Confidence scoring:**
-   - 1.0 = Data is crystal clear and unambiguous in the document
-   - 0.7-0.9 = Data is visible but slightly unclear or partially obscured
-   - 0.5-0.6 = Data is barely visible or requires interpretation
-   - Below 0.5 = DO NOT include the data, leave field empty
-4. **Data source tracking:** For each extracted field, note the exact location where you found it in the document
-5. **DO NOT:**
-   - Infer company type from company name
-   - Guess cities based on country
-   - Make up tax numbers from partial numbers
-   - Create contact information that doesn't exist
-   - Fill fields with "typical" or "common" values
-6. **If existing form data shows a different company, still extract the NEW document's data accurately** - the system will handle conflicts
+**ANTI-HALLUCINATION RULES:**
+❌ Don't guess city from country
+❌ Don't infer type from company name
+❌ Don't make up missing data
+✅ Only extract visible text
+✅ Return "" for missing fields
 
-**IMPORTANT:** 
-1. Your response should be a JSON object that can directly fill the form
-2. For "documentContent" field, extract and return ALL visible text content from the document as a single string
-3. Think intelligently about what data to include based on the existing form context, but NEVER hallucinate or guess data.`
+Extract now:`
               },
               ...uniqueDocuments.map(doc => ({
                 type: 'image_url' as const,
@@ -711,31 +632,14 @@ ${existingDataContext}
               }))
             ]
           }
-        ];
-
-        requestBody = {
-          model: environment.openaiModel || 'gpt-4o',
-          messages,
-          max_tokens: 4000,
-          temperature: attempt === 1 ? 0.1 : (attempt === 2 ? 0.3 : 0.5),
+          ],
+          max_tokens: 1000,
+          temperature: 0.1,
           seed: attempt * 1000
         };
         
-        // ✅ Calculate and log request size
         const requestSize = JSON.stringify(requestBody).length;
-        const requestSizeMB = (requestSize / (1024 * 1024)).toFixed(2);
-        const estimatedTokens = Math.ceil(requestSize / 4); // Rough estimate: 1 token ≈ 4 chars
-        
-        console.log(`📊 [OPENAI REQUEST SIZE]:`);
-        console.log(`   - Documents sent: ${uniqueDocuments.length}`);
-        console.log(`   - Request size: ${requestSize} bytes (${requestSizeMB} MB)`);
-        console.log(`   - Estimated tokens: ~${estimatedTokens.toLocaleString()}`);
-        console.log(`   - Model: ${environment.openaiModel || 'gpt-4o'}`);
-        console.log(`   - Attempt: ${attempt}/${maxRetries}`);
-        
-        if (estimatedTokens > 100000) {
-          console.warn(`⚠️ [OPENAI] Large request! May cause timeout or failure.`);
-        }
+        console.log(`📊 [OPENAI] Request size: ${(requestSize / 1024).toFixed(2)} KB`);
 
         const response = await firstValueFrom(
           this.http.post<any>('https://api.openai.com/v1/chat/completions', requestBody, {
@@ -751,107 +655,148 @@ ${existingDataContext}
         }
 
         const content = response.choices[0].message.content;
-        console.log(`🧪 [Service] Raw OpenAI response (attempt ${attempt}):`, content);
+        console.log(`🤖 [OPENAI] Raw response:`, content);
         
-        const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+        const cleanedContent = content
+          .replace(/```json\n?/g, '')
+          .replace(/```\n?/g, '')
+          .trim();
+        
         const extractedData = JSON.parse(cleanedContent);
+        console.log(`✅ [OPENAI] Parsed data:`, extractedData);
         
-        console.log(`🧪 [Service] Parsed extracted data (attempt ${attempt}):`, extractedData);
-        console.log(`🧪 [Service] City extracted: "${extractedData.city}"`);
+        // Validate that we got the 8 fields
+        const requiredFields = ['companyName', 'customerType', 'taxNumber', 'ownerName', 
+                                'buildingNumber', 'street', 'city', 'country'];
+        const missingFields = requiredFields.filter(f => !(f in extractedData));
         
-        // Map extracted fields to system fields
-        if (extractedData.companyName) {
-          console.log(`🔍 [CompanyName Debug] Raw extracted: "${extractedData.companyName}"`);
-          extractedData.firstName = this.mapCompanyName(extractedData.companyName);
-          console.log(`🔍 [CompanyName Debug] Mapped to firstName: "${extractedData.firstName}"`);
-        } else {
-          console.log(`⚠️ [CompanyName Debug] Company name not found`);
-        }
-        
-        // Parse company type from document content
-        if (extractedData.documentContent) {
-          console.log(`🔍 [CustomerType Debug] Parsing from document content`);
-          console.log(`📄 [Document Content] Length: ${extractedData.documentContent.length} chars`);
-          console.log(`📄 [Document Content] Preview: ${extractedData.documentContent.substring(0, 200)}...`);
-          extractedData.CustomerType = this.parseCompanyTypeFromContent(extractedData.documentContent);
-          console.log(`🔍 [CustomerType Debug] Parsed CustomerType: "${extractedData.CustomerType}"`);
-        } else {
-          console.log(`⚠️ [CustomerType Debug] Document content not found`);
-        }
-
-        // ✅ Validate confidence scores to prevent hallucination
-        if (extractedData.confidence) {
-          console.log(`🎯 [Anti-Hallucination] Confidence scores:`, extractedData.confidence);
-          console.log(`🎯 [Anti-Hallucination] Overall confidence: ${extractedData.confidence.overall}`);
-          
-          // Filter out low-confidence fields (below 0.5)
-          const confidenceThreshold = 0.5;
-          Object.keys(extractedData).forEach(field => {
-            if (extractedData.confidence && extractedData.confidence[field] !== undefined) {
-              if (extractedData.confidence[field] < confidenceThreshold) {
-                console.warn(`⚠️ [Anti-Hallucination] Removing low-confidence field: ${field} (confidence: ${extractedData.confidence[field]})`);
-                extractedData[field] = ''; // Clear low-confidence data
-              }
-            }
-          });
-        }
-
-        // ✅ Log data sources for transparency
-        if (extractedData.dataSource) {
-          console.log(`📍 [Data Source Tracking]:`, extractedData.dataSource);
-        }
-
-        const score = this.calculateDataCompleteness(extractedData);
-        console.log(`🧪 [Service] Attempt ${attempt} extracted ${score} fields`);
-        allAttempts.push({ data: extractedData, score, attempt });
-
-        // Check if current attempt has all core required fields (7 fields)
-        if (score >= 7) {
-          console.log(`✅ [Service] Attempt ${attempt} got all core required fields! Stopping.`);
-          break;
+        if (missingFields.length > 0) {
+          console.warn(`⚠️ [VALIDATION] Missing fields in response: ${missingFields.join(', ')}`);
+          missingFields.forEach(f => extractedData[f] = '');
         }
         
-        // ✅ NEW: Check if merged data from all attempts so far has all core required fields
-        if (attempt >= 2) {
-          const mergedSoFar = this.mergeExtractedData(allAttempts);
-          
-          const mergedScore = this.calculateDataCompleteness(mergedSoFar);
-          console.log(`🔍 [Service] Merged score after ${attempt} attempts: ${mergedScore}`);
-          
-          if (mergedScore >= 7) {
-            console.log(`✅ [Service] Merged data has all core required fields after ${attempt} attempts! Stopping early.`);
-            break;
-          }
-        }
-
-        if (attempt < maxRetries) {
-          const waitTime = attempt * 500;
-          console.log(`⏳ [Service] Waiting ${waitTime}ms before next attempt...`);
-          await new Promise(resolve => setTimeout(resolve, waitTime));
-        }
+        // Map to system format
+        const mappedData = this.mapExtractedToSystem(extractedData);
+        
+        console.log(`✅ [EXTRACTION] Success on attempt ${attempt}`);
+        return mappedData;
+        
       } catch (error: any) {
-        console.error(`❌ [Service] Extraction error (attempt ${attempt}/${maxRetries}):`, error);
-        if (attempt < maxRetries) {
-          const waitTime = attempt * 1000;
-          await new Promise(resolve => setTimeout(resolve, waitTime));
+        console.error(`❌ [OPENAI] Attempt ${attempt} failed:`, error.message);
+        
+        if (attempt === maxRetries) {
+          throw this.handleDocumentError(error);
         }
+        
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
       }
     }
+    
+    throw new Error('Extraction failed after all retries');
+  }
 
-    if (allAttempts.length === 0) {
-      throw new Error('فشلت جميع المحاولات / All extraction attempts failed');
+  /**
+   * Get missing fields for lightweight extraction
+   */
+  private getMissingFields(data: Partial<ExtractedData>): string[] {
+    const required = ['companyName', 'customerType', 'taxNumber', 'ownerName',
+                      'buildingNumber', 'street', 'city', 'country'];
+    
+    return required.filter(field => {
+      const value = (data as any)[field] || (data as any)[this.mapFieldToOldName(field)];
+      return !value || value.toString().trim() === '';
+    });
+  }
+
+  /**
+   * Map new field names to old system names (for compatibility)
+   */
+  private mapFieldToOldName(newField: string): string {
+    const mapping: {[key: string]: string} = {
+      'companyName': 'firstName',
+      'customerType': 'CustomerType',
+      'taxNumber': 'tax'
+    };
+    return mapping[newField] || newField;
+  }
+
+  /**
+   * Map OpenAI extracted data to system format
+   */
+  private mapExtractedToSystem(extracted: any): Partial<ExtractedData> {
+    console.log(`🔄 [MAPPING] Mapping OpenAI data to system format`);
+    
+    const mapped: any = {
+      firstName: this.cleanText(extracted.companyName),
+      firstNameAR: '',
+      tax: this.cleanText(extracted.taxNumber),
+      CustomerType: this.mapCustomerType(extracted.customerType),
+      ownerName: this.cleanText(extracted.ownerName),
+      buildingNumber: this.cleanText(extracted.buildingNumber),
+      street: this.cleanText(extracted.street),
+      city: this.cleanText(extracted.city),
+      country: this.cleanText(extracted.country),
+      salesOrganization: '',
+      distributionChannel: '',
+      division: '',
+      contacts: []
+    };
+    
+    console.log(`✅ [MAPPING] Completed:`);
+    console.log(`   - Company: "${mapped.firstName}"`);
+    console.log(`   - Type: "${mapped.CustomerType}"`);
+    console.log(`   - Tax: "${mapped.tax}"`);
+    console.log(`   - City: "${mapped.city}"`);
+    
+    return mapped;
+  }
+
+  /**
+   * Clean extracted text
+   */
+  private cleanText(text: string | undefined): string {
+    if (!text) return '';
+    return text.toString().trim();
+  }
+
+  /**
+   * Map customer type to system values
+   */
+  private mapCustomerType(rawType: string): string {
+    if (!rawType) return '';
+    
+    const normalized = rawType.toLowerCase().trim();
+    
+    const mapping: {[key: string]: string} = {
+      'joint stock': 'joint_stock',
+      'joint-stock': 'joint_stock',
+      'limited liability': 'limited_liability',
+      'llc': 'limited_liability',
+      'l.l.c': 'limited_liability',
+      'sole proprietorship': 'sole_proprietorship',
+      'partnership': 'partnership',
+      'corporate': 'Corporate',
+      'corporation': 'Corporate',
+      'sme': 'SME',
+      'small and medium enterprise': 'SME',
+      'retail chain': 'Retail Chain',
+      'public company': 'Public Company'
+    };
+    
+    if (mapping[normalized]) {
+      console.log(`✅ [TYPE] Mapped "${rawType}" → "${mapping[normalized]}"`);
+      return mapping[normalized];
     }
-
-    allAttempts.sort((a, b) => b.score - a.score);
-    const bestAttempt = allAttempts[0];
-    console.log(`🏆 [Service] Best result from attempt ${bestAttempt.attempt} with score ${bestAttempt.score}`);
-    console.log('📊 [Service] All attempts scores:', allAttempts.map(a => `Attempt ${a.attempt}: ${a.score} fields`));
-
-    const mergedData = this.mergeExtractedData(allAttempts);
-    if (!mergedData.country) {
-      mergedData.country = this.detectCountryFromData(mergedData);
+    
+    for (const [key, value] of Object.entries(mapping)) {
+      if (normalized.includes(key)) {
+        console.log(`✅ [TYPE] Partial match "${rawType}" → "${value}"`);
+        return value;
+      }
     }
-    return mergedData;
+    
+    console.log(`⚠️ [TYPE] No mapping for "${rawType}", using as-is`);
+    return rawType.trim();
   }
 
   private calculateDataCompleteness(data: any): number {
@@ -910,151 +855,10 @@ ${existingDataContext}
     return '';
   }
 
-  private async handleArabicTranslation(): Promise<void> {
-    if (this.extractedData.firstName && !this.extractedData.firstNameAR) {
-      this.extractedData.firstNameAR = await this.translateToArabic(this.extractedData.firstName);
-    }
-  }
 
-  /**
-   * Map raw company name text to clean format
-   */
-  private mapCompanyName(rawText: string): string {
-    if (!rawText) return '';
-    
-    // Clean and normalize company name
-    let cleanedName = rawText.trim();
-    
-    // Remove common prefixes/suffixes that might confuse the AI
-    cleanedName = cleanedName.replace(/^(Company|Corp|Corporation|Ltd|Limited|LLC|Inc|Incorporated)\s*/i, '');
-    cleanedName = cleanedName.replace(/\s+(Company|Corp|Corporation|Ltd|Limited|LLC|Inc|Incorporated)$/i, '');
-    
-    // Remove extra spaces and normalize
-    cleanedName = cleanedName.replace(/\s+/g, ' ').trim();
-    
-    console.log(`🔍 [CompanyName Mapping] "${rawText}" → "${cleanedName}"`);
-    return cleanedName;
-  }
 
-  /**
-   * Parse company type from document content
-   */
-  private parseCompanyTypeFromContent(documentContent: string): string {
-    if (!documentContent) {
-      console.log(`⚠️ [CompanyType Parser] No document content provided`);
-      return '';
-    }
-    
-    console.log(`🔍 [CompanyType Parser] Starting parsing of document content (${documentContent.length} chars)`);
-    const content = documentContent.toLowerCase();
-    
-    // Look for "Company Type:" pattern
-    console.log(`🔍 [CompanyType Parser] Looking for "Company Type:" pattern...`);
-    const companyTypeMatch = content.match(/company\s*type\s*:?\s*([^\n\r,]+)/i);
-    if (companyTypeMatch) {
-      const extractedType = companyTypeMatch[1].trim();
-      console.log(`✅ [CompanyType Parser] Found "Company Type:" in document: "${extractedType}"`);
-      const mappedType = this.mapCustomerType(extractedType);
-      console.log(`✅ [CompanyType Parser] Final mapped type: "${mappedType}"`);
-      return mappedType;
-    }
-    
-    // Look for common company type patterns
-    console.log(`🔍 [CompanyType Parser] Looking for common company type patterns...`);
-    const patterns = [
-      { pattern: /joint\s*stock/i, value: 'joint_stock' },
-      { pattern: /limited\s*liability/i, value: 'limited_liability' },
-      { pattern: /llc/i, value: 'limited_liability' },
-      { pattern: /sole\s*proprietorship/i, value: 'sole_proprietorship' },
-      { pattern: /partnership/i, value: 'partnership' },
-      { pattern: /corporate/i, value: 'Corporate' },
-      { pattern: /corporation/i, value: 'Corporate' },
-      { pattern: /sme|small\s*medium\s*enterprise/i, value: 'SME' },
-      { pattern: /retail\s*chain/i, value: 'Retail Chain' },
-      { pattern: /public\s*company/i, value: 'Public Company' }
-    ];
-    
-    for (const { pattern, value } of patterns) {
-      if (pattern.test(content)) {
-        console.log(`✅ [CompanyType Parser] Found pattern "${pattern}" in document: "${value}"`);
-        return value;
-      }
-    }
-    
-    console.warn(`⚠️ [CompanyType Parser] No company type patterns found in document content`);
-    console.log(`📄 [CompanyType Parser] Content sample: "${content.substring(0, 300)}..."`);
-    return '';
-  }
 
-  /**
-   * Map raw company type text to system values
-   */
-  private mapCustomerType(rawText: string): string {
-    if (!rawText) return '';
-    
-    const normalizedText = rawText.trim().toLowerCase();
-    
-    // Mapping table
-    const mapping: { [key: string]: string } = {
-      'limited liability': 'limited_liability',
-      'llc': 'limited_liability',
-      'joint stock': 'joint_stock',
-      'sole proprietorship': 'sole_proprietorship',
-      'partnership': 'partnership',
-      'corporate': 'Corporate',
-      'corporation': 'Corporate',
-      'sme': 'SME',
-      'small medium enterprise': 'SME',
-      'retail chain': 'Retail Chain',
-      'public company': 'Public Company'
-    };
-    
-    // Check for exact match
-    if (mapping[normalizedText]) {
-      console.log(`✅ [CustomerType] "${rawText}" → "${mapping[normalizedText]}"`);
-      return mapping[normalizedText];
-    }
-    
-    // Check for partial match (contains)
-    for (const [key, value] of Object.entries(mapping)) {
-      if (normalizedText.includes(key)) {
-        console.log(`✅ [CustomerType] "${rawText}" → "${value}" (partial match: "${key}")`);
-        return value;
-      }
-    }
-    
-    // Default fallback - return cleaned original
-    console.warn(`⚠️ [CustomerType] Unknown company type: "${rawText}", using as-is`);
-    return rawText.trim();
-  }
 
-  private async translateToArabic(text: string): Promise<string> {
-    try {
-      const response = await firstValueFrom(
-        this.http.post<any>('https://api.openai.com/v1/chat/completions', {
-          model: 'gpt-4o',
-          messages: [
-            {
-              role: 'user',
-              content: `Translate this company name to Arabic. Return ONLY the Arabic translation, nothing else: "${text}"`
-            }
-          ],
-          max_tokens: 100,
-          temperature: 0.3
-        }, {
-          headers: {
-            'Authorization': `Bearer ${environment.openaiApiKey}`,
-            'Content-Type': 'application/json'
-          }
-        })
-      );
-      
-      return response.choices[0].message.content.trim();
-    } catch (error) {
-      console.error('Translation error:', error);
-      return text; // Return original if translation fails
-    }
-  }
 
   async sendMessage(userMessage: string, additionalContext?: any): Promise<string> {
     try {
@@ -1272,9 +1076,9 @@ For dropdown fields, provide numbered options.`;
     try {
       const payload = this.buildRequestPayload();
 
-    console.log('📤 [SUBMIT] Submitting request with payload:', payload);
-    console.log('📤 [SUBMIT] Contacts count:', payload.contacts?.length || 0);
-    console.log('📤 [SUBMIT] Documents count:', payload.documents?.length || 0);
+      console.log('📤 [SUBMIT] Submitting request with payload:', payload);
+      console.log('📤 [SUBMIT] Contacts count:', payload.contacts?.length || 0);
+      console.log('📤 [SUBMIT] Documents count:', payload.documents?.length || 0);
     console.log('📤 [SUBMIT] Document content length:', payload.documentContent?.length || 0);
     console.log('📤 [SUBMIT] CustomerType from parser:', payload.CustomerType);
 
@@ -1320,7 +1124,6 @@ For dropdown fields, provide numbered options.`;
       SalesOrgOption: this.extractedData.salesOrganization || '',
       DistributionChannelOption: this.extractedData.distributionChannel || '',
       DivisionOption: this.extractedData.division || '',
-      documentContent: this.extractedData.documentContent || '',  // Include document content
       status: 'Pending',  // ✅ FIX: Capital P for Pending
       assignedTo: 'reviewer',  // ✅ FIX: Assign to reviewer automatically
       created_at: new Date().toISOString(),

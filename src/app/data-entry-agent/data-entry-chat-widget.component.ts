@@ -5599,7 +5599,6 @@ Respond with JSON only:
       street: extractedData.street,
       country: extractedData.country,
       city: extractedData.city,
-      documentContent: (extractedData as any).documentContent || '',  // Include document content
       salesOrg: extractedData.salesOrganization || extractedData.SalesOrgOption,  // ✅ Try both
       distributionChannel: extractedData.distributionChannel || extractedData.DistributionChannelOption,  // ✅ Try both
       division: extractedData.division || extractedData.DivisionOption,  // ✅ Try both
