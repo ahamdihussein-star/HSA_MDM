@@ -869,8 +869,8 @@
           </div>
           
           <!-- Sales Information (Optional) -->
-          <div class="form-row" *ngIf="!isSalesFieldOptional('salesOrganization') || !isSalesFieldOptional('distributionChannel')">
-            <div class="form-group" *ngIf="!isSalesFieldOptional('salesOrganization')">
+          <div class="form-row">
+            <div class="form-group">
               <label class="optional">Sales Organization (Optional):</label>
               <nz-select formControlName="salesOrganization" nzPlaceHolder="Select sales organization">
                 <nz-option *ngFor="let option of salesOrgOptions" 
@@ -879,7 +879,7 @@
                 </nz-option>
               </nz-select>
             </div>
-            <div class="form-group" *ngIf="!isSalesFieldOptional('distributionChannel')">
+            <div class="form-group">
               <label class="optional">Distribution Channel (Optional):</label>
               <nz-select formControlName="distributionChannel" nzPlaceHolder="Select distribution channel">
                 <nz-option *ngFor="let option of distributionChannelOptions" 
@@ -890,7 +890,7 @@
             </div>
           </div>
           
-          <div class="form-row" *ngIf="!isSalesFieldOptional('division')">
+          <div class="form-row">
             <div class="form-group">
               <label class="optional">Division (Optional):</label>
               <nz-select formControlName="division" nzPlaceHolder="Select division">

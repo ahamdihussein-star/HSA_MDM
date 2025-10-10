@@ -1316,9 +1316,9 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   private generateConfirmationMessage(_extractedData: any): string { return ''; }
 
   private checkMissingFields(data: ExtractedData): string[] {
-    // ✅ NEW SIMPLE LOGIC: Core required fields only (9 fields)
+    // ✅ NEW SIMPLE LOGIC: Core required fields only (7 fields - firstName and firstNameAR are optional)
     const coreRequiredFields = [
-      'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
+      'tax', 'CustomerType', 'ownerName',
       'buildingNumber', 'street', 'country', 'city'
     ];
     
@@ -1330,8 +1330,8 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     
     console.log(`🔍 [SIMPLE LOGIC] Core fields: ${coreRequiredFields.length} required, ${filledCoreFields.length} filled`);
     
-    // If all 9 core fields are filled, no missing data
-    if (filledCoreFields.length >= 9) {
+    // If all 7 core fields are filled, no missing data
+    if (filledCoreFields.length >= 7) {
       console.log('✅ [SIMPLE LOGIC] All core fields filled - no missing data');
       return [];
     }
@@ -1345,6 +1345,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     console.log(`⚠️ [SIMPLE LOGIC] Missing ${missingFields.length} core fields:`, missingFields);
     return missingFields;
   }
+
 
   private askForMissingField(field: string): void {
     // Prevent infinite loops

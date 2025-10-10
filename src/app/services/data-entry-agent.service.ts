@@ -12,7 +12,6 @@ import {
   PREFERRED_LANGUAGE_OPTIONS,
   DOCUMENT_TYPE_OPTIONS
 } from '../shared/lookup-data';
-import { SmartDropdownMatcherService } from './smart-dropdown-matcher.service';
 import { TranslateService } from '@ngx-translate/core';
 import { NotificationService } from './notification.service';
 
@@ -68,7 +67,7 @@ export class DataEntryAgentService {
   private readonly MAX_CONVERSATION_HISTORY = 10;
   private readonly MAX_DOCUMENTS = 5;
 
-  constructor(private http: HttpClient, private smartMatcher: SmartDropdownMatcherService, private notificationService: NotificationService, private translate: TranslateService) {
+  constructor(private http: HttpClient, private notificationService: NotificationService, private translate: TranslateService) {
     this.extractedData = this.initializeExtractedData();
     this.sessionId = this.generateSessionId();
     this.loadCurrentUser();
@@ -210,16 +209,6 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
 
       // Smart match dropdowns to exact system values
       let finalExtractedData = extractedData;
-      try {
-        const matchResult = await this.smartMatcher.matchExtractedToSystemValues(extractedData);
-        if (matchResult?.matchedValues) {
-          console.log('🎯 [Service] Smart matched values:', matchResult.matchedValues);
-          finalExtractedData = { ...extractedData, ...matchResult.matchedValues };
-          // Optionally: store reasoning/confidence if needed later
-        }
-      } catch (e) {
-        console.warn('⚠️ [Service] Smart matching failed, proceeding with raw values.', e);
-      }
 
       // Auto-detect metadata when not provided
       if (!documentsMetadata || documentsMetadata.length === 0) {
@@ -595,7 +584,7 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
             const value = existingFormData[key as keyof ExtractedData];
             return value && value.toString().trim() !== '';
           });
-          const missingFields = ['firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName', 
+          const missingFields = ['companyName', 'companyType', 'tax', 'ownerName', 
             'buildingNumber', 'street', 'country', 'city', 'salesOrganization', 
             'distributionChannel', 'division'].filter(f => !filledFields.includes(f));
           
@@ -603,7 +592,7 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
 **Form already has ${filledFields.length} fields filled.**
 
 **YOUR TASK:** Extract ONLY these fields:
-1. **COMPANY NAME** (firstName, firstNameAR) - MOST IMPORTANT for verification
+1. **COMPANY NAME** - MOST IMPORTANT for verification
 2. **MISSING FIELDS**: ${missingFields.length > 0 ? missingFields.join(', ') : 'None - all fields filled!'}
 
 **DO NOT extract fields that are already filled** - this saves time and processing!
@@ -641,44 +630,31 @@ ${existingDataContext}
 
 **CRITICAL EXTRACTION RULES:**
 1. SCAN EVERY PIXEL - examine headers, footers, margins, stamps, logos, watermarks
-2. **COMPANY NAME IS THE MOST IMPORTANT FIELD** - Look for:
-   - Company/Establishment name in document header
-   - Name field in registration documents (اسم المنشأة، اسم الشركة)
-   - Name in logos or stamps
-   - Any prominent business name anywhere in the document
-3. For Arabic text, provide both Arabic (in firstNameAR) and English versions (in firstName)
+2. **COMPANY NAME** - Look for "Company Name:" field in the document and return the EXACT text you see
+3. **COMPANY TYPE** - Look for "Company Type:" field in the document and return the EXACT text you see
 4. Find ALL numbers - tax IDs, VAT numbers, registration numbers, license numbers
 5. **CITY/LOCATION IS CRITICAL** - Look for city name near address, registration location, or branch. Examples: "Riyadh", "Cairo", "Dubai", "Jeddah", "Kuwait City"
 6. Extract complete addresses including building numbers, streets, districts, cities
 7. Find owner/CEO/manager names in signatures or official sections (store in "ownerName" or "CompanyOwner")
 8. Extract ALL dates in any format
-9. Look for dropdown field values:
-   - SalesOrgOption: Sales organizations codes/names
-   - DistributionChannelOption: Distribution channel codes/names
-   - DivisionOption: Division codes/names
-10. Extract contact information if available (name, jobTitle, email, mobile, landline, preferredLanguage)
+11. Extract contact information if available (name, jobTitle, email, mobile, landline, preferredLanguage)
 
 **RETURN FORMAT:** Return ONLY valid JSON with ALL form fields. For fields not found in the document, use empty string "".
 
 {
-  "firstName": "",
-  "firstNameAR": "",
+  "companyName": "",
+  "companyType": "",
   "tax": "",
-  "CustomerType": "",
   "ownerName": "",
   "CompanyOwner": "",
   "buildingNumber": "",
   "street": "",
   "country": "",
   "city": "",
-  "SalesOrgOption": "",
-  "DistributionChannelOption": "",
-  "DivisionOption": "",
   "registrationNumber": "",
   "commercialLicense": "",
   "vatNumber": "",
   "establishmentDate": "",
-  "legalForm": "",
   "capital": "",
   "website": "",
   "poBox": "",
@@ -686,14 +662,16 @@ ${existingDataContext}
   "branch": "",
   "contacts": [],
   "confidence": {
-    "firstName": 0.0-1.0,
+    "companyName": 0.0-1.0,
+    "companyType": 0.0-1.0,
     "tax": 0.0-1.0,
     "country": 0.0-1.0,
     "city": 0.0-1.0,
     "overall": 0.0-1.0
   },
   "dataSource": {
-    "firstName": "exact location in document where found (e.g., 'header line 2') or 'not found'",
+    "companyName": "exact location in document where found (e.g., 'Company Name section') or 'not found'",
+    "companyType": "exact location or 'not found'",
     "tax": "exact location or 'not found'",
     "country": "exact location or 'not found'"
   }
@@ -771,6 +749,23 @@ ${existingDataContext}
         
         console.log(`🧪 [Service] Parsed extracted data (attempt ${attempt}):`, extractedData);
         console.log(`🧪 [Service] City extracted: "${extractedData.city}"`);
+        
+        // Map extracted fields to system fields
+        if (extractedData.companyName) {
+          console.log(`🔍 [CompanyName Debug] Raw extracted: "${extractedData.companyName}"`);
+          extractedData.firstName = this.mapCompanyName(extractedData.companyName);
+          console.log(`🔍 [CompanyName Debug] Mapped to firstName: "${extractedData.firstName}"`);
+        } else {
+          console.log(`⚠️ [CompanyName Debug] Company name not found`);
+        }
+        
+        if (extractedData.companyType) {
+          console.log(`🔍 [CustomerType Debug] Raw extracted: "${extractedData.companyType}"`);
+          extractedData.CustomerType = this.mapCustomerType(extractedData.companyType);
+          console.log(`🔍 [CustomerType Debug] Mapped to CustomerType: "${extractedData.CustomerType}"`);
+        } else {
+          console.log(`⚠️ [CustomerType Debug] Company type not found`);
+        }
 
         // ✅ Validate confidence scores to prevent hallucination
         if (extractedData.confidence) {
@@ -798,8 +793,8 @@ ${existingDataContext}
         console.log(`🧪 [Service] Attempt ${attempt} extracted ${score} fields`);
         allAttempts.push({ data: extractedData, score, attempt });
 
-        // Check if current attempt has all core required fields (9 fields)
-        if (score >= 9) {
+        // Check if current attempt has all core required fields (7 fields)
+        if (score >= 7) {
           console.log(`✅ [Service] Attempt ${attempt} got all core required fields! Stopping.`);
           break;
         }
@@ -808,24 +803,11 @@ ${existingDataContext}
         if (attempt >= 2) {
           const mergedSoFar = this.mergeExtractedData(allAttempts);
           
-          // Try smart matching to fill sales org, distribution channel, division
-          let mergedWithSmartMatch = mergedSoFar;
-          try {
-            console.log(`🎯 [Service] Trying smart matching after ${attempt} attempts...`);
-            const matchResult = await this.smartMatcher.matchExtractedToSystemValues(mergedSoFar);
-            if (matchResult?.matchedValues) {
-              mergedWithSmartMatch = { ...mergedSoFar, ...matchResult.matchedValues };
-              console.log(`✅ [Service] Smart matching completed after ${attempt} attempts`);
-            }
-          } catch (e) {
-            console.warn(`⚠️ [Service] Smart matching failed after attempt ${attempt}, continuing...`);
-          }
+          const mergedScore = this.calculateDataCompleteness(mergedSoFar);
+          console.log(`🔍 [Service] Merged score after ${attempt} attempts: ${mergedScore}`);
           
-          const mergedScore = this.calculateDataCompleteness(mergedWithSmartMatch);
-          console.log(`🔍 [Service] Merged score (with smart matching) after ${attempt} attempts: ${mergedScore}`);
-          
-          if (mergedScore >= 9) {
-            console.log(`✅ [Service] Merged data (with smart matching) has all core required fields after ${attempt} attempts! Stopping early.`);
+          if (mergedScore >= 7) {
+            console.log(`✅ [Service] Merged data has all core required fields after ${attempt} attempts! Stopping early.`);
             break;
           }
         }
@@ -862,12 +844,12 @@ ${existingDataContext}
 
   private calculateDataCompleteness(data: any): number {
     let score = 0;
-    // ✅ Core required fields (9 fields only - removed sales fields)
+    // ✅ Core required fields (7 fields only - firstName and firstNameAR are optional)
     const requiredFields = [
-      'firstName', 'firstNameAR', 'tax', 'CustomerType', 
+      'tax', 'CustomerType', 
       'ownerName', 'buildingNumber', 'street', 'country', 'city'
     ];
-    // ✅ Sales fields moved to optional (smart matching will fill them)
+    // ✅ Sales fields moved to optional (user will fill them manually)
     const optionalFields = [
       'salesOrganization', 'distributionChannel', 'division',
       'registrationNumber', 'commercialLicense', 'vatNumber', 
@@ -920,6 +902,66 @@ ${existingDataContext}
     if (this.extractedData.firstName && !this.extractedData.firstNameAR) {
       this.extractedData.firstNameAR = await this.translateToArabic(this.extractedData.firstName);
     }
+  }
+
+  /**
+   * Map raw company name text to clean format
+   */
+  private mapCompanyName(rawText: string): string {
+    if (!rawText) return '';
+    
+    // Clean and normalize company name
+    let cleanedName = rawText.trim();
+    
+    // Remove common prefixes/suffixes that might confuse the AI
+    cleanedName = cleanedName.replace(/^(Company|Corp|Corporation|Ltd|Limited|LLC|Inc|Incorporated)\s*/i, '');
+    cleanedName = cleanedName.replace(/\s+(Company|Corp|Corporation|Ltd|Limited|LLC|Inc|Incorporated)$/i, '');
+    
+    // Remove extra spaces and normalize
+    cleanedName = cleanedName.replace(/\s+/g, ' ').trim();
+    
+    console.log(`🔍 [CompanyName Mapping] "${rawText}" → "${cleanedName}"`);
+    return cleanedName;
+  }
+
+  /**
+   * Map raw company type text to system values
+   */
+  private mapCustomerType(rawText: string): string {
+    if (!rawText) return '';
+    
+    const normalizedText = rawText.trim().toLowerCase();
+    
+    // Mapping table
+    const mapping: { [key: string]: string } = {
+      'joint stock': 'joint_stock',
+      'limited liability': 'limited_liability',
+      'sole proprietorship': 'sole_proprietorship',
+      'partnership': 'partnership',
+      'holding company': 'holding_company',
+      'branch': 'branch',
+      'non-profit': 'non_profit',
+      'non profit': 'non_profit',
+      'government entity': 'government_entity',
+      'corporate': 'Corporate',
+      'private company': 'Corporate'
+    };
+    
+    // Check for exact match
+    if (mapping[normalizedText]) {
+      return mapping[normalizedText];
+    }
+    
+    // Check for partial match (contains)
+    for (const [key, value] of Object.entries(mapping)) {
+      if (normalizedText.includes(key)) {
+        return value;
+      }
+    }
+    
+    // Default fallback
+    console.warn(`⚠️ [CustomerType Mapping] Unknown company type: "${rawText}", using default`);
+    return 'Corporate';
   }
 
   private async translateToArabic(text: string): Promise<string> {
