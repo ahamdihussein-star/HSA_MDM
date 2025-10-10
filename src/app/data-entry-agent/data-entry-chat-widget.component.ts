@@ -726,35 +726,30 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
         }
       }
       
-      // ✅ Calculate extracted and missing fields using checkMissingFields method
-      console.log('🔍 [DEBUG] showUnifiedModalFromDatabase: extractedDataFromDB after auto-translate/smart-detect:', extractedDataFromDB);
-      
+      // ✅ NEW SIMPLE LOGIC: Calculate extracted and missing fields
       const allFields = [
         'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
         'buildingNumber', 'street', 'country', 'city', 'salesOrganization',
         'distributionChannel', 'division', 'registrationNumber', 'legalForm'
       ];
       
+      // Count all extracted fields (including sales data)
       const extractedFields = allFields.filter(field => {
         const value = (extractedDataFromDB as any)[field];
         return value && value !== '';
       });
       
-      // ✅ Use checkMissingFields method for consistent missing fields calculation
+      console.log(`📊 [SIMPLE LOGIC] Total extracted fields: ${extractedFields.length}`);
+      
+      // Use simple logic for missing fields (core fields only)
       const missingFields = this.checkMissingFields(extractedDataFromDB);
       
-      console.log('📊 [DB FLOW] Extracted fields:', extractedFields);
-      console.log('📊 [DB FLOW] Missing fields (from checkMissingFields):', missingFields);
+      console.log(`📊 [SIMPLE LOGIC] Missing fields count: ${missingFields.length}`);
       
       // ✅ Update unifiedModalData with extracted/missing fields
       this.unifiedModalData.extractedFields = extractedFields.map(f => ({ field: f, value: (extractedDataFromDB as any)[f] }));
       this.unifiedModalData.missingFields = missingFields;
       this.unifiedModalData.contacts = companyData.contacts || [];
-      
-      console.log('📊 [DB FLOW] Final unifiedModalData.extractedFields:', this.unifiedModalData.extractedFields.length);
-      console.log('📊 [DB FLOW] Final unifiedModalData.missingFields:', this.unifiedModalData.missingFields.length);
-      console.log('📊 [DB FLOW] Final unifiedModalData.missingFields array:', this.unifiedModalData.missingFields);
-      console.log('📊 [DB FLOW] Final unifiedModalData:', this.unifiedModalData);
       
       // ✅ Fill form with extracted data (use extractedDataFromDB which has correct field names)
       console.log('📝 [DB FLOW] Patching form with extracted data:', extractedDataFromDB);
@@ -1321,24 +1316,34 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   private generateConfirmationMessage(_extractedData: any): string { return ''; }
 
   private checkMissingFields(data: ExtractedData): string[] {
-    console.log('🔍 [DEBUG] checkMissingFields called with data:', data);
-    
-    const required = [
+    // ✅ NEW SIMPLE LOGIC: Core required fields only (9 fields)
+    const coreRequiredFields = [
       'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
       'buildingNumber', 'street', 'country', 'city'
     ];
-    console.log('🔍 [DEBUG] checkMissingFields: Required fields:', required);
     
-    const missing = required.filter(field => {
+    // Count how many core fields are actually filled
+    const filledCoreFields = coreRequiredFields.filter(field => {
       const value = (data as any)[field];
-      const isEmpty = !value || (typeof value === 'string' && value.trim() === '');
-      console.log(`🔍 [DEBUG] checkMissingFields: Field ${field}: value="${value}", isEmpty=${isEmpty}`);
-      return isEmpty;
+      return value && (typeof value === 'string' ? value.trim() !== '' : true);
     });
-
-    // Contacts optional: don't include in missing list
-    console.log('🔍 [DEBUG] checkMissingFields: Final missing fields array:', missing);
-    return missing;
+    
+    console.log(`🔍 [SIMPLE LOGIC] Core fields: ${coreRequiredFields.length} required, ${filledCoreFields.length} filled`);
+    
+    // If all 9 core fields are filled, no missing data
+    if (filledCoreFields.length >= 9) {
+      console.log('✅ [SIMPLE LOGIC] All core fields filled - no missing data');
+      return [];
+    }
+    
+    // If not all filled, return the missing ones
+    const missingFields = coreRequiredFields.filter(field => {
+      const value = (data as any)[field];
+      return !value || (typeof value === 'string' && value.trim() === '');
+    });
+    
+    console.log(`⚠️ [SIMPLE LOGIC] Missing ${missingFields.length} core fields:`, missingFields);
+    return missingFields;
   }
 
   private askForMissingField(field: string): void {
@@ -4409,14 +4414,22 @@ Would you like to:
 
   // Helper method to check if field is missing
   isFieldMissing(field: string): boolean {
-    const isMissing = this.unifiedModalData.missingFields.includes(field);
-    console.log(`🔍 [DEBUG] isFieldMissing(${field}): missingFields=[${this.unifiedModalData.missingFields.join(', ')}], result=${isMissing}`);
-    return isMissing;
+    return this.unifiedModalData.missingFields.includes(field);
   }
 
   // Helper method to check if field was extracted
   isFieldExtracted(field: string): boolean {
     return this.unifiedModalData.extractedFields.some((item: any) => item.field === field);
+  }
+
+  // ✅ NEW: Helper method to check if sales field is optional (not missing)
+  isSalesFieldOptional(field: string): boolean {
+    const salesFields = ['salesOrganization', 'distributionChannel', 'division'];
+    if (!salesFields.includes(field)) return false;
+    
+    // Check if sales field has value (optional if filled, missing if empty)
+    const extractedField = this.unifiedModalData.extractedFields.find((item: any) => item.field === field);
+    return extractedField && extractedField.value && extractedField.value.trim() !== '';
   }
 
   // ====== Document Preview & Download (From new-request.component.ts) ======

@@ -868,10 +868,10 @@
             </div>
           </div>
           
-          <!-- Sales Information -->
-          <div class="form-row" *ngIf="isFieldMissing('salesOrganization') || isFieldMissing('distributionChannel')">
-            <div class="form-group" *ngIf="isFieldMissing('salesOrganization')">
-              <label class="required">Sales Organization:</label>
+          <!-- Sales Information (Optional) -->
+          <div class="form-row" *ngIf="!isSalesFieldOptional('salesOrganization') || !isSalesFieldOptional('distributionChannel')">
+            <div class="form-group" *ngIf="!isSalesFieldOptional('salesOrganization')">
+              <label class="optional">Sales Organization (Optional):</label>
               <nz-select formControlName="salesOrganization" nzPlaceHolder="Select sales organization">
                 <nz-option *ngFor="let option of salesOrgOptions" 
                           [nzValue]="option.value" 
@@ -879,8 +879,8 @@
                 </nz-option>
               </nz-select>
             </div>
-            <div class="form-group" *ngIf="isFieldMissing('distributionChannel')">
-              <label class="required">Distribution Channel:</label>
+            <div class="form-group" *ngIf="!isSalesFieldOptional('distributionChannel')">
+              <label class="optional">Distribution Channel (Optional):</label>
               <nz-select formControlName="distributionChannel" nzPlaceHolder="Select distribution channel">
                 <nz-option *ngFor="let option of distributionChannelOptions" 
                           [nzValue]="option.value" 
@@ -890,9 +890,9 @@
             </div>
           </div>
           
-          <div class="form-row" *ngIf="isFieldMissing('division')">
+          <div class="form-row" *ngIf="!isSalesFieldOptional('division')">
             <div class="form-group">
-              <label class="required">Division:</label>
+              <label class="optional">Division (Optional):</label>
               <nz-select formControlName="division" nzPlaceHolder="Select division">
                 <nz-option *ngFor="let option of divisionOptions" 
                           [nzValue]="option.value" 
