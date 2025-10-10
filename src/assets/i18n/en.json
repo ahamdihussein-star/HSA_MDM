@@ -977,6 +977,12 @@
   "Total Records Synced": "Total Records Synced",
   "System Breakdown": "System Breakdown",
   "agent": {
+    "progress": {
+      "analyzingDocuments": "Analyzing Documents",
+      "extractingMetadata": "Extracting Document Metadata",
+      "processingFiles": "Processing Files",
+      "processingDocuments": "Processing Documents"
+    },
     "title": "Data Entry AI Assistant",
     "welcomeGreeting": "Welcome {{userName}}! Ready to save some time today? I'm your AI assistant - I can quickly extract data from your documents and help you create customer requests effortlessly. Just hit the paperclip icon to upload your files and watch the magic happen!",
     "uploadDocument": "📄 Upload Document",
@@ -1065,8 +1071,10 @@
     },
     "contactForm": {
       "title": "Add Contact",
-      "name": "Contact Name",
+      "name": "Name",
+      "namePlaceholder": "Enter full name",
       "jobTitle": "Job Title",
+      "jobTitlePlaceholder": "Enter job title",
       "email": "Email",
       "mobile": "Mobile",
       "landline": "Landline",
@@ -1119,10 +1127,14 @@
       "country": "Country",
       "detectedFrom": "Detected from: OCR content",
       "autoAnalysis": "Document types detected from OCR content analysis",
-      "processingFailed": "Auto-processing failed",
+      "processingFailed": "Auto-processing failed. Some data may have been extracted.",
       "tryAgain": "Please try again or ensure images are clear",
       "fileNotImage": "{{filename}} must be an image",
       "fileTooLarge": "{{filename}} exceeds 10MB"
+    },
+    "messages": {
+      "uploadCancelled": "❌ Upload cancelled",
+      "continueWithPartialData": "✅ Continuing with partial data. Please fill in the missing fields in the form."
     },
     "documentTypes": {
       "commercialRegistration": "Commercial Registration",
@@ -1143,6 +1155,131 @@
     },
     "duplicateFound": {
       "message": "⚠️ **Duplicate Record Found!**\n\n📋 **Existing Record:**\n• **Name:** {{name}}\n• **Tax Number:** {{tax}}\n• **Company Type:** {{type}}\n• **Status:** {{status}}\n\n❌ **Cannot create duplicate record**\n\n💡 **Available Options:**\n1. Verify the entered data\n2. Modify tax number if incorrect\n3. Cancel the operation"
+    },
+    "warnings": {
+      "differentCompanies": "⚠️ Warning: Different Companies Detected!\n\nThe uploaded documents appear to be for different companies.\nYou cannot mix documents from multiple companies.\n\nPlease upload documents for the same company only.\n\nAll form data has been cleared.",
+      "replaceDocuments": "⚠️ Warning: All documents will be reprocessed and data will be re-extracted.\n\nDo you want to continue?",
+      "replaceDocument": "⚠️ Document \"{{fileName}}\" already exists with different content.\n\nDo you want to replace it with the new version?",
+      "differentCompaniesDetected": "Different Companies Detected!"
+    },
+    "questions": {
+      "whichCompany": "Which company would you like to continue with?"
+    },
+    "labels": {
+      "currentCompany": "Current Company",
+      "newCompany": "New Document Company"
+    },
+    "confirmations": {
+      "chooseCompany": "⚠️ Different Companies Detected!\n\nCurrent Company: {{currentCompany}} ({{currentCountry}})\nNew Document Company: {{newCompany}} ({{newCountry}})\n\nWhich company would you like to continue with?\n\nClick 'OK' to keep CURRENT company ({{currentCompany}})\nClick 'Cancel' to switch to NEW company ({{newCompany}})",
+      "replaceDocuments": "📄 New Document Detected!\n\nYou are about to upload: {{names}}\n\nThis will replace the existing document and re-process the data with OCR.\n\nClick 'OK' to continue\nClick 'Cancel' to keep current document"
+    },
+    "documentModal": {
+      "title": "Add Document Information",
+      "document": "Document",
+      "fileName": "File Name",
+      "country": "Country",
+      "type": "Document Type",
+      "description": "Description"
+    },
+    "success": {
+      "documentsReprocessed": "✅ Documents reprocessed successfully"
+    },
+    "errors": {
+      "reprocessingFailed": "❌ Reprocessing failed. Please try again.",
+      "reprocessingError": "❌ Error occurred during reprocessing",
+      "aiCommunicationError": "Unable to communicate with AI model",
+      "checkInternetConnection": "Please check your internet connection and try again",
+      "tryAgainLater": "If the problem persists, please try again later or contact support"
+    },
+    "confirmations": {
+      "deleteDocument": "Are you sure you want to delete this document?",
+      "addDocuments": "⚠️ All documents ({{count}} total) will be reprocessed and data will be re-extracted.\n\nDo you want to continue?"
+    },
+    "contact": {
+      "addTitle": "Add Contact",
+      "editTitle": "Edit Contact"
+    },
+    "fileSelection": {
+      "selectedFiles": "Selected Files"
+    },
+    "buttons": {
+      "addContact": "Add Contact",
+      "addMoreFiles": "Add More Files",
+      "continue": "Continue",
+      "addDocument": "Add Document",
+      "saveAndSubmit": "Save & Submit",
+      "saveChanges": "Save Changes",
+      "reviewAndComplete": "📝 Review & Complete Data",
+      "yes": "➕ Yes",
+      "continueAfterContact": "➡️ Continue",
+      "continueToReview": "Continue to Review",
+      "back": "Back",
+      "cancel": "Cancel",
+      "tryAgain": "🔄 Try Again",
+      "continueWithPartialData": "✅ Continue with Partial Data",
+      "keepCurrent": "Keep Current Company",
+      "switchToNew": "Switch to New Company",
+      "ignoreDifference": "Ignore the difference and use all the documents"
+    },
+    "steps": {
+      "upload": "Upload Files",
+      "review": "Review & Confirm"
+    },
+    "upload": {
+      "dragDrop": "Drag & Drop Files Here",
+      "orClick": "or click to browse",
+      "selectedFiles": "Selected Files"
+    },
+    "messages": {
+      "noDocuments": "No documents to display",
+      "completedFieldsDescription": "The following data was extracted from documents (for reference only)",
+      "noContactsAdded": "No contacts added yet - They are optional",
+      "filesUploaded": "📤 Uploaded {{count}} document(s): {{files}}",
+      "enterValue": "✍️ {{fieldLabel}}\n\n{{example}}\n\nEnter value:",
+      "selected": "✅ Selected: {{value}}",
+      "addContactInstruction": "👥 **Add Contact:**\n\nPlease fill the contact form in the popup.",
+      "contactAdded": "✅ Contact added: {{name}}\n\nWould you like to add another contact?",
+      "dataReview": "📊 **Data Review**\n\n**Extracted Data (✅ Complete):**\n{{extractedFields}}\n\n**Missing Data (❌ Missing):**\n{{missingFields}}\n\n📝 Please fill the missing data to complete the request.",
+      "autoOpenedForm": "🚀 **Form Auto-Opened**\n\nThe missing data form has been opened automatically.\nPlease fill the highlighted required fields.",
+      "submittedSuccessfully": "🎉 **Submitted Successfully!**\n\nRequest ID: {{id}}\nStatus: Pending Review\n\nYou can track the request from your task list.",
+      "submissionFailed": "❌ Submission failed: {{error}}",
+      "requestSubmittedForReview": "Your request has been submitted for review and will be processed by our team.",
+      "manualEntry": "📝 **Manual Entry**\n\nI will help you enter the data step by step.\nWe can add contacts and documents as needed.\n\nLet's start!",
+      "help": "📖 **Help**\n\n**Available Commands:**\n• \"upload\" - Upload documents\n• \"manual\" - Manual entry\n• \"clear\" - Clear data\n• \"help\" - Show help\n\n**Tips:**\n• You can upload multiple documents at once\n• Use numbers to select from lists\n• Type \"skip\" to skip optional fields",
+      "processingNewDocuments": "Processing new documents...",
+      "reviewExtractedData": "📊 **Review Extracted Data**\n\nIs the extracted data correct?",
+      "editExtractedData": "✏️ **Edit Extracted Data**\n\n📊 **Extracted Data Only:**\n{{extractedCount}} fields extracted\n\n✅ **Extracted Data:**\n{{fields}}\n\n📝 **The popup contains:**\n• Extracted data only (editable)\n• No empty or non-extracted fields\n\nPlease review and edit the data in the popup.",
+      "editFormError": "❌ Error opening edit form: {{error}}",
+      "completeMissingData": "📝 **Complete Missing Data**\n\nPlease fill the missing fields in the popup. Pre-filled fields are for reference only.",
+      "missingFormError": "❌ Error opening missing fields form: {{error}}",
+      "genericError": "❌ Error: {{error}}",
+      "allDataSaved": "✅ **All data saved successfully!**\n\nWill now check for duplicates then submit the request.",
+      "dataConfirmed": "✅ Data confirmed. Will now continue to ask for missing data.",
+      "dataCancelled": "Cancelled. You can review and try again.",
+      "changesSaved": "✅ **Changes saved successfully**\n\nWill now check for missing data.",
+      "missingDataSaved": "✅ **Missing data saved successfully**\n\nWill now check data completeness."
+    },
+    "labels": {
+      "document": "Document",
+      "fields": "fields"
+    },
+    "sections": {
+      "completedFields": "Completed Fields",
+      "extractedData": "Extracted Data",
+      "missingData": "Missing Data",
+      "contacts": "Contacts (Optional)",
+      "attachedDocuments": "Attached Documents"
+    },
+    "titles": {
+      "documentPreview": "Document Preview"
+    },
+    "contactLabels": {
+      "name": "Name",
+      "jobTitle": "Job Title",
+      "email": "Email",
+      "mobile": "Mobile",
+      "landline": "Landline",
+      "language": "Preferred Language"
     }
   }
 }

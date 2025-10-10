@@ -2421,7 +2421,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
       });
 
       // Add some additional random contacts for variety
-      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(2, this.currentDemoCompany.country);
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(2, this.currentDemoCompany.country, this.currentDemoCompany.name);
       additionalContacts.forEach(contact => {
         this.addContact();
         const lastIndex = this.contactsFA.length - 1;
@@ -2438,19 +2438,9 @@ export class NewRequestComponent implements OnInit, OnDestroy {
       // Update city options based on selected country
       this.filteredCityOptions = getCitiesByCountry(demoCompany.country);
 
-      // Show success message with company name
-      setTimeout(() => {
-        this.msg.success(`Demo data loaded: ${demoCompany.name}`, { nzDuration: 3000 });
-      }, 1000);
-
-      // Log remaining companies for reference
-      const remaining = this.demoDataGenerator.getRemainingCompaniesCount();
-      console.log(`Demo data loaded for: ${demoCompany.name}`);
-      console.log(`Remaining companies: ${remaining}`);
 
     } catch (error) {
-      console.error('Error generating demo data:', error);
-      this.msg.error('Failed to generate demo data. Please try again.');
+      // Silent error handling
     }
   }
 
@@ -2482,7 +2472,6 @@ export class NewRequestComponent implements OnInit, OnDestroy {
    */
   resetDemoGenerator(): void {
     this.demoDataGenerator.resetGenerator();
-    this.msg.success('Demo generator reset. All companies available again!');
   }
 
   // ====== Auto Translation ======
@@ -3118,8 +3107,6 @@ export class NewRequestComponent implements OnInit, OnDestroy {
    * Press Ctrl+D (or Cmd+D on Mac) to auto-fill the focused field
    */
   setupKeyboardAutoFill(): void {
-    console.log('Setting up keyboard auto-fill for data entry user');
-    
     // Generate demo company data once
     this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
     
@@ -3134,7 +3121,6 @@ export class NewRequestComponent implements OnInit, OnDestroy {
           this.spaceClickCount++;
           if (this.spaceClickCount >= 2) {
             event.preventDefault();
-            console.log('Double space detected - triggering auto-fill');
             this.handleAutoFillKeypress();
             this.spaceClickCount = 0;
           }
@@ -3149,8 +3135,6 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     // Add event listener
     if (isPlatformBrowser(this.platformId)) {
       document.addEventListener('keydown', this.keyboardListener);
-      
-      // No tip notification - keep it clean
     }
   }
 
@@ -3158,37 +3142,57 @@ export class NewRequestComponent implements OnInit, OnDestroy {
    * Handle auto-fill keypress
    */
   handleAutoFillKeypress(): void {
-    console.log('=== AUTO-FILL TRIGGERED ===');
-    
     const activeElement = document.activeElement as HTMLElement;
-    console.log('Active element:', activeElement);
-    console.log('Demo company:', this.currentDemoCompany);
     
-    if (!activeElement || !this.currentDemoCompany) {
-      this.msg.warning('Please focus on a form field first');
+    if (!activeElement) {
+      return;
+    }
+
+    // Try to get company from form first
+    this.syncCurrentDemoCompanyFromForm();
+
+    if (!this.currentDemoCompany) {
       return;
     }
 
     // Get the field name from various possible attributes
     const fieldName = this.getFieldNameFromElement(activeElement);
-    console.log('Detected field name:', fieldName);
     
     if (!fieldName) {
-      this.msg.warning('Cannot auto-fill this field');
       return;
     }
 
     // Get demo value for this field
     const demoValue = this.getDemoValueForField(fieldName);
-    console.log('Demo value for field:', fieldName, '=', demoValue);
     
     if (demoValue !== null && demoValue !== undefined) {
       // Fill the field
       this.fillFieldWithValue(fieldName, demoValue);
+    }
+  }
+
+  /**
+   * Sync currentDemoCompany from form data
+   * If company name exists in form, find it in the pool
+   */
+  private syncCurrentDemoCompanyFromForm(): void {
+    const companyName = this.requestForm.get('firstName')?.value;
+    
+    if (companyName && companyName.trim()) {
+      // Try to find this company in the demo pool
+      const foundCompany = this.demoDataGenerator.findCompanyByName(companyName);
       
-      // Visual feedback only - no notification message
-    } else {
-      this.msg.warning(`No demo data available for "${fieldName}"`);
+      if (foundCompany) {
+        // Use the found company with all its data
+        this.currentDemoCompany = foundCompany;
+      } else if (!this.currentDemoCompany) {
+        // If not found and we don't have a current company, generate new one
+        this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+      }
+      // If not found but we have currentDemoCompany, keep using it
+    } else if (!this.currentDemoCompany) {
+      // No company name in form, generate new one
+      this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
     }
   }
 
@@ -3204,7 +3208,11 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     if (name) return name;
     
     const id = element.getAttribute('id');
-    if (id) return id;
+    if (id) {
+      // Special handling for compliance block reason
+      if (id === 'comp-block-reason') return 'blockReason';
+      return id;
+    }
     
     // Check for nz-select elements
     const nzSelectId = element.getAttribute('nzSelectId');
@@ -3245,7 +3253,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     // Generate additional contacts if needed
     const allContacts = [...this.currentDemoCompany.contacts];
     if (allContacts.length < 3) {
-      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(3 - allContacts.length, this.currentDemoCompany.country);
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(3 - allContacts.length, this.currentDemoCompany.country, this.currentDemoCompany.name);
       allContacts.push(...additionalContacts);
     }
 
@@ -3287,7 +3295,10 @@ export class NewRequestComponent implements OnInit, OnDestroy {
       'landline': this.getContactDataByField('landline', fieldName),
       'Landline': this.getContactDataByField('landline', fieldName),
       'preferredLanguage': this.getContactDataByField('preferredLanguage', fieldName),
-      'PrefferedLanguage': this.getContactDataByField('preferredLanguage', fieldName)
+      'PrefferedLanguage': this.getContactDataByField('preferredLanguage', fieldName),
+      
+      // Compliance block reason
+      'blockReason': this.generateBlockReason()
     };
 
     return fieldMapping[fieldName] || null;
@@ -3305,7 +3316,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     // Generate additional contacts if needed
     const allContacts = [...this.currentDemoCompany.contacts];
     if (allContacts.length <= contactIndex) {
-      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(contactIndex + 1 - allContacts.length, this.currentDemoCompany.country);
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(contactIndex + 1 - allContacts.length, this.currentDemoCompany.country, this.currentDemoCompany.name);
       allContacts.push(...additionalContacts);
     }
     
@@ -3325,11 +3336,33 @@ export class NewRequestComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Generate compliance block reason
+   */
+  private generateBlockReason(): string {
+    const reasons = [
+      'Company appears on sanctions list and requires further compliance verification',
+      'Suspicious business activities detected during due diligence review',
+      'Entity matches OFAC (Office of Foreign Assets Control) sanctions list',
+      'Failed to meet minimum creditworthiness requirements as per company policy',
+      'Company listed on UN Security Council consolidated sanctions list',
+      'Outstanding legal disputes identified during background check',
+      'EU financial sanctions applicable - immediate blocking required per regulations',
+      'Previous fraud allegations found in public records requiring investigation'
+    ];
+    return reasons[Math.floor(Math.random() * reasons.length)];
+  }
+
+  /**
    * Fill specific field with value
    */
   private fillFieldWithValue(fieldName: string, value: any): void {
     try {
-      console.log(`Trying to fill field: ${fieldName} with value:`, value);
+      // Special handling for blockReason (not in form)
+      if (fieldName === 'blockReason') {
+        this.blockReason = value;
+        this.addVisualFeedback();
+        return;
+      }
       
       // First try main form controls
       const control = this.requestForm.get(fieldName);
@@ -3348,20 +3381,16 @@ export class NewRequestComponent implements OnInit, OnDestroy {
         control.updateValueAndValidity();
         
         this.addVisualFeedback();
-        console.log(`Successfully filled main form field: ${fieldName}`);
         return;
       }
 
       // Try to fill FormArray fields (contacts)
       if (this.fillFormArrayField(fieldName, value)) {
         this.addVisualFeedback();
-        console.log(`Successfully filled FormArray field: ${fieldName}`);
         return;
       }
-
-      console.log(`Could not find field: ${fieldName}`);
     } catch (error) {
-      console.error('Error filling field:', error);
+      // Silent error handling
     }
   }
 
@@ -3373,8 +3402,6 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     const contactFields = ['name', 'email', 'mobile', 'jobTitle', 'landline', 'preferredLanguage'];
     
     if (contactFields.includes(fieldName)) {
-      console.log('Trying to fill contact field:', fieldName);
-      
       // Find the focused input element
       const activeElement = document.activeElement as HTMLInputElement;
       
@@ -3393,7 +3420,6 @@ export class NewRequestComponent implements OnInit, OnDestroy {
           const event = new Event('input', { bubbles: true });
           activeElement.dispatchEvent(event);
           
-          console.log(`Direct fill: "${fieldName}" with: ${demoValue}`);
           return true;
         }
       }
@@ -3409,7 +3435,6 @@ export class NewRequestComponent implements OnInit, OnDestroy {
           control.markAsTouched();
           control.updateValueAndValidity();
           
-          console.log(`Fallback fill: "${fieldName}" in contact #${i + 1} with: ${demoValue}`);
           return true;
         }
       }
@@ -3460,7 +3485,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     // Generate enough contacts
     const allContacts = [...this.currentDemoCompany.contacts];
     while (allContacts.length <= contactIndex) {
-      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(1, this.currentDemoCompany.country);
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(1, this.currentDemoCompany.country, this.currentDemoCompany.name);
       allContacts.push(...additionalContacts);
     }
     

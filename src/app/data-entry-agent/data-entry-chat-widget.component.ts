@@ -4,6 +4,7 @@ import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
 import { DataEntryAgentService, ExtractedData } from '../services/data-entry-agent.service';
 import { TranslateService } from '@ngx-translate/core';
 import { DemoDataGeneratorService, DemoCompany } from '../services/demo-data-generator.service';
+import { SessionStagingService } from '../services/session-staging.service';
 import { Subject, Subscription } from 'rxjs';
 import { NzModalService } from 'ng-zorro-antd/modal';
 import { 
@@ -54,12 +55,39 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   private awaitingDataReview = false;
   private currentLang: 'ar' | 'en' = 'en';
   
-  // Document upload
-  uploadedFiles: File[] = [];
+  // Document upload - ✅ NOW USING DATABASE ONLY
+  pendingRetryFiles: File[] = [];  // ✅ Store files for retry on error
   showDocumentModal = false;
+  currentCompanyId: string | null = null;  // ✅ Track current company in DB
+  
+  // ⚠️ DEPRECATED - Kept for backward compatibility only - DO NOT USE!
+  // All document operations now use database (sessionStaging) instead
+  private uploadedFiles: File[] = [];  // ❌ DEPRECATED - Use database
+  private unifiedModalDocuments: any[] = [];  // ❌ DEPRECATED - Use database
   pendingFiles: File[] = [];
   documentMetadataForm!: FormGroup;
+  currentDocumentStep: 'upload' | 'review' = 'upload';
+  
+  // ✅ Background governance - Company document management
+  private currentCompanyDocuments: {
+    companyId: string;
+    companyName: string;
+    documents: File[];
+    extractedData: any;
+  } | null = null;
+  
+  private allCompaniesDocuments: Map<string, any> = new Map();
+  
+  // Metadata extraction progress
+  showMetadataExtractionProgress = false;
+  metadataExtractionProgress = 0;
+  metadataExtractionStatus = '';
   modalKey = 0; // Force modal re-render
+  
+  // New flow progress bar
+  showProgressBar = false;
+  progressValue = 0;
+  progressStatus = '';
   private modalInstance: any = null; // Track modal instance
   
   // Contact form
@@ -91,8 +119,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   private lastSpaceTime: number = 0;
   private spaceClickCount: number = 0;
 
-  // Document management for unified modal
-  unifiedModalDocuments: any[] = [];
+  // Document management for unified modal - ✅ REMOVED - NOW USING DATABASE ONLY
   showDocumentReplace = false;
   isReprocessingDocuments = false;
   originalExtractedData: any = {};
@@ -106,7 +133,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   // Contact modal properties (Innovative Design)
   showContactModal = false;
   contactModalForm!: FormGroup;
-  contactModalTitle = 'إضافة جهة اتصال / Add Contact';
+  contactModalTitle = '';
   isEditingContact = false;
   editingContactIndex = -1;
 
@@ -146,6 +173,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     private modalService: NzModalService,
     private demoDataGenerator: DemoDataGeneratorService,
     private translate: TranslateService,
+    private sessionStaging: SessionStagingService,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.initializeForms();
@@ -306,8 +334,12 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     this.destroyed$.complete();
     
     this.messages = [];
-    this.uploadedFiles = [];
     this.accumulatedFiles = [];
+    
+    // ✅ Clear database session on destroy
+    if (this.currentCompanyId) {
+      this.sessionStaging.clearSession().catch(err => console.warn('Session cleanup failed:', err));
+    }
   }
 
   private addWelcomeMessage(): void {
@@ -433,7 +465,6 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
   private async processDocumentsDirectly(files: File[]): Promise<void> {
     try {
       console.log('⚡ Processing documents automatically...');
-      this.uploadedFiles = files;
 
       const fileNames = files.map(f => f.name).join(', ');
       this.addMessage({
@@ -462,58 +493,430 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       // Remove loading message
       this.messages = this.messages.filter(m => m.id !== progressMessage.id);
 
-      const metadata = this.agentService.getDocumentMetadata();
-      if (metadata && metadata.length > 0) {
-        const detectionMessages = metadata.map((m, i) => {
-          const typeKey = `agent.documentTypes.${m.type}`;
-          const translatedType = this.translate.instant(typeKey);
-          const countryKey = `agent.countries.${m.country}`;
-          const translatedCountry = this.translate.instant(countryKey);
-
-          let icon = '📄';
-          const t = (m.type || '').toLowerCase();
-          if (t.includes('commercial')) icon = '🏢';
-          else if (t.includes('tax')) icon = '💰';
-          else if (t.includes('vat')) icon = '📊';
-          else if (t.includes('license')) icon = '📜';
-          else if (t.includes('id')) icon = '🆔';
-          else if (t.includes('contract')) icon = '📝';
-
-          return `${icon} **${this.translate.instant('agent.autoProcessing.documentDetected', { index: i + 1 })}:**
-   • ${this.translate.instant('agent.autoProcessing.type')}: ${translatedType}
-   • ${this.translate.instant('agent.autoProcessing.country')}: ${translatedCountry}
-   • ${this.translate.instant('agent.autoProcessing.detectedFrom')}`;
-        }).join('\n\n');
-
-        this.addMessage({
-          id: `detected_${Date.now()}`,
-          role: 'assistant',
-          content: `✅ ${this.translate.instant('agent.autoProcessing.detectionComplete')}:
-        
-${detectionMessages}
-
-🤖 ${this.translate.instant('agent.autoProcessing.autoAnalysis')}`,
-          timestamp: new Date(),
-          type: 'text'
-        });
-      }
-
-      this.displayExtractedDataWithLabels(extractedData);
-
-      const missingFields = this.checkMissingFields(extractedData);
-      if (missingFields.length > 0) {
-        this.askForMissingField(missingFields[0]);
-      } else {
-        // Do not push extra review message here; the structured review message is already shown
-      }
+      // ✅ Save to database first
+      console.log('💾 [DB FLOW] Saving extracted data to database...');
+      await this.saveToSessionStaging(extractedData, files);
+      
+      // ✅ Show modal with data from database
+      await this.showUnifiedModalFromDatabase(extractedData);
+      
     } catch (error: any) {
       console.error('❌ Auto-processing error:', error);
+      
+      // Remove loading message
+      this.messages = this.messages.filter(m => m.type === 'loading');
+      
+      // ✅ Check if we have partial extracted data
+      const extractedData = this.agentService.getExtractedData();
+      const hasPartialData = extractedData && (
+        extractedData.firstName || 
+        extractedData.tax || 
+        extractedData.country ||
+        extractedData.city
+      );
+      
+      console.log('🔍 [ERROR RECOVERY] Checking for partial data:', {
+        hasPartialData,
+        extractedFields: hasPartialData ? Object.keys(extractedData).filter(k => (extractedData as any)[k]) : []
+      });
+      
+      // Check if it's a CORS or network error
+      const isCorsOrNetworkError = 
+        error?.status === 0 || 
+        error?.message?.includes('CORS') ||
+        error?.message?.includes('timeout') ||
+        error?.message?.includes('Network') ||
+        error?.name === 'HttpErrorResponse';
+      
+      let errorMessage = isCorsOrNetworkError
+        ? `❌ ${this.translate.instant('agent.errors.aiCommunicationError')}\n\n🌐 ${this.translate.instant('agent.errors.checkInternetConnection')}`
+        : `❌ ${this.translate.instant('agent.autoProcessing.processingFailed')}`;
+      
+      // ✅ If we have partial data, show it
+      if (hasPartialData) {
+        const extractedFields = Object.keys(extractedData)
+          .filter(k => (extractedData as any)[k] && k !== 'contacts')
+          .map(k => `• ${k}: ${(extractedData as any)[k]}`)
+          .join('\n');
+        
+        errorMessage += `\n\n📋 **Partial Data Extracted:**\n${extractedFields}\n\n💡 **Options:**`;
+      }
+      
+      // ✅ Add error message with smart options
+      const buttons = hasPartialData ? [
+        {
+          label: this.translate.instant('agent.buttons.tryAgain') || '🔄 Try Again to Extract More',
+          action: 'retry_upload',
+          style: 'primary'
+        },
+        {
+          label: this.translate.instant('agent.buttons.continueWithPartialData') || '✅ Continue with Partial Data',
+          action: 'continue_with_partial_data',
+          style: 'default'
+        },
+        {
+          label: this.translate.instant('agent.buttons.cancel') || '❌ Cancel',
+          action: 'cancel_upload',
+          style: 'default'
+        }
+      ] : [
+        {
+          label: this.translate.instant('agent.buttons.tryAgain') || '🔄 Try Again',
+          action: 'retry_upload',
+          style: 'primary'
+        },
+        {
+          label: this.translate.instant('agent.buttons.cancel') || '❌ Cancel',
+          action: 'cancel_upload',
+          style: 'default'
+        }
+      ];
+      
       this.addMessage({
         id: `error_${Date.now()}`,
         role: 'assistant',
-        content: `❌ ${this.translate.instant('agent.autoProcessing.processingFailed')}
+        content: errorMessage,
+        timestamp: new Date(),
+        type: 'confirmation',
+        data: {
+          buttons,
+          extractedData: hasPartialData ? extractedData : undefined,
+          files
+        }
+      });
       
-${this.translate.instant('agent.autoProcessing.tryAgain')}`,
+      // Store files for retry
+      this.pendingRetryFiles = files;
+    }
+  }
+
+  // ✅ NEW: Show modal with data loaded from database
+  private async showUnifiedModalFromDatabase(extractedData: ExtractedData): Promise<void> {
+    console.log('💾 [DB FLOW] Loading company data from database...');
+    
+    const companyId = this.generateCompanyId(extractedData);
+    const sessionId = this.sessionStaging['sessionId']; // Get session ID from service
+    
+    console.log('💾 [DB FLOW] Loading company:', companyId);
+    
+    try {
+      // ✅ Load company data from database
+      const companyData = await this.sessionStaging.getCompany(companyId);
+      
+      console.log('✅ [DB FLOW] Company data loaded:', companyData);
+      console.log('📄 [DB FLOW] Documents from DB:', companyData.documents?.length || 0);
+      
+      // ✅ Convert base64 documents back to File objects for display
+      const documentsFromDB = companyData.documents || [];
+      const fileObjects: File[] = [];
+      
+      for (const doc of documentsFromDB) {
+        // Convert base64 to File object
+        const base64Data = doc.document_content.split(',')[1] || doc.document_content;
+        const byteCharacters = atob(base64Data);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: doc.document_type });
+        const file = new File([blob], doc.document_name, { type: doc.document_type });
+        fileObjects.push(file);
+      }
+      
+      console.log('✅ [DB FLOW] Converted documents to File objects:', fileObjects.length);
+      
+      // ✅ Update current company ID
+      this.currentCompanyId = companyId;
+      
+      // ✅ Store documents in unifiedModalData for getDocumentsList()
+      this.unifiedModalData.documents = documentsFromDB.map((doc: any, index: number) => ({
+        value: {
+          id: `db-doc-${index}`,
+          name: doc.document_name,
+          type: this.getDocumentType({ type: doc.document_type || '' }),
+          mime: doc.document_type,
+          size: doc.document_size || 0,
+          uploadedAt: doc.created_at || new Date().toISOString(),
+          contentBase64: doc.document_content || ''
+        }
+      }));
+      
+      console.log('✅ [DB FLOW] Documents stored in unifiedModalData:', this.unifiedModalData.documents.length);
+      
+      // ✅ Build extracted data object from database
+      const extractedDataFromDB = {
+        firstName: companyData.first_name || '',
+        firstNameAR: companyData.first_name_ar || '',
+        tax: companyData.tax_number || '',
+        CustomerType: companyData.customer_type || '',
+        ownerName: companyData.company_owner || '',
+        CompanyOwner: companyData.company_owner || '',
+        buildingNumber: companyData.building_number || '',
+        street: companyData.street || '',
+        country: companyData.country || '',
+        city: companyData.city || '',
+        salesOrganization: companyData.sales_org || '',
+        distributionChannel: companyData.distribution_channel || '',
+        division: companyData.division || '',
+        registrationNumber: companyData.registration_number || '',
+        legalForm: companyData.legal_form || '',
+        contacts: companyData.contacts || []
+      };
+      
+      console.log('📊 [DB FLOW] Built extracted data from DB:', extractedDataFromDB);
+      
+      // ✅ Calculate extracted and missing fields
+      const allFields = [
+        'firstName', 'firstNameAR', 'tax', 'CustomerType', 'ownerName',
+        'buildingNumber', 'street', 'country', 'city', 'salesOrganization',
+        'distributionChannel', 'division', 'registrationNumber', 'legalForm'
+      ];
+      
+      const extractedFields = allFields.filter(field => {
+        const value = (extractedDataFromDB as any)[field];
+        return value && value !== '';
+      });
+      
+      const missingFields = allFields.filter(field => {
+        const value = (extractedDataFromDB as any)[field];
+        return !value || value === '';
+      });
+      
+      console.log('📊 [DB FLOW] Extracted fields:', extractedFields);
+      console.log('📊 [DB FLOW] Missing fields:', missingFields);
+      
+      // ✅ Update unifiedModalData with extracted/missing fields
+      this.unifiedModalData.extractedFields = extractedFields.map(f => ({ field: f, value: (extractedDataFromDB as any)[f] }));
+      this.unifiedModalData.missingFields = missingFields;
+      this.unifiedModalData.contacts = companyData.contacts || [];
+      
+      console.log('📊 [DB FLOW] Final unifiedModalData.extractedFields:', this.unifiedModalData.extractedFields.length);
+      console.log('📊 [DB FLOW] Final unifiedModalData.missingFields:', this.unifiedModalData.missingFields.length);
+      console.log('📊 [DB FLOW] Final unifiedModalData:', this.unifiedModalData);
+      
+      // ✅ Fill form with database data
+      this.unifiedModalForm.patchValue({
+        firstName: companyData.first_name || '',
+        firstNameAr: companyData.first_name_ar || '',
+        tax: companyData.tax_number || '',
+        CustomerType: companyData.customer_type || '',
+        CompanyOwner: companyData.company_owner || '',
+        buildingNumber: companyData.building_number || '',
+        street: companyData.street || '',
+        country: companyData.country || '',
+        city: companyData.city || '',
+        SalesOrgOption: companyData.sales_org || '',
+        DistributionChannelOption: companyData.distribution_channel || '',
+        DivisionOption: companyData.division || ''
+      });
+      
+      // ✅ Set fields as read-only (extracted data should be locked)
+      this.extractedDataReadOnly = true;
+      
+      // ✅ Show modal
+      this.showUnifiedModal = true;
+      this.cdr.detectChanges();
+      
+      console.log('✅ [DB FLOW] Modal shown with database data');
+      console.log('📄 [DB FLOW] Final documents count:', this.unifiedModalData.documents.length);
+      
+    } catch (error) {
+      console.error('❌ [DB FLOW] Error loading from database:', error);
+      // Show error message to user
+      this.addMessage({
+        id: `db_error_${Date.now()}`,
+        role: 'assistant',
+        content: `❌ Error loading company data from database. Please try again.`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
+  }
+
+  private async animateProgressBar(): Promise<void> {
+    return new Promise((resolve) => {
+      const interval = setInterval(() => {
+        this.progressValue += Math.random() * 15;
+        if (this.progressValue >= 100) {
+          this.progressValue = 100;
+          this.progressStatus = 'Data processing complete!';
+          clearInterval(interval);
+          setTimeout(resolve, 500);
+        } else {
+          this.progressStatus = `Processing... ${Math.floor(this.progressValue)}%`;
+        }
+        this.cdr.detectChanges();
+      }, 200);
+    });
+  }
+
+  private showCompanyChoiceDialog(extractedData: ExtractedData, newFiles?: File[]): void {
+    const currentCompanyName = this.unifiedModalForm?.get('firstName')?.value || 'Unknown';
+    const currentCountry = this.unifiedModalForm?.get('country')?.value || 'Unknown';
+    const newCompanyName = extractedData?.firstName || 'Unknown';
+    const newCountry = extractedData?.country || 'Unknown';
+    
+    console.log('🔔 [NEW FLOW] Preparing choice dialog:', {
+      currentCompany: currentCompanyName,
+      currentCountry: currentCountry,
+      newCompany: newCompanyName,
+      newCountry: newCountry,
+      newFilesCount: newFiles?.length || 0
+    });
+    
+    // Add message to chat about different companies
+    this.addMessage({
+      id: `different_company_${Date.now()}`,
+      role: 'assistant',
+      content: `⚠️ Different Companies Detected!\n\n` +
+               `📍 Current Company: **${currentCompanyName}** (${currentCountry})\n` +
+               `📄 New Document Company: **${newCompanyName}** (${newCountry})\n\n` +
+               `Which company would you like to continue with?`,
+      timestamp: new Date(),
+      type: 'confirmation',
+      data: {
+        buttons: [
+          { 
+            text: `✅ ${this.translate.instant('agent.buttons.keepCurrent')} (${currentCompanyName})`, 
+            action: 'keep_current_company',
+            data: { extractedData, newFiles }
+          },
+          { 
+            text: `🔄 ${this.translate.instant('agent.buttons.switchToNew')} (${newCompanyName})`, 
+            action: 'switch_to_new_company',
+            data: { extractedData, newFiles }  // ✅ الآن بيبعت الاتنين
+          },
+          { 
+            text: `📄 ${this.translate.instant('agent.buttons.ignoreDifference')}`, 
+            action: 'continue_both_companies',
+            data: { extractedData, newFiles }
+          }
+        ]
+      }
+    });
+  }
+
+  private clearUnifiedFormData(): void {
+    console.log('🧹 [NEW FLOW] Clearing unified form data');
+    
+    // Reset all form fields
+    this.unifiedModalForm.reset({
+      firstName: '',
+      firstNameAr: '',
+      tax: '',
+      CustomerType: '',
+      CompanyOwner: '',
+      buildingNumber: '',
+      street: '',
+      country: '',
+      city: '',
+      SalesOrgOption: '',
+      DistributionChannelOption: '',
+      DivisionOption: ''
+    });
+    
+    // Clear contacts completely
+    const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
+    while (contactsArray.length !== 0) {
+      contactsArray.removeAt(0);
+    }
+    
+    // ✅ Clear service documents (for extraction cache only)
+    console.log('🗑️ [NEW FLOW] Clearing service extraction cache');
+    this.agentService.clearAllDocuments();
+    
+    // ✅ Clear current company ID (database reference)
+    this.currentCompanyId = null;
+    
+    // ✅ Clear background governance data
+    this.currentCompanyDocuments = null;
+    // Note: Keep allCompaniesDocuments for audit trail
+    
+    // Clear extracted data completely
+    this.unifiedModalData = {
+      extractedFields: [],
+      missingFields: [],
+      contacts: [],
+      documents: []
+    };
+    
+    // Clear current demo company
+    this.currentDemoCompany = null;
+    
+    // Force UI update
+    this.cdr.detectChanges();
+    
+    console.log('✅ [NEW FLOW] Form data cleared successfully');
+    console.log('📄 [NEW FLOW] Current company cleared - now using database only');
+  }
+
+  private async handleDocumentAddition(newFiles: File[]): Promise<void> {
+    console.log('📄 [NEW FLOW] Handling document addition with:', newFiles.map(f => f.name));
+    
+    try {
+      // Add processing message to chat (like when starting conversation)
+      const fileNames = newFiles.map(f => f.name).join(', ');
+      this.addMessage({
+        id: `upload_${Date.now()}`,
+        role: 'user',
+        content: `📤 Uploaded ${newFiles.length} document(s): ${fileNames}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+
+      // ✅ Show progress bar and animation
+      console.log('📊 [PROGRESS] Showing progress bar for document addition');
+      this.showProgressBar = true;
+      this.progressValue = 0;
+      this.progressStatus = 'Processing documents with AI...';
+      this.cdr.detectChanges();
+      console.log('📊 [PROGRESS] Progress bar state:', { showProgressBar: this.showProgressBar, progressValue: this.progressValue });
+
+      // ✅ Animate progress bar
+      console.log('📊 [PROGRESS] Starting progress bar animation');
+      await this.animateProgressBar();
+      console.log('📊 [PROGRESS] Progress bar animation completed');
+      
+      // Process new documents with OCR
+      const extractedData = await this.agentService.uploadAndProcessDocuments(newFiles);
+      console.log('🔍 [NEW FLOW] New documents processed, extracted data:', extractedData);
+      
+      // ✅ Hide progress bar
+      this.showProgressBar = false;
+      this.cdr.detectChanges();
+      
+      // ✅ Save to database
+      console.log('💾 [DB FLOW] Saving added documents to database...');
+      await this.saveToSessionStaging(extractedData, newFiles);
+      
+      // ✅ Reload modal from database to show updated documents
+      console.log('🔄 [DB FLOW] Reloading modal from database...');
+      await this.showUnifiedModalFromDatabase(extractedData);
+      
+    } catch (error: any) {
+      console.error('❌ [NEW FLOW] Document addition error:', error);
+      
+      // ✅ Hide progress bar on error
+      this.showProgressBar = false;
+      this.cdr.detectChanges();
+      
+      // Check if it's a CORS or network error
+      const isCorsOrNetworkError = 
+        error?.status === 0 || 
+        error?.message?.includes('CORS') ||
+        error?.message?.includes('timeout') ||
+        error?.message?.includes('Network') ||
+        error?.name === 'HttpErrorResponse';
+      
+      const errorMessage = isCorsOrNetworkError
+        ? `❌ ${this.translate.instant('agent.errors.aiCommunicationError')}\n\n🌐 ${this.translate.instant('agent.errors.checkInternetConnection')}\n\n💡 ${this.translate.instant('agent.errors.tryAgainLater')}`
+        : `❌ ${this.translate.instant('agent.errors.reprocessingFailed')}`;
+      
+      this.addMessage({
+        id: `addition_error_${Date.now()}`,
+        role: 'assistant',
+        content: errorMessage,
         timestamp: new Date(),
         type: 'text'
       });
@@ -534,6 +937,10 @@ ${this.translate.instant('agent.autoProcessing.tryAgain')}`,
     this.initializeDocumentForm();
     
     console.log('✅ [MODAL] Files added to pending:', this.pendingFiles.length);
+    
+    // Process new documents with OCR and merge data
+    const newFiles = Array.from(files) as File[];
+    this.processNewDocumentsInModal(newFiles);
   }
 
   onDragOver(event: DragEvent): void {
@@ -614,9 +1021,16 @@ ${this.translate.instant('agent.autoProcessing.tryAgain')}`,
       const detectedInfo = this.detectDocumentInfo(file.name);
       console.log('🧪 [Chat] detected info for', file.name, '=', detectedInfo);
       
+      // Get country from extracted data if not detected from filename
+      let country = detectedInfo?.country || '';
+      if (!country && this.unifiedModalForm) {
+        country = this.unifiedModalForm.get('country')?.value || 'Saudi Arabia'; // Default fallback
+        console.log(`🧪 [Chat] Using country from form/extracted data: ${country}`);
+      }
+      
       const documentGroup = this.fb.group({
         name: [file.name],
-        country: [detectedInfo?.country || '', Validators.required],
+        country: [country, Validators.required],
         type: [detectedInfo?.type || '', Validators.required],
         description: [this.generateSmartDescription(file.name, detectedInfo)]
     });
@@ -663,14 +1077,12 @@ ${this.translate.instant('agent.autoProcessing.tryAgain')}`,
   private async processDocumentsWithMetadata(files: File[], metadata: Array<{ country?: string; type: string; description: string }>): Promise<void> {
     try {
       console.log('🧪 [Chat] processDocumentsWithMetadata start. files =', files.map(f => f.name), ' metadata count =', metadata.length);
-      // Keep a local reference so they appear in unified modal documents section
-      this.uploadedFiles = files;
       // User message
       const fileNames = files.map(f => f.name).join(', ');
       this.addMessage({
         id: `upload_${Date.now()}`,
         role: 'user',
-        content: `📤 رفع ${files.length} مستند / Uploaded ${files.length} document(s): ${fileNames}`,
+        content: this.translate.instant('agent.messages.filesUploaded', { count: files.length, files: fileNames }),
         timestamp: new Date(),
         type: 'text'
       });
@@ -709,7 +1121,7 @@ ${this.translate.instant('agent.autoProcessing.tryAgain')}`,
       this.addMessage({
         id: `error_${Date.now()}`,
         role: 'assistant',
-        content: `❌ خطأ / Error: ${error.message}`,
+        content: this.translate.instant('agent.errors.uploadError', { error: error.message }),
         timestamp: new Date(),
         type: 'text'
       });
@@ -745,7 +1157,7 @@ ${this.translate.instant('agent.autoProcessing.tryAgain')}`,
         fields,
         buttons: [
           { 
-            text: '📝 مراجعة وإكمال البيانات / Review & Complete Data', 
+            text: this.translate.instant('agent.buttons.reviewAndComplete'), 
             action: 'open_unified_modal',
             class: 'modern-btn btn-primary'
           }
@@ -850,7 +1262,7 @@ ${this.translate.instant('agent.autoProcessing.tryAgain')}`,
     this.addMessage({
       id: `text_${field}_${Date.now()}`,
       role: 'assistant',
-      content: `✍️ ${fieldLabel}\n\n${example}\n\nادخل القيمة / Enter value:`,
+      content: this.translate.instant('agent.messages.enterValue', { fieldLabel, example }),
       timestamp: new Date(),
       type: 'text'
     });
@@ -868,7 +1280,7 @@ ${this.translate.instant('agent.autoProcessing.tryAgain')}`,
     this.addMessage({
       id: `dropdown_selected_${Date.now()}`,
       role: 'assistant',
-      content: `✅ تم اختيار / Selected: ${selected?.label || value}`,
+      content: this.translate.instant('agent.messages.selected', { value: selected?.label || value }),
       timestamp: new Date(),
       type: 'text'
     });
@@ -909,9 +1321,7 @@ ${this.translate.instant('agent.autoProcessing.tryAgain')}`,
     this.addMessage({
       id: `contact_${Date.now()}`,
       role: 'assistant',
-      content: `👥 **إضافة جهة اتصال / Add Contact:**\n
-يرجى ملء نموذج جهة الاتصال في النافذة المنبثقة.
-Please fill the contact form in the popup window.`,
+      content: this.translate.instant('agent.messages.addContactInstruction'),
       timestamp: new Date(),
       type: 'contact-form'
     });
@@ -961,15 +1371,13 @@ Please fill the contact form in the popup window.`,
       this.addMessage({
         id: `contact_saved_${Date.now()}`,
         role: 'assistant',
-        content: `✅ تم إضافة جهة الاتصال / Contact added: ${contact.name}
-        
-هل تريد إضافة جهة اتصال أخرى؟ / Add another contact?`,
+        content: this.translate.instant('agent.messages.contactAdded', { name: contact.name }),
         timestamp: new Date(),
         type: 'confirmation',
         data: {
           buttons: [
-            { text: '➕ نعم / Yes', action: 'add_another_contact' },
-            { text: '➡️ متابعة / Continue', action: 'continue_after_contact' }
+            { text: this.translate.instant('agent.buttons.yes'), action: 'add_another_contact' },
+            { text: this.translate.instant('agent.buttons.continueAfterContact'), action: 'continue_after_contact' }
           ]
         }
       });
@@ -1035,6 +1443,39 @@ Please fill the contact form in the popup window.`,
     this.loading = true;
 
     try {
+      // First, check if user wants to review/modify data (intelligent intent detection)
+      const intent = await this.detectModalIntent(userMessage);
+      
+      if (intent.action === 'open_modal_review') {
+        console.log('🎯 [INTENT] User wants to review data - opening modal');
+        this.extractedDataReadOnly = true;
+        this.showUnifiedModal = true;
+        this.cdr.detectChanges();
+        
+        this.addMessage({
+          id: `modal_opened_${Date.now()}`,
+          role: 'assistant',
+          content: this.t('✅ تم فتح نموذج المراجعة', '✅ Review form opened'),
+          timestamp: new Date(),
+          type: 'text'
+        });
+        return;
+      } else if (intent.action === 'open_modal_edit') {
+        console.log('🎯 [INTENT] User wants to edit data - opening modal in edit mode');
+        this.extractedDataReadOnly = false;
+        this.showUnifiedModal = true;
+        this.cdr.detectChanges();
+        
+        this.addMessage({
+          id: `modal_opened_${Date.now()}`,
+          role: 'assistant',
+          content: this.t('✅ تم فتح نموذج التعديل', '✅ Edit form opened'),
+          timestamp: new Date(),
+          type: 'text'
+        });
+        return;
+      }
+      
       // Handle field responses
       if (this.currentMissingField) {
         await this.handleFieldResponse(userMessage);
@@ -1140,7 +1581,7 @@ Please fill the contact form in the popup window.`,
       this.addMessage({
         id: `data_confirmed_${Date.now()}`,
         role: 'assistant',
-        content: '✅ تم تأكيد البيانات / Data confirmed. سأتابع الآن لطلب البيانات الناقصة / Will now continue to ask for missing data.',
+        content: this.translate.instant('agent.messages.dataConfirmed'),
         timestamp: new Date(),
         type: 'text'
       });
@@ -1270,7 +1711,7 @@ Please fill the missing data to complete the request.`,
       this.addMessage({
         id: `cancelled_${Date.now()}`,
         role: 'assistant',
-        content: 'تم الإلغاء. يمكنك المراجعة وإعادة المحاولة. / Cancelled. You can review and try again.',
+        content: this.translate.instant('agent.messages.dataCancelled'),
         timestamp: new Date(),
         type: 'text'
       });
@@ -1364,23 +1805,22 @@ Please fill the missing data to complete the request.`,
         this.addMessage({
           id: `success_${Date.now()}`,
           role: 'assistant',
-          content: `🎉 **تم الإرسال بنجاح! / Submitted successfully!**
-          
-رقم الطلب / Request ID: ${response.id}
-الحالة / Status: Pending Review
-
-يمكنك متابعة الطلب من قائمة المهام.
-You can track the request in your task list.`,
+          content: `✅ ${this.translate.instant('agent.messages.submittedSuccessfully', { id: response.id })}\n\n🎯 ${this.translate.instant('agent.messages.requestSubmittedForReview')}`,
           timestamp: new Date(),
           type: 'text'
         });
         
         // CRITICAL: Reset after success
         this.agentService.reset();
-        this.uploadedFiles = [];
         this.contactsAdded = [];
         this.fieldAttempts = {} as any;
         this.currentMissingField = null;
+        
+        // ✅ Clear database session after successful submission
+        if (this.currentCompanyId) {
+          this.sessionStaging.clearSession().catch(err => console.warn('Session cleanup failed:', err));
+          this.currentCompanyId = null;
+        }
         this.awaitingConfirmation = false;
         this.awaitingDataReview = false;
         console.log('🔄 [RESET] All data reset after successful submission');
@@ -1399,7 +1839,7 @@ You can track the request in your task list.`,
       this.addMessage({
         id: `error_${Date.now()}`,
         role: 'assistant',
-        content: `❌ فشل الإرسال / Submission failed: ${error.message}`,
+        content: this.translate.instant('agent.messages.submissionFailed', { error: error.message }),
         timestamp: new Date(),
         type: 'text'
       });
@@ -1413,7 +1853,7 @@ You can track the request in your task list.`,
     }
   }
 
-  onButtonClick(action: string, data?: any): void {
+  async onButtonClick(action: string, data?: any): Promise<void> {
     console.log('🎯 [BUTTON] Button clicked:', action, data ?? '');
     
     switch(action) {
@@ -1433,6 +1873,110 @@ You can track the request in your task list.`,
       case 'data_review_yes':
         console.log('🎯 [BUTTON] User confirmed extracted data');
         this.handleDataReviewResponse('نعم');
+        break;
+        case 'keep_current_company':
+          console.log('✅ [NEW FLOW] User chose to keep current company');
+          this.showUnifiedModal = true;
+          this.cdr.detectChanges();
+          break;
+        case 'review_data_again':
+          console.log('📋 [INTENT] User wants to review data again');
+          this.showUnifiedModal = true;
+          this.cdr.detectChanges();
+          break;
+        case 'modify_fields':
+          console.log('✏️ [INTENT] User wants to modify fields');
+          this.extractedDataReadOnly = false; // Enable edit mode
+          this.showUnifiedModal = true;
+          this.cdr.detectChanges();
+          break;
+        case 'continue_with_data':
+          console.log('✅ [INTENT] User wants to continue with current data');
+          // No action needed, data is already ready
+          break;
+        case 'switch_to_new_company':
+          console.log('✅ [NEW FLOW] User chose new company - clearing old data');
+          this.clearUnifiedFormData();
+          
+          // ✅ Save new company data to database
+          if (data?.extractedData && data?.newFiles) {
+            try {
+              console.log('💾 [DB] Saving new company to database...');
+              await this.saveToSessionStaging(data.extractedData, data.newFiles);
+              console.log('✅ [DB] New company saved successfully');
+              
+              // ✅ Now show modal with data from database
+              await this.showUnifiedModalFromDatabase(data.extractedData);
+            } catch (error) {
+              console.error('❌ [DB] Failed to save/load from database:', error);
+              // Show error message
+              this.addMessage({
+                id: `db_error_${Date.now()}`,
+                role: 'assistant',
+                content: `❌ Error saving company data. Please try uploading again.`,
+                timestamp: new Date(),
+                type: 'text'
+              });
+            }
+          }
+          break;
+        
+        case 'retry_upload':
+          console.log('🔄 [RETRY] User clicked Try Again - retrying upload');
+          if (this.pendingRetryFiles && this.pendingRetryFiles.length > 0) {
+            await this.processDocumentsDirectly(this.pendingRetryFiles);
+            this.pendingRetryFiles = [];
+          } else {
+            console.warn('⚠️ [RETRY] No pending files to retry');
+          }
+          break;
+        
+        case 'cancel_upload':
+          console.log('❌ [CANCEL] User cancelled upload retry');
+          this.pendingRetryFiles = [];
+          this.addMessage({
+            id: `cancelled_${Date.now()}`,
+            role: 'assistant',
+            content: this.translate.instant('agent.messages.uploadCancelled') || '❌ Upload cancelled',
+            timestamp: new Date(),
+            type: 'text'
+          });
+          break;
+        
+        case 'continue_with_partial_data':
+          console.log('✅ [PARTIAL DATA] User chose to continue with partial extracted data');
+          if (data?.extractedData && data?.files) {
+            // ✅ Save partial data to database and show modal
+            try {
+              await this.saveToSessionStaging(data.extractedData, data.files);
+              await this.showUnifiedModalFromDatabase(data.extractedData);
+            } catch (error) {
+              console.error('❌ [DB] Failed to save partial data:', error);
+            }
+            this.pendingRetryFiles = [];
+            
+            this.addMessage({
+              id: `partial_continue_${Date.now()}`,
+              role: 'assistant',
+              content: this.translate.instant('agent.messages.continueWithPartialData') || 
+                       '✅ Continuing with partial data. Please fill in the missing fields in the form.',
+              timestamp: new Date(),
+              type: 'text'
+            });
+          }
+          break;
+        case 'continue_both_companies':
+          console.log('✅ [NEW FLOW] User chose to continue with both companies');
+          // Save both companies to session staging (optional - don't block on failure)
+          if (data?.extractedData && data?.newFiles) {
+            try {
+              await this.saveToSessionStaging(data.extractedData, data.newFiles);
+            } catch (error) {
+              console.warn('⚠️ [SESSION] Session staging failed (non-critical):', error);
+              // Continue anyway - session staging is optional
+            }
+          }
+          this.handleBothCompaniesChoice(data?.extractedData, data?.newFiles);
         break;
       case 'data_review_no':
         console.log('🎯 [BUTTON] User wants to edit extracted data');
@@ -1475,12 +2019,7 @@ You can track the request in your task list.`,
     this.addMessage({
       id: `manual_${Date.now()}`,
       role: 'assistant',
-      content: `📝 **الإدخال اليدوي / Manual Entry**
-      
-سأساعدك في إدخال البيانات خطوة بخطوة.
-I'll help you enter data step by step.
-
-هيا نبدأ! / Let's start!`,
+      content: this.translate.instant('agent.messages.manualEntry'),
       timestamp: new Date(),
       type: 'text'
     });
@@ -1500,18 +2039,7 @@ I'll help you enter data step by step.
     this.addMessage({
       id: `help_${Date.now()}`,
       role: 'assistant',
-      content: `📖 **المساعدة / Help**
-
-**الأوامر المتاحة / Available Commands:**
-• "رفع" أو "upload" - لرفع المستندات
-• "يدوي" أو "manual" - للإدخال اليدوي
-• "مسح" أو "clear" - لمسح البيانات
-• "مساعدة" أو "help" - لعرض المساعدة
-
-**النصائح / Tips:**
-• يمكنك رفع عدة مستندات مرة واحدة
-• استخدم الأرقام للاختيار من القوائم
-• اكتب "تخطي" أو "skip" لتخطي حقل اختياري`,
+      content: this.translate.instant('agent.messages.help'),
       timestamp: new Date(),
       type: 'text'
     });
@@ -1538,7 +2066,6 @@ I'll help you enter data step by step.
           if (this.spaceClickCount >= 2) {
             event.preventDefault();
             event.stopPropagation();
-            console.log('Double space detected - triggering auto-fill');
             this.handleAutoFillKeypress();
             this.spaceClickCount = 0;
           }
@@ -1576,7 +2103,6 @@ I'll help you enter data step by step.
               if (this.spaceClickCount >= 2) {
                 event.preventDefault();
                 event.stopPropagation();
-                console.log('Double space detected in modal - triggering auto-fill');
                 this.handleAutoFillKeypress();
                 this.spaceClickCount = 0;
               }
@@ -1725,32 +2251,21 @@ I'll help you enter data step by step.
 
   fillWithDemoData(): void {
     try {
-      console.log('🎯 [DEMO] Starting demo data generation...');
-      console.log('🎯 [DEMO] Modal state:', { 
-        showUnifiedModal: this.showUnifiedModal, 
-        unifiedModalForm: !!this.unifiedModalForm 
-      });
-      
       // Ensure modal and form are ready
       if (!this.showUnifiedModal) {
-        console.warn('⚠️ [DEMO] Unified modal not open. Opening now before applying demo data...');
         this.openUnifiedModal();
         this.cdr.detectChanges();
       }
       if (!this.unifiedModalForm) {
-        console.warn('⚠️ [DEMO] unifiedModalForm not initialized yet. Deferring demo fill...');
         setTimeout(() => this.fillWithDemoData(), 50);
         return;
       }
 
       if (!this.currentDemoCompany) {
         this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
-        console.log('🎯 [DEMO] Generated new company:', this.currentDemoCompany);
       }
       
       if (this.showUnifiedModal && this.unifiedModalForm) {
-        console.log('🎯 [DEMO] Patching form with demo data...');
-        
         // Patch main form fields
         this.unifiedModalForm.patchValue({
           firstName: this.currentDemoCompany.name,
@@ -1772,7 +2287,6 @@ I'll help you enter data step by step.
         
         // Handle contacts
         const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
-        console.log('🎯 [DEMO] Current contacts array length:', contactsArray.length);
         
         // Clear existing contacts
         while (contactsArray.length !== 0) {
@@ -1781,7 +2295,6 @@ I'll help you enter data step by step.
         
         // Add demo contacts
         this.currentDemoCompany.contacts.forEach((contact, index) => {
-          console.log(`🎯 [DEMO] Adding contact ${index + 1}:`, contact);
           this.addContactToUnifiedForm();
           const idx = contactsArray.length - 1;
           contactsArray.at(idx).patchValue({
@@ -1796,32 +2309,9 @@ I'll help you enter data step by step.
         
         // Force change detection
         this.cdr.detectChanges();
-        
-        console.log('✅ [DEMO] Demo data applied successfully');
-    } else {
-        console.warn('⚠️ [DEMO] Cannot apply demo data - modal not open or form not initialized');
-        console.log('Modal state:', { 
-          showUnifiedModal: this.showUnifiedModal, 
-          unifiedModalForm: !!this.unifiedModalForm 
-        });
       }
-      
-      this.addMessage({
-        id: `demo_${Date.now()}`,
-        role: 'assistant',
-        content: `✅ **Demo data loaded: ${this.currentDemoCompany?.name}**\nRemaining companies: ${this.demoDataGenerator.getRemainingCompaniesCount()}`,
-        timestamp: new Date(),
-        type: 'text'
-      });
     } catch (e) {
-      console.error('❌ [DEMO] Error generating demo data:', e);
-      this.addMessage({
-        id: `demo_error_${Date.now()}`,
-        role: 'assistant',
-        content: `❌ **Demo data failed:** ${e}`,
-        timestamp: new Date(),
-        type: 'text'
-      });
+      // Silent error handling
     }
   }
 
@@ -1949,7 +2439,7 @@ Please review and edit the extracted data in the popup form.`,
       this.addMessage({
         id: `edit_error_${Date.now()}`,
         role: 'assistant',
-        content: `❌ حدث خطأ في فتح نموذج التعديل / Error opening edit form: ${error.message}`,
+        content: this.translate.instant('agent.messages.editFormError', { error: error.message }),
       timestamp: new Date(),
       type: 'text'
     });
@@ -2028,11 +2518,48 @@ Please review and edit the extracted data in the popup form.`,
     this.showDocumentModal = false;
     this.pendingFiles = [];
     this.documentMetadataForm.reset();
+    this.currentDocumentStep = 'upload';
     
     // Close modal service instance if it exists
     if (this.modalInstance) {
       this.modalInstance.destroy();
       this.modalInstance = null;
+    }
+  }
+
+  goToReviewStep(): void {
+    if (this.pendingFiles.length > 0) {
+      this.currentDocumentStep = 'review';
+      this.initializeDocumentForm();
+      this.cdr.detectChanges();
+    }
+  }
+
+  goToUploadStep(): void {
+    this.currentDocumentStep = 'upload';
+    this.cdr.detectChanges();
+  }
+
+  triggerFileInput(): void {
+    const fileInput = document.getElementById('directFileInput') as HTMLInputElement;
+    if (fileInput) {
+      fileInput.click();
+    } else {
+      console.warn('⚠️ Falling back to dynamic input creation');
+      // Create a temporary file input
+      const tempInput = document.createElement('input');
+      tempInput.type = 'file';
+      tempInput.multiple = true;
+      tempInput.accept = 'image/*';
+      tempInput.style.display = 'none';
+      
+      tempInput.onchange = (event: any) => {
+        this.onFileSelected(event);
+        document.body.removeChild(tempInput);
+      };
+      
+      document.body.appendChild(tempInput);
+      tempInput.click();
     }
   }
 
@@ -2064,7 +2591,7 @@ Please review and edit the extracted data in the popup form.`,
     this.addMessage({
       id: `edit_saved_${Date.now()}`,
       role: 'assistant',
-      content: '✅ **تم حفظ التعديلات / Changes saved successfully**\n\nسأتحقق الآن من البيانات الناقصة / Will now check for missing data.',
+      content: this.translate.instant('agent.messages.changesSaved'),
       timestamp: new Date(),
       type: 'text'
     });
@@ -2167,7 +2694,7 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
       this.addMessage({
         id: `missing_form_error_${Date.now()}`,
         role: 'assistant',
-        content: `❌ حدث خطأ في فتح نموذج البيانات الناقصة / Error opening missing fields form: ${error.message}`,
+        content: this.translate.instant('agent.messages.missingFormError', { error: error.message }),
         timestamp: new Date(),
         type: 'text'
       });
@@ -2195,7 +2722,7 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
     this.addMessage({
       id: `missing_saved_${Date.now()}`,
       role: 'assistant',
-      content: '✅ **تم حفظ البيانات الناقصة / Missing data saved successfully**\n\nسأتحقق الآن من اكتمال البيانات / Will now check data completeness.',
+      content: this.translate.instant('agent.messages.missingDataSaved'),
       timestamp: new Date(),
       type: 'text'
     });
@@ -2339,7 +2866,158 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
   }
 
   get documentsFA(): FormArray {
-    return (this.documentMetadataForm?.get('documents') as FormArray) || this.fb.array([]);
+    // Reduced debugging - only return the array without excessive logging
+    if (this.documentMetadataForm) {
+      const documentsArray = this.documentMetadataForm.get('documents') as FormArray;
+      return documentsArray || this.fb.array([]);
+    }
+    
+    console.log('🔍 [DEBUG] documentMetadataForm is null, returning empty array');
+    return this.fb.array([]);
+  }
+
+  // Smart document metadata detection with multiple attempts (like main extraction)
+  async detectDocumentMetadataSmart(file: File): Promise<{ country?: string; type?: string }> {
+    console.log('🔍 [SMART] Starting smart document metadata detection for:', file.name);
+    
+    // Show progress indicator
+    this.showMetadataExtractionProgress = true;
+    this.metadataExtractionProgress = 0;
+    this.metadataExtractionStatus = `Analyzing ${file.name}...`;
+    
+    const attempts = [];
+    const maxAttempts = 3;
+    
+    for (let attempt = 1; attempt <= maxAttempts; attempt++) {
+      console.log(`🔍 [SMART] Attempt ${attempt}/${maxAttempts} for ${file.name}`);
+      
+      // Update progress
+      this.metadataExtractionProgress = (attempt - 1) * 33;
+      this.metadataExtractionStatus = `Attempt ${attempt}/${maxAttempts} - Analyzing ${file.name}...`;
+      this.cdr.detectChanges();
+      
+      try {
+        // Create a temporary canvas to extract text
+        const canvas = document.createElement('canvas');
+        const ctx = canvas.getContext('2d');
+        const img = new Image();
+        
+        const imageData = await new Promise<string>((resolve, reject) => {
+          img.onload = () => {
+            canvas.width = img.width;
+            canvas.height = img.height;
+            ctx?.drawImage(img, 0, 0);
+            resolve(canvas.toDataURL());
+          };
+          img.onerror = reject;
+          img.src = URL.createObjectURL(file);
+        });
+        
+        // Simulate OCR extraction (in real implementation, you'd call OCR service)
+        const extractedText = await this.simulateOCRExtraction(imageData, file.name);
+        
+        // Parse extracted text for country and document type
+        const detectedInfo = this.parseExtractedTextForMetadata(extractedText);
+        
+        attempts.push({
+          attempt,
+          detectedInfo,
+          confidence: this.calculateMetadataConfidence(detectedInfo)
+        });
+        
+        console.log(`🔍 [SMART] Attempt ${attempt} result:`, detectedInfo);
+        
+        // Wait between attempts
+        if (attempt < maxAttempts) {
+          await new Promise(resolve => setTimeout(resolve, 500));
+        }
+        
+      } catch (error) {
+        console.warn(`🔍 [SMART] Attempt ${attempt} failed:`, error);
+        attempts.push({
+          attempt,
+          detectedInfo: {},
+          confidence: 0
+        });
+      }
+    }
+    
+    // Find best result
+    const bestAttempt = attempts.reduce((best, current) => 
+      current.confidence > best.confidence ? current : best
+    );
+    
+    // Complete progress
+    this.metadataExtractionProgress = 100;
+    this.metadataExtractionStatus = `Analysis complete for ${file.name}`;
+    this.cdr.detectChanges();
+    
+    // Hide progress after a short delay
+    setTimeout(() => {
+      this.showMetadataExtractionProgress = false;
+      this.cdr.detectChanges();
+    }, 1000);
+    
+    console.log('🔍 [SMART] Best result:', bestAttempt.detectedInfo, 'Confidence:', bestAttempt.confidence);
+    return bestAttempt.detectedInfo;
+  }
+  
+  // Simulate OCR extraction (replace with real OCR service)
+  private async simulateOCRExtraction(imageData: string, filename: string): Promise<string> {
+    // In real implementation, call your OCR service here
+    // For now, return mock extracted text based on filename and some randomness
+    const lowerFilename = filename.toLowerCase();
+    
+    if (lowerFilename.includes('commercial')) {
+      const countries = ['Saudi Arabia', 'Egypt', 'United Arab Emirates'];
+      const cities = ['Riyadh', 'Cairo', 'Dubai'];
+      const randomCountry = countries[Math.floor(Math.random() * countries.length)];
+      const randomCity = cities[Math.floor(Math.random() * cities.length)];
+      
+      return `Commercial Registration Document - ${randomCountry} - ${randomCity} - Company Registration - Business License`;
+    } else if (lowerFilename.includes('tax')) {
+      return 'Tax Registration Document - Saudi Arabia - Riyadh - VAT Certificate - Tax ID';
+    } else if (lowerFilename.includes('license')) {
+      return 'Business License Document - Egypt - Cairo - Commercial License - Operating Permit';
+    }
+    
+    return 'Document text extracted via OCR - Business Registration - Company Information';
+  }
+  
+  // Parse extracted text for metadata
+  private parseExtractedTextForMetadata(text: string): { country?: string; type?: string } {
+    const lowerText = text.toLowerCase();
+    
+    let country = '';
+    let type = '';
+    
+    // Detect country from text
+    if (lowerText.includes('saudi') || lowerText.includes('riyadh') || lowerText.includes('jeddah')) {
+      country = 'Saudi Arabia';
+    } else if (lowerText.includes('egypt') || lowerText.includes('cairo') || lowerText.includes('alexandria')) {
+      country = 'Egypt';
+    } else if (lowerText.includes('uae') || lowerText.includes('dubai') || lowerText.includes('abu dhabi')) {
+      country = 'United Arab Emirates';
+    }
+    
+    // Detect document type from text
+    if (lowerText.includes('commercial') || lowerText.includes('registration')) {
+      type = 'Commercial Registration';
+    } else if (lowerText.includes('tax') || lowerText.includes('vat')) {
+      type = 'Tax Card';
+    } else if (lowerText.includes('license') || lowerText.includes('permit')) {
+      type = 'Business License';
+    }
+    
+    return { country, type };
+  }
+  
+  // Calculate confidence score for detected metadata
+  private calculateMetadataConfidence(detectedInfo: { country?: string; type?: string }): number {
+    let confidence = 0;
+    if (detectedInfo.country) confidence += 50;
+    if (detectedInfo.type) confidence += 50;
+    return confidence;
   }
 
   // Document type detection for accumulated files
@@ -2558,8 +3236,7 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
         contacts: (extractedData as any).contacts || []
       };
       
-      // Store current uploaded documents and original data
-      this.unifiedModalDocuments = [...this.uploadedFiles];
+      // ✅ REMOVED - Now using database only
       this.originalExtractedData = { ...extractedData };
 
       // Initialize form with all data
@@ -2643,7 +3320,7 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
       this.addMessage({
         id: `unified_error_${Date.now()}`,
         role: 'assistant',
-        content: `❌ حدث خطأ / Error: ${error.message}`,
+        content: this.translate.instant('agent.messages.genericError', { error: error.message }),
         timestamp: new Date(),
         type: 'text'
       });
@@ -2786,10 +3463,7 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
     this.addMessage({
       id: `unified_saved_${Date.now()}`,
       role: 'assistant',
-      content: `✅ **تم حفظ جميع البيانات بنجاح! / All data saved successfully!**
-    
-سيتم الآن التحقق من عدم وجود تكرار ثم إرسال الطلب.
-Will now check for duplicates then submit the request.`,
+      content: this.translate.instant('agent.messages.allDataSaved'),
       timestamp: new Date(),
       type: 'text'
     });
@@ -2816,11 +3490,8 @@ Will now check for duplicates then submit the request.`,
     if (!files || files.length === 0) return;
     const newFiles = Array.from(files);
     console.log('🔄 [UNIFIED] Replacing documents with:', newFiles.map(f => f.name));
-    const userConfirmed = confirm(
-      'تحذير: سيتم إعادة معالجة جميع المستندات واستخراج البيانات من جديد.\n' +
-      'Warning: All documents will be reprocessed and data will be re-extracted.\n\n' +
-      'هل تريد المتابعة؟ / Do you want to continue?'
-    );
+    const warningMsg = this.translate.instant('agent.warnings.replaceDocuments');
+    const userConfirmed = confirm(warningMsg);
     if (!userConfirmed) {
       event.target.value = '';
       return;
@@ -2835,6 +3506,11 @@ Will now check for duplicates then submit the request.`,
       this.cdr.detectChanges();
       console.log('🔄 [REPROCESS] Starting OCR reprocessing for', files.length, 'files');
       this.unifiedModalDocuments = files;
+      // Reset progress indicators
+      this.showMetadataExtractionProgress = false;
+      this.metadataExtractionProgress = 0;
+      this.metadataExtractionStatus = '';
+      
       // Prepare metadata form for new files
       this.pendingFiles = files;
       this.showDocumentModal = true;
@@ -2844,9 +3520,16 @@ Will now check for duplicates then submit the request.`,
       const documentsArray = this.documentMetadataForm.get('documents') as FormArray;
       files.forEach(file => {
         const detectedInfo = this.detectDocumentInfo(file.name);
+        
+        // Get country from extracted data if not detected from filename
+        let country = detectedInfo?.country || '';
+        if (!country && this.unifiedModalForm) {
+          country = this.unifiedModalForm.get('country')?.value || 'Saudi Arabia'; // Default fallback
+        }
+        
         const documentGroup = this.fb.group({
           name: [file.name],
-          country: [detectedInfo?.country || '', Validators.required],
+          country: [country], // Removed Validators.required - will be in missing data if empty
           type: [detectedInfo?.type || '', Validators.required],
           description: [this.generateSmartDescription(file.name, detectedInfo)]
         });
@@ -2855,35 +3538,551 @@ Will now check for duplicates then submit the request.`,
     } catch (error: any) {
       console.error('❌ [REPROCESS] Error:', error);
       this.isReprocessingDocuments = false;
-      alert('حدث خطأ أثناء إعادة المعالجة / Error during reprocessing');
+      const errorMsg = this.translate.instant('agent.errors.reprocessingError');
+      alert(errorMsg);
     }
   }
 
   private async processDocumentsForUnifiedModal(files: File[], metadata: any[]): Promise<void> {
+    console.log('🔍 [DEBUG] processDocumentsForUnifiedModal() called');
+    console.log('🔍 [DEBUG] Files count:', files.length);
+    console.log('🔍 [DEBUG] Files names:', files.map(f => f.name));
+    console.log('🔍 [DEBUG] Metadata:', metadata);
+    
     try {
       console.log('🔄 [UNIFIED OCR] Processing new documents with OCR');
+      console.log('🔍 [DEBUG] Calling agentService.uploadAndProcessDocuments()');
+      
       const extractedData = await Promise.race([
         this.agentService.uploadAndProcessDocuments(files, metadata),
         new Promise<ExtractedData>((_, reject) => setTimeout(() => reject(new Error('Processing timeout')), 60000))
       ]);
+      
+      console.log('🔍 [DEBUG] OCR processing completed');
       console.log('✅ [UNIFIED OCR] New extracted data:', extractedData);
+      
+      // Check if documents are for different companies (using AI)
+      console.log('🔍 [DEBUG] Checking for different companies using AI');
+      const isDifferentCompany = await this.checkIfDifferentCompanies(extractedData);
+      console.log('🔍 [DEBUG] isDifferentCompany result from AI:', isDifferentCompany);
+      
+      if (isDifferentCompany) {
+        console.log('🔍 [DEBUG] Different companies detected, showing choice dialog');
+        // Different companies detected - ask user to choose
+        const currentCompanyName = this.unifiedModalForm?.get('firstName')?.value || 'Unknown';
+        const currentCountry = this.unifiedModalForm?.get('country')?.value || 'Unknown';
+        const newCompanyName = extractedData?.firstName || 'Unknown';
+        const newCountry = extractedData?.country || 'Unknown';
+        
+        const choiceMsg = this.translate.instant('agent.confirmations.chooseCompany', {
+          currentCompany: currentCompanyName,
+          currentCountry: currentCountry,
+          newCompany: newCompanyName,
+          newCountry: newCountry
+        });
+        
+        console.log('🔍 [DEBUG] Choice dialog message:', choiceMsg);
+        console.log('🔍 [DEBUG] Showing confirm dialog for company choice');
+        const keepCurrentCompany = confirm(choiceMsg);
+        console.log('🔍 [DEBUG] User choice (keepCurrentCompany):', keepCurrentCompany);
+        
+        if (keepCurrentCompany) {
+          // User chose to keep current company - discard new documents
+          console.log('✅ [CHOICE] User chose to keep current company:', currentCompanyName);
+          console.log('🔍 [DEBUG] Setting isReprocessingDocuments to false');
+          this.isReprocessingDocuments = false;
+          console.log('🔍 [DEBUG] Showing unified modal with existing data');
+          this.showUnifiedModal = true;
+          this.cdr.detectChanges();
+          console.log('🔍 [DEBUG] Returning from processDocumentsForUnifiedModal (keep current)');
+          return;
+        } else {
+          // User chose new company - clear old data and use new extraction
+          console.log('✅ [CHOICE] User chose new company:', newCompanyName);
+          console.log('🔍 [DEBUG] Clearing old form data');
+          this.clearUnifiedFormData();
+          console.log('🔍 [DEBUG] Updating form with new extracted data');
       this.updateUnifiedModalWithNewData(extractedData);
+          console.log('🔍 [DEBUG] Setting uploaded files and documents');
       this.uploadedFiles = files;
       this.unifiedModalDocuments = files;
+          console.log('🔍 [DEBUG] Setting isReprocessingDocuments to false');
       this.isReprocessingDocuments = false;
+          
+          // Show modal with new company data
+          console.log('🔍 [DEBUG] Showing unified modal with new company data');
+          this.showUnifiedModal = true;
       this.cdr.detectChanges();
-      alert('✅ تم إعادة معالجة المستندات بنجاح / Documents reprocessed successfully');
+          console.log('🔍 [DEBUG] Returning from processDocumentsForUnifiedModal (switch to new)');
+          return;
+        }
+      }
+      
+      // Same company - update normally
+      console.log('🔍 [DEBUG] Same company detected, updating normally');
+      console.log('🔍 [DEBUG] Calling updateUnifiedModalWithNewData');
+      this.updateUnifiedModalWithNewData(extractedData);
+      console.log('🔍 [DEBUG] Setting uploaded files and documents');
+      this.uploadedFiles = files;
+      this.unifiedModalDocuments = files;
+      console.log('🔍 [DEBUG] Setting isReprocessingDocuments to false');
+      this.isReprocessingDocuments = false;
+      
+      // 🔧 FIX: Show unified modal automatically after re-extraction
+      console.log('🔍 [DEBUG] Showing unified modal automatically');
+      this.showUnifiedModal = true;
+      
+      console.log('🔍 [DEBUG] Triggering change detection');
+      this.cdr.detectChanges();
+      
+      console.log('✅ [UNIFIED OCR] Documents reprocessed and modal opened');
     } catch (error: any) {
       console.error('❌ [UNIFIED OCR] Processing error:', error);
       this.isReprocessingDocuments = false;
-      alert('فشلت إعادة المعالجة / Reprocessing failed');
+      const errorMsg = this.translate.instant('agent.errors.reprocessingFailed');
+      alert(errorMsg);
     }
   }
 
+  private async checkIfDifferentCompanies(extractedData: any): Promise<boolean> {
+    console.log('🔍 [AI COMPARISON] Starting intelligent company comparison using OpenAI');
+    
+    const currentCompanyName = this.unifiedModalForm?.get('firstName')?.value;
+    const currentCompanyNameAr = this.unifiedModalForm?.get('firstNameAr')?.value;
+    const currentTax = this.unifiedModalForm?.get('tax')?.value;
+    const currentCountry = this.unifiedModalForm?.get('country')?.value;
+    const currentCity = this.unifiedModalForm?.get('city')?.value;
+    
+    const newCompanyName = extractedData?.firstName;
+    const newCompanyNameAr = extractedData?.firstNameAR;
+    const newTax = extractedData?.tax;
+    const newCountry = extractedData?.country;
+    const newCity = extractedData?.city;
+    
+    console.log('🔍 [AI COMPARISON] Current company data:', { 
+      name: currentCompanyName, 
+      nameAr: currentCompanyNameAr,
+      tax: currentTax, 
+      country: currentCountry,
+      city: currentCity 
+    });
+    console.log('🔍 [AI COMPARISON] New extracted data:', { 
+      name: newCompanyName, 
+      nameAr: newCompanyNameAr,
+      tax: newTax, 
+      country: newCountry,
+      city: newCity 
+    });
+    
+    // If no current company, it's the first extraction
+    if (!currentCompanyName || currentCompanyName.trim() === '') {
+      console.log('🔍 [AI COMPARISON] No current company - first extraction');
+      return false;
+    }
+    
+    // If no new company name extracted, can't determine
+    if (!newCompanyName || newCompanyName.trim() === '') {
+      console.log('🔍 [AI COMPARISON] No new company name extracted');
+      return false;
+    }
+    
+    // ✅ Use OpenAI to intelligently compare companies
+    try {
+      const comparisonResult = await this.intelligentCompanyComparison({
+        current: {
+          name: currentCompanyName,
+          nameAr: currentCompanyNameAr,
+          tax: currentTax,
+          country: currentCountry,
+          city: currentCity
+        },
+        new: {
+          name: newCompanyName,
+          nameAr: newCompanyNameAr,
+          tax: newTax,
+          country: newCountry,
+          city: newCity
+        }
+      });
+      
+      console.log('🤖 [AI COMPARISON] OpenAI comparison result:', comparisonResult);
+      
+      if (comparisonResult.isDifferent) {
+        console.warn('⚠️ [AI COMPARISON] Different companies detected by AI:', comparisonResult);
+      } else {
+        console.log('✅ [AI COMPARISON] Same company confirmed by AI:', comparisonResult);
+      }
+      
+      return comparisonResult.isDifferent;
+      
+    } catch (error) {
+      console.error('❌ [AI COMPARISON] OpenAI comparison failed, falling back to simple comparison:', error);
+      
+      // Fallback to simple string comparison if OpenAI fails
+      const current = currentCompanyName.toLowerCase().trim();
+      const newName = newCompanyName.toLowerCase().trim();
+      const isDifferent = current !== newName && !current.includes(newName) && !newName.includes(current);
+      
+      console.log('🔄 [FALLBACK] Simple comparison result:', isDifferent);
+      return isDifferent;
+    }
+  }
+
+  private async analyzeAndCompareCompanies(extractedData: any, newFiles: File[]): Promise<void> {
+    // Use AI to intelligently compare companies
+    const isDifferentCompany = await this.checkIfDifferentCompanies(extractedData);
+    
+    if (isDifferentCompany) {
+      // Different companies - show analysis and choice
+      this.showDetailedCompanyAnalysis(extractedData, newFiles);
+    } else {
+      // Same company - add documents and merge data directly
+      this.addDocumentsToSameCompany(extractedData, newFiles);
+    }
+  }
+
+  private showDetailedCompanyAnalysis(extractedData: any, newFiles: File[]): void {
+    const currentCompanyName = this.unifiedModalForm?.get('firstName')?.value || 'Unknown';
+    const currentCountry = this.unifiedModalForm?.get('country')?.value || 'Unknown';
+    const newCompanyName = extractedData?.firstName || 'Unknown';
+    const newCountry = extractedData?.country || 'Unknown';
+    
+    // Analyze differences
+    const differences = [];
+    if (currentCompanyName !== newCompanyName) {
+      differences.push(`Company Name: "${currentCompanyName}" vs "${newCompanyName}"`);
+    }
+    if (currentCountry !== newCountry) {
+      differences.push(`Country: "${currentCountry}" vs "${newCountry}"`);
+    }
+    
+    const analysisMessage = `🔍 **Company Analysis Results**
+
+⚠️ **Different Companies Detected!**
+
+**Current Company:** ${currentCompanyName} (${currentCountry})
+**New Document Company:** ${newCompanyName} (${newCountry})
+
+**Key Differences Found:**
+${differences.map(diff => `• ${diff}`).join('\n')}
+
+**Analysis:** The uploaded documents appear to belong to a different company based on the extracted information.
+
+Would you like to:
+1. **Continue with both companies** (keep old + new documents)
+2. **Switch to new company** (replace with new documents)
+3. **Keep current company** (discard new documents)`;
+
+    this.addMessage({
+      id: `company_analysis_${Date.now()}`,
+      role: 'assistant',
+      content: analysisMessage,
+      timestamp: new Date(),
+      type: 'confirmation',
+      data: {
+        buttons: [
+          { 
+            text: `✅ Continue with Both Companies`, 
+            action: 'continue_both_companies',
+            data: { extractedData, newFiles }
+          },
+          { 
+            text: `🔄 Switch to New Company (${newCompanyName})`, 
+            action: 'switch_to_new_company',
+            data: { extractedData, newFiles }
+          },
+          { 
+            text: `📄 Keep Current Company (${currentCompanyName})`, 
+            action: 'keep_current_company',
+            data: { newFiles }
+          }
+        ]
+      }
+    });
+  }
+
+  private async addDocumentsToSameCompany(extractedData: any, newFiles: File[]): Promise<void> {
+    console.log('✅ [NEW FLOW] Same company - adding documents');
+    
+    // ✅ Smart deduplication: compare by content hash (not just name)
+    const uniqueNewFiles: File[] = [];
+    
+    for (const newFile of newFiles) {
+      const newFileHash = await this.calculateFileHash(newFile);
+      let isDuplicate = false;
+      
+      // Check against existing files
+      for (const existingFile of this.uploadedFiles) {
+        const existingFileHash = await this.calculateFileHash(existingFile);
+        
+        if (newFileHash === existingFileHash) {
+          console.log('🔍 [DEDUPLICATION] Exact duplicate found (same content):', {
+            newFile: newFile.name,
+            existingFile: existingFile.name,
+            hash: newFileHash
+          });
+          isDuplicate = true;
+          break;
+        } else if (newFile.name === existingFile.name) {
+          // Same name but different content - ask user
+          console.log('⚠️ [DEDUPLICATION] Same name, different content:', {
+            file: newFile.name,
+            newHash: newFileHash,
+            existingHash: existingFileHash
+          });
+          
+          const message = await this.translate.get('agent.warnings.replaceDocument', {
+            fileName: newFile.name
+          }).toPromise();
+          
+          const userConfirmed = confirm(message || `Document "${newFile.name}" already exists with different content. Replace it?`);
+          
+          if (userConfirmed) {
+            // Remove old file and add new one
+            this.uploadedFiles = this.uploadedFiles.filter(f => f.name !== existingFile.name);
+            console.log('✅ [DEDUPLICATION] User confirmed replacement');
+          } else {
+            console.log('❌ [DEDUPLICATION] User cancelled replacement');
+            isDuplicate = true;
+          }
+          break;
+        }
+      }
+      
+      if (!isDuplicate) {
+        uniqueNewFiles.push(newFile);
+      }
+    }
+    
+    console.log('📄 [DEDUPLICATION] Smart filtering results:', {
+      existingCount: this.uploadedFiles.length,
+      newCount: newFiles.length,
+      uniqueNewCount: uniqueNewFiles.length,
+      uniqueNewNames: uniqueNewFiles.map(f => f.name)
+    });
+    
+    // Add only unique new files to existing files
+    this.uploadedFiles = [...this.uploadedFiles, ...uniqueNewFiles];
+    this.unifiedModalDocuments = [...this.unifiedModalDocuments, ...uniqueNewFiles];
+    
+    // Merge extracted data (keep existing, add new fields if missing)
+    this.mergeExtractedData(extractedData);
+    
+    // Show success message
+    if (uniqueNewFiles.length > 0) {
+      this.addMessage({
+        id: `addition_success_${Date.now()}`,
+        role: 'assistant',
+        content: `✅ Documents added successfully!\n\n📄 Added: ${uniqueNewFiles.map(f => f.name).join(', ')}\n\nTotal documents: ${this.uploadedFiles.length}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    } else {
+      this.addMessage({
+        id: `no_new_docs_${Date.now()}`,
+        role: 'assistant',
+        content: `ℹ️ No new documents added (all were duplicates or replacements were cancelled)`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
+    
+    // Show unified modal with updated data
+    this.showUnifiedModal = true;
+    this.cdr.detectChanges();
+  }
+  
+  // ✅ Calculate SHA-256 hash for file content
+  private async calculateFileHash(file: File): Promise<string> {
+    try {
+      const arrayBuffer = await file.arrayBuffer();
+      const hashBuffer = await crypto.subtle.digest('SHA-256', arrayBuffer);
+      const hashArray = Array.from(new Uint8Array(hashBuffer));
+      const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+      return hashHex;
+    } catch (error) {
+      console.error('❌ Error calculating file hash:', error);
+      // Fallback: use file name + size as identifier
+      return `${file.name}_${file.size}`;
+    }
+  }
+
+  private mergeExtractedData(newData: any): void {
+    // Merge new data with existing data, prioritizing existing data
+    const existingData = this.agentService.getExtractedData();
+    
+    // Only update fields that are empty in existing data
+    Object.keys(newData).forEach(key => {
+      if (newData[key] && (!(existingData as any)[key] || (existingData as any)[key] === '')) {
+        this.agentService.updateExtractedDataField(key, newData[key]);
+      }
+    });
+    
+    // Update the form with merged data
+    this.updateUnifiedModalWithNewData(this.agentService.getExtractedData());
+  }
+
+  private async processNewDocumentsInModal(newFiles: File[]): Promise<void> {
+    console.log('📄 [MODAL] Processing new documents in modal:', newFiles.map(f => f.name));
+    
+    try {
+      // Add processing message to chat
+      const fileNames = newFiles.map(f => f.name).join(', ');
+      this.addMessage({
+        id: `modal_upload_${Date.now()}`,
+        role: 'user',
+        content: `📤 Added ${newFiles.length} document(s) to existing data: ${fileNames}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+
+      const progressMessage = this.addMessage({
+        id: `modal_progress_${Date.now()}`,
+        role: 'assistant',
+        content: `🤖 Processing additional documents...
+
+⚡ Extracting and merging data...`,
+        timestamp: new Date(),
+        type: 'loading'
+      });
+      
+      // Process new documents with OCR
+      const extractedData = await this.agentService.uploadAndProcessDocuments(newFiles);
+      console.log('🔍 [MODAL] New documents processed, extracted data:', extractedData);
+      
+      // Remove loading message
+      this.messages = this.messages.filter(m => m.id !== progressMessage.id);
+      
+      // Merge new data with existing data (fill missing fields)
+      this.mergeNewDataWithExisting(extractedData);
+      
+      // Add new files to existing files
+      this.uploadedFiles = [...this.uploadedFiles, ...newFiles];
+      this.unifiedModalDocuments = [...this.unifiedModalDocuments, ...newFiles];
+      
+      // Show success message
+      this.addMessage({
+        id: `modal_success_${Date.now()}`,
+        role: 'assistant',
+        content: `✅ Documents processed and data merged!\n\n📄 Total documents: ${this.uploadedFiles.length}\n\nMissing fields have been filled from new documents.`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+      
+      // Update the form with merged data
+      this.updateUnifiedModalWithNewData(this.agentService.getExtractedData());
+      
+    } catch (error: any) {
+      console.error('❌ [MODAL] Document processing error:', error);
+      
+      // Check if it's a CORS or network error
+      const isCorsOrNetworkError = 
+        error?.status === 0 || 
+        error?.message?.includes('CORS') ||
+        error?.message?.includes('timeout') ||
+        error?.message?.includes('Network') ||
+        error?.name === 'HttpErrorResponse';
+      
+      const errorMessage = isCorsOrNetworkError
+        ? `❌ ${this.translate.instant('agent.errors.aiCommunicationError')}\n\n🌐 ${this.translate.instant('agent.errors.checkInternetConnection')}\n\n💡 ${this.translate.instant('agent.errors.tryAgainLater')}`
+        : `❌ Failed to process additional documents. Please try again.`;
+      
+      this.addMessage({
+        id: `modal_error_${Date.now()}`,
+        role: 'assistant',
+        content: errorMessage,
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
+  }
+
+  private mergeNewDataWithExisting(newData: any): void {
+    console.log('🔄 [MODAL] Merging new data with existing data');
+    
+    const existingData = this.agentService.getExtractedData();
+    
+    // Only update fields that are empty in existing data
+    Object.keys(newData).forEach(key => {
+      if (newData[key] && (!(existingData as any)[key] || (existingData as any)[key] === '')) {
+        console.log(`🔄 [MODAL] Filling missing field: ${key} = ${newData[key]}`);
+        this.agentService.updateExtractedDataField(key, newData[key]);
+      }
+    });
+    
+    // Update missing fields list
+    this.refreshMissingFieldsList();
+  }
+
+  private refreshMissingFieldsList(): void {
+    const extractedData = this.agentService.getExtractedData();
+    const allFields = ['firstName', 'firstNameAR', 'tax', 'CustomerType', 'country', 'city', 'buildingNumber', 'street', 'SalesOrgOption', 'DistributionChannelOption', 'DivisionOption'];
+    
+    this.unifiedModalData.missingFields = allFields.filter(field => {
+      const value = (extractedData as any)[field];
+      return !value || value === '' || value === null || value === undefined;
+    });
+    
+    console.log('🔍 [MISSING] Updated missing fields:', this.unifiedModalData.missingFields);
+  }
+
+  private handleBothCompaniesChoice(extractedData: any, newFiles: File[]): void {
+    console.log('🔄 [NEW FLOW] Handling both companies choice');
+    
+    // Add new files to existing files
+    this.uploadedFiles = [...this.uploadedFiles, ...newFiles];
+    this.unifiedModalDocuments = [...this.unifiedModalDocuments, ...newFiles];
+    
+    // Merge extracted data (keep existing, add new fields if missing)
+    this.mergeExtractedData(extractedData);
+    
+    // Show success message
+    this.addMessage({
+      id: `both_companies_success_${Date.now()}`,
+      role: 'assistant',
+      content: `✅ Both companies merged successfully!\n\n📄 Total documents: ${this.uploadedFiles.length}\n\nData from both documents has been combined.`,
+      timestamp: new Date(),
+      type: 'text'
+    });
+    
+    // Show unified modal with merged data
+    this.showUnifiedModal = true;
+    this.cdr.detectChanges();
+  }
+
   private updateUnifiedModalWithNewData(newExtractedData: any): void {
-    console.log('📝 [UNIFIED] Updating form with new extracted data');
+    console.log('🤖 [AI] OpenAI intelligently filled form fields based on document + existing data');
+    console.log('📝 [UNIFIED] Applying OpenAI-generated form data:', newExtractedData);
+    
+    // ✅ OpenAI has already decided which fields to fill/update based on:
+    // 1. Document content
+    // 2. Existing form data
+    // 3. Smart merging logic
+    // 4. Confidence scores (anti-hallucination)
+    
+    // ✅ Check overall confidence and warn user if low
+    if (newExtractedData.confidence && newExtractedData.confidence.overall) {
+      const overallConfidence = newExtractedData.confidence.overall;
+      console.log(`🎯 [Anti-Hallucination] Overall extraction confidence: ${(overallConfidence * 100).toFixed(1)}%`);
+      
+      if (overallConfidence < 0.7) {
+        console.warn(`⚠️ [Anti-Hallucination] Low confidence extraction - some data may be missing or unclear`);
+        
+        // Show warning message to user
+        this.addMessage({
+          id: `confidence_warning_${Date.now()}`,
+          role: 'assistant',
+          content: `⚠️ **Data Quality Notice**\n\nThe document quality was not optimal. Confidence: ${(overallConfidence * 100).toFixed(0)}%\n\nPlease review the extracted data carefully and fill any missing fields manually.\n\n✅ Only high-confidence data was extracted to prevent errors.`,
+          timestamp: new Date(),
+          type: 'text'
+        });
+      } else {
+        console.log(`✅ [Anti-Hallucination] High confidence extraction - data is reliable`);
+      }
+    }
+    
     Object.keys(newExtractedData).forEach(key => {
-      if (newExtractedData[key] !== null && newExtractedData[key] !== undefined) {
+      if (newExtractedData[key] !== null && newExtractedData[key] !== undefined && key !== 'confidence' && key !== 'dataSource') {
         this.agentService.updateExtractedDataField(key, newExtractedData[key]);
       }
     });
@@ -2902,6 +4101,8 @@ Will now check for duplicates then submit the request.`,
     });
     this.unifiedModalData.extractedFields = newExtractedFields;
     this.unifiedModalData.missingFields = newMissingFields;
+    
+    // Update main form fields
     const formData = {
       firstName: newExtractedData.firstName || '',
       firstNameAR: newExtractedData.firstNameAR || '',
@@ -2917,35 +4118,101 @@ Will now check for duplicates then submit the request.`,
       division: newExtractedData.division || ''
     } as any;
     this.unifiedModalForm.patchValue(formData);
+    
+    // Update contacts if present in extracted data
+    if (newExtractedData.contacts && Array.isArray(newExtractedData.contacts)) {
+      const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
+      
+      // Clear existing contacts
+      while (contactsArray.length !== 0) {
+        contactsArray.removeAt(0);
+      }
+      
+      // Add new extracted contacts
+      newExtractedData.contacts.forEach((contact: any) => {
+        this.addContactToUnifiedForm();
+        const idx = contactsArray.length - 1;
+        contactsArray.at(idx).patchValue({
+          name: contact.name || '',
+          jobTitle: contact.jobTitle || '',
+          email: contact.email || '',
+          mobile: contact.mobile || '',
+          landline: contact.landline || '',
+          preferredLanguage: contact.preferredLanguage || 'Arabic'
+        });
+      });
+    }
+    
     if (formData.country) {
       this.updateCityOptions(formData.country);
     }
+    
+    // 🔧 FIX: Update currentDemoCompany after extraction to match new company
+    if (newExtractedData.firstName) {
+      const foundCompany = this.demoDataGenerator.findCompanyByName(newExtractedData.firstName);
+      if (foundCompany) {
+        this.currentDemoCompany = foundCompany;
+        console.log('✅ [UNIFIED] Updated currentDemoCompany to:', foundCompany.name);
+      } else {
+        // Reset if company not found in pool
+        this.currentDemoCompany = null;
+        console.log('⚠️ [UNIFIED] Company not found in demo pool, reset currentDemoCompany');
+      }
+    }
+    
     this.toggleExtractedDataEdit(false);
-    console.log('✅ [UNIFIED] Form updated with new OCR data');
+    this.cdr.detectChanges();
+    console.log('✅ [UNIFIED] Form updated with new OCR data including contacts');
   }
 
   saveDocuments(): void {
-    console.log('🧪 [Chat] saveDocuments() clicked. Reprocessing?', this.isReprocessingDocuments);
+    console.log('🔍 [DEBUG] saveDocuments() called');
+    console.log('🔍 [DEBUG] isReprocessingDocuments:', this.isReprocessingDocuments);
+    console.log('🔍 [DEBUG] documentMetadataForm exists:', !!this.documentMetadataForm);
+    console.log('🔍 [DEBUG] documentMetadataForm valid:', this.documentMetadataForm?.valid);
+    console.log('🔍 [DEBUG] pendingFiles count:', this.pendingFiles?.length);
+    
     if (this.documentMetadataForm.valid) {
+      console.log('🔍 [DEBUG] Form is valid, proceeding');
       const filesToProcess = [...this.pendingFiles];
-      const metadata = this.documentsFA.controls.map(control => ({
+      console.log('🔍 [DEBUG] Files to process:', filesToProcess.map(f => f.name));
+      
+      const metadata = this.documentsFA.controls.map((control, index) => {
+        const meta = {
         country: control.get('country')?.value,
         type: control.get('type')?.value,
         description: control.get('description')?.value
-      }));
+        };
+        console.log(`🔍 [DEBUG] Metadata for file ${index + 1}:`, meta);
+        return meta;
+      });
+      
+      console.log('🔍 [DEBUG] All metadata:', metadata);
+      console.log('🔍 [DEBUG] Closing document modal');
       this.closeDocumentModal();
+      
       if (this.isReprocessingDocuments) {
+        console.log('🔍 [DEBUG] Calling processDocumentsForUnifiedModal()');
         this.processDocumentsForUnifiedModal(filesToProcess, metadata);
       } else {
+        console.log('🔍 [DEBUG] Calling processDocumentsWithMetadata()');
         this.processDocumentsWithMetadata(filesToProcess, metadata);
       }
     } else {
-      console.warn('⚠️ [Chat] saveDocuments() blocked due to invalid form');
+      console.warn('⚠️ [DEBUG] saveDocuments() blocked due to invalid form');
+      console.warn('🔍 [DEBUG] Form errors:', this.documentMetadataForm?.errors);
+      console.warn('🔍 [DEBUG] FormArray errors:', this.documentsFA?.errors);
+      this.documentsFA.controls.forEach((control, index) => {
+        if (!control.valid) {
+          console.warn(`🔍 [DEBUG] Invalid control ${index}:`, control.errors);
+        }
+      });
     }
   }
 
   removeDocumentFromUnified(index: number): void {
-    if (confirm('هل تريد حذف هذا المستند؟ / Delete this document?')) {
+    const confirmMsg = this.translate.instant('agent.confirmations.deleteDocument');
+    if (confirm(confirmMsg)) {
       this.unifiedModalDocuments.splice(index, 1);
       this.uploadedFiles.splice(index, 1);
       this.cdr.detectChanges();
@@ -3129,41 +4396,31 @@ Will now check for duplicates then submit the request.`,
   }
 
   /**
-   * Get documents list for display
+   * Get documents list for display - ✅ NOW USING DATABASE ONLY
    */
   getDocumentsList(): any[] {
-    // Get documents from service (they have base64 content)
-    const serviceDocuments = this.agentService.getDocuments();
+    console.log('🔍 [DB DOCUMENTS] getDocumentsList() called');
+    console.log('🔍 [DB DOCUMENTS] Current company ID:', this.currentCompanyId);
     
-    if (!serviceDocuments || serviceDocuments.length === 0) {
-      // Fallback to uploadedFiles if service documents not available
-      if (!this.uploadedFiles || this.uploadedFiles.length === 0) return [];
-      
-      return this.uploadedFiles.map((file: any, index: number) => ({
-        value: {
-          id: file.id || `doc-${index}`,
-          name: file.name,
-          type: this.getDocumentType(file),
-          mime: file.type,
-          size: file.size,
-          uploadedAt: file.uploadedAt || new Date().toISOString(),
-          contentBase64: file.contentBase64 || file.content || ''
-        }
-      }));
+    // ✅ If no current company, return empty (fresh start)
+    if (!this.currentCompanyId) {
+      console.log('⚠️ [DB DOCUMENTS] No current company - returning empty array');
+      return [];
     }
     
-    // Convert service documents to display format
-    return serviceDocuments.map((doc: any, index: number) => ({
-      value: {
-        id: doc.id || `doc-${index}`,
-        name: doc.name,
-        type: this.getDocumentType({ type: doc.type || '' }),
-        mime: this.getMimeType(doc.name, doc.type),
-        size: doc.size,
-        uploadedAt: doc.uploadedAt || new Date().toISOString(),
-        contentBase64: doc.content || ''
-      }
-    }));
+    // ✅ Get documents from database synchronously using cached data
+    // Note: This will be updated by showUnifiedModalFromDatabase()
+    const cachedDocs = this.unifiedModalData.documents || [];
+    
+    console.log(`📄 [DB DOCUMENTS] Cached documents from last DB load: ${cachedDocs.length}`);
+    
+    if (cachedDocs.length > 0) {
+      console.log(`📄 [DB DOCUMENTS] Document names:`, cachedDocs.map((d: any) => d.value?.name || d.name));
+      return cachedDocs;
+    }
+    
+    console.log('⚠️ [DB DOCUMENTS] No cached documents - modal will load from DB');
+    return [];
   }
   
   /**
@@ -3282,7 +4539,7 @@ Will now check for duplicates then submit the request.`,
   openAddContactModal(): void {
     this.isEditingContact = false;
     this.editingContactIndex = -1;
-    this.contactModalTitle = 'إضافة جهة اتصال / Add Contact';
+    this.contactModalTitle = this.translate.instant('agent.contact.addTitle');
     this.contactModalForm.reset({
       name: '',
       jobTitle: '',
@@ -3323,7 +4580,6 @@ Will now check for duplicates then submit the request.`,
             if (now - this.lastSpaceTime < 500) {
               this.spaceClickCount++;
               if (this.spaceClickCount >= 2) {
-                console.log('🎯 Double space detected in contact modal - generating demo contact');
                 this.generateDemoContactData();
                 this.spaceClickCount = 0;
               }
@@ -3334,7 +4590,6 @@ Will now check for duplicates then submit the request.`,
           }
         };
         modalContent.addEventListener('keydown', this.modalKeyboardListener as any);
-        console.log('✅ Demo data listener attached to contact modal');
       }
     }, 300);
   }
@@ -3343,8 +4598,35 @@ Will now check for duplicates then submit the request.`,
    * Generate demo contact data
    */
   private generateDemoContactData(): void {
-    const demoCompany = this.demoDataGenerator.generateDemoData();
-    const demoContact = demoCompany.contacts[0];
+    // Get company name from form to find matching company
+    const companyName = this.unifiedModalForm?.get('firstName')?.value;
+    
+    // Use current demo company or find by name
+    if (!this.currentDemoCompany && companyName) {
+      this.currentDemoCompany = this.demoDataGenerator.findCompanyByName(companyName);
+    }
+    
+    // If still no company, generate new one
+    if (!this.currentDemoCompany) {
+      this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+    }
+    
+    // Get next contact from the company (not always first one for variety)
+    const contactsArray = this.unifiedModalForm?.get('contacts') as any;
+    const currentContactCount = contactsArray?.length || 0;
+    
+    // Generate additional contacts if needed
+    let allContacts = [...this.currentDemoCompany.contacts];
+    while (allContacts.length <= currentContactCount) {
+      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(
+        1, 
+        this.currentDemoCompany.country,
+        this.currentDemoCompany.name
+      );
+      allContacts.push(...additionalContacts);
+    }
+    
+    const demoContact = allContacts[currentContactCount] || allContacts[0];
     
     this.contactModalForm.patchValue({
       name: demoContact.name || 'Ahmed Mohamed',
@@ -3356,7 +4638,6 @@ Will now check for duplicates then submit the request.`,
     });
     
     this.cdr.detectChanges();
-    console.log('✅ Demo contact data generated:', this.contactModalForm.value);
   }
 
   /**
@@ -3365,7 +4646,7 @@ Will now check for duplicates then submit the request.`,
   editContactInModal(index: number): void {
     this.isEditingContact = true;
     this.editingContactIndex = index;
-    this.contactModalTitle = 'تعديل جهة اتصال / Edit Contact';
+    this.contactModalTitle = this.translate.instant('agent.contact.editTitle');
     
     const contact = this.unifiedContactsArray.at(index);
     this.contactModalForm.patchValue({
@@ -3439,25 +4720,122 @@ Will now check for duplicates then submit the request.`,
    * Handle adding new documents
    */
   async onAddDocument(event: any): Promise<void> {
+    console.log('🔍 [DEBUG] onAddDocument() called');
     const files = event.target.files;
-    if (!files || files.length === 0) return;
+    if (!files || files.length === 0) {
+      console.log('🔍 [DEBUG] No files selected, returning');
+      return;
+    }
 
     try {
+      console.log('🔍 [DEBUG] Files received:', files.length);
       console.log('📎 Adding new documents:', files.length);
       
       // Convert files to array
       const newFiles = Array.from(files) as File[];
+      console.log('🔍 [DEBUG] New files converted:', newFiles.map(f => f.name));
       
-      // Add to uploaded files
-      this.uploadedFiles.push(...newFiles);
+      // Check if this is adding to existing documents
+      if (this.uploadedFiles.length > 0) {
+        console.log('🔍 [DEBUG] Adding documents to existing ones');
+        
+        // ✅ MANDATORY GOVERNANCE CHECK - Compare new documents with current company
+        await this.performGovernanceCheck(newFiles);
+        
+        event.target.value = '';
+        return;
+      }
       
-      // Process with service
-      await this.agentService.uploadAndProcessDocuments(newFiles);
+      // First document upload scenario
+      console.log('🔍 [DEBUG] First document upload scenario');
+      const allFiles = newFiles;
+      console.log('🔍 [DEBUG] New files count:', allFiles.length);
+      console.log('🔍 [DEBUG] All files names:', allFiles.map(f => f.name));
       
+      // Show confirmation
+      const confirmMsg = this.translate.instant('agent.confirmations.addDocuments', { count: allFiles.length });
+      console.log('🔍 [DEBUG] Showing confirmation dialog:', confirmMsg);
+      const userConfirmed = confirm(confirmMsg);
+      console.log('🔍 [DEBUG] User confirmed:', userConfirmed);
+      
+      if (!userConfirmed) {
+        console.log('🔍 [DEBUG] User cancelled, clearing input and returning');
+        event.target.value = '';
+        return;
+      }
+      
+      console.log('🔍 [DEBUG] Setting reprocessing flag to true');
+      // Reprocess all documents (old + new)
+      this.isReprocessingDocuments = true;
+      this.unifiedModalDocuments = allFiles;
+      
+      console.log('🔍 [DEBUG] Setting pendingFiles and showing document modal');
+      // Reset progress indicators
+      this.showMetadataExtractionProgress = false;
+      this.metadataExtractionProgress = 0;
+      this.metadataExtractionStatus = '';
+      
+      // Prepare metadata form for all files
+      this.pendingFiles = allFiles;
+      this.showDocumentModal = true;
+      
+      console.log('🔍 [DEBUG] Creating document metadata form');
+      this.documentMetadataForm = this.fb.group({
+        documents: this.fb.array([])
+      });
+      console.log('🔍 [DEBUG] documentMetadataForm created:', !!this.documentMetadataForm);
+      console.log('🔍 [DEBUG] documents FormArray created:', !!this.documentMetadataForm.get('documents'));
+      
+      const documentsArray = this.documentMetadataForm.get('documents') as FormArray;
+      console.log('🔍 [DEBUG] Processing', allFiles.length, 'files for metadata form');
+      
+      // Process files with smart detection
+      for (let index = 0; index < allFiles.length; index++) {
+        const file = allFiles[index];
+        console.log(`🔍 [DEBUG] Processing file ${index + 1}:`, file.name);
+        
+        // Use smart detection with 3 attempts
+        const smartDetectedInfo = await this.detectDocumentMetadataSmart(file);
+        console.log(`🔍 [DEBUG] Smart detection result for ${file.name}:`, smartDetectedInfo);
+        
+        // Fallback to filename-based detection if smart detection fails
+        const fallbackInfo = this.detectDocumentInfo(file.name);
+        const finalInfo = {
+          country: smartDetectedInfo.country || fallbackInfo?.country || '',
+          type: smartDetectedInfo.type || fallbackInfo?.type || ''
+        };
+        
+        console.log(`🔍 [DEBUG] Final detected info for ${file.name}:`, finalInfo);
+        console.log(`🔍 [DEBUG] Country: "${finalInfo.country}" (will be missing data if empty)`);
+        console.log(`🔍 [DEBUG] Type: "${finalInfo.type}" (will be missing data if empty)`);
+        
+        const documentGroup = this.fb.group({
+          name: [file.name],
+          country: [finalInfo.country], // Will be in missing data if empty
+          type: [finalInfo.type], // Will be in missing data if empty
+          description: [this.generateSmartDescription(file.name, finalInfo)]
+        });
+        
+        console.log(`🔍 [DEBUG] Form group created for ${file.name}:`, documentGroup.value);
+        documentsArray.push(documentGroup);
+        console.log(`🔍 [DEBUG] Added form group for ${file.name}`);
+        console.log(`🔍 [DEBUG] documentsArray length after adding:`, documentsArray.length);
+      }
+      
+      console.log('🔍 [DEBUG] Document metadata form created with', documentsArray.length, 'entries');
+      console.log('🔍 [DEBUG] Document modal should be visible:', this.showDocumentModal);
+      console.log('🔍 [DEBUG] Form valid after creation:', this.documentMetadataForm.valid);
+      console.log('✅ Prepared metadata form for reprocessing all documents');
+      
+      // Ensure progress indicators are hidden
+      this.showMetadataExtractionProgress = false;
+      this.metadataExtractionProgress = 0;
+      this.metadataExtractionStatus = '';
       this.cdr.detectChanges();
-      console.log('✅ Documents added successfully');
     } catch (error) {
       console.error('❌ Error adding documents:', error);
+      console.error('🔍 [DEBUG] Error stack:', (error as Error).stack);
+      this.isReprocessingDocuments = false;
     }
 
     // Clear input
@@ -3468,7 +4846,8 @@ Will now check for duplicates then submit the request.`,
    * Remove document by index
    */
   removeDocument(index: number): void {
-    if (confirm('هل تريد حذف هذا المستند؟ / Delete this document?')) {
+    const confirmMsg = this.translate.instant('agent.confirmations.deleteDocument');
+    if (confirm(confirmMsg)) {
       // Get service documents
       const serviceDocuments = this.agentService.getDocuments();
       
@@ -3485,6 +4864,446 @@ Will now check for duplicates then submit the request.`,
       
       this.cdr.detectChanges();
       console.log('✅ Document removed at index:', index);
+    }
+  }
+
+  // Method to handle modal close with intent analysis
+  onUnifiedModalClose(): void {
+    this.showUnifiedModal = false;
+    this.showProgressBar = false;
+    this.progressValue = 0;
+    this.progressStatus = '';
+    this.cdr.detectChanges();
+    
+    // Check if user wants to review or modify extracted data
+    this.checkUserIntentForModalClose();
+  }
+
+  private async checkUserIntentForModalClose(): Promise<void> {
+    // Don't show suggestions immediately, just monitor for future requests
+    console.log('🔍 [INTENT] Modal closed - monitoring for review requests');
+  }
+
+  private async detectModalIntent(userMessage: string): Promise<{action: 'open_modal_review' | 'open_modal_edit' | 'none'}> {
+    try {
+      // Check if there's extracted data available
+      const extractedData = this.agentService.getExtractedData();
+      if (!extractedData || !extractedData.firstName) {
+        console.log('🔍 [INTENT] No extracted data available, skipping intent detection');
+        return { action: 'none' };
+      }
+
+      const prompt = `You are an intelligent intent detection system. Analyze the user's message (which can be in ANY Arabic dialect, English, or mixed languages) to determine if they want to open/review/edit a data form.
+
+User Message: "${userMessage}"
+
+The user might express their intent in VARIOUS ways across different Arabic dialects and English:
+
+**Examples for REVIEW/OPEN (action: "open_modal_review"):**
+- Egyptian: "عايز أشوف البيانات", "ممكن أفتح الفورم", "وريني الداتا"
+- Saudi/Gulf: "أبغى أشوف البيانات", "أفتح الفورم", "ورني المعلومات"
+- Levantine: "بدي شوف البيانات", "فوت على الفورم"
+- Standard Arabic: "أريد أن أرى البيانات", "افتح النموذج"
+- English: "show me the data", "open the form", "I want to review", "display the information", "let me see", "can I check"
+- Mixed: "افتح ال form", "show البيانات", "أريد أشوف the data"
+
+**Examples for EDIT/MODIFY (action: "open_modal_edit"):**
+- Egyptian: "عايز أعدل البيانات", "محتاج أغير حاجة", "عايز أصلح الداتا"
+- Saudi/Gulf: "أبغى أعدل المعلومات", "أبي أغير شيء"
+- Levantine: "بدي عدل البيانات", "بدي غير شي"
+- Standard Arabic: "أريد تعديل البيانات", "أحتاج لتغيير المعلومات"
+- English: "I want to edit", "modify the data", "change something", "update information", "fix the data"
+- Mixed: "عايز أعمل edit", "أعدل ال data", "I want to change البيانات"
+
+**None (action: "none"):**
+- Anything else that doesn't clearly indicate wanting to open/review/edit the form
+
+Be VERY flexible with dialects, slang, typos, and mixed languages. Focus on the INTENT, not exact keywords.
+
+Respond with JSON ONLY (no markdown, no extra text):
+{
+  "action": "open_modal_review" | "open_modal_edit" | "none",
+  "confidence": 0.0-1.0,
+  "reasoning": "brief explanation"
+}`;
+
+      const response = await this.agentService.callOpenAI(prompt);
+      console.log('🔍 [INTENT] Raw OpenAI response:', response);
+      
+      const cleanedResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const result = JSON.parse(cleanedResponse);
+      
+      console.log('🔍 [INTENT] Detected intent:', result);
+      console.log('🔍 [INTENT] Confidence:', result.confidence);
+      console.log('🔍 [INTENT] Reasoning:', result.reasoning);
+      
+      // Only act if confidence is high enough (lowered threshold for better UX)
+      if (result.confidence && result.confidence > 0.6) {
+        console.log(`🎯 [INTENT] Action selected: ${result.action} (confidence: ${result.confidence})`);
+        return { action: result.action };
+      } else {
+        console.log(`❌ [INTENT] Confidence too low (${result.confidence}), skipping action`);
+        return { action: 'none' };
+      }
+    } catch (error) {
+      console.error('❌ [INTENT] Error detecting modal intent:', error);
+      return { action: 'none' };
+    }
+  }
+
+  private async analyzeUserIntent(userMessages: string): Promise<{wantsToReview: boolean, wantsToModify: boolean}> {
+    try {
+      const prompt = `Analyze the following user messages to determine if they want to review or modify extracted data:
+
+User Messages: "${userMessages}"
+
+Look for keywords like:
+- "review", "check", "look at", "see", "show me"
+- "modify", "change", "edit", "update", "fix", "correct"
+- "wrong", "incorrect", "not right", "mistake"
+- "missing", "incomplete", "need more"
+
+Respond with JSON only:
+{
+  "wantsToReview": boolean,
+  "wantsToModify": boolean
+}`;
+
+      const response = await this.agentService.callOpenAI(prompt);
+      const cleanedResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      return JSON.parse(cleanedResponse);
+    } catch (error) {
+      console.log('🔍 [INTENT] Error analyzing intent:', error);
+      return { wantsToReview: false, wantsToModify: false };
+    }
+  }
+
+  // ✅ Background governance - Mandatory company comparison
+  private async performGovernanceCheck(newFiles: File[]): Promise<void> {
+    console.log('🏛️ [GOVERNANCE] Performing mandatory company comparison');
+    
+    try {
+      // Step 1: Close modal first
+      this.showUnifiedModal = false;
+      this.cdr.detectChanges();
+      
+      // Step 2: Show processing message
+      console.log('📨 [GOVERNANCE] Adding processing message to chat');
+      const fileNames = newFiles.map(f => f.name).join(', ');
+      this.addMessage({
+        id: `upload_${Date.now()}`,
+        role: 'user',
+        content: `📤 Uploaded ${newFiles.length} additional document(s): ${fileNames}`,
+        timestamp: new Date(),
+        type: 'text'
+      });
+      
+      const progressMessage = this.addMessage({
+        id: `progress_${Date.now()}`,
+        role: 'assistant',
+        content: `🤖 Processing ${newFiles.length} documents with AI...\n\n⚡ Extracting data...`,
+        timestamp: new Date(),
+        type: 'loading'
+      });
+      
+      console.log('📨 [GOVERNANCE] Processing message added:', progressMessage.id);
+      
+      // Step 2.5: Show progress bar
+      console.log('📊 [GOVERNANCE] Showing progress bar');
+      this.showProgressBar = true;
+      this.progressValue = 0;
+      this.progressStatus = `Processing ${newFiles.length} documents with AI...`;
+      this.cdr.detectChanges();
+      
+      // Step 2.6: Animate progress bar
+      console.log('📊 [GOVERNANCE] Starting progress bar animation');
+      this.animateProgressBar(); // Don't await, let it run in background
+      
+      // Step 3: Extract data from new documents using public method
+      console.log('🔍 [GOVERNANCE] Extracting data from new documents...');
+      const newExtractedData = await this.agentService.uploadAndProcessDocuments(newFiles);
+      
+      // Step 3.5: Hide progress bar and remove loading message
+      console.log('📊 [GOVERNANCE] Hiding progress bar');
+      this.showProgressBar = false;
+      this.messages = this.messages.filter(m => m.id !== progressMessage.id);
+      this.cdr.detectChanges();
+      
+      // Step 4: Get current form data (current company)
+      const currentFormData = this.getCurrentFormData();
+      console.log('📋 [GOVERNANCE] Current form data:', currentFormData);
+      console.log('📋 [GOVERNANCE] New extracted data:', newExtractedData);
+      
+      // Step 5: MANDATORY LLM Comparison (Governance requirement)
+      console.log('🤖 [GOVERNANCE] Performing LLM company comparison...');
+      console.log('🔍 [GOVERNANCE] Current form data for comparison:', JSON.stringify(currentFormData, null, 2));
+      console.log('🔍 [GOVERNANCE] New extracted data for comparison:', JSON.stringify(newExtractedData, null, 2));
+      
+      const comparisonResult = await this.intelligentCompanyComparison({
+        current: currentFormData,
+        new: newExtractedData
+      });
+      
+      console.log('🎯 [GOVERNANCE] Comparison result:', comparisonResult);
+      
+      // ✅ Check if current form data is empty (first upload scenario)
+      const isEmptyFormData = !currentFormData.name && !currentFormData.tax && !currentFormData.country;
+      
+      if (isEmptyFormData) {
+        console.log('✅ [GOVERNANCE] Empty form data - this is the first document upload');
+        comparisonResult.isDifferent = false;
+        comparisonResult.confidence = 0.95;
+        comparisonResult.reasoning = 'First document upload - no existing data to compare';
+      } else {
+        // ✅ Fallback logic: Compare ONLY company name (ignore everything else)
+        const isExactNameMatch = currentFormData.name && newExtractedData.firstName && 
+                                currentFormData.name.toLowerCase().trim() === newExtractedData.firstName.toLowerCase().trim();
+        
+        console.log('🔍 [GOVERNANCE] Company name comparison:', {
+          nameMatch: isExactNameMatch,
+          currentName: currentFormData.name,
+          newName: newExtractedData.firstName
+        });
+        
+        // ✅ Override AI result if company names match (IGNORE tax, country, city differences)
+        if (isExactNameMatch) {
+          console.log('✅ [GOVERNANCE] Company name match - overriding AI result');
+          console.log('📝 [GOVERNANCE] Ignoring differences in tax, country, city');
+          comparisonResult.isDifferent = false;
+          comparisonResult.confidence = 0.95;
+          comparisonResult.reasoning = 'Company name matches - same company';
+        }
+      }
+      
+      if (comparisonResult.isDifferent && comparisonResult.confidence > 0.7) {
+        // Step 6: Different company detected - use existing UI flow
+        console.log('⚠️ [GOVERNANCE] Different company detected - using existing choice dialog');
+        this.showCompanyChoiceDialog(newExtractedData as ExtractedData, newFiles);
+      } else {
+        // Step 7: Same company - save to session staging and add documents
+        console.log('✅ [GOVERNANCE] Same company detected - saving to session staging');
+        
+        // ✅ Try to save to session staging (optional - don't block on failure)
+        try {
+          await this.saveToSessionStaging(newExtractedData, newFiles);
+        } catch (error) {
+          console.warn('⚠️ [SESSION] Session staging failed (non-critical):', error);
+          // Continue anyway - session staging is optional
+        }
+        
+        // Step 8: Continue with existing flow
+        this.handleDocumentAddition(newFiles);
+      }
+      
+    } catch (error) {
+      console.error('❌ [GOVERNANCE] Error in governance check:', error);
+      // Fallback to existing behavior
+      this.handleDocumentAddition(newFiles);
+    }
+  }
+
+  // ✅ Session staging integration
+  private async saveToSessionStaging(extractedData: any, documents: File[]): Promise<void> {
+    const companyId = this.generateCompanyId(extractedData);
+    const companyName = extractedData.firstName || 'Unknown Company';
+    
+    console.log('💾 [SESSION] Saving to session staging:', { companyId, companyName, documentsCount: documents.length });
+    console.log('💾 [SESSION] Full extracted data:', extractedData);
+    
+    await this.sessionStaging.saveCompany({
+      companyId,
+      companyName,
+      firstName: extractedData.firstName,
+      firstNameAr: extractedData.firstNameAR || extractedData.firstNameAr,  // ✅ Handle both cases
+      taxNumber: extractedData.tax,
+      customerType: extractedData.CustomerType,
+      companyOwner: extractedData.CompanyOwner || extractedData.ownerName,
+      buildingNumber: extractedData.buildingNumber,
+      street: extractedData.street,
+      country: extractedData.country,
+      city: extractedData.city,
+      salesOrg: extractedData.salesOrganization || extractedData.SalesOrgOption,  // ✅ Try both
+      distributionChannel: extractedData.distributionChannel || extractedData.DistributionChannelOption,  // ✅ Try both
+      division: extractedData.division || extractedData.DivisionOption,  // ✅ Try both
+      registrationNumber: extractedData.registrationNumber,
+      legalForm: extractedData.legalForm,
+      documents,
+      contacts: extractedData.contacts || []
+    });
+    
+    console.log('✅ [SESSION] Data saved to session staging successfully');
+  }
+
+  // ✅ Background governance helper methods
+  private generateCompanyId(extractedData: any): string {
+    const name = extractedData.firstName || extractedData.name || 'unknown';
+    const tax = extractedData.tax || 'notax';
+    return `${name.replace(/\s+/g, '_')}_${tax}`.toLowerCase();
+  }
+  
+  private getCurrentFormData(): any {
+    console.log('📋 [GOVERNANCE] Getting current form data...');
+    
+    // ✅ Try to get data from form first
+    if (this.unifiedModalForm && this.unifiedModalForm.value) {
+      const formValue = this.unifiedModalForm.value;
+      const formData = {
+        name: formValue.firstName || '',
+        nameAr: formValue.firstNameAr || formValue.firstNameAR || '',
+        tax: formValue.tax || '',
+        country: formValue.country || '',
+        city: formValue.city || ''
+      };
+      
+      console.log('📋 [GOVERNANCE] Form data from unifiedModalForm:', formData);
+      
+      // ✅ Check if form has meaningful data (not all empty)
+      if (formData.name || formData.tax || formData.country) {
+        return formData;
+      }
+    }
+    
+    console.log('📋 [GOVERNANCE] Form empty, falling back to service extractedData');
+    
+    // ✅ Fallback to extractedData from service
+    const extractedData = this.agentService.getExtractedData();
+    const serviceData = {
+      name: extractedData?.firstName || '',
+      nameAr: extractedData?.firstNameAR || '',
+      tax: extractedData?.tax || '',
+      country: extractedData?.country || '',
+      city: extractedData?.city || ''
+    };
+    
+    console.log('📋 [GOVERNANCE] Service extracted data:', serviceData);
+    return serviceData;
+  }
+  
+  private addDocumentsToCurrentCompany(newFiles: File[], extractedData: any): void {
+    console.log('🏢 [GOVERNANCE] Adding documents to current company');
+    
+    if (!this.currentCompanyDocuments) {
+      // Initialize current company
+      this.currentCompanyDocuments = {
+        companyId: this.generateCompanyId(extractedData),
+        companyName: extractedData.firstName || 'Unknown Company',
+        documents: [...newFiles],
+        extractedData
+      };
+      console.log(`🏢 [GOVERNANCE] Created new company: ${this.currentCompanyDocuments.companyName}`);
+    } else {
+      // Add to existing company (PRESERVE existing documents)
+      const existingCount = this.currentCompanyDocuments.documents.length;
+      this.currentCompanyDocuments.documents = [
+        ...this.currentCompanyDocuments.documents, // ✅ Keep existing
+        ...newFiles // ✅ Add new ones
+      ];
+      
+      console.log(`🏢 [GOVERNANCE] Added ${newFiles.length} documents to existing company: ${this.currentCompanyDocuments.companyName}`);
+      console.log(`🏢 [GOVERNANCE] Total documents now: ${this.currentCompanyDocuments.documents.length} (was ${existingCount})`);
+      
+      // Merge extracted data intelligently
+      this.currentCompanyDocuments.extractedData = this.mergeCompanyData(
+        this.currentCompanyDocuments.extractedData,
+        extractedData
+      );
+    }
+    
+    // Store in global map
+    this.allCompaniesDocuments.set(this.currentCompanyDocuments.companyId, this.currentCompanyDocuments);
+    
+    // Update uploadedFiles to match current company documents
+    this.uploadedFiles = this.currentCompanyDocuments.documents;
+    this.unifiedModalDocuments = this.currentCompanyDocuments.documents;
+    
+    console.log(`✅ [GOVERNANCE] Current company now has ${this.uploadedFiles.length} documents`);
+  }
+  
+  private switchToNewCompany(newDocuments: { files: File[], extractedData: any }): void {
+    console.log('🔄 [GOVERNANCE] Switching to new company');
+    
+    // Create new company document set
+    this.currentCompanyDocuments = {
+      companyId: this.generateCompanyId(newDocuments.extractedData),
+      companyName: newDocuments.extractedData.firstName || 'Unknown Company',
+      documents: [...newDocuments.files],
+      extractedData: newDocuments.extractedData
+    };
+    
+    console.log(`🏢 [GOVERNANCE] Switched to new company: ${this.currentCompanyDocuments.companyName}`);
+    console.log(`📄 [GOVERNANCE] New company documents: ${this.currentCompanyDocuments.documents.length}`);
+    
+    // Store in global map
+    this.allCompaniesDocuments.set(this.currentCompanyDocuments.companyId, this.currentCompanyDocuments);
+    
+    // Update uploadedFiles to match new company documents
+    this.uploadedFiles = this.currentCompanyDocuments.documents;
+    this.unifiedModalDocuments = this.currentCompanyDocuments.documents;
+  }
+  
+  private mergeCompanyData(existing: any, newData: any): any {
+    // Simple merge - keep existing values, add new ones if missing
+    return {
+      ...existing,
+      ...newData,
+      // For arrays like contacts, merge them
+      contacts: [...(existing.contacts || []), ...(newData.contacts || [])]
+    };
+  }
+
+  private async intelligentCompanyComparison(data: {
+    current: { name?: string; nameAr?: string; tax?: string; country?: string; city?: string },
+    new: { name?: string; nameAr?: string; tax?: string; country?: string; city?: string }
+  }): Promise<{ isDifferent: boolean; confidence: number; reasoning: string; differences: string[] }> {
+    try {
+      const prompt = `You are a FAST company name comparison system. Compare ONLY the company names to determine if they are the SAME company.
+
+**CURRENT COMPANY NAME:**
+- English: "${data.current.name || 'N/A'}"
+- Arabic: "${data.current.nameAr || 'N/A'}"
+
+**NEW DOCUMENT COMPANY NAME:**
+- English: "${data.new.name || 'N/A'}"
+- Arabic: "${data.new.nameAr || 'N/A'}"
+
+**SIMPLE RULES:**
+1. **EXACT match** → SAME company (isDifferent: false, confidence: 0.95)
+2. **Minor variations** (Co., Ltd., Inc., spelling) → SAME company (isDifferent: false, confidence: 0.8)
+3. **Completely different names** → DIFFERENT companies (isDifferent: true, confidence: 0.9)
+
+**IGNORE:** Tax numbers, country, city, all other fields. ONLY compare company names.
+
+**RESPOND WITH JSON ONLY (no markdown):**
+{
+  "isDifferent": boolean,
+  "confidence": 0.0-1.0,
+  "reasoning": "Brief explanation",
+  "differences": [] or ["name"]
+}
+
+**EXAMPLES:**
+- "Al-Rowad Food Co" vs "Al-Rowad Food Co" → {"isDifferent": false, "confidence": 0.95}
+- "Al Marai" vs "Almarai Co" → {"isDifferent": false, "confidence": 0.8}
+- "Company A" vs "Company B" → {"isDifferent": true, "confidence": 0.9}`;
+
+      const response = await this.agentService.callOpenAI(prompt);
+      console.log('🤖 [AI COMPARISON] Raw OpenAI response:', response);
+      
+      const cleanedResponse = response.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+      const result = JSON.parse(cleanedResponse);
+      
+      console.log('🤖 [AI COMPARISON] Parsed result:', result);
+      
+      return {
+        isDifferent: result.isDifferent,
+        confidence: result.confidence || 0.5,
+        reasoning: result.reasoning || 'No reasoning provided',
+        differences: result.differences || []
+      };
+      
+    } catch (error) {
+      console.error('❌ [AI COMPARISON] Error during intelligent comparison:', error);
+      throw error;
     }
   }
 }

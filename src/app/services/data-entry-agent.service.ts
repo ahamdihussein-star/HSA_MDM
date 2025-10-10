@@ -51,7 +51,10 @@ export interface ExtractedData {
   providedIn: 'root'
 })
 export class DataEntryAgentService {
-  private apiBase = environment.apiBaseUrl || 'http://localhost:3001/api';
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
+  private openaiApiUrl = environment.openaiApiUrl || 'https://api.openai.com/v1/chat/completions';
+  private openaiApiKey = environment.openaiApiKey || '';
+  private openaiModel = environment.openaiModel || 'gpt-4o';
   private extractedData: ExtractedData;
   private uploadedDocuments: Array<{id: string, name: string, type: string, size: number, content: string}> = [];
   private conversationHistory: Array<{role: string, content: string}> = [];
@@ -183,17 +186,22 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
 
   async uploadAndProcessDocuments(files: File[], documentsMetadata?: Array<{ country?: string; type: string; description: string }>): Promise<ExtractedData> {
     try {
+      console.log(`🚀 [SERVICE] uploadAndProcessDocuments called with ${files.length} files`);
+      
       // Validate files
       this.validateFiles(files);
 
       // Convert to base64 with optimization
+      console.log('🔄 [SERVICE] Converting files to base64...');
       const base64Files = await this.convertFilesToBase64(files);
 
       // Store documents with cleanup
+      console.log('💾 [SERVICE] Storing documents...');
       this.storeDocuments(base64Files);
 
-      // Extract data using AI
-      const extractedData = await this.extractDataFromDocuments(base64Files);
+      // ✅ Extract data using AI with intelligent form filling
+      console.log('🤖 [SERVICE] Starting AI extraction with multiple attempts...');
+      const extractedData = await this.extractDataFromDocuments(base64Files, this.extractedData);
 
       // Smart match dropdowns to exact system values
       let finalExtractedData = extractedData;
@@ -466,11 +474,38 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
   }
 
   private storeDocuments(base64Files: any[]): void {
+    console.log('💾 [SERVICE] Storing documents - current count:', this.uploadedDocuments.length);
+    console.log('💾 [SERVICE] New documents to store:', base64Files.length);
+    console.log('💾 [SERVICE] New document names:', base64Files.map(f => f.name));
+    
+    // ✅ Prevent duplicates: filter by name AND content hash
+    const existingNames = this.uploadedDocuments.map(d => d.name);
+    const uniqueNewFiles = base64Files.filter(newFile => {
+      const isDuplicate = this.uploadedDocuments.some(existing => 
+        existing.name === newFile.name && existing.content === newFile.content
+      );
+      
+      if (isDuplicate) {
+        console.log('⏭️ [SERVICE] Skipping duplicate document:', newFile.name);
+      }
+      
+      return !isDuplicate;
+    });
+    
+    console.log('💾 [SERVICE] Unique new documents:', uniqueNewFiles.length);
+    console.log('💾 [SERVICE] Unique document names:', uniqueNewFiles.map(f => f.name));
+    
     // Limit stored documents to prevent memory issues
     if (this.uploadedDocuments.length > this.MAX_DOCUMENTS) {
+      console.log('⚠️ [SERVICE] Trimming documents - exceeds MAX_DOCUMENTS:', this.MAX_DOCUMENTS);
       this.uploadedDocuments = this.uploadedDocuments.slice(-3);
     }
-    this.uploadedDocuments.push(...base64Files);
+    
+    // ✅ Add only unique documents
+    this.uploadedDocuments.push(...uniqueNewFiles);
+    
+    console.log('✅ [SERVICE] Total documents after storage:', this.uploadedDocuments.length);
+    console.log('✅ [SERVICE] All document names:', this.uploadedDocuments.map(d => d.name));
   }
 
   private cleanupMemory(base64Files: any[]): void {
@@ -482,18 +517,77 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
     });
   }
 
-  private async extractDataFromDocuments(documents: Array<{content: string, name: string, type: string, size: number}>): Promise<Partial<ExtractedData>> {
+  private async extractDataFromDocuments(documents: Array<{content: string, name: string, type: string, size: number}>, existingFormData?: Partial<ExtractedData>): Promise<Partial<ExtractedData>> {
     const maxRetries = 3;
     const allAttempts: Array<{ data: any; score: number; attempt: number }> = [];
+
+    // ✅ CRITICAL: Check for duplicates BEFORE sending to OpenAI using SHA-256 Content Hash
+    console.log('🔍 [OPENAI INPUT] Total documents to process:', documents.length);
+    console.log('🔍 [OPENAI INPUT] Document names:', documents.map(d => d.name));
+    
+    // ✅ Calculate SHA-256 hash for each document's content
+    const documentsWithHashes = await Promise.all(
+      documents.map(async (doc) => {
+        const encoder = new TextEncoder();
+        const data = encoder.encode(doc.content);
+        const hashBuffer = await crypto.subtle.digest('SHA-256', data);
+        const hashArray = Array.from(new Uint8Array(hashBuffer));
+        const hashHex = hashArray.map(b => b.toString(16).padStart(2, '0')).join('');
+        
+        return {
+          ...doc,
+          contentHash: hashHex
+        };
+      })
+    );
+    
+    console.log('🔐 [OPENAI INPUT] Content hashes calculated for all documents');
+    
+    // ✅ Deduplicate by content hash (most accurate) + name as secondary check
+    const uniqueDocuments = documentsWithHashes.filter((doc, index, self) => {
+      const firstIndex = self.findIndex(d => d.contentHash === doc.contentHash);
+      const isDuplicate = firstIndex !== index;
+      
+      if (isDuplicate) {
+        console.log(`⏭️ [OPENAI INPUT] Skipping duplicate: "${doc.name}" (hash: ${doc.contentHash.substring(0, 16)}...)`);
+      }
+      
+      return !isDuplicate;
+    });
+    
+    if (uniqueDocuments.length < documents.length) {
+      console.warn(`⚠️ [OPENAI INPUT] Removed ${documents.length - uniqueDocuments.length} duplicate documents using SHA-256 hash!`);
+      console.warn(`⚠️ [OPENAI INPUT] Original: ${documents.length}, Unique: ${uniqueDocuments.length}`);
+    }
+    
+    console.log('✅ [OPENAI INPUT] Unique documents to send to OpenAI:', uniqueDocuments.length);
+    console.log('✅ [OPENAI INPUT] Unique document names:', uniqueDocuments.map(d => d.name));
+    console.log('✅ [OPENAI INPUT] Content hashes:', uniqueDocuments.map(d => d.contentHash.substring(0, 16) + '...'));
 
     for (let attempt = 1; attempt <= maxRetries; attempt++) {
       let requestBody: any = null;
       try {
-        console.log(`🧪 [Service] Starting document extraction (attempt ${attempt}/${maxRetries})...`);
+        console.log(`🧪 [Service] Starting intelligent document extraction (attempt ${attempt}/${maxRetries})...`);
+        console.log(`🧪 [Service] Existing form data:`, existingFormData);
 
         if (!environment.openaiApiKey) {
           throw new Error('OpenAI API key not configured');
         }
+
+        // Build intelligent prompt with existing data context
+        const existingDataContext = existingFormData && Object.keys(existingFormData).length > 0
+          ? `\n\n**EXISTING FORM DATA (already filled):**
+${JSON.stringify(existingFormData, null, 2)}
+
+**INTELLIGENT FORM FILLING RULES:**
+1. **KEEP existing values** - DO NOT overwrite fields that are already filled UNLESS the new document provides MORE ACCURATE or MORE COMPLETE information
+2. **FILL MISSING fields** - Focus on extracting data for fields that are currently empty ("")
+3. **ENHANCE incomplete data** - If existing data is partial (e.g., only building number without street), complete it from the new document
+4. **CONSISTENCY CHECK** - If you extract a company name that is DIFFERENT from the existing one, you MUST still extract it accurately (the system will handle conflicts)
+5. **SMART MERGING** - Combine information from the new document with existing data intelligently
+
+**YOUR TASK:** Extract data from the NEW document and intelligently decide which fields to fill/update based on the existing form data above.`
+          : `\n\n**FIRST DOCUMENT** - This is the first document being processed, so extract ALL possible fields.`;
 
         const messages = [
           {
@@ -501,49 +595,91 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
             content: [
               {
                 type: 'text',
-                text: `Extract customer data from these business documents with MAXIMUM PRECISION.
-                
-                Attempt ${attempt}/${maxRetries} - Focus on extracting ALL possible fields.
-                
-                CRITICAL EXTRACTION RULES:
-                1. SCAN EVERY PIXEL - examine headers, footers, margins, stamps, logos, watermarks
-                2. **COMPANY NAME IS THE MOST IMPORTANT FIELD** - Look for:
-                   - Company/Establishment name in document header
-                   - Name field in registration documents (اسم المنشأة، اسم الشركة)
-                   - Name in logos or stamps
-                   - Any prominent business name anywhere in the document
-                3. For Arabic text, provide both Arabic (in firstNameAR) and English versions (in firstName)
-                4. Find ALL numbers - tax IDs, VAT numbers, registration numbers, license numbers
-                5. **CITY/LOCATION** - Look for city name near address, registration location, or branch
-                6. Extract complete addresses including building numbers, streets, districts, cities
-                7. Find owner/CEO/manager names in signatures or official sections
-                8. Extract ALL dates in any format
-                9. Double-check for fields you might have missed in previous attempts
-                
-                Return ONLY valid JSON with these fields (leave empty string "" if not found):
-                {
-                  "firstName": "",
-                  "firstNameAR": "",
-                  "tax": "",
-                  "CustomerType": "",
-                  "ownerName": "",
-                  "buildingNumber": "",
-                  "street": "",
-                  "country": "",
-                  "city": "",
-                  "registrationNumber": "",
-                  "commercialLicense": "",
-                  "vatNumber": "",
-                  "establishmentDate": "",
-                  "legalForm": "",
-                  "capital": "",
-                  "website": "",
-                  "poBox": "",
-                  "fax": "",
-                  "branch": ""
-                }`
+                text: `You are an intelligent document processing AI. Extract customer data from these business documents and intelligently fill form fields.
+
+Attempt ${attempt}/${maxRetries} - Focus on extracting ALL possible fields with MAXIMUM PRECISION.
+${existingDataContext}
+
+**CRITICAL EXTRACTION RULES:**
+1. SCAN EVERY PIXEL - examine headers, footers, margins, stamps, logos, watermarks
+2. **COMPANY NAME IS THE MOST IMPORTANT FIELD** - Look for:
+   - Company/Establishment name in document header
+   - Name field in registration documents (اسم المنشأة، اسم الشركة)
+   - Name in logos or stamps
+   - Any prominent business name anywhere in the document
+3. For Arabic text, provide both Arabic (in firstNameAR) and English versions (in firstName)
+4. Find ALL numbers - tax IDs, VAT numbers, registration numbers, license numbers
+5. **CITY/LOCATION IS CRITICAL** - Look for city name near address, registration location, or branch. Examples: "Riyadh", "Cairo", "Dubai", "Jeddah", "Kuwait City"
+6. Extract complete addresses including building numbers, streets, districts, cities
+7. Find owner/CEO/manager names in signatures or official sections (store in "ownerName" or "CompanyOwner")
+8. Extract ALL dates in any format
+9. Look for dropdown field values:
+   - SalesOrgOption: Sales organizations codes/names
+   - DistributionChannelOption: Distribution channel codes/names
+   - DivisionOption: Division codes/names
+10. Extract contact information if available (name, jobTitle, email, mobile, landline, preferredLanguage)
+
+**RETURN FORMAT:** Return ONLY valid JSON with ALL form fields. For fields not found in the document, use empty string "".
+
+{
+  "firstName": "",
+  "firstNameAR": "",
+  "tax": "",
+  "CustomerType": "",
+  "ownerName": "",
+  "CompanyOwner": "",
+  "buildingNumber": "",
+  "street": "",
+  "country": "",
+  "city": "",
+  "SalesOrgOption": "",
+  "DistributionChannelOption": "",
+  "DivisionOption": "",
+  "registrationNumber": "",
+  "commercialLicense": "",
+  "vatNumber": "",
+  "establishmentDate": "",
+  "legalForm": "",
+  "capital": "",
+  "website": "",
+  "poBox": "",
+  "fax": "",
+  "branch": "",
+  "contacts": [],
+  "confidence": {
+    "firstName": 0.0-1.0,
+    "tax": 0.0-1.0,
+    "country": 0.0-1.0,
+    "city": 0.0-1.0,
+    "overall": 0.0-1.0
+  },
+  "dataSource": {
+    "firstName": "exact location in document where found (e.g., 'header line 2') or 'not found'",
+    "tax": "exact location or 'not found'",
+    "country": "exact location or 'not found'"
+  }
+}
+
+**CRITICAL ANTI-HALLUCINATION RULES:**
+1. **ONLY extract data that is CLEARLY VISIBLE in the document** - DO NOT guess, infer, or make up data
+2. **If a field is not found, leave it as empty string ""** - DO NOT fill it with assumed or typical values
+3. **Confidence scoring:**
+   - 1.0 = Data is crystal clear and unambiguous in the document
+   - 0.7-0.9 = Data is visible but slightly unclear or partially obscured
+   - 0.5-0.6 = Data is barely visible or requires interpretation
+   - Below 0.5 = DO NOT include the data, leave field empty
+4. **Data source tracking:** For each extracted field, note the exact location where you found it in the document
+5. **DO NOT:**
+   - Infer company type from company name
+   - Guess cities based on country
+   - Make up tax numbers from partial numbers
+   - Create contact information that doesn't exist
+   - Fill fields with "typical" or "common" values
+6. **If existing form data shows a different company, still extract the NEW document's data accurately** - the system will handle conflicts
+
+**IMPORTANT:** Your response should be a JSON object that can directly fill the form. Think intelligently about what data to include based on the existing form context, but NEVER hallucinate or guess data.`
               },
-              ...documents.map(doc => ({
+              ...uniqueDocuments.map(doc => ({
                 type: 'image_url' as const,
                 image_url: { url: `data:${doc.type};base64,${doc.content}` }
               }))
@@ -558,6 +694,22 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
           temperature: attempt === 1 ? 0.1 : (attempt === 2 ? 0.3 : 0.5),
           seed: attempt * 1000
         };
+        
+        // ✅ Calculate and log request size
+        const requestSize = JSON.stringify(requestBody).length;
+        const requestSizeMB = (requestSize / (1024 * 1024)).toFixed(2);
+        const estimatedTokens = Math.ceil(requestSize / 4); // Rough estimate: 1 token ≈ 4 chars
+        
+        console.log(`📊 [OPENAI REQUEST SIZE]:`);
+        console.log(`   - Documents sent: ${uniqueDocuments.length}`);
+        console.log(`   - Request size: ${requestSize} bytes (${requestSizeMB} MB)`);
+        console.log(`   - Estimated tokens: ~${estimatedTokens.toLocaleString()}`);
+        console.log(`   - Model: ${environment.openaiModel || 'gpt-4o'}`);
+        console.log(`   - Attempt: ${attempt}/${maxRetries}`);
+        
+        if (estimatedTokens > 100000) {
+          console.warn(`⚠️ [OPENAI] Large request! May cause timeout or failure.`);
+        }
 
         const response = await firstValueFrom(
           this.http.post<any>('https://api.openai.com/v1/chat/completions', requestBody, {
@@ -573,8 +725,35 @@ Just hit the paperclip icon to upload your files and watch the magic happen! ✨
         }
 
         const content = response.choices[0].message.content;
+        console.log(`🧪 [Service] Raw OpenAI response (attempt ${attempt}):`, content);
+        
         const cleanedContent = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
         const extractedData = JSON.parse(cleanedContent);
+        
+        console.log(`🧪 [Service] Parsed extracted data (attempt ${attempt}):`, extractedData);
+        console.log(`🧪 [Service] City extracted: "${extractedData.city}"`);
+
+        // ✅ Validate confidence scores to prevent hallucination
+        if (extractedData.confidence) {
+          console.log(`🎯 [Anti-Hallucination] Confidence scores:`, extractedData.confidence);
+          console.log(`🎯 [Anti-Hallucination] Overall confidence: ${extractedData.confidence.overall}`);
+          
+          // Filter out low-confidence fields (below 0.5)
+          const confidenceThreshold = 0.5;
+          Object.keys(extractedData).forEach(field => {
+            if (extractedData.confidence && extractedData.confidence[field] !== undefined) {
+              if (extractedData.confidence[field] < confidenceThreshold) {
+                console.warn(`⚠️ [Anti-Hallucination] Removing low-confidence field: ${field} (confidence: ${extractedData.confidence[field]})`);
+                extractedData[field] = ''; // Clear low-confidence data
+              }
+            }
+          });
+        }
+
+        // ✅ Log data sources for transparency
+        if (extractedData.dataSource) {
+          console.log(`📍 [Data Source Tracking]:`, extractedData.dataSource);
+        }
 
         const score = this.calculateDataCompleteness(extractedData);
         console.log(`🧪 [Service] Attempt ${attempt} extracted ${score} fields`);
@@ -795,8 +974,13 @@ For dropdown fields, provide numbered options.`;
     
     // Handle country-city relationship
     if (field === 'country') {
-      this.extractedData.city = ''; // Reset city when country changes
-      console.log('🧪 [Service] Reset city due to country change');
+      // Only reset city if it's not already extracted from OCR
+      if (!this.extractedData.city || this.extractedData.city === '') {
+        this.extractedData.city = ''; // Reset city when country changes
+        console.log('🧪 [Service] Reset city due to country change');
+      } else {
+        console.log('🧪 [Service] Keeping extracted city:', this.extractedData.city);
+      }
     }
   }
 
@@ -1100,6 +1284,11 @@ For dropdown fields, provide numbered options.`;
     this.uploadedDocuments = this.uploadedDocuments.filter(doc => doc.id !== id);
   }
 
+  clearAllDocuments(): void {
+    console.log('🗑️ [Service] Clearing all documents from service');
+    this.uploadedDocuments = [];
+  }
+
   getDocuments(): Array<any> {
     return this.uploadedDocuments;
   }
@@ -1110,6 +1299,48 @@ For dropdown fields, provide numbered options.`;
       requestId: this.requestId || undefined
     };
   }
+
+  async callOpenAI(prompt: string, maxRetries: number = 3): Promise<string> {
+    for (let attempt = 1; attempt <= maxRetries; attempt++) {
+      try {
+        console.log(`🧪 [Service] OpenAI call attempt ${attempt}/${maxRetries}`);
+        
+        const response = await this.http.post<any>(this.openaiApiUrl, {
+          model: this.openaiModel,
+          messages: [
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          max_tokens: 1000,
+          temperature: 0.3
+        }, {
+          headers: {
+            'Authorization': `Bearer ${this.openaiApiKey}`,
+            'Content-Type': 'application/json'
+          }
+        }).toPromise();
+
+        const content = response.choices[0].message.content;
+        console.log(`🧪 [Service] OpenAI response (attempt ${attempt}):`, content);
+        return content;
+
+      } catch (error: any) {
+        console.warn(`🧪 [Service] OpenAI attempt ${attempt} failed:`, error);
+        
+        if (attempt === maxRetries) {
+          throw error;
+        }
+        
+        // Wait before retry
+        await new Promise(resolve => setTimeout(resolve, 1000 * attempt));
+      }
+    }
+    
+    throw new Error('OpenAI call failed after all retries');
+  }
+
 }
 
 

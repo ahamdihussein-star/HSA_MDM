@@ -57,7 +57,7 @@ interface GoldenRecord {
 })
 export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
   private destroy$ = new Subject<void>();
-  private apiBase = environment.apiBaseUrl || 'http://localhost:3001/api';
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
 
   // Overview Stats
   totalGoldenRecords = 0;

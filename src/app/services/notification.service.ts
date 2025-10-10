@@ -1,6 +1,7 @@
 import { Injectable } from '@angular/core';
 import { BehaviorSubject, Observable } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 export interface Notification {
   id: string;
@@ -20,7 +21,7 @@ export interface Notification {
   providedIn: 'root'
 })
 export class NotificationService {
-  private apiBase = 'http://localhost:3001/api';
+  private apiBase = environment.apiBaseUrl;
   private notificationsSubject = new BehaviorSubject<Notification[]>([]);
   public notifications$ = this.notificationsSubject.asObservable();
 

@@ -37,7 +37,7 @@ interface SystemSourceStat {
 })
 export class TechnicalDashboardComponent implements OnInit, OnDestroy {
   
-  private apiBase = environment.apiBaseUrl || 'http://localhost:3001/api';
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
   private refreshSubscription?: Subscription;
   
   isArabic = localStorage.getItem('lang') === 'ar';

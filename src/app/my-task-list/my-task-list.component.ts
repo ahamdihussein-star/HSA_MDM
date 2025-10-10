@@ -78,7 +78,7 @@ export class MyTaskListComponent implements OnInit {
   ngOnInit(): void {
     console.log('MyTaskList: Loading data entry rejected requests');
     // Always fetch current user from database to ensure fresh data
-    fetch('http://localhost:3001/api/auth/me?username=' + (sessionStorage.getItem('username') || 'data_entry'))
+    fetch('http://localhost:3000/api/auth/me?username=' + (sessionStorage.getItem('username') || 'data_entry'))
       .then(r => r.json())
       .then(u => {
         this.currentUser = u;

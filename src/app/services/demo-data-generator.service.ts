@@ -1,19 +1,29 @@
 import { Injectable } from '@angular/core';
 
 export interface DemoCompany {
+  id?: string;
   name: string;
   nameAr: string;
   customerType: string;
   ownerName: string;
   taxNumber: string;
-  buildingNumber: string;
-  street: string;
+  buildingNumber?: string;
+  street?: string;
   country: string;
-  city: string;
+  city?: string;
+  industry?: string;
   contacts: DemoContact[];
-  salesOrg: string;
-  distributionChannel: string;
-  division: string;
+  salesOrg?: string;
+  distributionChannel?: string;
+  division?: string;
+  usedIn?: string;
+  status?: string;
+  assignedTo?: string;
+  rejectReason?: string;
+  source?: string;
+  confidence?: number;
+  isMaster?: number;
+  masterId?: string;
 }
 
 export interface DemoContact {
@@ -25,439 +35,238 @@ export interface DemoContact {
   preferredLanguage: string;
 }
 
+export interface CompanyPool {
+  all: DemoCompany[];
+  available: DemoCompany[];
+  quarantine: DemoCompany[];
+  duplicate: DemoCompany[];
+  complete: DemoCompany[];
+  lastUsedCategory: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class DemoDataGeneratorService {
   
-  private companies: DemoCompany[] = [
-    // Saudi Arabia Food Companies
-    {
-      name: "Almarai",
-      nameAr: "المراعي",
-      customerType: "Public Company",
-      ownerName: "Majed Al-Qasabi",
-      taxNumber: "300000000000001",
-      buildingNumber: "1234",
-      street: "King Abdulaziz Road",
-      country: "Saudi Arabia",
-      city: "Riyadh",
-      contacts: [
-        {
-          name: "Noura Al-Dosari",
-          jobTitle: "Procurement Manager",
-          email: "noura.dosari@almarai.com",
-          mobile: "+966501234571",
-          landline: "+966112345681",
-          preferredLanguage: "Arabic"
-        },
-        {
-          name: "Khalid Al-Mutairi",
-          jobTitle: "Logistics Manager",
-          email: "khalid.mutairi@almarai.com",
-          mobile: "+966501234572",
-          landline: "+966112345682",
-          preferredLanguage: "English"
-        }
-      ],
-      salesOrg: "1000",
-      distributionChannel: "10",
-      division: "00"
-    },
-    {
-      name: "Saudia Dairy & Foodstuff Company",
-      nameAr: "شركة المراعي للألبان والأغذية",
-      customerType: "Public Company",
-      ownerName: "Abdullah Al-Othaim",
-      taxNumber: "300000000000002",
-      buildingNumber: "5678",
-      street: "Industrial Area",
-      country: "Saudi Arabia",
-      city: "Jeddah",
-      contacts: [
-        {
-          name: "Fatima Al-Shehri",
-          jobTitle: "Supply Chain Director",
-          email: "fatima.shehri@sdfo.com.sa",
-          mobile: "+966501234573",
-          landline: "+966112345683",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "2000",
-      distributionChannel: "20",
-      division: "10"
-    },
-    {
-      name: "Al Safi Danone",
-      nameAr: "الصافي دانون",
-      customerType: "Private Company",
-      ownerName: "Mohammed Al-Safi",
-      taxNumber: "300000000000003",
-      buildingNumber: "9012",
-      street: "Al Kharj Road",
-      country: "Saudi Arabia",
-      city: "Riyadh",
-      contacts: [
-        {
-          name: "Ahmed Al-Rashid",
-          jobTitle: "Operations Manager",
-          email: "ahmed.rashid@alsafi.com.sa",
-          mobile: "+966501234574",
-          landline: "+966112345684",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "3000",
-      distributionChannel: "30",
-      division: "20"
-    },
-    {
-      name: "Nadec",
-      nameAr: "نادك",
-      customerType: "Public Company",
-      ownerName: "Saud Al-Rasheed",
-      taxNumber: "300000000000004",
-      buildingNumber: "3456",
-      street: "King Fahd Road",
-      country: "Saudi Arabia",
-      city: "Riyadh",
-      contacts: [
-        {
-          name: "Sarah Al-Mansouri",
-          jobTitle: "Procurement Specialist",
-          email: "sarah.mansouri@nadec.com.sa",
-          mobile: "+966501234575",
-          landline: "+966112345685",
-          preferredLanguage: "English"
-        }
-      ],
-      salesOrg: "4000",
-      distributionChannel: "40",
-      division: "30"
-    },
-    {
-      name: "Al Rabie Saudi Foods",
-      nameAr: "الرابي للأغذية السعودية",
-      customerType: "Private Company",
-      ownerName: "Omar Al-Rabie",
-      taxNumber: "300000000000005",
-      buildingNumber: "7890",
-      street: "Industrial Zone",
-      country: "Saudi Arabia",
-      city: "Dammam",
-      contacts: [
-        {
-          name: "Layla Al-Ghamdi",
-          jobTitle: "Quality Manager",
-          email: "layla.ghamdi@alrabie.com.sa",
-          mobile: "+966501234576",
-          landline: "+966112345686",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "5000",
-      distributionChannel: "50",
-      division: "40"
-    },
-    // Egypt Food Companies
-    {
-      name: "Juhayna Food Industries",
-      nameAr: "جهينة للصناعات الغذائية",
-      customerType: "Public Company",
-      ownerName: "Safwan Thabet",
-      taxNumber: "200000000000001",
-      buildingNumber: "1111",
-      street: "6th October City",
-      country: "Egypt",
-      city: "Cairo",
-      contacts: [
-        {
-          name: "Mohammed Hassan",
-          jobTitle: "Procurement Manager",
-          email: "mohammed.hassan@juhayna.com",
-          mobile: "+201001234567",
-          landline: "+20212345678",
-          preferredLanguage: "Arabic"
-        },
-        {
-          name: "Amina Farouk",
-          jobTitle: "Supply Chain Director",
-          email: "amina.farouk@juhayna.com",
-          mobile: "+201001234568",
-          landline: "+20212345679",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "6000",
-      distributionChannel: "60",
-      division: "50"
-    },
-    {
-      name: "Domty",
-      nameAr: "دمتي",
-      customerType: "Public Company",
-      ownerName: "Ahmed Domty",
-      taxNumber: "200000000000002",
-      buildingNumber: "2222",
-      street: "New Cairo",
-      country: "Egypt",
-      city: "Cairo",
-      contacts: [
-        {
-          name: "Youssef Ibrahim",
-          jobTitle: "Operations Manager",
-          email: "youssef.ibrahim@domty.com",
-          mobile: "+201001234569",
-          landline: "+20212345680",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "7000",
-      distributionChannel: "70",
-      division: "60"
-    },
-    {
-      name: "Panda Retail Company",
-      nameAr: "شركة بنده للتجزئة",
-      customerType: "Private Company",
-      ownerName: "Fawaz Al-Hokair",
-      taxNumber: "300000000000006",
-      buildingNumber: "3333",
-      street: "King Abdullah Road",
-      country: "Saudi Arabia",
-      city: "Riyadh",
-      contacts: [
-        {
-          name: "Reem Al-Sheikh",
-          jobTitle: "Retail Operations Manager",
-          email: "reem.sheikh@panda.com.sa",
-          mobile: "+966501234577",
-          landline: "+966112345687",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "8000",
-      distributionChannel: "80",
-      division: "70"
-    },
-    {
-      name: "Carrefour Egypt",
-      nameAr: "كارفور مصر",
-      customerType: "Private Company",
-      ownerName: "Majid Al Futtaim",
-      taxNumber: "200000000000003",
-      buildingNumber: "4444",
-      street: "New Administrative Capital",
-      country: "Egypt",
-      city: "Cairo",
-      contacts: [
-        {
-          name: "Hassan Al-Malki",
-          jobTitle: "Store Manager",
-          email: "hassan.malki@carrefour.com.eg",
-          mobile: "+201001234570",
-          landline: "+20212345681",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "9000",
-      distributionChannel: "90",
-      division: "80"
-    },
-    {
-      name: "Spinneys",
-      nameAr: "سبينيس",
-      customerType: "Private Company",
-      ownerName: "Majid Al Futtaim",
-      taxNumber: "200000000000004",
-      buildingNumber: "5555",
-      street: "Zamalek",
-      country: "Egypt",
-      city: "Cairo",
-      contacts: [
-        {
-          name: "Nour El-Din",
-          jobTitle: "Procurement Specialist",
-          email: "nour.eldin@spinneys.com.eg",
-          mobile: "+201001234571",
-          landline: "+20212345682",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "10000",
-      distributionChannel: "100",
-      division: "90"
-    },
-    // UAE Food Companies
-    {
-      name: "Emirates Food Industries",
-      nameAr: "الإمارات للصناعات الغذائية",
-      customerType: "Private Company",
-      ownerName: "Ahmed Al-Maktoum",
-      taxNumber: "400000000000001",
-      buildingNumber: "6666",
-      street: "Dubai Industrial City",
-      country: "UAE",
-      city: "Dubai",
-      contacts: [
-        {
-          name: "Fatima Al-Zahra",
-          jobTitle: "Quality Control Manager",
-          email: "fatima.zahra@emiratesfood.ae",
-          mobile: "+971501234567",
-          landline: "+97141234567",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "11000",
-      distributionChannel: "110",
-      division: "100"
-    },
-    {
-      name: "Al Ain Dairy",
-      nameAr: "ألبان العين",
-      customerType: "Private Company",
-      ownerName: "Mohammed Al-Dhaheri",
-      taxNumber: "400000000000002",
-      buildingNumber: "7777",
-      street: "Al Ain Industrial Area",
-      country: "UAE",
-      city: "Al Ain",
-      contacts: [
-        {
-          name: "Khalid Al-Suwaidi",
-          jobTitle: "Production Manager",
-          email: "khalid.suwaidi@alaindairy.ae",
-          mobile: "+971501234568",
-          landline: "+97131234567",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "12000",
-      distributionChannel: "120",
-      division: "110"
-    },
-    // Kuwait Food Companies
-    {
-      name: "Kuwait Food Company",
-      nameAr: "شركة الكويت للأغذية",
-      customerType: "Public Company",
-      ownerName: "Nasser Al-Sabah",
-      taxNumber: "500000000000001",
-      buildingNumber: "8888",
-      street: "Shuwaikh Industrial Area",
-      country: "Kuwait",
-      city: "Kuwait City",
-      contacts: [
-        {
-          name: "Mariam Al-Kandari",
-          jobTitle: "Procurement Manager",
-          email: "mariam.kandari@kfc.com.kw",
-          mobile: "+965501234567",
-          landline: "+96512345678",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "13000",
-      distributionChannel: "130",
-      division: "120"
-    },
-    // Yemen Food Companies
-    {
-      name: "Yemen Food Industries",
-      nameAr: "اليمن للصناعات الغذائية",
-      customerType: "Private Company",
-      ownerName: "Ahmed Al-Yemeni",
-      taxNumber: "600000000000001",
-      buildingNumber: "9999",
-      street: "Sana'a Industrial Zone",
-      country: "Yemen",
-      city: "Sana'a",
-      contacts: [
-        {
-          name: "Abdullah Al-Hadrami",
-          jobTitle: "Operations Director",
-          email: "abdullah.hadrami@yfi.com.ye",
-          mobile: "+967701234567",
-          landline: "+96711234567",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "14000",
-      distributionChannel: "140",
-      division: "130"
-    },
-    // Qatar Food Companies
-    {
-      name: "Qatar Food Industries",
-      nameAr: "قطر للصناعات الغذائية",
-      customerType: "Private Company",
-      ownerName: "Sheikh Hamad Al-Thani",
-      taxNumber: "700000000000001",
-      buildingNumber: "1010",
-      street: "Doha Industrial Area",
-      country: "Qatar",
-      city: "Doha",
-      contacts: [
-        {
-          name: "Nasser Al-Qahtani",
-          jobTitle: "Supply Chain Manager",
-          email: "nasser.qahtani@qfi.com.qa",
-          mobile: "+974501234567",
-          landline: "+97441234567",
-          preferredLanguage: "Arabic"
-        }
-      ],
-      salesOrg: "15000",
-      distributionChannel: "150",
-      division: "140"
-    }
-  ];
+  private companyPool: CompanyPool = {
+    all: [],
+    available: [],
+    quarantine: [],
+    duplicate: [],
+    complete: [],
+    lastUsedCategory: ''
+  };
+
+  // Master list of 70 companies (10 per country x 7 countries)
+  private readonly masterCompanyData = {
+    'Egypt': [
+      { name: 'Juhayna Food Industries', nameAr: 'جهينة للصناعات الغذائية', industry: 'Food & Beverage', type: 'Public Company' },
+      { name: 'Edita Food Industries', nameAr: 'إيديتا للصناعات الغذائية', industry: 'Food & Beverage', type: 'Public Company' },
+      { name: 'Domty', nameAr: 'دومتي', industry: 'Dairy Products', type: 'Public Company' },
+      { name: 'Cairo Poultry', nameAr: 'القاهرة للدواجن', industry: 'Poultry', type: 'Private Company' },
+      { name: 'Wadi Food', nameAr: 'وادي فوود', industry: 'Food Processing', type: 'Private Company' },
+      { name: 'Beyti', nameAr: 'بيتي', industry: 'Juice & Beverages', type: 'Private Company' },
+      { name: 'Farm Frites Egypt', nameAr: 'فارم فرايتس مصر', industry: 'Frozen Food', type: 'Private Company' },
+      { name: 'Americana Foods', nameAr: 'أمريكانا للأغذية', industry: 'Food & Snacks', type: 'Public Company' },
+      { name: 'Carrefour Egypt', nameAr: 'كارفور مصر', industry: 'Retail', type: 'Private Company' },
+      { name: 'Spinneys Egypt', nameAr: 'سبينيس مصر', industry: 'Retail', type: 'Private Company' }
+    ],
+    'Saudi Arabia': [
+      { name: 'Almarai', nameAr: 'المراعي', industry: 'Dairy & Food', type: 'Public Company' },
+      { name: 'Saudia Dairy & Foodstuff', nameAr: 'سدافكو', industry: 'Dairy', type: 'Public Company' },
+      { name: 'Al Safi Danone', nameAr: 'الصافي دانون', industry: 'Dairy', type: 'Private Company' },
+      { name: 'Nadec', nameAr: 'نادك', industry: 'Agriculture & Food', type: 'Public Company' },
+      { name: 'Savola Group', nameAr: 'مجموعة صافولا', industry: 'Food & Retail', type: 'Public Company' },
+      { name: 'Herfy Food Services', nameAr: 'هرفي للخدمات الغذائية', industry: 'Fast Food', type: 'Public Company' },
+      { name: 'Halwani Bros', nameAr: 'إخوان حلواني', industry: 'Food Processing', type: 'Private Company' },
+      { name: 'Al Kabeer', nameAr: 'الكبير', industry: 'Frozen Food', type: 'Private Company' },
+      { name: 'Sunbulah Group', nameAr: 'مجموعة سنبلة', industry: 'Frozen Food', type: 'Private Company' },
+      { name: 'Panda Retail', nameAr: 'بنده للتجزئة', industry: 'Retail', type: 'Private Company' }
+    ],
+    'United Arab Emirates': [
+      { name: 'Al Ain Farms', nameAr: 'مزارع العين', industry: 'Fresh Produce', type: 'Private Company' },
+      { name: 'National Food Products', nameAr: 'الشركة الوطنية للمنتجات الغذائية', industry: 'Food Manufacturing', type: 'Public Company' },
+      { name: 'Al Islami Foods', nameAr: 'الإسلامي للأغذية', industry: 'Halal Food', type: 'Private Company' },
+      { name: 'Emirates Snack Foods', nameAr: 'الإمارات للوجبات الخفيفة', industry: 'Snacks', type: 'Private Company' },
+      { name: 'Agthia Group', nameAr: 'مجموعة أغذية', industry: 'Food & Beverages', type: 'Public Company' },
+      { name: 'IFFCO', nameAr: 'إيفكو', industry: 'Oils & Food', type: 'Public Company' },
+      { name: 'Al Rawdah Dairy', nameAr: 'ألبان الروضة', industry: 'Dairy', type: 'Private Company' },
+      { name: 'Barakah Dates', nameAr: 'تمور بركة', industry: 'Dates & Fruits', type: 'Private Company' },
+      { name: 'Hunter Foods', nameAr: 'هنتر فودز', industry: 'Meat Processing', type: 'Private Company' },
+      { name: 'Al Khaleej Sugar', nameAr: 'سكر الخليج', industry: 'Sugar Refinery', type: 'Public Company' }
+    ],
+    'Yemen': [
+      { name: 'Yemen Soft Drinks', nameAr: 'اليمن للمشروبات الغازية', industry: 'Beverages', type: 'Private Company' },
+      { name: 'Hayel Saeed Anam Group', nameAr: 'مجموعة هائل سعيد أنعم', industry: 'Trading & Food', type: 'Private Company' },
+      { name: 'Yemen Dairy Factory', nameAr: 'مصنع اليمن للألبان', industry: 'Dairy', type: 'Private Company' },
+      { name: 'Sanaa Flour Mills', nameAr: 'مطاحن صنعاء', industry: 'Flour & Grains', type: 'Public Company' },
+      { name: 'Al-Saeed Trading', nameAr: 'السعيد للتجارة', industry: 'Food Trading', type: 'Private Company' },
+      { name: 'Yemen Food Industries', nameAr: 'اليمن للصناعات الغذائية', industry: 'Food Processing', type: 'Private Company' },
+      { name: 'Taiz Food Company', nameAr: 'شركة تعز للأغذية', industry: 'Food Distribution', type: 'Private Company' },
+      { name: 'Aden Refinery Company', nameAr: 'شركة مصافي عدن', industry: 'Oil & Food', type: 'Public Company' },
+      { name: 'Hodeidah Mills', nameAr: 'مطاحن الحديدة', industry: 'Flour Mills', type: 'Private Company' },
+      { name: 'Al-Rowad Food Co', nameAr: 'شركة الرواد للأغذية', industry: 'Food Import', type: 'Private Company' }
+    ],
+    'Kuwait': [
+      { name: 'Kuwait Flour Mills', nameAr: 'مطاحن الكويت', industry: 'Flour & Bakery', type: 'Public Company' },
+      { name: 'Kuwait Food Company', nameAr: 'شركة الكويت للأغذية', industry: 'Food & Restaurant', type: 'Public Company' },
+      { name: 'Al Yasra Foods', nameAr: 'أغذية اليسرة', industry: 'Food Trading', type: 'Private Company' },
+      { name: 'Kout Food Group', nameAr: 'مجموعة كوت الغذائية', industry: 'Restaurants', type: 'Public Company' },
+      { name: 'Kuwait Danish Dairy', nameAr: 'الألبان الدنماركية الكويتية', industry: 'Dairy', type: 'Private Company' },
+      { name: 'Al Wazzan Foods', nameAr: 'الوزان للأغذية', industry: 'Food Import', type: 'Private Company' },
+      { name: 'Safat Dairy', nameAr: 'ألبان الصفاة', industry: 'Dairy Products', type: 'Private Company' },
+      { name: 'Kuwait Protein Company', nameAr: 'الشركة الكويتية للبروتين', industry: 'Meat & Poultry', type: 'Public Company' },
+      { name: 'Al Durraq Food', nameAr: 'الدراق للأغذية', industry: 'Food Processing', type: 'Private Company' },
+      { name: 'Mezzan Holding', nameAr: 'شركة مزن القابضة', industry: 'Food & Beverages', type: 'Public Company' }
+    ],
+    'Qatar': [
+      { name: 'Qatar National Food Company', nameAr: 'الشركة القطرية الوطنية للأغذية', industry: 'Food Manufacturing', type: 'Public Company' },
+      { name: 'Baladna', nameAr: 'بلدنا', industry: 'Dairy', type: 'Public Company' },
+      { name: 'Zulal Oasis', nameAr: 'واحة زلال', industry: 'Water & Beverages', type: 'Private Company' },
+      { name: 'Qatar Flour Mills', nameAr: 'مطاحن قطر', industry: 'Flour & Bakery', type: 'Public Company' },
+      { name: 'Al Meera Consumer Goods', nameAr: 'الميرة للسلع الاستهلاكية', industry: 'Retail & Food', type: 'Public Company' },
+      { name: 'Widam Food Company', nameAr: 'شركة ودام الغذائية', industry: 'Meat Processing', type: 'Private Company' },
+      { name: 'Qatar Poultry', nameAr: 'الدواجن القطرية', industry: 'Poultry', type: 'Private Company' },
+      { name: 'Senyar Industries', nameAr: 'صناعات سنيار', industry: 'Food Processing', type: 'Private Company' },
+      { name: 'Al Watania Dairy', nameAr: 'ألبان الوطنية', industry: 'Dairy Products', type: 'Private Company' },
+      { name: 'Qatar Food Industries', nameAr: 'قطر للصناعات الغذائية', industry: 'Food Manufacturing', type: 'Public Company' }
+    ],
+    'Bahrain': [
+      { name: 'Bahrain Flour Mills', nameAr: 'مطاحن البحرين', industry: 'Flour & Bakery', type: 'Public Company' },
+      { name: 'Awal Dairy Company', nameAr: 'شركة أوال للألبان', industry: 'Dairy', type: 'Private Company' },
+      { name: 'Trafco Group', nameAr: 'مجموعة ترافكو', industry: 'Food Trading', type: 'Public Company' },
+      { name: 'Bahrain Food Import', nameAr: 'البحرين لاستيراد الأغذية', industry: 'Food Import', type: 'Private Company' },
+      { name: 'Al Zain Dairy', nameAr: 'ألبان الزين', industry: 'Dairy Products', type: 'Private Company' },
+      { name: 'Delmon Poultry', nameAr: 'دواجن دلمون', industry: 'Poultry', type: 'Private Company' },
+      { name: 'Bahrain Fresh Fruits', nameAr: 'البحرين للفواكه الطازجة', industry: 'Fresh Produce', type: 'Private Company' },
+      { name: 'Al Jazira Food', nameAr: 'أغذية الجزيرة', industry: 'Food Distribution', type: 'Private Company' },
+      { name: 'Manazel Food Company', nameAr: 'شركة منازل للأغذية', industry: 'Food Processing', type: 'Private Company' },
+      { name: 'Bahrain Beverages', nameAr: 'مشروبات البحرين', industry: 'Beverages', type: 'Private Company' }
+    ],
+    'Oman': [
+      { name: 'Oman Flour Mills', nameAr: 'مطاحن عمان', industry: 'Flour & Bakery', type: 'Public Company' },
+      { name: 'A\'Saffa Foods', nameAr: 'أغذية الصفاء', industry: 'Poultry & Food', type: 'Public Company' },
+      { name: 'Oman Refreshment Company', nameAr: 'الشركة العمانية للمرطبات', industry: 'Beverages', type: 'Public Company' },
+      { name: 'National Mineral Water', nameAr: 'المياه المعدنية الوطنية', industry: 'Water & Beverages', type: 'Public Company' },
+      { name: 'Al Maha Dairy', nameAr: 'ألبان المها', industry: 'Dairy', type: 'Private Company' },
+      { name: 'Sweets of Oman', nameAr: 'حلويات عمان', industry: 'Confectionery', type: 'Private Company' },
+      { name: 'Dhofar Beverages', nameAr: 'مشروبات ظفار', industry: 'Beverages', type: 'Private Company' },
+      { name: 'Sohar Poultry', nameAr: 'دواجن صحار', industry: 'Poultry', type: 'Private Company' },
+      { name: 'Areej Vegetable Oils', nameAr: 'زيوت أريج النباتية', industry: 'Oils & Fats', type: 'Private Company' },
+      { name: 'Oman Foodstuff Factory', nameAr: 'مصنع عمان للمواد الغذائية', industry: 'Food Processing', type: 'Public Company' }
+    ]
+  };
+
+  // City mappings for each country
+  private readonly cityMappings: { [key: string]: string[] } = {
+    'Egypt': ['Cairo', 'Alexandria', 'Giza', 'Luxor'],
+    'Saudi Arabia': ['Riyadh', 'Jeddah', 'Mecca', 'Dammam'],
+    'United Arab Emirates': ['Dubai', 'Abu Dhabi', 'Sharjah', 'Ajman'],
+    'Yemen': ['Sanaa', 'Aden', 'Taiz'],
+    'Kuwait': ['Kuwait City', 'Hawalli', 'Farwaniya'],
+    'Qatar': ['Doha', 'Al Wakrah', 'Al Rayyan'],
+    'Bahrain': ['Manama', 'Muharraq', 'Riffa'],
+    'Oman': ['Muscat', 'Salalah', 'Sohar']
+  };
 
   private usedCompanies: Set<number> = new Set();
   private lastUsedIndex: number = -1;
 
   constructor() {
-    // Initialize with some randomness
-    this.shuffleCompanies();
+    this.initializeCompanyPool();
   }
 
   /**
-   * Generates demo data for a company
-   * Ensures different company each time
+   * Initialize the company pool with all 70 companies
    */
-  generateDemoData(): DemoCompany {
-    let selectedIndex: number;
+  private initializeCompanyPool(): void {
+    const allCompanies: DemoCompany[] = [];
+    let globalIndex = 0;
     
-    // If all companies have been used, reset and shuffle
-    if (this.usedCompanies.size >= this.companies.length) {
-      this.usedCompanies.clear();
-      this.shuffleCompanies();
+    Object.entries(this.masterCompanyData).forEach(([country, companies]) => {
+      const cities = this.cityMappings[country] || [];
+      
+      companies.forEach((company, index) => {
+        const city = cities[index % cities.length];
+        
+        allCompanies.push({
+          id: `${country.toLowerCase().replace(/\s+/g, '_')}_${index + 1}`,
+          name: company.name,
+          nameAr: company.nameAr,
+          customerType: company.type,
+          ownerName: this.generateOwnerName(country),
+          taxNumber: this.generateTaxNumber(country, index + 1),
+          buildingNumber: `${1000 + index}`,
+          street: this.generateStreet(city, index),
+          country: country,
+          city: city,
+          industry: company.industry,
+          contacts: this.generateContactsForCompany(country, 2, company.name),
+          salesOrg: this.getSalesOrgByCountry(country, index),
+          distributionChannel: this.getDistributionChannel(index),
+          division: this.getDivision(company.industry)
+        });
+        
+        globalIndex++;
+      });
+    });
+
+    this.companyPool.all = allCompanies;
+    this.companyPool.available = [...allCompanies];
+    
+    console.log(`✅ Initialized company pool with ${allCompanies.length} companies across ${Object.keys(this.masterCompanyData).length} countries`);
+  }
+
+  /**
+   * Get companies for specific use case ensuring no duplication
+   */
+  getCompaniesForUseCase(useCase: 'quarantine' | 'duplicate' | 'complete', count: number): DemoCompany[] {
+    const selectedCompanies: DemoCompany[] = [];
+    
+    // Ensure we have enough available companies
+    if (this.companyPool.available.length < count) {
+      console.warn(`⚠️ Not enough available companies (${this.companyPool.available.length}). Requested: ${count}. Resetting pool for ${useCase}`);
+      this.resetPoolForCategory(useCase);
     }
 
-    // Find next unused company
-    do {
-      selectedIndex = Math.floor(Math.random() * this.companies.length);
-    } while (this.usedCompanies.has(selectedIndex) && this.usedCompanies.size < this.companies.length);
+    // Select companies from available pool
+    for (let i = 0; i < count && this.companyPool.available.length > 0; i++) {
+      const randomIndex = Math.floor(Math.random() * this.companyPool.available.length);
+      const company = this.companyPool.available.splice(randomIndex, 1)[0];
+      
+      // Mark where it's used
+      company.usedIn = useCase;
+      selectedCompanies.push(company);
+      
+      // Track usage by category
+      this.companyPool[useCase].push(company);
+    }
 
-    // Mark as used
+    this.companyPool.lastUsedCategory = useCase;
+    
+    return selectedCompanies;
+  }
+
+  /**
+   * Generate demo data for forms (sequential from pool)
+   */
+  generateDemoData(): DemoCompany {
+    // Check if we're still using old method
+    if (this.usedCompanies.size >= this.companyPool.all.length) {
+      this.usedCompanies.clear();
+    }
+
+    // Find next unused company from pool
+    let selectedIndex: number;
+    do {
+      selectedIndex = Math.floor(Math.random() * this.companyPool.all.length);
+    } while (this.usedCompanies.has(selectedIndex) && this.usedCompanies.size < this.companyPool.all.length);
+
     this.usedCompanies.add(selectedIndex);
     this.lastUsedIndex = selectedIndex;
 
-    // Get the company and enhance it with country-specific data
-    const company = this.deepClone(this.companies[selectedIndex]);
-    
-    // Generate additional contacts with country-specific data
-    const additionalContacts = this.generateAdditionalContacts(2, company.country);
-    company.contacts = [...company.contacts, ...additionalContacts];
-    
-    // Update owner name to be country-specific
-    const countryData = this.getCountryData(company.country);
-    const ownerFirstName = countryData.firstNames[Math.floor(Math.random() * countryData.firstNames.length)];
-    const ownerLastName = countryData.lastNames[Math.floor(Math.random() * countryData.lastNames.length)];
-    company.ownerName = `${ownerFirstName} ${ownerLastName}`;
-
+    const company = this.deepClone(this.companyPool.all[selectedIndex]);
     return company;
   }
 
@@ -466,7 +275,7 @@ export class DemoDataGeneratorService {
    */
   getLastUsedCompany(): DemoCompany | null {
     if (this.lastUsedIndex >= 0) {
-      return this.deepClone(this.companies[this.lastUsedIndex]);
+      return this.deepClone(this.companyPool.all[this.lastUsedIndex]);
     }
     return null;
   }
@@ -475,7 +284,7 @@ export class DemoDataGeneratorService {
    * Gets remaining unused companies count
    */
   getRemainingCompaniesCount(): number {
-    return this.companies.length - this.usedCompanies.size;
+    return this.companyPool.available.length;
   }
 
   /**
@@ -484,17 +293,127 @@ export class DemoDataGeneratorService {
   resetGenerator(): void {
     this.usedCompanies.clear();
     this.lastUsedIndex = -1;
-    this.shuffleCompanies();
+    this.companyPool.available = [...this.companyPool.all];
+    this.companyPool.quarantine = [];
+    this.companyPool.duplicate = [];
+    this.companyPool.complete = [];
+    console.log('🔄 Company pool reset');
   }
 
   /**
-   * Shuffles the companies array for more randomness
+   * Find company by name in the pool
    */
-  private shuffleCompanies(): void {
-    for (let i = this.companies.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [this.companies[i], this.companies[j]] = [this.companies[j], this.companies[i]];
+  findCompanyByName(name: string): DemoCompany | null {
+    if (this.companyPool.all.length === 0) {
+      this.initializeCompanyPool();
     }
+
+    const searchName = name.trim().toLowerCase();
+    
+    // Search in all companies
+    const found = this.companyPool.all.find(company => 
+      company.name.toLowerCase() === searchName || 
+      company.name.toLowerCase().includes(searchName) ||
+      company.nameAr === name ||
+      company.nameAr.includes(name)
+    );
+
+    return found ? this.deepClone(found) : null;
+  }
+
+  /**
+   * Reset pool for specific category
+   */
+  private resetPoolForCategory(category: string): void {
+    // Return used companies back to available pool
+    const categoryKey = category as keyof Pick<CompanyPool, 'quarantine' | 'duplicate' | 'complete'>;
+    const usedCompanies = this.companyPool[categoryKey];
+    this.companyPool.available.push(...usedCompanies);
+    this.companyPool[categoryKey] = [];
+    console.log(`🔄 Reset pool for category: ${category}`);
+  }
+
+  /**
+   * Generate owner name for a country
+   */
+  private generateOwnerName(country: string): string {
+    const countryData = this.getCountryData(country);
+    const firstName = countryData.firstNames[Math.floor(Math.random() * countryData.firstNames.length)];
+    const lastName = countryData.lastNames[Math.floor(Math.random() * countryData.lastNames.length)];
+    return `${firstName} ${lastName}`;
+  }
+
+  /**
+   * Generate tax number for a country
+   */
+  private generateTaxNumber(country: string, index: number): string {
+    const countryPrefixes: { [key: string]: string } = {
+      'Egypt': '200',
+      'Saudi Arabia': '300',
+      'United Arab Emirates': '400',
+      'Yemen': '500',
+      'Kuwait': '600',
+      'Qatar': '700',
+      'Bahrain': '800',
+      'Oman': '900'
+    };
+    
+    const prefix = countryPrefixes[country] || '100';
+    return `${prefix}${String(index).padStart(12, '0')}`;
+  }
+
+  /**
+   * Generate street name
+   */
+  private generateStreet(city: string, index: number): string {
+    const streetTypes = ['Street', 'Avenue', 'Road', 'Boulevard'];
+    const streetNames = ['King Abdulaziz', 'Sheikh Zayed', 'Industrial', 'Corniche', 'Al Manara'];
+    
+    return `${streetNames[index % streetNames.length]} ${streetTypes[index % streetTypes.length]}, ${city}`;
+  }
+
+  /**
+   * Get sales organization by country
+   */
+  private getSalesOrgByCountry(country: string, index: number): string {
+    const baseOrg = 1000 + (Object.keys(this.masterCompanyData).indexOf(country) * 5000);
+    return String(baseOrg + (index * 1000));
+  }
+
+  /**
+   * Get distribution channel
+   */
+  private getDistributionChannel(index: number): string {
+    const channels = ['10', '20', '30', '40', '50', '60', '70', '80', '90', '100'];
+    return channels[index % channels.length];
+  }
+
+  /**
+   * Get division by industry
+   */
+  private getDivision(industry: string): string {
+    const industryToDivision: { [key: string]: string } = {
+      'Food & Beverage': '00',
+      'Dairy Products': '10',
+      'Dairy': '10',
+      'Poultry': '20',
+      'Frozen Food': '30',
+      'Retail': '40',
+      'Food Processing': '50',
+      'Beverages': '60',
+      'Trading & Food': '70',
+      'Flour & Bakery': '80',
+      'Food Import': '90'
+    };
+    
+    return industryToDivision[industry] || '00';
+  }
+
+  /**
+   * Generate contacts for a company
+   */
+  private generateContactsForCompany(country: string, count: number = 2, companyName?: string): DemoContact[] {
+    return this.generateAdditionalContacts(count, country, companyName);
   }
 
   /**
@@ -507,7 +426,7 @@ export class DemoDataGeneratorService {
   /**
    * Generates random additional contacts for variety
    */
-  generateAdditionalContacts(count: number = 1, country?: string): DemoContact[] {
+  generateAdditionalContacts(count: number = 1, country?: string, companyName?: string): DemoContact[] {
     const jobTitles = [
       "Procurement Manager",
       "Operations Director", 
@@ -539,16 +458,32 @@ export class DemoDataGeneratorService {
       const firstName = firstNames[Math.floor(Math.random() * firstNames.length)];
       const lastName = lastNames[Math.floor(Math.random() * lastNames.length)];
       const jobTitle = jobTitles[Math.floor(Math.random() * jobTitles.length)];
-      const domain = domains[Math.floor(Math.random() * domains.length)];
       
       // Generate country-specific phone numbers
       const mobile = this.generatePhoneNumber(phoneFormat.mobile);
       const landline = this.generatePhoneNumber(phoneFormat.landline);
       
+      // Generate email domain based on company name or use default
+      let emailDomain: string;
+      if (companyName) {
+        // Convert company name to domain format
+        const cleanName = companyName
+          .toLowerCase()
+          .replace(/\s+/g, '')           // Remove spaces
+          .replace(/[^a-z0-9]/g, '')     // Remove special chars
+          .substring(0, 20);              // Limit length
+        
+        // Get country extension
+        const countryExt = countryData.domains[0].split('.').pop(); // e.g., 'sa' from 'company.com.sa'
+        emailDomain = `${cleanName}.com.${countryExt}`;
+      } else {
+        emailDomain = domains[Math.floor(Math.random() * domains.length)];
+      }
+      
       contacts.push({
         name: `${firstName} ${lastName}`,
         jobTitle: jobTitle,
-        email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace('al-', '')}@${domain}`,
+        email: `${firstName.toLowerCase()}.${lastName.toLowerCase().replace('al-', '')}@${emailDomain}`,
         mobile: mobile,
         landline: landline,
         preferredLanguage: Math.random() > 0.5 ? "Arabic" : "English"
@@ -577,7 +512,7 @@ export class DemoDataGeneratorService {
           mobile: "+9665XXXXXXXX",
           landline: "+9661XXXXXXXX"
         },
-        domains: ["company.com", "corp.sa", "group.com", "holdings.sa", "enterprise.com"]
+        domains: ["company.com.sa", "corp.sa", "group.com.sa", "holdings.sa", "enterprise.com.sa"]
       },
       'Egypt': {
         firstNames: [
@@ -590,11 +525,11 @@ export class DemoDataGeneratorService {
         ],
         phoneFormat: {
           mobile: "+201XXXXXXXXX",
-          landline: "+202XXXXXXXXX"
+          landline: "+202XXXXXXXX"
         },
         domains: ["company.com.eg", "corp.eg", "group.com.eg", "holdings.eg", "enterprise.com.eg"]
       },
-      'UAE': {
+      'United Arab Emirates': {
         firstNames: [
           "Ahmed", "Mohammed", "Omar", "Khalid", "Saeed", "Rashid", "Hamdan", "Zayed",
           "Fatima", "Aisha", "Mona", "Nour", "Dina", "Hala", "Rania", "Yasmin"
@@ -609,35 +544,80 @@ export class DemoDataGeneratorService {
         },
         domains: ["company.ae", "corp.ae", "group.ae", "holdings.ae", "enterprise.ae"]
       },
+      'Yemen': {
+        firstNames: [
+          "Abdullah", "Ali", "Saleh", "Abdo", "Ahmed", "Mohammed", "Omar", "Hassan",
+          "Fatima", "Aisha", "Mona", "Nour", "Dina", "Hala", "Rania", "Yasmin"
+        ],
+        lastNames: [
+          "Al-Ahmar", "Al-Houthi", "Al-Sammad", "Al-Yemeni", "Al-Hadrami", 
+          "Al-Awlaki", "Al-Zindani", "Al-Sanabani", "Al-Eryani", "Al-Iryani"
+        ],
+        phoneFormat: {
+          mobile: "+96770XXXXXXX",
+          landline: "+9671XXXXXXX"
+        },
+        domains: ["company.com.ye", "corp.ye", "group.com.ye", "enterprise.com.ye"]
+      },
       'Kuwait': {
         firstNames: [
           "Ahmed", "Mohammed", "Omar", "Khalid", "Saud", "Fahad", "Abdullah", "Yousef",
-          "Fatima", "Noura", "Layla", "Reem", "Sarah", "Aisha", "Hala", "Mona"
+          "Fatima", "Noura", "Layla", "Reem", "Sarah", "Aisha", "Hala", "Mariam"
         ],
         lastNames: [
           "Al-Sabah", "Al-Kandari", "Al-Mutairi", "Al-Rashid", "Al-Dosari", 
-          "Al-Mutairi", "Al-Harbi", "Al-Ghamdi", "Al-Sheikh", "Al-Malki"
+          "Al-Adwani", "Al-Ajmi", "Al-Enezi", "Al-Azmi", "Al-Shammari"
         ],
         phoneFormat: {
           mobile: "+9656XXXXXXXX",
           landline: "+9652XXXXXXXX"
         },
-        domains: ["company.kw", "corp.kw", "group.kw", "holdings.kw", "enterprise.kw"]
+        domains: ["company.com.kw", "corp.kw", "group.com.kw", "holdings.kw", "enterprise.com.kw"]
       },
       'Qatar': {
         firstNames: [
-          "Ahmed", "Mohammed", "Omar", "Khalid", "Saud", "Fahad", "Abdullah", "Yousef",
+          "Ahmed", "Mohammed", "Omar", "Khalid", "Hamad", "Tamim", "Abdullah", "Nasser",
           "Fatima", "Noura", "Layla", "Reem", "Sarah", "Aisha", "Hala", "Mona"
         ],
         lastNames: [
           "Al-Thani", "Al-Mahmoud", "Al-Kuwari", "Al-Suwaidi", "Al-Dosari", 
-          "Al-Mutairi", "Al-Harbi", "Al-Ghamdi", "Al-Sheikh", "Al-Malki"
+          "Al-Attiyah", "Al-Ansari", "Al-Emadi", "Al-Mohannadi", "Al-Marri"
         ],
         phoneFormat: {
-          mobile: "+9743XXXXXXXX",
+          mobile: "+9745XXXXXXXX",
           landline: "+9744XXXXXXXX"
         },
-        domains: ["company.qa", "corp.qa", "group.qa", "holdings.qa", "enterprise.qa"]
+        domains: ["company.com.qa", "corp.qa", "group.com.qa", "holdings.qa", "enterprise.com.qa"]
+      },
+      'Bahrain': {
+        firstNames: [
+          "Ahmed", "Mohammed", "Omar", "Khalid", "Hamad", "Salman", "Abdullah", "Yousef",
+          "Fatima", "Noura", "Layla", "Reem", "Sarah", "Aisha", "Hala", "Mona"
+        ],
+        lastNames: [
+          "Al-Khalifa", "Al-Dosari", "Al-Mahmoud", "Al-Mannai", "Al-Fadhel", 
+          "Al-Noaimi", "Al-Binali", "Al-Koheji", "Al-Sayed", "Al-Hashimi"
+        ],
+        phoneFormat: {
+          mobile: "+9733XXXXXXXX",
+          landline: "+9731XXXXXXXX"
+        },
+        domains: ["company.com.bh", "corp.bh", "group.com.bh", "holdings.bh", "enterprise.com.bh"]
+      },
+      'Oman': {
+        firstNames: [
+          "Ahmed", "Mohammed", "Omar", "Khalid", "Haitham", "Fahd", "Assad", "Tareq",
+          "Fatima", "Noura", "Layla", "Reem", "Sarah", "Aisha", "Hala", "Mona"
+        ],
+        lastNames: [
+          "Al-Said", "Al-Busaidi", "Al-Lawati", "Al-Maamari", "Al-Hinai", 
+          "Al-Balushi", "Al-Harthi", "Al-Kindi", "Al-Rashdi", "Al-Habsi"
+        ],
+        phoneFormat: {
+          mobile: "+9689XXXXXXXX",
+          landline: "+9682XXXXXXX"
+        },
+        domains: ["company.com.om", "corp.om", "group.com.om", "holdings.om", "enterprise.com.om"]
       }
     };
 
@@ -657,54 +637,35 @@ export class DemoDataGeneratorService {
   generateDemoDocuments(): any[] {
     const documents = [
       {
-        name: 'السجل التجاري - شركة المراعي.pdf',
+        name: 'Commercial Registration.pdf',
         type: 'Commercial Registration',
-        description: 'السجل التجاري الرسمي للشركة',
+        description: 'Official commercial registration certificate',
         mime: 'application/pdf',
-        size: 245760, // ~240KB
-        contentBase64: this.generatePdfBase64('السجل التجاري - شركة المراعي'),
+        size: 245760,
+        contentBase64: this.generatePdfBase64('Commercial Registration'),
         uploadedAt: new Date().toISOString()
       },
       {
-        name: 'الشهادة الضريبية - شركة المراعي.pdf', 
+        name: 'Tax Certificate.pdf', 
         type: 'Tax Certificate',
-        description: 'الشهادة الضريبية الصادرة من الهيئة العامة للزكاة والدخل',
+        description: 'Tax certificate issued by tax authority',
         mime: 'application/pdf',
-        size: 189440, // ~185KB
-        contentBase64: this.generatePdfBase64('الشهادة الضريبية - شركة المراعي'),
+        size: 189440,
+        contentBase64: this.generatePdfBase64('Tax Certificate'),
         uploadedAt: new Date().toISOString()
       },
       {
-        name: 'صورة السجل التجاري.jpg',
-        type: 'Commercial Registration',
-        description: 'صورة فوتوغرافية للسجل التجاري',
+        name: 'VAT Certificate.jpg',
+        type: 'VAT Certificate',
+        description: 'Value Added Tax certificate',
         mime: 'image/jpeg',
-        size: 156789, // ~153KB
-        contentBase64: this.generateImageBase64('السجل التجاري'),
-        uploadedAt: new Date().toISOString()
-      },
-      {
-        name: 'الشهادة الضريبية.jpg',
-        type: 'Tax Certificate', 
-        description: 'صورة فوتوغرافية للشهادة الضريبية',
-        mime: 'image/jpeg',
-        size: 198432, // ~194KB
-        contentBase64: this.generateImageBase64('الشهادة الضريبية'),
-        uploadedAt: new Date().toISOString()
-      },
-      {
-        name: 'ترخيص النشاط التجاري.pdf',
-        type: 'License',
-        description: 'ترخيص مزاولة النشاط التجاري',
-        mime: 'application/pdf',
-        size: 312456, // ~305KB
-        contentBase64: this.generatePdfBase64('ترخيص النشاط التجاري'),
+        size: 156789,
+        contentBase64: this.generateImageBase64('VAT Certificate'),
         uploadedAt: new Date().toISOString()
       }
     ];
 
-    // Return 2-3 random documents
-    const numDocs = Math.floor(Math.random() * 2) + 2; // 2-3 documents
+    const numDocs = Math.floor(Math.random() * 2) + 2;
     return documents.slice(0, numDocs);
   }
 
@@ -712,7 +673,6 @@ export class DemoDataGeneratorService {
    * Generates a simple PDF base64 content (demo purposes)
    */
   private generatePdfBase64(title: string): string {
-    // Simple PDF content for demo
     const pdfContent = `%PDF-1.4
 1 0 obj
 <<
@@ -788,7 +748,137 @@ startxref
    * Generates a simple image base64 content (demo purposes)
    */
   private generateImageBase64(title: string): string {
-    // Simple 1x1 pixel image as base64
     return 'iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNkYPhfDwAChwGA60e6kgAAAABJRU5ErkJggg==';
+  }
+
+  /**
+   * Generate quarantine data with incomplete fields
+   * Returns 40 records (10 companies × 4 variants each)
+   */
+  generateQuarantineData(count: number = 40): any[] {
+    const baseCompanyCount = Math.ceil(count / 4); // 4 variants per company
+    const companies = this.getCompaniesForUseCase('quarantine', baseCompanyCount);
+    const quarantineRecords: any[] = [];
+
+    companies.forEach((company, index) => {
+      // Create 4 variants per company with missing data
+      for (let variant = 0; variant < 4; variant++) {
+        const record = this.deepClone(company);
+        
+        // Randomly remove some fields to simulate incomplete data
+        if (variant === 0) {
+          record.street = undefined;
+          record.buildingNumber = undefined;
+        }
+        if (variant === 1) {
+          record.city = undefined;
+        }
+        if (variant === 2) {
+          record.buildingNumber = undefined;
+        }
+        if (variant === 3) {
+          record.street = undefined;
+        }
+        
+        // Make tax number unique for each variant
+        record.taxNumber = `${company.taxNumber}_V${variant}`;
+        
+        // Add metadata
+        const sourceSystems = ['Oracle Forms', 'SAP S/4HANA', 'SAP ByDesign'];
+        record.status = 'Quarantine';
+        record.assignedTo = 'data_entry';
+        record.rejectReason = `Incomplete record - missing ${variant === 0 ? 'address details' : variant === 1 ? 'city' : variant === 2 ? 'building number' : 'street'}`;
+        record.source = sourceSystems[variant % 3];
+        record.confidence = 60 + Math.random() * 20; // 60-80% confidence
+        
+        quarantineRecords.push(record);
+      }
+    });
+
+    console.log(`📊 Generated ${quarantineRecords.length} quarantine records from ${companies.length} base companies`);
+    return quarantineRecords;
+  }
+
+  /**
+   * Generate duplicate groups with variations
+   * Returns ~60 records in 20 groups (2-4 records per group)
+   */
+  generateDuplicateGroups(groupCount: number = 20): any[] {
+    const companies = this.getCompaniesForUseCase('duplicate', groupCount);
+    const duplicateRecords: any[] = [];
+
+    companies.forEach((company, groupIndex) => {
+      const groupSize = [2, 3, 4][groupIndex % 3]; // Vary group sizes: 2, 3, or 4
+      const sharedTax = company.taxNumber;
+      const sharedType = company.customerType;
+      const masterId = `master_${Date.now()}_${groupIndex}`;
+
+      for (let i = 0; i < groupSize; i++) {
+        const record = this.deepClone(company);
+        
+        // First record = master
+        if (i === 0) {
+          record.isMaster = 1;
+          record.status = 'Duplicate';
+          record.taxNumber = sharedTax; // Keep original tax number
+        } 
+      // All other records = duplicates with same tax number but name variations
+      else {
+        record.name = this.varyCompanyName(company.name, i);
+        record.nameAr = this.varyCompanyName(company.nameAr, i);
+        record.status = 'Duplicate'; // Changed from 'Linked' to 'Duplicate'
+        record.isMaster = 0;
+        record.taxNumber = sharedTax; // Same tax number for all in group
+      }
+
+        record.masterId = masterId;
+        const sourceSystems = ['Oracle Forms', 'SAP S/4HANA', 'SAP ByDesign'];
+        record.source = sourceSystems[i % 3];
+        record.confidence = 85 + Math.random() * 10; // 85-95% confidence
+        
+        duplicateRecords.push(record);
+      }
+    });
+
+    console.log(`📊 Generated ${duplicateRecords.length} duplicate records in ${groupCount} groups`);
+    return duplicateRecords;
+  }
+
+  /**
+   * Vary company name for duplicate variations
+   */
+  private varyCompanyName(originalName: string, variation: number): string {
+    const suffixes = ['', ' Co.', ' LLC', ' Ltd.', ' Trading', ' International', ' Group'];
+    return `${originalName}${suffixes[variation % suffixes.length]}`;
+  }
+
+  /**
+   * Get all companies from pool (for external use like PDF bulk generator)
+   */
+  getAllCompanies(): DemoCompany[] {
+    return this.deepClone(this.companyPool.all);
+  }
+
+  /**
+   * Get companies by country
+   */
+  getCompaniesByCountry(country: string): DemoCompany[] {
+    return this.companyPool.all.filter(c => c.country === country);
+  }
+
+  /**
+   * Get pool statistics
+   */
+  getPoolStatistics(): { total: number; available: number; used: number; byCategory: any } {
+    return {
+      total: this.companyPool.all.length,
+      available: this.companyPool.available.length,
+      used: this.companyPool.all.length - this.companyPool.available.length,
+      byCategory: {
+        quarantine: this.companyPool.quarantine.length,
+        duplicate: this.companyPool.duplicate.length,
+        complete: this.companyPool.complete.length
+      }
+    };
   }
 }

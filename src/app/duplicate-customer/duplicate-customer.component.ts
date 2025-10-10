@@ -6,6 +6,7 @@ import { environment } from '../../environments/environment';
 import { firstValueFrom } from 'rxjs';
 import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { NotificationService } from '../services/notification.service';
+import { DemoDataGeneratorService, DemoCompany } from '../services/demo-data-generator.service';
 
 // Import unified lookup data
 import {
@@ -186,7 +187,8 @@ export class DuplicateCustomerComponent implements OnInit, OnDestroy {
     private cdr: ChangeDetectorRef,
     private notification: NzNotificationService,
     private sanitizer: DomSanitizer,
-    private appNotificationService: NotificationService
+    private appNotificationService: NotificationService,
+    private demoDataGenerator: DemoDataGeneratorService
   ) {}
 
   ngOnDestroy(): void {
@@ -2024,8 +2026,12 @@ getRecordSourceSystem(recordId: string): string {
       console.log('✅ Filling contact field:', fieldName);
       event.preventDefault();
       this.fillContactField(target, fieldName);
+    } else if (fieldName) {
+      console.log('✅ Filling company field:', fieldName);
+      event.preventDefault();
+      this.fillCompanyField(target, fieldName);
     } else {
-      console.log('❌ Not a contact field or field not recognized');
+      console.log('❌ Field not recognized');
     }
   }
 
@@ -2036,37 +2042,173 @@ getRecordSourceSystem(recordId: string): string {
     // Debug what we're getting
     console.log('🔍 Field detection - placeholder:', placeholder, 'name:', name);
     
-    if (placeholder.includes('contact name') || placeholder.includes('enter contact name') || name.includes('name')) return 'contact.name';
-    if (placeholder.includes('example@company.com') || placeholder.includes('email') || name.includes('email')) return 'contact.email';
-    if (placeholder.includes('+1234567890') || placeholder.includes('mobile') || placeholder.includes('phone') || name.includes('mobile')) return 'contact.mobile';
-    if (placeholder.includes('sales manager') || placeholder.includes('job') || name.includes('job')) return 'contact.jobTitle';
-    
-    // Try any input field in contact modal
+    // Check if in contact modal first
     const parentModal = element.closest('.ant-modal');
     if (parentModal && parentModal.textContent?.includes('Add New Contact')) {
+      if (placeholder.includes('contact name') || placeholder.includes('enter contact name')) return 'contact.name';
+      if (placeholder.includes('example@company.com') || placeholder.includes('email')) return 'contact.email';
+      if (placeholder.includes('+1234567890') || placeholder.includes('mobile') || placeholder.includes('phone')) return 'contact.mobile';
+      if (placeholder.includes('sales manager') || placeholder.includes('job')) return 'contact.jobTitle';
       if (element === parentModal.querySelector('input[type="text"]:first-of-type')) return 'contact.name';
       if (element.type === 'email') return 'contact.email';
       if (element.type === 'tel') return 'contact.mobile';
       if (element === parentModal.querySelector('input[type="text"]:nth-of-type(2)')) return 'contact.jobTitle';
     }
     
+    // Company fields - check by data-field-key attribute or placeholder
+    const fieldKey = element.getAttribute('data-field-key');
+    if (fieldKey) return fieldKey;
+    
+    // Fallback: detect by placeholder for company fields
+    if (placeholder.includes('enter company name') || placeholder.includes('company name')) return 'firstName';
+    if (placeholder.includes('tax number') || placeholder.includes('tax id')) return 'tax';
+    if (placeholder.includes('building number')) return 'buildingNumber';
+    if (placeholder.includes('street')) return 'street';
+    if (placeholder.includes('city')) return 'city';
+    if (placeholder.includes('country')) return 'country';
+    if (placeholder.includes('owner')) return 'CompanyOwner';
+    
     return null;
   }
 
   private fillContactField(element: HTMLInputElement, fieldName: string): void {
-    const demoData = {
-      'contact.name': ['Ahmed Al-Rashid', 'Fatima Al-Zahra', 'Omar Al-Balawi', 'Layla Al-Saud'],
-      'contact.email': ['ahmed.rashid@company.com', 'fatima.zahra@company.com', 'omar.balawi@company.com', 'layla.saud@company.com'],
-      'contact.mobile': ['+966501234567', '+966509876543', '+966512345678', '+966598765432'],
-      'contact.jobTitle': ['General Manager', 'Operations Manager', 'Sales Manager', 'Finance Manager']
+    // Get demo company if not already generated
+    if (!this.currentDemoCompany) {
+      this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+    }
+
+    // Get first contact from demo company
+    const demoContact = this.currentDemoCompany.contacts?.[0];
+    
+    if (!demoContact) {
+      return;
+    }
+
+    // Map field names to contact data
+    const fieldMapping: { [key: string]: string } = {
+      'contact.name': demoContact.name,
+      'contact.email': demoContact.email,
+      'contact.mobile': demoContact.mobile,
+      'contact.jobTitle': demoContact.jobTitle,
+      'contact.landline': demoContact.landline || ''
     };
 
-    const values = demoData[fieldName as keyof typeof demoData];
-    if (values && values.length > 0) {
-      const randomValue = values[Math.floor(Math.random() * values.length)];
-      element.value = randomValue;
+    const value = fieldMapping[fieldName];
+    if (value) {
+      element.value = value;
       element.dispatchEvent(new Event('input', { bubbles: true }));
     }
+  }
+
+  private fillCompanyField(element: HTMLInputElement, fieldName: string): void {
+    // Get demo company if not already generated
+    if (!this.currentDemoCompany) {
+      this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+    }
+
+    // Map field names to company data
+    const fieldMapping: { [key: string]: any } = {
+      'firstName': this.currentDemoCompany.name,
+      'firstNameAr': this.currentDemoCompany.nameAr,
+      'tax': this.currentDemoCompany.taxNumber,
+      'CustomerType': this.currentDemoCompany.customerType,
+      'CompanyOwner': this.currentDemoCompany.ownerName,
+      'buildingNumber': this.currentDemoCompany.buildingNumber,
+      'street': this.currentDemoCompany.street,
+      'country': this.currentDemoCompany.country,
+      'city': this.currentDemoCompany.city,
+      'SalesOrgOption': this.currentDemoCompany.salesOrg,
+      'DistributionChannelOption': this.currentDemoCompany.distributionChannel,
+      'DivisionOption': this.currentDemoCompany.division
+    };
+
+    const value = fieldMapping[fieldName];
+    if (value) {
+      // Set as manual entry
+      this.manualFields[fieldName] = 'MANUAL_ENTRY';
+      this.manualFieldValues[fieldName] = value;
+      
+      // Update the input element
+      element.value = value;
+      element.dispatchEvent(new Event('input', { bubbles: true }));
+      
+      // Trigger change detection
+      this.cdr.detectChanges();
+    }
+  }
+
+  /**
+   * Fill master record with complete demo data from unified service
+   * Used for manual entry when no duplicate records exist
+   */
+  fillMasterWithDemoData(): void {
+    try {
+      // Generate demo company from unified pool
+      const demoCompany = this.demoDataGenerator.generateDemoData();
+      this.currentDemoCompany = demoCompany;
+      
+      // Set all fields as manual entry with demo values
+      this.selectedFields = {};
+      this.manualFields = {};
+      this.manualFieldValues = {};
+      
+      // Map all main fields
+      const fieldMappings: { [key: string]: any } = {
+        'firstName': demoCompany.name,
+        'firstNameAr': demoCompany.nameAr,
+        'tax': demoCompany.taxNumber,
+        'CustomerType': demoCompany.customerType,
+        'CompanyOwner': demoCompany.ownerName,
+        'buildingNumber': demoCompany.buildingNumber,
+        'street': demoCompany.street,
+        'country': demoCompany.country,
+        'city': demoCompany.city,
+        'SalesOrgOption': demoCompany.salesOrg,
+        'DistributionChannelOption': demoCompany.distributionChannel,
+        'DivisionOption': demoCompany.division
+      };
+      
+      // Set as manual entry for each field
+      Object.keys(fieldMappings).forEach(fieldKey => {
+        this.manualFields[fieldKey] = 'MANUAL_ENTRY';
+        this.manualFieldValues[fieldKey] = fieldMappings[fieldKey];
+      });
+      
+      // Clear and add demo contacts
+      this.masterContacts = [];
+      demoCompany.contacts.forEach((contact, index) => {
+        this.masterContacts.push({
+          id: `demo_contact_${index}`,
+          name: contact.name,
+          email: contact.email,
+          mobile: contact.mobile,
+          jobTitle: contact.jobTitle,
+          landline: contact.landline,
+          preferredLanguage: contact.preferredLanguage
+        });
+      });
+      
+      // Trigger change detection
+      this.cdr.detectChanges();
+      
+    } catch (error) {
+      // Silent error handling
+    }
+  }
+
+  /**
+   * Get remaining demo companies count
+   */
+  getRemainingDemoCompanies(): number {
+    return this.demoDataGenerator.getRemainingCompaniesCount();
+  }
+
+  /**
+   * Reset demo generator
+   */
+  resetDemoGenerator(): void {
+    this.demoDataGenerator.resetGenerator();
+    this.currentDemoCompany = null;
   }
 
 }

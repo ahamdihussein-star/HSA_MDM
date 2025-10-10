@@ -20,7 +20,7 @@ interface DataStats {
 })
 export class AdminDataManagementComponent implements OnInit {
   
-  private apiBase = environment.apiBaseUrl || 'http://localhost:3001/api';
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
   
   stats: DataStats = {
     duplicateRecords: 0,

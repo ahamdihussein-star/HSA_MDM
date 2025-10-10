@@ -62,7 +62,7 @@ export class ExecutiveDashboardComponent implements OnInit, OnDestroy, AfterView
   // Chart instances
   private charts: { [key: string]: Chart } = {};
   
-  private apiBase = environment.apiBaseUrl || 'http://localhost:3001/api';
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
   private refreshSubscription?: Subscription;
   
   // Language

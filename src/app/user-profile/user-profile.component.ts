@@ -48,7 +48,7 @@ export class UserProfileComponent implements OnInit {
     { value: 'admin', label: 'System Administrator' },
     { value: 'manager', label: 'Business Manager' }
   ];
-  private apiBase = 'http://localhost:3001/api';
+  private apiBase = 'http://localhost:3000/api';
 
   constructor(
     private http: HttpClient,
@@ -78,7 +78,7 @@ export class UserProfileComponent implements OnInit {
       // Ensure avatar absolute & propagate to header via session + event
       if (this.currentUser?.avatarUrl) {
         if (!this.currentUser.avatarUrl.startsWith('http')) {
-          this.currentUser.avatarUrl = `http://localhost:3001${this.currentUser.avatarUrl}`;
+          this.currentUser.avatarUrl = `http://localhost:3000${this.currentUser.avatarUrl}`;
         }
         // Set preview for initial modal state
         this.avatarPreview = this.currentUser.avatarUrl || null;
@@ -157,7 +157,7 @@ export class UserProfileComponent implements OnInit {
       );
       
       console.log('✅ Avatar upload response:', response);
-      const fullUrl = response.url.startsWith('http') ? response.url : `http://localhost:3001${response.url}`;
+      const fullUrl = response.url.startsWith('http') ? response.url : `http://localhost:3000${response.url}`;
 
       // 1) Update preview immediately
       this.avatarPreview = fullUrl;

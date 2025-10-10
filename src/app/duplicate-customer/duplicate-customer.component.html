@@ -431,7 +431,7 @@
         <div class="builder-header">
           <h2>🏗️ Build Your Golden Record</h2>
           <div class="builder-tools">
-            <button class="tool-btn" (click)="autoFillBest()">
+            <button class="tool-btn" (click)="autoFillBest()" title="Auto-select best values from duplicates">
               <span>✨</span> Smart Fill
             </button>
             <button class="tool-btn" (click)="clearAllFields()">
@@ -523,11 +523,13 @@
                            type="text"
                            class="manual-field-input"
                            [(ngModel)]="manualFieldValues[field.key]"
+                           [attr.data-field-key]="field.key"
                            [placeholder]="'Enter ' + field.label"
                            (keyup.enter)="applyManualValue(field.key)">
                     <select *ngIf="field.type === 'dropdown'"
                             class="manual-field-select"
                             [(ngModel)]="manualFieldValues[field.key]"
+                            [attr.data-field-key]="field.key"
                             (change)="field.key === 'country' ? updateCityOptions(manualFieldValues[field.key]) : null">
                       <option value="">Select {{ field.label }}</option>
                       <option *ngFor="let opt of getDropdownOptions(field.key)" [value]="opt.value">

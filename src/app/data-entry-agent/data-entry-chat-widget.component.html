@@ -128,7 +128,7 @@
               nzType="primary" 
               (click)="openContactForm()">
               <i nz-icon nzType="user-add" nzTheme="outline"></i>
-              إضافة جهة اتصال
+              {{ 'agent.buttons.addContact' | translate }}
             </button>
           </div>
         </div>
@@ -137,7 +137,7 @@
       <!-- Accumulated Files Panel -->
       <div class="accumulated-files-panel" *ngIf="showAccumulatedFiles">
         <div class="panel-header">
-          <h4>الملفات المحددة / Selected Files</h4>
+          <h4>{{ 'agent.fileSelection.selectedFiles' | translate }}</h4>
           <button nz-button nzType="text" nzSize="small" (click)="clearAccumulatedFiles()">
             <i nz-icon nzType="delete" nzTheme="outline"></i>
           </button>
@@ -156,14 +156,14 @@
         </div>
         <div class="panel-footer">
           <button nz-button nzType="default" (click)="clearAccumulatedFiles()">
-            إلغاء / Cancel
+            {{ 'Cancel' | translate }}
           </button>
           <button nz-button nzType="dashed" (click)="triggerFileUpload()">
             <i nz-icon nzType="plus"></i>
-            إضافة ملفات أخرى / Add More Files
+            {{ 'agent.buttons.addMoreFiles' | translate }}
           </button>
           <button nz-button nzType="primary" (click)="proceedWithAccumulatedFiles()">
-            متابعة / Continue ({{ accumulatedFiles.length }})
+            {{ 'agent.buttons.continue' | translate }} ({{ accumulatedFiles.length }})
           </button>
         </div>
       </div>
@@ -254,7 +254,7 @@
       <div formArrayName="documents">
         <!-- Show message if no documents -->
         <div *ngIf="documentsFA.length === 0" style="text-align: center; padding: 20px; color: #666;">
-          <p>لا توجد مستندات للعرض / No documents to display</p>
+          <p>{{ 'agent.messages.noDocuments' | translate }}</p>
           <p>pendingFiles: {{ pendingFiles.length }}</p>
         </div>
         
@@ -263,7 +263,7 @@
           [formGroupName]="i" 
           class="document-form">
           
-          <nz-card [nzTitle]="'مستند ' + (i + 1)" nzSize="small">
+          <nz-card [nzTitle]="('agent.labels.document' | translate) + ' ' + (i + 1)" nzSize="small">
             <div class="form-row">
               <div class="form-group">
                 <label [for]="'fileName_' + i">{{ 'agent.documentModal.fileName' | translate }}:</label>
@@ -272,7 +272,7 @@
                   [name]="'fileName_' + i"
                   formControlName="name" 
                   readonly
-                  aria-label="اسم الملف / File Name">
+                  [attr.aria-label]="'agent.documentModal.fileName' | translate">
               </div>
             </div>
             
@@ -283,7 +283,7 @@
                   [id]="'country_' + i"
                   formControlName="country" 
                   (ngModelChange)="onCountryChange($event, i)"
-                  aria-label="البلد / Country">
+                  [attr.aria-label]="'agent.documentModal.country' | translate">
                   <nz-option 
                     *ngFor="let country of countriesList" 
                     [nzValue]="country" 
@@ -297,7 +297,7 @@
                 <nz-select 
                   [id]="'documentType_' + i"
                   formControlName="type"
-                  aria-label="نوع المستند / Document Type">
+                  [attr.aria-label]="'agent.documentModal.documentType' | translate">
                   <nz-option 
                     *ngFor="let type of getDocumentTypesByCountry(docGroup.get('country')?.value || '')" 
                     [nzValue]="type" 
@@ -315,7 +315,7 @@
                   [name]="'description_' + i"
                   formControlName="description" 
                   rows="2"
-                  aria-label="الوصف / Description"></textarea>
+                  [attr.aria-label]="'agent.documentModal.description' | translate"></textarea>
               </div>
             </div>
           </nz-card>
@@ -338,7 +338,7 @@
 <!-- Contact Form Modal -->
 <nz-modal 
   [(nzVisible)]="showContactForm" 
-  nzTitle="إضافة جهة اتصال / Add Contact"
+  [nzTitle]="contactModalTitle"
   (nzOnCancel)="closeContactForm()"
   [nzFooter]="null"
   nzWidth="600px">
@@ -348,36 +348,36 @@
     <div class="contact-form-content">
       <div class="form-row">
         <div class="form-group">
-          <label>الاسم / Name: *</label>
-          <input formControlName="name" placeholder="أدخل الاسم الكامل">
+          <label>{{ 'agent.contactForm.name' | translate }}: *</label>
+          <input formControlName="name" [placeholder]="'agent.contactForm.namePlaceholder' | translate">
         </div>
         <div class="form-group">
-          <label>المسمى الوظيفي / Job Title: *</label>
-          <input formControlName="jobTitle" placeholder="أدخل المسمى الوظيفي">
+          <label>{{ 'agent.contactForm.jobTitle' | translate }}: *</label>
+          <input formControlName="jobTitle" [placeholder]="'agent.contactForm.jobTitlePlaceholder' | translate">
         </div>
       </div>
       
       <div class="form-row">
         <div class="form-group">
-          <label>البريد الإلكتروني / Email: *</label>
+          <label>{{ 'agent.contactForm.email' | translate }}: *</label>
           <input formControlName="email" type="email" placeholder="example@company.com">
         </div>
         <div class="form-group">
-          <label>الجوال / Mobile: *</label>
+          <label>{{ 'agent.contactForm.mobile' | translate }}: *</label>
           <input formControlName="mobile" placeholder="+966501234567">
         </div>
       </div>
       
       <div class="form-row">
         <div class="form-group">
-          <label>الهاتف الأرضي / Landline:</label>
+          <label>{{ 'agent.contactForm.landline' | translate }}:</label>
           <input formControlName="landline" placeholder="+966112345678">
         </div>
         <div class="form-group">
-          <label>اللغة المفضلة / Preferred Language:</label>
+          <label>{{ 'agent.contactForm.preferredLanguage' | translate }}:</label>
           <nz-select formControlName="preferredLanguage">
-            <nz-option nzValue="Arabic" nzLabel="العربية"></nz-option>
-            <nz-option nzValue="English" nzLabel="English"></nz-option>
+            <nz-option nzValue="Arabic" [nzLabel]="'Arabic' | translate"></nz-option>
+            <nz-option nzValue="English" [nzLabel]="'English' | translate"></nz-option>
           </nz-select>
         </div>
       </div>
@@ -386,10 +386,10 @@
     <!-- ✅ Footer buttons -->
   <div class="modal-footer">
     <button nz-button nzType="default" (click)="closeContactForm()">
-      إلغاء / Cancel
+      {{ 'Cancel' | translate }}
     </button>
     <button nz-button nzType="primary" (click)="saveContactForm()" [disabled]="!contactForm.valid">
-      حفظ / Save
+      {{ 'Save' | translate }}
     </button>
     </div>
   </form>
@@ -508,21 +508,21 @@
             <h5>{{ 'agent.missingForm.companyInfo' | translate }}</h5>
             <div class="form-row">
               <div class="form-group" *ngIf="currentMissingFields.includes('firstName')">
-                <label>اسم الشركة (إنجليزي) / Company Name (English): <span class="required">*</span></label>
+                <label>{{ 'agent.fieldLabels.firstName' | translate }}: <span class="required">*</span></label>
                 <input formControlName="firstName" placeholder="Company Name">
               </div>
               <div class="form-group" *ngIf="currentMissingFields.includes('firstNameAR')">
-                <label>اسم الشركة (عربي) / Company Name (Arabic): <span class="required">*</span></label>
+                <label>{{ 'agent.fieldLabels.firstNameAR' | translate }}: <span class="required">*</span></label>
                 <input formControlName="firstNameAR" placeholder="اسم الشركة">
               </div>
             </div>
             <div class="form-row">
               <div class="form-group" *ngIf="currentMissingFields.includes('tax')">
-                <label>الرقم الضريبي / Tax Number: <span class="required">*</span></label>
+                <label>{{ 'agent.fieldLabels.tax' | translate }}: <span class="required">*</span></label>
                 <input formControlName="tax" placeholder="Tax Number">
               </div>
               <div class="form-group" *ngIf="currentMissingFields.includes('CustomerType')">
-                <label>نوع العميل / Customer Type: <span class="required">*</span></label>
+                <label>{{ 'agent.fieldLabels.CustomerType' | translate }}: <span class="required">*</span></label>
                 <nz-select formControlName="CustomerType">
                   <nz-option nzValue="Corporate" nzLabel="Corporate"></nz-option>
                   <nz-option nzValue="SME" nzLabel="SME"></nz-option>
@@ -532,7 +532,7 @@
             </div>
             <div class="form-row">
               <div class="form-group" *ngIf="currentMissingFields.includes('ownerName')">
-                <label>اسم المالك / Owner Name:</label>
+                <label>{{ 'agent.fieldLabels.ownerName' | translate }}:</label>
                 <input formControlName="ownerName" placeholder="Owner Name">
               </div>
             </div>
@@ -543,17 +543,17 @@
             <h5>{{ 'agent.missingForm.addressInfo' | translate }}</h5>
             <div class="form-row">
               <div class="form-group" *ngIf="currentMissingFields.includes('buildingNumber')">
-                <label>رقم المبنى / Building Number:</label>
+                <label>{{ 'agent.fieldLabels.buildingNumber' | translate }}:</label>
                 <input formControlName="buildingNumber" placeholder="Building Number">
               </div>
               <div class="form-group" *ngIf="currentMissingFields.includes('street')">
-                <label>الشارع / Street:</label>
+                <label>{{ 'agent.fieldLabels.street' | translate }}:</label>
                 <input formControlName="street" placeholder="Street Address">
               </div>
             </div>
             <div class="form-row">
               <div class="form-group" *ngIf="currentMissingFields.includes('country')">
-                <label>الدولة / Country: <span class="required">*</span></label>
+                <label>{{ 'agent.fieldLabels.country' | translate }}: <span class="required">*</span></label>
                 <nz-select formControlName="country">
                   <nz-option nzValue="Egypt" nzLabel="Egypt"></nz-option>
                   <nz-option nzValue="Saudi Arabia" nzLabel="Saudi Arabia"></nz-option>
@@ -562,7 +562,7 @@
                 </nz-select>
               </div>
               <div class="form-group" *ngIf="currentMissingFields.includes('city')">
-                <label>المدينة / City:</label>
+                <label>{{ 'agent.fieldLabels.city' | translate }}:</label>
                 <input formControlName="city" placeholder="City">
               </div>
             </div>
@@ -573,7 +573,7 @@
             <h5>{{ 'agent.missingForm.salesInfo' | translate }}</h5>
             <div class="form-row">
               <div class="form-group" *ngIf="currentMissingFields.includes('salesOrganization')">
-                <label>منظمة المبيعات / Sales Organization: <span class="required">*</span></label>
+                <label>{{ 'agent.fieldLabels.salesOrganization' | translate }}: <span class="required">*</span></label>
                 <nz-select formControlName="salesOrganization">
                   <nz-option nzValue="egypt_cairo_office" nzLabel="Egypt - Cairo Head Office"></nz-option>
                   <nz-option nzValue="egypt_alexandria_branch" nzLabel="Egypt - Alexandria Branch"></nz-option>
@@ -583,7 +583,7 @@
                 </nz-select>
               </div>
               <div class="form-group" *ngIf="currentMissingFields.includes('distributionChannel')">
-                <label>قناة التوزيع / Distribution Channel: <span class="required">*</span></label>
+                <label>{{ 'agent.fieldLabels.distributionChannel' | translate }}: <span class="required">*</span></label>
                 <nz-select formControlName="distributionChannel">
                   <nz-option nzValue="direct_sales" nzLabel="Direct Sales"></nz-option>
                   <nz-option nzValue="authorized_distributors" nzLabel="Authorized Distributors"></nz-option>
@@ -593,7 +593,7 @@
             </div>
             <div class="form-row">
               <div class="form-group" *ngIf="currentMissingFields.includes('division')">
-                <label>القسم / Division: <span class="required">*</span></label>
+                <label>{{ 'agent.fieldLabels.division' | translate }}: <span class="required">*</span></label>
                 <nz-select formControlName="division">
                   <nz-option nzValue="food_products" nzLabel="Food Products Division"></nz-option>
                   <nz-option nzValue="beverages" nzLabel="Beverages Division"></nz-option>
@@ -606,8 +606,8 @@
 
         <!-- ✅ COMPLETED FIELDS - Reference Section -->
         <div class="form-section completed-fields-section" *ngIf="getCompletedFields().length > 0">
-          <h4>✅ البيانات المكتملة / Completed Fields</h4>
-          <p class="section-description">البيانات التالية تم استخراجها من المستندات (للمرجع فقط) / The following data was extracted from documents (for reference only):</p>
+          <h4>✅ {{ 'agent.sections.completedFields' | translate }}</h4>
+          <p class="section-description">{{ 'agent.messages.completedFieldsDescription' | translate }}</p>
           
           <div class="completed-fields-grid">
             <div class="completed-field" *ngFor="let field of getCompletedFields()">
@@ -633,7 +633,7 @@
 <!-- Unified Review & Complete Modal -->
 <nz-modal 
   [(nzVisible)]="showUnifiedModal" 
-  (nzOnCancel)="showUnifiedModal = false"
+  (nzOnCancel)="onUnifiedModalClose()"
   [nzFooter]="null"
   nzWidth="1000px"
   [nzMaskClosable]="false"
@@ -641,19 +641,37 @@
   [nzBodyStyle]="{'padding': '0'}">
   
   <div *nzModalContent>
-    <form *ngIf="unifiedModalForm" [formGroup]="unifiedModalForm">
+    
+    <!-- Progress Bar Section -->
+    <div *ngIf="showProgressBar" class="progress-section">
+      <div class="progress-container">
+        <div class="progress-header">
+          <h3>{{ 'agent.progress.processingDocuments' | translate }}</h3>
+          <p class="progress-status">{{ progressStatus }}</p>
+        </div>
+        <nz-progress 
+          [nzPercent]="progressValue" 
+          [nzStatus]="progressValue === 100 ? 'success' : 'active'"
+          [nzShowInfo]="true"
+          [nzStrokeWidth]="8">
+        </nz-progress>
+      </div>
+    </div>
+    
+    <!-- Main Form Content -->
+    <form *ngIf="unifiedModalForm && !showProgressBar" [formGroup]="unifiedModalForm">
       
       <!-- Section 1: Extracted Data -->
       <div class="modal-section extracted-section" *ngIf="unifiedModalData.extractedFields.length > 0">
         <div class="section-header">
-          <h3>✅ البيانات المستخرجة / Extracted Data</h3>
+          <h3>✅ {{ 'agent.sections.extractedData' | translate }}</h3>
           <button type="button" 
                   nz-button 
                   [nzType]="extractedDataReadOnly ? 'default' : 'primary'"
                   nzSize="small"
                   (click)="toggleExtractedDataEdit(extractedDataReadOnly)">
             <span nz-icon [nzType]="extractedDataReadOnly ? 'edit' : 'save'"></span>
-            {{ extractedDataReadOnly ? 'تعديل / Edit' : 'حفظ التعديلات / Save Changes' }}
+            {{ extractedDataReadOnly ? ('Edit' | translate) : ('agent.buttons.saveChanges' | translate) }}
           </button>
         </div>
         
@@ -771,8 +789,8 @@
       <!-- Section 2: Missing Data -->
       <div class="modal-section missing-section" *ngIf="unifiedModalData.missingFields.length > 0">
         <div class="section-header">
-          <h3>❌ البيانات الناقصة / Missing Data</h3>
-          <span class="missing-count">{{ unifiedModalData.missingFields.length }} حقول / fields</span>
+          <h3>❌ {{ 'agent.sections.missingData' | translate }}</h3>
+          <span class="missing-count">{{ unifiedModalData.missingFields.length }} {{ 'agent.labels.fields' | translate }}</span>
         </div>
         
         <div class="form-grid">
@@ -889,7 +907,7 @@
       <!-- Section 3: Contacts (Table Design) -->
       <div class="modal-section contacts-section">
         <div class="section-header">
-          <h3>👥 جهات الاتصال (اختياري) / Contacts (Optional) 
+          <h3>👥 {{ 'agent.sections.contacts' | translate }} 
             <span class="contact-count-badge" *ngIf="getValidContactsCount() > 0">{{ getValidContactsCount() }}</span>
           </h3>
           <button type="button" 
@@ -898,7 +916,7 @@
                   nzSize="small" 
                   (click)="openAddContactModal()">
             <span nz-icon nzType="plus"></span> 
-            إضافة جهة اتصال / Add Contact
+            {{ 'agent.buttons.addContact' | translate }}
           </button>
         </div>
         
@@ -971,8 +989,7 @@
             [nzNotFoundContent]="emptyContactsTemplate">
           </nz-empty>
           <ng-template #emptyContactsTemplate>
-            <p class="empty-text">لم يتم إضافة جهات اتصال بعد</p>
-            <p class="empty-hint">No contacts added yet - They are optional</p>
+            <p class="empty-text">{{ 'agent.messages.noContactsAdded' | translate }}</p>
           </ng-template>
         </div>
       </div>
@@ -982,14 +999,14 @@
     <!-- Documents Section -->
     <div class="unified-section documents-section">
       <div class="section-header">
-        <h4>📎 المستندات المرفقة / Attached Documents ({{ getDocumentsCount() }})</h4>
+        <h4>📎 {{ 'agent.sections.attachedDocuments' | translate }} ({{ getDocumentsCount() }})</h4>
         <button type="button" 
                 nz-button 
                 nzType="primary"
                 nzSize="small"
                 (click)="triggerAddDocument()">
           <span nz-icon nzType="plus"></span>
-          إضافة مستند / Add Document
+          {{ 'agent.buttons.addDocument' | translate }}
         </button>
       </div>
       
@@ -1116,14 +1133,14 @@
       
       <div class="footer-actions">
         <button nz-button nzType="default" (click)="showUnifiedModal = false">
-          إلغاء / Cancel
+          {{ 'Cancel' | translate }}
         </button>
         <button nz-button 
                 nzType="primary" 
                 (click)="saveUnifiedModal()"
                 [disabled]="unifiedModalForm.invalid || unifiedContactsArray.length === 0">
           <span nz-icon nzType="save"></span>
-          حفظ وإرسال / Save & Submit
+          {{ 'agent.buttons.saveAndSubmit' | translate }}
         </button>
       </div>
     </div>
@@ -1135,7 +1152,7 @@
 <!-- Document Preview Modal (from new-request.component.html) -->
 <nz-modal
   [(nzVisible)]="showDocumentPreviewModal"
-  [nzTitle]="'معاينة المستند / Document Preview'"
+  [nzTitle]="'agent.titles.documentPreview' | translate"
   (nzOnCancel)="closeDocumentPreview()"
   [nzFooter]="previewFooterTemplate"
   nzWidth="900px"
@@ -1177,11 +1194,11 @@
     <div class="preview-footer">
       <button nz-button nzType="default" (click)="closeDocumentPreview()">
         <span nz-icon nzType="close"></span>
-        إغلاق / Close
+        {{ 'Close' | translate }}
       </button>
       <button nz-button nzType="primary" (click)="downloadDocument(currentPreviewDocument)">
         <span nz-icon nzType="download"></span>
-        تحميل / Download
+        {{ 'Download' | translate }}
       </button>
     </div>
   </ng-template>
@@ -1203,7 +1220,7 @@
         <div class="modal-form-group">
           <label class="required">
             <span nz-icon nzType="user"></span>
-            الاسم / Name
+            {{ 'agent.contactLabels.name' | translate }}
           </label>
           <input nz-input 
                  formControlName="name" 
@@ -1212,7 +1229,7 @@
         <div class="modal-form-group">
           <label class="required">
             <span nz-icon nzType="idcard"></span>
-            المسمى الوظيفي / Job Title
+            {{ 'agent.contactLabels.jobTitle' | translate }}
           </label>
           <input nz-input 
                  formControlName="jobTitle" 
@@ -1225,7 +1242,7 @@
         <div class="modal-form-group">
           <label class="required">
             <span nz-icon nzType="mail"></span>
-            البريد الإلكتروني / Email
+            {{ 'agent.contactLabels.email' | translate }}
           </label>
           <input nz-input 
                  type="email"
@@ -1235,7 +1252,7 @@
         <div class="modal-form-group">
           <label class="required">
             <span nz-icon nzType="phone"></span>
-            الجوال / Mobile
+            {{ 'agent.contactLabels.mobile' | translate }}
           </label>
           <input nz-input 
                  formControlName="mobile" 
@@ -1248,7 +1265,7 @@
         <div class="modal-form-group">
           <label>
             <span nz-icon nzType="phone"></span>
-            الهاتف الأرضي / Landline
+            {{ 'agent.contactLabels.landline' | translate }}
             <span class="optional-badge">Optional</span>
           </label>
           <input nz-input 
@@ -1258,12 +1275,12 @@
         <div class="modal-form-group">
           <label class="required">
             <span nz-icon nzType="global"></span>
-            اللغة المفضلة / Language
+            {{ 'agent.contactLabels.language' | translate }}
           </label>
           <nz-select formControlName="preferredLanguage" 
                      nzPlaceHolder="Select language">
-            <nz-option nzValue="Arabic" nzLabel="العربية / Arabic"></nz-option>
-            <nz-option nzValue="English" nzLabel="English / الإنجليزية"></nz-option>
+            <nz-option nzValue="Arabic" [nzLabel]="'Arabic' | translate"></nz-option>
+            <nz-option nzValue="English" [nzLabel]="'English' | translate"></nz-option>
           </nz-select>
         </div>
       </div>
@@ -1275,16 +1292,103 @@
     <div class="contact-modal-footer">
       <button nz-button nzType="default" (click)="closeContactModal()">
         <span nz-icon nzType="close"></span>
-        إلغاء / Cancel
+        {{ 'Cancel' | translate }}
       </button>
       <button nz-button 
               nzType="primary" 
               (click)="saveContactFromModal()"
               [disabled]="contactModalForm.invalid">
         <span nz-icon nzType="check"></span>
-        {{ isEditingContact ? 'تحديث / Update' : 'إضافة / Add' }}
+        {{ isEditingContact ? ('Update' | translate) : ('Add' | translate) }}
       </button>
     </div>
   </ng-template>
+</nz-modal>
+
+<!-- Document Upload Modal - New Design -->
+<nz-modal 
+  [(nzVisible)]="showDocumentModal" 
+  nzTitle="📄 {{ 'agent.documentModal.title' | translate }}"
+  (nzOnCancel)="closeDocumentModal()"
+  [nzFooter]="null"
+  nzWidth="800px">
+  
+  <div class="document-modal-content">
+    <!-- Step Indicator -->
+    <div class="step-indicator">
+      <div class="step active">
+        <span class="step-number">📄</span>
+        <span class="step-title">{{ 'agent.steps.review' | translate }}</span>
+      </div>
+    </div>
+
+    <!-- Review & Metadata -->
+    <div class="review-step">
+      <form [formGroup]="documentMetadataForm">
+        <div formArrayName="documents">
+          <div 
+            *ngFor="let docGroup of documentsFA.controls; let i = index" 
+            [formGroupName]="i" 
+            class="document-form">
+            
+            <nz-card [nzTitle]="('agent.documentModal.document' | translate) + ' ' + (i + 1)" nzSize="small">
+              <div class="form-row">
+                <div class="form-group">
+                  <label>{{ 'agent.documentModal.fileName' | translate }}:</label>
+                  <input formControlName="name" readonly>
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label>{{ 'agent.documentModal.country' | translate }}:</label>
+                  <nz-select formControlName="country">
+                    <nz-option 
+                      *ngFor="let country of countriesList" 
+                      [nzValue]="country" 
+                      [nzLabel]="country">
+                    </nz-option>
+                  </nz-select>
+                </div>
+                
+                <div class="form-group">
+                  <label>{{ 'agent.documentModal.type' | translate }}:</label>
+                  <nz-select formControlName="type">
+                    <nz-option 
+                      *ngFor="let type of allDocumentTypes" 
+                      [nzValue]="type" 
+                      [nzLabel]="type">
+                    </nz-option>
+                  </nz-select>
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group full-width">
+                  <label>{{ 'agent.documentModal.description' | translate }}:</label>
+                  <textarea formControlName="description" rows="2"></textarea>
+                </div>
+              </div>
+            </nz-card>
+          </div>
+        </div>
+      </form>
+    </div>
+  </div>
+  
+  <!-- Footer Buttons -->
+  <div class="modal-footer">
+    <button nz-button nzType="default" (click)="closeDocumentModal()">
+      {{ 'agent.buttons.cancel' | translate }}
+    </button>
+    
+    <button 
+      nz-button 
+      nzType="primary" 
+      (click)="saveDocuments()" 
+      [disabled]="!documentMetadataForm.valid">
+      {{ 'agent.buttons.saveAndSubmit' | translate }}
+    </button>
+  </div>
 </nz-modal>
 

@@ -794,6 +794,37 @@
   }
 }
 
+// Progress Bar Styles
+.progress-section {
+  padding: 2rem;
+  background: linear-gradient(135deg, #f8fafc 0%, #e2e8f0 100%);
+  border-radius: 12px;
+  margin: 1rem;
+  text-align: center;
+  
+  .progress-container {
+    max-width: 500px;
+    margin: 0 auto;
+    
+    .progress-header {
+      margin-bottom: 1.5rem;
+      
+      h3 {
+        color: #2d3748;
+        font-size: 1.25rem;
+        font-weight: 600;
+        margin-bottom: 0.5rem;
+      }
+      
+      .progress-status {
+        color: #718096;
+        font-size: 0.95rem;
+        margin: 0;
+      }
+    }
+  }
+}
+
 // Document Modal Styles
 .document-modal-content {
   .document-form {
@@ -2851,5 +2882,213 @@
   
   .contacts-cards-display {
     grid-template-columns: 1fr !important;
+  }
+}
+
+
+// Metadata extraction progress styles
+.metadata-extraction-progress {
+  padding: 2rem;
+  text-align: center;
+  
+  .progress-header {
+    margin-bottom: 1.5rem;
+    
+    h4 {
+      color: #1890ff;
+      margin-bottom: 0.5rem;
+      font-weight: 600;
+    }
+    
+    .progress-status {
+      color: #666;
+      font-size: 0.9rem;
+      margin: 0;
+    }
+  }
+  
+  nz-progress {
+    margin-top: 1rem;
+  }
+}
+
+// New Document Modal Design
+.document-modal-content {
+  padding: 20px;
+}
+
+.step-indicator {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 30px;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 8px;
+
+  .step {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    padding: 10px 20px;
+    border-radius: 8px;
+    transition: all 0.3s ease;
+
+    &.active {
+      background: #1890ff;
+      color: white;
+      transform: scale(1.05);
+    }
+
+    &.completed {
+      background: #52c41a;
+      color: white;
+    }
+
+    .step-number {
+      width: 30px;
+      height: 30px;
+      border-radius: 50%;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: bold;
+      margin-bottom: 5px;
+      background: rgba(255, 255, 255, 0.2);
+    }
+
+    .step-title {
+      font-size: 0.9rem;
+      font-weight: 500;
+    }
+  }
+
+  .step-arrow {
+    margin: 0 20px;
+    font-size: 1.5rem;
+    color: #666;
+  }
+}
+
+.upload-step {
+  text-align: center;
+
+  .upload-area {
+    border: 2px dashed #d9d9d9;
+    border-radius: 8px;
+    padding: 40px 20px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    background: #fafafa;
+
+    &:hover {
+      border-color: #1890ff;
+      background: #f0f8ff;
+    }
+
+    .upload-icon {
+      font-size: 3rem;
+      margin-bottom: 15px;
+    }
+
+    h3 {
+      margin: 0 0 10px 0;
+      color: #333;
+      font-size: 1.2rem;
+    }
+
+    p {
+      margin: 0;
+      color: #666;
+      font-size: 0.9rem;
+    }
+  }
+
+  .file-list {
+    margin-top: 30px;
+    text-align: left;
+
+    h4 {
+      margin-bottom: 15px;
+      color: #333;
+      font-size: 1.1rem;
+    }
+
+    .file-item {
+      display: flex;
+      align-items: center;
+      padding: 10px 15px;
+      background: #f8f9fa;
+      border-radius: 6px;
+      margin-bottom: 8px;
+      border: 1px solid #e9ecef;
+
+      .file-icon {
+        margin-right: 10px;
+        font-size: 1.2rem;
+      }
+
+      .file-name {
+        flex: 1;
+        font-size: 0.9rem;
+        color: #333;
+      }
+
+      button {
+        color: #ff4d4f;
+        
+        &:hover {
+          background: #fff2f0;
+        }
+      }
+    }
+  }
+}
+
+.review-step {
+  .document-form {
+    margin-bottom: 20px;
+  }
+
+  .form-row {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 15px;
+
+    .form-group {
+      flex: 1;
+
+      &.full-width {
+        flex: 100%;
+      }
+
+      label {
+        display: block;
+        margin-bottom: 5px;
+        font-weight: 500;
+        color: #333;
+      }
+
+      input, textarea, nz-select {
+        width: 100%;
+      }
+    }
+  }
+}
+
+.modal-footer {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 20px;
+  border-top: 1px solid #e9ecef;
+  background: #fafafa;
+
+  button {
+    margin-left: 10px;
+
+    &:first-child {
+      margin-left: 0;
+    }
   }
 }

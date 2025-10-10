@@ -114,12 +114,12 @@ export class DocumentImageGeneratorService {
     ctx.fillText(data?.customerType || data?.CustomerType || 'Private Company', 250, y);
     
     y += 30;
-    ctx.fillText('Tax Number:', 70, y);
-    ctx.fillText(data?.tax || this.generateTaxNumber(country), 250, y);
+    ctx.fillText('Company Owner:', 70, y);
+    ctx.fillText(data?.ownerName || data?.CompanyOwner || 'N/A', 250, y);
     
     y += 30;
-    ctx.fillText('Company Owner:', 70, y);
-    ctx.fillText(data?.ownerName || 'N/A', 250, y);
+    ctx.fillText('Tax Number:', 70, y);
+    ctx.fillText(data?.tax || this.generateTaxNumber(country), 250, y);
     
     y += 30;
     ctx.fillText('Address:', 70, y);
@@ -263,6 +263,9 @@ export class DocumentImageGeneratorService {
     y += 50;
     ctx.font = '16px Arial';
     ctx.textAlign = 'left';
+    ctx.fillText(`Company Owner: ${data?.ownerName || data?.CompanyOwner || 'N/A'}`, 50, y);
+    
+    y += 30;
     ctx.fillText(`Country: ${country}`, 50, y);
     
     y += 30;

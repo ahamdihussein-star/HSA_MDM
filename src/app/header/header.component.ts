@@ -20,7 +20,7 @@ export class HeaderComponent implements OnInit, OnDestroy, AfterViewInit {
   userAvatarUrl: string | null = null;
   currentUser: any = null;
   private subscriptions: Subscription[] = [];
-  private apiBase = 'http://localhost:3001/api';
+  private apiBase = 'http://localhost:3000/api';
 
   constructor(
     private translate: TranslateService, 
@@ -157,7 +157,7 @@ export class HeaderComponent implements OnInit, OnDestroy, AfterViewInit {
         
         // Ensure absolute URL for avatar
         if (this.currentUser?.avatarUrl && !this.currentUser.avatarUrl.startsWith('http')) {
-          this.currentUser.avatarUrl = `http://localhost:3001${this.currentUser.avatarUrl}`;
+          this.currentUser.avatarUrl = `http://localhost:3000${this.currentUser.avatarUrl}`;
         }
         
         // Set userAvatarUrl for backward compatibility

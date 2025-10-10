@@ -51,7 +51,7 @@ export class BusinessDashboardComponent implements OnInit, AfterViewInit, OnDest
   @ViewChild('statusChart') statusChartRef!: ElementRef<HTMLCanvasElement>;
   @ViewChild('trendChart') trendChartRef!: ElementRef<HTMLCanvasElement>;
 
-  private apiBase = environment.apiBaseUrl || 'http://localhost:3001/api';
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
   private charts: { [key: string]: Chart } = {};
   
   // Language

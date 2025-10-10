@@ -136,7 +136,11 @@ export class RealisticDocumentGeneratorService {
     
     y += 8;
     pdf.text(`Legal Status:`, 25, y);
-      pdf.text(data?.customerType || data?.CustomerType || 'Limited Liability Company', 90, y);
+    pdf.text(data?.customerType || data?.CustomerType || 'Limited Liability Company', 90, y);
+    
+    y += 8;
+    pdf.text(`Company Owner:`, 25, y);
+    pdf.text(data?.ownerName || data?.CompanyOwner || 'N/A', 90, y);
     
     y += 8;
     pdf.text(`Address:`, 25, y);
@@ -248,6 +252,7 @@ export class RealisticDocumentGeneratorService {
     pdf.setFont('helvetica', 'normal');
     const details = [
       ['Tax Registration Number:', taxNumber],
+      ['Company Owner:', data?.ownerName || data?.CompanyOwner || 'N/A'],
       ['Registration Date:', issueDate],
       ['Tax Type:', 'Corporate Income Tax'],
       ['Status:', 'Active'],
@@ -334,6 +339,7 @@ export class RealisticDocumentGeneratorService {
     
     y += 10;
     const info = [
+      ['Company Owner:', data?.ownerName || data?.CompanyOwner || 'N/A'],
       ['Effective Date:', issueDate],
       ['Tax Period:', 'Monthly'],
       ['Business Activity:', 'Commercial Trade'],

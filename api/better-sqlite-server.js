@@ -5,7 +5,7 @@ const Database = require('better-sqlite3');
 const path = require('path');
 
 const app = express();
-const PORT = 3001;
+const PORT = 3000;
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
 // Enhanced Middlewares with better limits
@@ -708,6 +708,69 @@ function insertSampleData() {
     
     console.log('Sample data inserted');
   }
+
+  // ✅ Session Staging Tables
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS session_staging (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      company_name TEXT NOT NULL,
+      
+      -- Company Basic Info
+      first_name TEXT,
+      first_name_ar TEXT,
+      tax_number TEXT,
+      customer_type TEXT,
+      company_owner TEXT,
+      
+      -- Address Info
+      building_number TEXT,
+      street TEXT,
+      country TEXT,
+      city TEXT,
+      
+      -- Sales Info
+      sales_org TEXT,
+      distribution_channel TEXT,
+      division TEXT,
+      
+      -- Additional Info
+      registration_number TEXT,
+      legal_form TEXT,
+      
+      -- Timestamps
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      
+      UNIQUE(session_id, company_id)
+    );
+
+    CREATE TABLE IF NOT EXISTS session_documents (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      document_name TEXT NOT NULL,
+      document_content TEXT NOT NULL,
+      document_type TEXT NOT NULL,
+      document_size INTEGER NOT NULL,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      
+      UNIQUE(session_id, company_id, document_name)
+    );
+
+    CREATE TABLE IF NOT EXISTS session_contacts (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      session_id TEXT NOT NULL,
+      company_id TEXT NOT NULL,
+      contact_name TEXT NOT NULL,
+      contact_email TEXT,
+      contact_phone TEXT,
+      contact_position TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+  `);
+  console.log('Session staging tables ready');
 }
 
 // Initialize database
@@ -1109,6 +1172,177 @@ app.post('/api/login', (req, res) => {
   } catch (err) {
     console.error(err);
     res.status(500).json({ error: err.message });
+  }
+});
+
+// ✅ Session Staging API Endpoints
+
+// Save company data and documents
+app.post('/api/session/save-company', (req, res) => {
+  const { 
+    sessionId, companyId, companyName,
+    firstName, firstNameAr, taxNumber, customerType, companyOwner,
+    buildingNumber, street, country, city,
+    salesOrg, distributionChannel, division,
+    registrationNumber, legalForm,
+    documents, contacts
+  } = req.body;
+  
+  try {
+    console.log('🏛️ [SESSION] Saving company data:', {
+      sessionId,
+      companyId,
+      companyName,
+      documentsCount: documents?.length || 0,
+      contactsCount: contacts?.length || 0
+    });
+    
+    // Save company data (upsert) - ✅ better-sqlite3 synchronous method
+    const stmt = db.prepare(`
+      INSERT OR REPLACE INTO session_staging 
+      (session_id, company_id, company_name, first_name, first_name_ar, 
+       tax_number, customer_type, company_owner, building_number, street, 
+       country, city, sales_org, distribution_channel, division, 
+       registration_number, legal_form, updated_at)
+      VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, CURRENT_TIMESTAMP)
+    `);
+    
+    stmt.run(sessionId, companyId, companyName, firstName, firstNameAr, 
+        taxNumber, customerType, companyOwner, buildingNumber, street, 
+        country, city, salesOrg, distributionChannel, division,
+        registrationNumber, legalForm);
+    
+    console.log('✅ [SESSION] Company data saved to session_staging');
+    
+    // Save documents (prevent duplicates)
+    if (documents && documents.length > 0) {
+      // Get existing document names for this company
+      const existingDocs = db.prepare(`
+        SELECT document_name FROM session_documents 
+        WHERE session_id = ? AND company_id = ?
+      `).all(sessionId, companyId);
+      
+      const existingNames = existingDocs.map(d => d.document_name);
+      console.log('📄 [SESSION] Existing documents:', existingNames);
+      
+      const docStmt = db.prepare(`
+        INSERT INTO session_documents 
+        (session_id, company_id, document_name, document_content, document_type, document_size)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+      
+      for (const doc of documents) {
+        // Skip if document already exists
+        if (existingNames.includes(doc.name)) {
+          console.log('⏭️ [SESSION] Skipping duplicate document:', doc.name);
+          continue;
+        }
+        
+        docStmt.run(sessionId, companyId, doc.name, doc.content, doc.type, doc.size);
+        console.log('✅ [SESSION] Document saved:', doc.name);
+      }
+    }
+    
+    // Save contacts
+    if (contacts && contacts.length > 0) {
+      // Clear existing contacts for this company
+      const deleteStmt = db.prepare(`DELETE FROM session_contacts WHERE session_id = ? AND company_id = ?`);
+      deleteStmt.run(sessionId, companyId);
+      
+      const contactStmt = db.prepare(`
+        INSERT INTO session_contacts 
+        (session_id, company_id, contact_name, contact_email, contact_phone, contact_position)
+        VALUES (?, ?, ?, ?, ?, ?)
+      `);
+      
+      for (const contact of contacts) {
+        contactStmt.run(sessionId, companyId, contact.name, contact.email, contact.phone, contact.position);
+      }
+      
+      console.log('✅ [SESSION] Contacts saved:', contacts.length);
+    }
+    
+    console.log('✅ [SESSION] All data saved successfully');
+    res.json({ success: true });
+  } catch (error) {
+    console.error('❌ [SESSION] Error saving company data:', error);
+    console.error('❌ [SESSION] Error details:', error.message);
+    console.error('❌ [SESSION] Request body:', req.body);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get all companies for session
+app.get('/api/session/companies/:sessionId', (req, res) => {
+  try {
+    const companies = db.prepare(`
+      SELECT 
+        company_id, company_name, first_name, tax_number, country,
+        COUNT(d.id) as document_count,
+        created_at, updated_at
+      FROM session_staging s
+      LEFT JOIN session_documents d ON s.session_id = d.session_id AND s.company_id = d.company_id
+      WHERE s.session_id = ?
+      GROUP BY s.company_id
+      ORDER BY updated_at DESC
+    `).all(req.params.sessionId);
+    
+    res.json(companies);
+  } catch (error) {
+    console.error('Error getting companies:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Get company data and documents
+app.get('/api/session/company/:sessionId/:companyId', (req, res) => {
+  try {
+    // Get company data
+    const company = db.prepare(`
+      SELECT * FROM session_staging 
+      WHERE session_id = ? AND company_id = ?
+    `).get(req.params.sessionId, req.params.companyId);
+    
+    if (!company) {
+      return res.status(404).json({ error: 'Company not found' });
+    }
+    
+    // Get documents
+    const documents = db.prepare(`
+      SELECT document_name, document_content, document_type, document_size, created_at
+      FROM session_documents 
+      WHERE session_id = ? AND company_id = ?
+    `).all(req.params.sessionId, req.params.companyId);
+    
+    // Get contacts
+    const contacts = db.prepare(`
+      SELECT contact_name, contact_email, contact_phone, contact_position
+      FROM session_contacts 
+      WHERE session_id = ? AND company_id = ?
+    `).all(req.params.sessionId, req.params.companyId);
+    
+    res.json({
+      ...company,
+      documents,
+      contacts
+    });
+  } catch (error) {
+    console.error('Error getting company data:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// Clear session data
+app.delete('/api/session/:sessionId', (req, res) => {
+  try {
+    db.prepare(`DELETE FROM session_staging WHERE session_id = ?`).run(req.params.sessionId);
+    db.prepare(`DELETE FROM session_documents WHERE session_id = ?`).run(req.params.sessionId);
+    db.prepare(`DELETE FROM session_contacts WHERE session_id = ?`).run(req.params.sessionId);
+    
+    res.json({ success: true });
+  } catch (error) {
+    console.error('Error clearing session:', error);
+    res.status(500).json({ error: error.message });
   }
 });
 
@@ -2503,9 +2737,7 @@ app.get('/api/duplicates/groups', (req, res) => {
         MIN(r.firstName) as firstName,
         COUNT(*) as recordCount
       FROM requests r
-      WHERE r.status IN ('Duplicate', 'New', 'Draft')
-        AND r.isMaster != 1
-        AND r.masterId IS NULL
+      WHERE r.status IN ('Duplicate', 'Linked')
         AND (r.isMerged IS NULL OR r.isMerged != 1)
       GROUP BY r.tax
       HAVING COUNT(*) > 1
@@ -3980,13 +4212,19 @@ app.delete('/api/requests/admin/clear-:dataType', (req, res) => {
 // Generate sample duplicate data
 // Generate sample duplicate data - شركات مختلفة تماماً عن الـ quarantine
 // Generate sample quarantine data - مع القيم الصحيحة من lookup-data
-// Generate sample quarantine data - شركات مختلفة تماماً مع القيم الصحيحة
+// Generate sample quarantine data - using shared demo companies
+const sharedDemoCompanies = require('./shared-demo-companies');
+
 // Generate sample quarantine data - حوالي سطر 2325
 app.post('/api/requests/admin/generate-quarantine', (req, res) => {
   try {
-    console.log('[ADMIN] POST /api/requests/admin/generate-quarantine');
+    console.log('[ADMIN] POST /api/requests/admin/generate-quarantine - Using Unified Demo Service');
     
-    // شركات حقيقية مواد غذائية ومطاعم وسوبر ماركت - مختلفة تماماً عن الـ duplicates
+    // Use shared demo company service
+    const quarantineRecords = sharedDemoCompanies.generateQuarantineData(40);
+    
+    // OLD CODE - مش محتاجينه دلوقتي
+    /*
     const realFoodCompanies = [
       { 
         name: 'Panda Retail Company', 
@@ -4062,112 +4300,70 @@ app.post('/api/requests/admin/generate-quarantine', (req, res) => {
       }
     ];
 
-    const companies = realFoodCompanies;
-    
-    const sourceSystems = ['Oracle Forms', 'SAP S/4HANA', 'SAP ByD'];
-    const preferredLanguages = ['Arabic', 'English', 'Both'];
-    
-    const salesOrgMapping = {
-      'Saudi Arabia': 'HSA Saudi Arabia 2000',
-      'United Arab Emirates': 'HSA UAE 3000',
-      'Yemen': 'HSA Yemen 4000',
-      'Kuwait': 'HSA Kuwait 5000',
-      'Oman': 'HSA Oman 6000'
-    };
-    
-    const distributionChannels = ['Modern Trade', 'Traditional Trade', 'HoReCa', 'B2B', 'Key Accounts'];
-    const divisions = ['Food Products', 'Beverages', 'Dairy and Cheese', 'Frozen Products', 'Snacks and Confectionery'];
+    */
     
     const transaction = db.transaction(() => {
       const insertStmt = db.prepare(`
         INSERT INTO requests (
           id, firstName, firstNameAr, tax, 
           CustomerType, CompanyOwner, country, city,
-          ContactName, EmailAddress, MobileNumber,
-          JobTitle, Landline,
           buildingNumber, street,
           SalesOrgOption, DistributionChannelOption, DivisionOption,
-          PrefferedLanguage,
           status, assignedTo, origin, sourceSystem,
           requestType, originalRequestType, 
           notes, createdBy, createdAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
       const createdIds = [];
-      const jobTitles = ['Sales Manager', 'Operations Manager', 'Finance Manager', 'Procurement Manager'];
       
-      companies.forEach((company, index) => {
+      quarantineRecords.forEach((company, index) => {
         const id = nanoid(8);
-        
-        // استخدم نفس التوقيت للـ record creation والـ workflow
-        const recordTimestamp = new Date().toISOString();
-        
-        const salesOrg = company.country && Math.random() > 0.4 ? salesOrgMapping[company.country] : null;
-        const hasContact = Math.random() > 0.4;
-        const hasAddress = Math.random() > 0.3;
-        const hasSalesInfo = Math.random() > 0.5;
+        const recordTimestamp = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString();
         
         insertStmt.run(
           id,
           company.name,
           company.nameAr,
-          company.tax,
+          company.taxNumber,
           company.customerType,
-          company.owner,
+          company.ownerName,
           company.country,
-          company.city,
-          hasContact ? `${company.name.split(' ')[0]} Contact` : null,
-          hasContact ? `info@${company.name.toLowerCase().replace(/\s+/g, '').substring(0, 10)}.com` : null,
-          hasContact ? `+966${Math.floor(500000000 + Math.random() * 100000000)}` : null,
-          hasContact ? jobTitles[index % jobTitles.length] : null,
-          hasContact && Math.random() > 0.5 ? `+9661${Math.floor(1000000 + Math.random() * 9000000)}` : null,
-          hasAddress ? Math.floor(100 + Math.random() * 900).toString() : null,
-          hasAddress ? 'Industrial Area' : null,
-          hasSalesInfo ? salesOrg : null,
-          hasSalesInfo && Math.random() > 0.3 ? distributionChannels[index % distributionChannels.length] : null,
-          hasSalesInfo && Math.random() > 0.3 ? divisions[index % divisions.length] : null,
-          hasContact ? preferredLanguages[index % 3] : null,
+          company.city || null,
+          company.buildingNumber || null,
+          company.street || null,
+          company.salesOrg || null,
+          company.distributionChannel || null,
+          company.division || null,
           'Quarantine',
           'data_entry',
           'quarantine',
-          sourceSystems[index % 3],
+          company.source,
           'quarantine',
           'quarantine',
-          `Incomplete record from ${sourceSystems[index % 3]} - Missing: ${
-            [
-              !company.owner && 'Company Owner',
-              !company.city && 'City',
-              !company.customerType && 'Customer Type',
-              !hasContact && 'Contact Details',
-              !hasAddress && 'Address Information',
-              !hasSalesInfo && 'Sales Organization Data'
-            ].filter(Boolean).join(', ')
-          }`,
+          company.rejectReason || 'Incomplete record',
           'system_import',
-          recordTimestamp // استخدم نفس التوقيت
+          recordTimestamp
         );
         
         createdIds.push(id);
         
-        // أضف التوقيت كـ parameter أخير
+        // Log workflow
         logWorkflow(id, 'IMPORTED_TO_QUARANTINE', null, 'Quarantine', 
                    'system', 'system', 
-                   `Incomplete food company record imported from ${sourceSystems[index % 3]}`,
+                   `Imported from ${company.source} - ${company.rejectReason}`,
                    { 
                      operation: 'import_quarantine',
-                     sourceSystem: sourceSystems[index % 3],
+                     sourceSystem: company.source,
                      country: company.country,
+                     industry: company.industry,
                      missingFields: [
-                       !company.owner && 'CompanyOwner',
                        !company.city && 'City',
-                       !company.customerType && 'CustomerType',
-                       !hasContact && 'ContactDetails',
-                       !hasAddress && 'AddressInfo',
-                       !hasSalesInfo && 'SalesOrganization'
+                       !company.buildingNumber && 'Building Number',
+                       !company.street && 'Street'
                      ].filter(Boolean)
                    },
-                   recordTimestamp // نفس التوقيت للـ workflow
+                   recordTimestamp
         );
       });
       
@@ -4176,7 +4372,7 @@ app.post('/api/requests/admin/generate-quarantine', (req, res) => {
     
     const createdIds = transaction();
     
-    console.log(`[ADMIN] Generated ${createdIds.length} quarantine records for food companies`);
+    console.log(`[ADMIN] Generated ${createdIds.length} quarantine records using unified demo service`);
     
     res.json({
       success: true,
@@ -4194,8 +4390,13 @@ app.post('/api/requests/admin/generate-quarantine', (req, res) => {
 // Generate sample duplicate data - حوالي سطر 2520
 app.post('/api/requests/admin/generate-duplicates', (req, res) => {
   try {
-    console.log('[ADMIN] POST /api/requests/admin/generate-duplicates');
+    console.log('[ADMIN] POST /api/requests/admin/generate-duplicates - Using Unified Demo Service');
     
+    // Use shared demo company service
+    const duplicateRecords = sharedDemoCompanies.generateDuplicateGroups(20);
+    
+    // OLD CODE - مش محتاجينه دلوقتي
+    /*
     const sourceSystems = ['Oracle Forms', 'SAP S/4HANA', 'SAP ByD'];
     const customerTypes = ['Limited Liability Company', 'Joint Stock Company', 'Partnership', 'Wholesale Distributor'];
     const salesOrgs = ['HSA Saudi Arabia 2000', 'HSA UAE 3000', 'HSA Yemen 4000'];
@@ -4203,7 +4404,6 @@ app.post('/api/requests/admin/generate-duplicates', (req, res) => {
     const divisions = ['Food Products', 'Beverages', 'Dairy and Cheese', 'Frozen Products', 'Snacks and Confectionery'];
     const preferredLanguages = ['Arabic', 'English', 'Both'];
     
-    // شركات حقيقية مختلفة تماماً عن الـ quarantine - مع تشابه في الاسم والرقم الضريبي
     const realDuplicateGroups = [
       {
         baseName: 'Almarai Company',
@@ -4457,111 +4657,93 @@ app.post('/api/requests/admin/generate-duplicates', (req, res) => {
 
     const duplicateGroups = realDuplicateGroups;
     
+    */
+    
     const transaction = db.transaction(() => {
       const insertStmt = db.prepare(`
         INSERT INTO requests (
           id, firstName, firstNameAr, tax,
           CustomerType, CompanyOwner, 
           buildingNumber, street, country, city,
-          ContactName, EmailAddress, MobileNumber,
-          JobTitle, Landline, PrefferedLanguage,
           SalesOrgOption, DistributionChannelOption, DivisionOption,
           status, assignedTo, origin, sourceSystem,
           requestType, originalRequestType,
-          confidence, notes, createdBy, createdAt
-        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+          isMaster, masterId, confidence, notes, createdBy, createdAt
+        ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
       `);
       
       const createdIds = [];
+      const groupMasterIds = new Map();
       
-      duplicateGroups.forEach((group, groupIndex) => {
-        group.variations.forEach((variation, index) => {
-          const id = nanoid(8);
-          
-          // استخدم نفس التوقيت للـ record creation والـ workflow
-          const recordTimestamp = new Date().toISOString();
-          
-          let confidence = 0.95;
-          if (!variation.owner) confidence -= 0.15;
-          if (!variation.contact) confidence -= 0.10;
-          if (!variation.email) confidence -= 0.10;
-          if (!variation.street) confidence -= 0.05;
-          if (!variation.salesOrg) confidence -= 0.10;
-          if (!variation.distChannel) confidence -= 0.05;
-          
-          const jobTitles = ['Sales Manager', 'General Manager', 'Operations Manager', 'Marketing Manager', 'Finance Manager'];
-          
-          insertStmt.run(
-            id,
-            variation.name,
-            variation.nameAr,
-            group.tax,
-            customerTypes[index % customerTypes.length],
-            variation.owner,
-            variation.street ? Math.floor(100 + Math.random() * 900).toString() : null,
-            variation.street,
-            group.country,
-            variation.city,
-            variation.contact,
-            variation.email,
-            variation.mobile,
-            variation.contact ? jobTitles[index % jobTitles.length] : null,
-            variation.contact ? `+9661${Math.floor(1000000 + Math.random() * 9000000)}` : null,
-            variation.email ? preferredLanguages[index % 3] : null,
-            variation.salesOrg,
-            variation.distChannel,
-            variation.division,
-            'Duplicate',
-            'data_entry',
-            'duplicate',
-            sourceSystems[index % 3],
-            'duplicate',
-            'duplicate',
-            confidence,
-            `Potential duplicate - Same tax number ${group.tax}, confidence: ${(confidence * 100).toFixed(0)}%`,
-            'system_import',
-            recordTimestamp // استخدم نفس التوقيت
-          );
-          
-          createdIds.push(id);
-          
-          // أضف التوقيت كـ parameter أخير
-          logWorkflow(id, 'DUPLICATE_DETECTED', null, 'Duplicate', 
-                     'system', 'system', 
-                     `Duplicate detected from ${sourceSystems[index % 3]} - Tax: ${group.tax}`,
-                     { 
-                       operation: 'duplicate_detection',
-                       taxNumber: group.tax,
-                       sourceSystem: sourceSystems[index % 3],
-                       confidence: confidence,
-                       groupSize: group.variations.length,
-                       missingFields: [
-                         !variation.owner && 'Owner',
-                         !variation.contact && 'Contact',
-                         !variation.email && 'Email',
-                         !variation.street && 'Street',
-                         !variation.salesOrg && 'SalesOrganization',
-                         !variation.distChannel && 'DistributionChannel',
-                         !variation.division && 'Division'
-                       ].filter(Boolean)
-                     },
-                     recordTimestamp // نفس التوقيت للـ workflow
-          );
-        });
+      duplicateRecords.forEach((record, index) => {
+        const id = nanoid(8);
+        const recordTimestamp = new Date(Date.now() - Math.random() * 30 * 24 * 60 * 60 * 1000).toISOString();
+        
+        // Track master ID for this group
+        if (record.isMaster) {
+          groupMasterIds.set(record.masterId, id);
+        }
+        
+        insertStmt.run(
+          id,
+          record.name,
+          record.nameAr,
+          record.taxNumber,
+          record.customerType,
+          record.ownerName,
+          record.buildingNumber || null,
+          record.street || null,
+          record.country,
+          record.city,
+          record.salesOrg || null,
+          record.distributionChannel || null,
+          record.division || null,
+          record.status,
+          'data_entry',
+          'duplicate',
+          record.source,
+          'duplicate',
+          'duplicate',
+          record.isMaster ? 1 : 0,
+          record.masterId,
+          record.confidence || 0.90,
+          `${record.isMaster ? 'Master record' : 'Linked duplicate'} - Tax: ${record.taxNumber}`,
+          'system_import',
+          recordTimestamp
+        );
+        
+        createdIds.push(id);
+        
+        // Log workflow
+        logWorkflow(id, 'DUPLICATE_DETECTED', null, 'Duplicate', 
+                   'system', 'system', 
+                   `Duplicate detected from ${record.source} - Tax: ${record.taxNumber}`,
+                   { 
+                     operation: 'duplicate_detection',
+                     taxNumber: record.taxNumber,
+                     sourceSystem: record.source,
+                     confidence: record.confidence,
+                     isMaster: record.isMaster,
+                     masterId: record.masterId,
+                     industry: record.industry
+                   },
+                   recordTimestamp
+        );
       });
       
       return createdIds;
     });
     
     const createdIds = transaction();
+    const groups = [...new Set(duplicateRecords.map(r => r.masterId))].length;
     
-    console.log(`[ADMIN] Generated ${createdIds.length} duplicate records in ${duplicateGroups.length} groups`);
+    console.log(`[ADMIN] Generated ${createdIds.length} duplicate records in ${groups} groups using unified demo service`);
     
     res.json({
       success: true,
-      message: `Generated ${createdIds.length} duplicate records in ${duplicateGroups.length} groups`,
+      message: `Generated ${createdIds.length} duplicate records in ${groups} groups`,
       recordIds: createdIds,
-      groups: duplicateGroups.length
+      groups: groups
     });
     
   } catch (error) {
@@ -6269,7 +6451,7 @@ app.post('/api/users/upload-avatar', (req, res) => {
     fs.writeFileSync(filePath, base64Data, 'base64');
     
     const fileUrl = `/uploads/${safeName}`;
-    const fullUrl = `http://localhost:3001${fileUrl}`;
+    const fullUrl = `http://localhost:3000${fileUrl}`;
     
     console.log('✅ Avatar uploaded successfully:', fileUrl);
     console.log('✅ Full URL:', fullUrl);

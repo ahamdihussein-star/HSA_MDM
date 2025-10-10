@@ -35,7 +35,7 @@ The **Master Data Management (MDM) System** is a comprehensive enterprise soluti
 - ✅ **100% Duplicate Prevention** before golden record creation
 - ✅ **Complete Audit Trail** for regulatory compliance
 - ✅ **Multi-Stage Approval** ensuring data quality
-- ✅ **External System Integration** (SAP, ERP systems)
+- ✅ **External System Integration** (SAP 4/Hana, SAPbyDesign, Oracle Forms)
 
 ### Technology Stack
 
@@ -54,21 +54,25 @@ The **Master Data Management (MDM) System** is a comprehensive enterprise soluti
 The system enforces **strict role-based access control** with 5 distinct roles:
 
 #### Role 1: **Data Entry** (`data_entry`)
-**Business Objective**: Create new customer requests with accurate data
+**Business Objective**: Create new customer requests with accurate data, complete missing Quarantine Data, Review Duplicate Data and confirm Linked Records and identify what's not duplicate and complete missing data in the duplicates records as well
 
 **Responsibilities**:
 - Create customer requests (manual or AI-assisted)
-- Upload business documents (commercial registration, tax cards, etc.)
-- Complete all required fields
-- Cannot submit duplicates (system enforced)
+- Fix Rejected Requests Came from Reviewer and submit again for reviewer
+- Complete all required fields for Quarantine Data and submit for reviewer to be reviewed again
+- Review Duplicate Records identified by the system, confirm linked records, move what's not realy duplicate to Quarantine, and select the most accurate data across all duplicates for every field to construct one golden record and complete any missing Data in the duplicate constructed record.
 
 **Permissions**:
 - ✅ Create new requests
-- ✅ Use AI Agent
-- ✅ Upload documents
-- ✅ View own task list
+- ✅ Use AI Agent to create new request.
+- ✅ View own task list.
+- ✅ Compelete Quarantine Data in Quarantine List and submitted for review.
+- ✅ Handle Duplicates and construct one Golden record from the duplicates and submit for review.
+- ✅ View all system Dashboard.
+- ✅ View Golden records.
 - ❌ Cannot approve/reject requests
-- ❌ Cannot access other users' requests
+- ❌ Cannot Block Company or add or view the reason of Blocking in the golden Summary Page.
+
 
 **Current System Users**:
 - Username: `data_entry`
@@ -94,19 +98,19 @@ if (user.role !== 'data_entry' && user.role !== 'admin') {
 **Business Objective**: Review and validate customer data for accuracy
 
 **Responsibilities**:
-- Review all pending customer requests
+- Review all customer creation requests types came from the data entry
 - Verify document authenticity
 - Validate data completeness and accuracy
 - Approve valid requests → Forward to Compliance
 - Reject invalid requests → Return to Data Entry with reason
 
 **Permissions**:
-- ✅ View all pending requests
+- ✅ View all requests in his task list
 - ✅ Approve requests (forward to compliance)
 - ✅ Reject requests (return to data entry)
-- ✅ Edit request details
-- ✅ Add comments
+- ✅ Add comments for the rejected requests.
 - ❌ Cannot create golden records
+- ❌ Cannot Edit request details
 - ❌ Cannot delete requests
 
 **Current System Users**:
@@ -1653,5 +1657,12 @@ Admin: admin / admin123
 **Document Version**: 1.0.0  
 **Last Updated**: October 8, 2025  
 **Status**: ✅ Complete Production Documentation
+
+
+
+
+
+
+
 
 

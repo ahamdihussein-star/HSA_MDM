@@ -25,7 +25,9 @@ export class PdfBulkGeneratorComponent implements OnInit {
     { value: 'United Arab Emirates', label: 'UAE', labelAr: 'الإمارات العربية المتحدة' },
     { value: 'Kuwait', label: 'Kuwait', labelAr: 'الكويت' },
     { value: 'Qatar', label: 'Qatar', labelAr: 'قطر' },
-    { value: 'Yemen', label: 'Yemen', labelAr: 'اليمن' }
+    { value: 'Yemen', label: 'Yemen', labelAr: 'اليمن' },
+    { value: 'Bahrain', label: 'Bahrain', labelAr: 'البحرين' },
+    { value: 'Oman', label: 'Oman', labelAr: 'عمان' }
   ];
   
   // Document Types
@@ -270,11 +272,16 @@ export class PdfBulkGeneratorComponent implements OnInit {
     // Get all companies from demo service
     const companies: any[] = [];
     
-    // Generate all 50+ companies
-    for (let i = 0; i < 50; i++) {
-      const company = this.demoDataService.generateDemoData();
-      companies.push(company);
-    }
+    // Get all 70 companies from unified pool
+    const allCompanies = this.demoDataService.getAllCompanies();
+    
+    // Filter by selected countries
+    const filteredCompanies = this.selectedCountries.length > 0
+      ? allCompanies.filter(c => this.selectedCountries.includes(c.country))
+      : allCompanies;
+    
+    companies.push(...filteredCompanies);
+    console.log(`📊 Using ${companies.length} companies from unified pool`);
     
     return companies;
   }
