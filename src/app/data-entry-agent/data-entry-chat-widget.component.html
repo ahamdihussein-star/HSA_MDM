@@ -661,8 +661,12 @@
     <!-- Main Form Content -->
     <form *ngIf="unifiedModalForm && !showProgressBar" [formGroup]="unifiedModalForm">
       
-      <!-- Section 1: Extracted Data -->
-      <div class="modal-section extracted-section" *ngIf="unifiedModalData.extractedFields.length > 0">
+      <!-- Tabs Navigation -->
+      <nz-tabset [(nzSelectedIndex)]="selectedTabIndex" nzType="card" nzSize="small">
+        
+        <!-- Tab 1: Extracted Data -->
+        <nz-tab [nzTitle]="extractedDataTabTitle" *ngIf="unifiedModalData.extractedFields.length > 0">
+          <div class="modal-section extracted-section">
         <div class="section-header">
           <h3>✅ {{ 'agent.sections.extractedData' | translate }}</h3>
           <button type="button" 
@@ -904,7 +908,52 @@
         </div>
       </div>
       
-      <!-- Section 3: Contacts (Table Design) -->
+      <!-- Section 3: Sales Data (Always Visible - Optional) -->
+      <div class="modal-section sales-section">
+        <div class="section-header">
+          <h3>💼 {{ 'agent.sections.salesData' | translate }} 
+            <span class="optional-badge">Optional</span>
+          </h3>
+          <p class="section-description">Enter sales organization details (optional)</p>
+        </div>
+        
+        <div class="form-grid">
+          <div class="form-row">
+            <div class="form-group">
+              <label class="optional">Sales Organization:</label>
+              <nz-select formControlName="salesOrganization" nzPlaceHolder="Select sales organization">
+                <nz-option *ngFor="let option of salesOrgOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+            <div class="form-group">
+              <label class="optional">Distribution Channel:</label>
+              <nz-select formControlName="distributionChannel" nzPlaceHolder="Select distribution channel">
+                <nz-option *ngFor="let option of distributionChannelOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+          </div>
+          
+          <div class="form-row">
+            <div class="form-group">
+              <label class="optional">Division:</label>
+              <nz-select formControlName="division" nzPlaceHolder="Select division">
+                <nz-option *ngFor="let option of divisionOptions" 
+                          [nzValue]="option.value" 
+                          [nzLabel]="option.label">
+                </nz-option>
+              </nz-select>
+            </div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Section 4: Contacts (Table Design) -->
       <div class="modal-section contacts-section">
         <div class="section-header">
           <h3>👥 {{ 'agent.sections.contacts' | translate }} 
@@ -999,13 +1048,13 @@
     <!-- Documents Section -->
     <div class="unified-section documents-section">
       <div class="section-header">
-        <h4>📎 {{ 'agent.sections.attachedDocuments' | translate }} ({{ getDocumentsCount() }})</h4>
+        <h4>📎 {{ 'agent.sections.attachedDocuments' | translate }}</h4>
         <button type="button" 
                 nz-button 
-                nzType="primary"
-                nzSize="small"
+                nzType="primary" 
+                nzSize="small" 
                 (click)="triggerAddDocument()">
-          <span nz-icon nzType="plus"></span>
+          <span nz-icon nzType="plus"></span> 
           {{ 'agent.buttons.addDocument' | translate }}
         </button>
       </div>
