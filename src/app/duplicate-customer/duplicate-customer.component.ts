@@ -1595,6 +1595,17 @@ export class DuplicateCustomerComponent implements OnInit, OnDestroy {
    * Downloads document
    */
   downloadDocument(doc: any): void {
+    // ✅ HYBRID: Support filesystem documents (fileUrl)
+    if (doc.fileUrl) {
+      console.log('📥 [DOWNLOAD] Using filesystem URL:', doc.fileUrl);
+      const link = document.createElement('a');
+      link.href = doc.fileUrl;
+      link.download = doc.name || 'document';
+      link.click();
+      return;
+    }
+    
+    // ✅ HYBRID: Support base64 documents (contentBase64)
     if (!doc.contentBase64) {
       this.notification.error('Document content not available', '');
       return;
@@ -1646,13 +1657,23 @@ export class DuplicateCustomerComponent implements OnInit, OnDestroy {
    * Gets preview URL for document
    */
   getPreviewUrl(doc: any): string {
-    if (!doc || !doc.contentBase64) return '';
+    if (!doc) return '';
     
-    if (doc.contentBase64.startsWith('data:')) {
-      return doc.contentBase64;
+    // ✅ HYBRID: Support filesystem documents (fileUrl)
+    if (doc.fileUrl) {
+      console.log('🔍 [PREVIEW] Using filesystem URL:', doc.fileUrl);
+      return doc.fileUrl;
     }
     
-    return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+    // ✅ HYBRID: Support base64 documents (contentBase64)
+    if (doc.contentBase64) {
+      if (doc.contentBase64.startsWith('data:')) {
+        return doc.contentBase64;
+      }
+      return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+    }
+    
+    return '';
   }
 
   /**

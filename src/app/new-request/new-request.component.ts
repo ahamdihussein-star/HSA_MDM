@@ -2003,7 +2003,8 @@ export class NewRequestComponent implements OnInit, OnDestroy {
           size: [d.size || 0],
           mime: [d.mime || ''],
           uploadedAt: [d.uploadedAt || new Date().toISOString()],
-          contentBase64: [d.contentBase64 || '']
+          contentBase64: [d.contentBase64 || ''],
+          fileUrl: [d.fileUrl || '']  // ✅ FIX: Include fileUrl for filesystem documents
         });
         this.documentsFA.push(docGroup);
       });
@@ -2739,13 +2740,15 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     console.log('MIME type:', documentData?.mime);
     console.log('Is PDF:', this.isPdf(documentData));
     console.log('Has contentBase64:', !!documentData?.contentBase64);
+    console.log('Has fileUrl:', !!documentData?.fileUrl);
     
     if (!documentData) {
       this.msg.error('Document data not found');
       return;
     }
     
-    if (!documentData.contentBase64) {
+    // ✅ HYBRID: Support both filesystem (fileUrl) and base64 (contentBase64)
+    if (!documentData.contentBase64 && !documentData.fileUrl) {
       this.msg.error('Document content not available');
       return;
     }
@@ -2768,6 +2771,24 @@ export class NewRequestComponent implements OnInit, OnDestroy {
   downloadDocument(doc: any): void {
     try {
       const docData = doc.value || doc;
+      
+      // ✅ HYBRID: Support filesystem documents (fileUrl)
+      if (docData.fileUrl) {
+        console.log('📥 [DOWNLOAD] Using filesystem URL:', docData.fileUrl);
+        // Create a temporary link and click it to download
+        const link = document.createElement('a');
+        link.href = docData.fileUrl;
+        link.download = docData.name || 'document';
+        link.click();
+        return;
+      }
+      
+      // ✅ HYBRID: Support base64 documents (contentBase64)
+      if (!docData.contentBase64) {
+        this.msg.error('Document content not available');
+        return;
+      }
+      
       // Extract base64 content (remove data URL prefix if exists)
       let base64Content = docData.contentBase64 || '';
       
@@ -2806,15 +2827,25 @@ export class NewRequestComponent implements OnInit, OnDestroy {
    * Gets preview URL for document
    */
   getPreviewUrl(doc: any): string {
-    if (!doc || !doc.contentBase64) {
+    if (!doc) {
       return '';
     }
     
-    if (doc.contentBase64.startsWith('data:')) {
-      return doc.contentBase64;
+    // ✅ HYBRID: Support filesystem documents (fileUrl)
+    if (doc.fileUrl) {
+      console.log('🔍 [PREVIEW] Using filesystem URL:', doc.fileUrl);
+      return doc.fileUrl;
     }
     
-    return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+    // ✅ HYBRID: Support base64 documents (contentBase64)
+    if (doc.contentBase64) {
+      if (doc.contentBase64.startsWith('data:')) {
+        return doc.contentBase64;
+      }
+      return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+    }
+    
+    return '';
   }
 
   /**

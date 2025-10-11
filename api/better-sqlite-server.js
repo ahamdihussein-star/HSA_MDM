@@ -65,6 +65,13 @@ const upload = multer({
 
 // Enhanced Middlewares with better limits
 app.use(cors());
+
+// ✅ REQUEST LOGGING MIDDLEWARE
+app.use((req, res, next) => {
+  console.log(`📥 [${new Date().toISOString()}] ${req.method} ${req.url}`);
+  next();
+});
+
 app.use('/uploads', express.static(UPLOADS_DIR)); // ✅ NEW: Serve uploaded files
 app.use(express.json({ 
   limit: '20mb',  // Reduced from 50mb for stability
@@ -1352,6 +1359,7 @@ app.get('/api/session/documents/:sessionId/:companyId', async (req, res) => {
         type: doc.document_type,
         size: doc.document_size,
         fileUrl: fileUrl,
+        document_path: doc.document_path,  // ✅ FIX: Include document_path for submission
         mime: doc.document_type
       };
     });
@@ -2419,32 +2427,40 @@ if (data.contacts && Array.isArray(data.contacts)) {
     });
 }
         
-        // Handle documents update - ENHANCED with proper change tracking
+        // Handle documents update - ENHANCED with filesystem support
         if (data.documents && Array.isArray(data.documents)) {
+            console.log('📄 [UPDATE] Processing documents:', data.documents.length);
+            
             // Get existing documents for comparison
             const existingDocuments = db.prepare('SELECT * FROM documents WHERE requestId = ?').all(id);
             
-            // Create maps for easier comparison
+            // Create maps for easier comparison (use documentId as key)
             const existingDocsMap = new Map();
             existingDocuments.forEach(doc => {
-                const key = `${doc.name}_${doc.type}`;
-                existingDocsMap.set(key, doc);
+                existingDocsMap.set(doc.documentId, doc);
             });
             
             const newDocsMap = new Map();
             data.documents.forEach(doc => {
-                if (doc.name && doc.contentBase64) {
-                    const key = `${doc.name}_${doc.type || 'other'}`;
-                    newDocsMap.set(key, doc);
+                // ✅ FIX: Accept documents with EITHER contentBase64 OR fileUrl/document_path
+                if (doc.name && (doc.contentBase64 || doc.fileUrl || doc.document_path)) {
+                    const docId = doc.id || doc.documentId;
+                    if (docId) {
+                        newDocsMap.set(docId, doc);
+                    }
                 }
             });
+            
+            console.log('📄 [UPDATE] Existing documents:', existingDocsMap.size);
+            console.log('📄 [UPDATE] New documents:', newDocsMap.size);
             
             // Track document changes
             const documentChanges = [];
             
             // Check for removed documents
-            existingDocsMap.forEach((existingDoc, key) => {
-                if (!newDocsMap.has(key)) {
+            existingDocsMap.forEach((existingDoc, docId) => {
+                if (!newDocsMap.has(docId)) {
+                    console.log('📄 [UPDATE] Document removed:', existingDoc.name);
                     documentChanges.push({
                         field: `Document: ${existingDoc.name}`,
                         oldValue: existingDoc.name,
@@ -2456,70 +2472,59 @@ if (data.contacts && Array.isArray(data.contacts)) {
             });
             
             // Check for added and modified documents
-            newDocsMap.forEach((newDoc, key) => {
-                const existingDoc = existingDocsMap.get(key);
+            newDocsMap.forEach((newDoc, docId) => {
+                const existingDoc = existingDocsMap.get(docId);
                 
                 if (!existingDoc) {
-                    // New document added - only log if this is actually a new document
-                    // Check if this document was already processed in this session
-                    const alreadyProcessed = documentChanges.some(change => 
-                        change.field === `Document: ${newDoc.name}` && change.changeType === 'Create'
-                    );
-                    
-                    if (!alreadyProcessed) {
-                        documentChanges.push({
-                            field: `Document: ${newDoc.name}`,
-                            oldValue: null,
-                            newValue: newDoc.name,
-                            changeType: 'Create',
-                            documentId: newDoc.id || newDoc.documentId
-                        });
-                    }
+                    // New document added
+                    console.log('📄 [UPDATE] New document added:', newDoc.name);
+                    documentChanges.push({
+                        field: `Document: ${newDoc.name}`,
+                        oldValue: null,
+                        newValue: newDoc.name,
+                        changeType: 'Create',
+                        documentId: newDoc.id || newDoc.documentId
+                    });
                 } else {
-                    // Check if document was modified (compare content hash or other properties)
-                    const isModified = (
-                        existingDoc.description !== (newDoc.description || '') ||
-                        (existingDoc.size || 0) !== (newDoc.size || 0) ||
-                        existingDoc.mime !== (newDoc.mime || 'application/octet-stream')
-                    );
-                    
-                    if (isModified) {
-                        documentChanges.push({
-                            field: `Document: ${newDoc.name}`,
-                            oldValue: existingDoc.name,
-                            newValue: newDoc.name,
-                            changeType: 'Update',
-                            documentId: existingDoc.documentId,
-                            oldDescription: existingDoc.description,
-                            newDescription: newDoc.description || '',
-                            oldSize: existingDoc.size,
-                            newSize: newDoc.size || 0
-                        });
-                    }
+                    // Document exists - check if we need to preserve filesystem path
+                    console.log('📄 [UPDATE] Document exists, preserving:', newDoc.name);
+                    // No change tracking needed - just preserve it
                 }
             });
+            
+            console.log('📄 [UPDATE] Document changes:', documentChanges.length);
             
             // Only delete and re-insert documents if there are actual changes
             if (documentChanges.length > 0) {
                 // Delete only the documents that were actually removed
                 documentChanges.forEach(change => {
                     if (change.changeType === 'Delete') {
-                        db.prepare('DELETE FROM documents WHERE requestId = ? AND name = ?').run(id, change.field.replace('Document: ', ''));
+                        const docToDelete = existingDocuments.find(d => d.documentId === change.documentId);
+                        if (docToDelete) {
+                            console.log('🗑️ [UPDATE] Deleting document:', docToDelete.name);
+                            db.prepare('DELETE FROM documents WHERE requestId = ? AND documentId = ?').run(id, change.documentId);
+                        }
                     }
                 });
                 
                 // Insert only new documents
                 documentChanges.forEach(change => {
                     if (change.changeType === 'Create') {
-                        const docName = change.field.replace('Document: ', '');
-                        const newDoc = data.documents.find(doc => doc.name === docName);
+                        const newDoc = data.documents.find(doc => (doc.id || doc.documentId) === change.documentId);
                         
-                        if (newDoc && newDoc.name && newDoc.contentBase64) {
+                        if (newDoc && newDoc.name) {
                             const docTimestamp = new Date().toISOString();
                             
+                            console.log('📄 [UPDATE] Inserting new document:', {
+                                name: newDoc.name,
+                                hasBase64: !!newDoc.contentBase64,
+                                hasPath: !!newDoc.document_path,
+                                hasFileUrl: !!newDoc.fileUrl
+                            });
+                            
                             db.prepare(`
-                                INSERT INTO documents (requestId, documentId, name, type, description, size, mime, contentBase64, uploadedAt, uploadedBy, source)
-                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+                                INSERT INTO documents (requestId, documentId, name, type, description, size, mime, contentBase64, document_path, uploadedAt, uploadedBy, source)
+                                VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                             `).run(
                                 id, 
                                 newDoc.id || newDoc.documentId || nanoid(8),
@@ -2528,38 +2533,19 @@ if (data.contacts && Array.isArray(data.contacts)) {
                                 newDoc.description || '',
                                 newDoc.size || 0, 
                                 newDoc.mime || 'application/octet-stream', 
-                                newDoc.contentBase64, 
+                                newDoc.contentBase64 || '',  // ✅ Empty for filesystem docs
+                                newDoc.document_path || null,  // ✅ NEW: Preserve filesystem path
                                 docTimestamp,
                                 data.updatedBy || 'system',
                                 newDoc.source || 'Data Steward'
                             );
+                            
+                            console.log('✅ [UPDATE] Document inserted:', newDoc.name);
                         }
                     }
                 });
-                
-                // Update existing documents that were modified
-                documentChanges.forEach(change => {
-                    if (change.changeType === 'Update') {
-                        const docName = change.field.replace('Document: ', '');
-                        const updatedDoc = data.documents.find(doc => doc.name === docName);
-                        
-                        if (updatedDoc) {
-                            db.prepare(`
-                                UPDATE documents 
-                                SET description = ?, size = ?, mime = ?, contentBase64 = ?, uploadedBy = ?
-                                WHERE requestId = ? AND name = ?
-                            `).run(
-                                updatedDoc.description || '',
-                                updatedDoc.size || 0,
-                                updatedDoc.mime || 'application/octet-stream',
-                                updatedDoc.contentBase64,
-                                data.updatedBy || 'system',
-                                id,
-                                docName
-                            );
-                        }
-                    }
-                });
+            } else {
+                console.log('✅ [UPDATE] No document changes detected - documents preserved');
             }
             
             // Add document changes to the main changes array only if there are actual changes

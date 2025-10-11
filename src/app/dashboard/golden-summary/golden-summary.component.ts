@@ -238,6 +238,14 @@ private loadFromRouterState(state: any): void {
   
   console.log('Loaded documents from router state:', this.documents.length, this.documents);
   
+  // ✅ FIX: Check if documents have valid content (fileUrl or contentBase64)
+  const hasValidDocuments = this.documents.some(d => d.fileUrl || d.contentBase64);
+  if (this.documents.length > 0 && !hasValidDocuments && this.master.id) {
+    console.log('⚠️ [GOLDEN] Documents loaded but missing content, fetching from API...');
+    // Fetch full documents from API
+    this.loadGoldenRecord(this.master.id);
+  }
+  
   // NEW: Load linked and quarantine records if available
   this.linkedRecords = state.linkedRecords || [];
   this.quarantineRecords = state.quarantineRecords || [];
@@ -1167,10 +1175,13 @@ async loadLinkedRecords(taxNumber: string): Promise<void> {
   }
 
   openDoc(doc: any): void {
+    console.log('🖱️ [GOLDEN] openDoc() called with:', doc);
     this.previewDocument(doc);
   }
 
   previewDocument(doc: any): void {
+    console.log('👁️ [GOLDEN] previewDocument() called with:', doc);
+    console.log('👁️ [GOLDEN] canPreview result:', this.canPreview(doc));
     this.selectedDocument = doc;
     this.showDocumentPreviewModal = true;
   }
@@ -1181,19 +1192,65 @@ async loadLinkedRecords(taxNumber: string): Promise<void> {
   }
 
   canPreview(doc: any): boolean {
-    if (!doc || !doc.mime) return false;
-    const mime = doc.mime.toLowerCase();
-    return mime.includes('image') || mime.includes('pdf');
+    console.log('🔍 [GOLDEN] canPreview() called with:', {
+      name: doc?.name,
+      mime: doc?.mime,
+      fileUrl: doc?.fileUrl,
+      hasContentBase64: !!doc?.contentBase64
+    });
+    
+    if (!doc) {
+      console.log('❌ [GOLDEN] canPreview: doc is null/undefined');
+      return false;
+    }
+    
+    // Check mime type if available
+    if (doc.mime) {
+      const mime = doc.mime.toLowerCase();
+      if (mime.includes('image') || mime.includes('pdf')) {
+        console.log('✅ [GOLDEN] canPreview: true (mime check)');
+        return true;
+      }
+    }
+    
+    // ✅ FIX: Fallback to file extension if mime is not available
+    if (doc.name) {
+      const ext = doc.name.toLowerCase().split('.').pop();
+      const canPreview = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext || '');
+      console.log(`${canPreview ? '✅' : '❌'} [GOLDEN] canPreview: ${canPreview} (name extension: ${ext})`);
+      if (canPreview) return true;
+    }
+    
+    // ✅ FIX: Check fileUrl extension
+    if (doc.fileUrl) {
+      const ext = doc.fileUrl.toLowerCase().split('.').pop()?.split('?')[0]; // Remove query params
+      const canPreview = ['pdf', 'png', 'jpg', 'jpeg', 'gif', 'webp'].includes(ext || '');
+      console.log(`${canPreview ? '✅' : '❌'} [GOLDEN] canPreview: ${canPreview} (fileUrl extension: ${ext})`);
+      if (canPreview) return true;
+    }
+    
+    console.log('❌ [GOLDEN] canPreview: false (no valid preview method found)');
+    return false;
   }
 
   getPreviewUrl(doc: any): string {
-    if (!doc || !doc.contentBase64) return '';
+    if (!doc) return '';
     
-    if (doc.contentBase64.startsWith('data:')) {
-      return doc.contentBase64;
+    // ✅ HYBRID: Support filesystem documents (fileUrl)
+    if (doc.fileUrl) {
+      console.log('🔍 [PREVIEW] Using filesystem URL:', doc.fileUrl);
+      return doc.fileUrl;
     }
     
-    return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+    // ✅ HYBRID: Support base64 documents (contentBase64)
+    if (doc.contentBase64) {
+      if (doc.contentBase64.startsWith('data:')) {
+        return doc.contentBase64;
+      }
+      return `data:${doc.mime || 'application/pdf'};base64,${doc.contentBase64}`;
+    }
+    
+    return '';
   }
 
   // Add method for Safe URL
@@ -1203,6 +1260,17 @@ async loadLinkedRecords(taxNumber: string): Promise<void> {
   }
 
   downloadDoc(doc: any): void {
+    // ✅ HYBRID: Support filesystem documents (fileUrl)
+    if (doc.fileUrl) {
+      console.log('📥 [DOWNLOAD] Using filesystem URL:', doc.fileUrl);
+      const link = document.createElement('a');
+      link.href = doc.fileUrl;
+      link.download = doc.name || 'document';
+      link.click();
+      return;
+    }
+    
+    // ✅ HYBRID: Support base64 documents (contentBase64)
     if (!doc.contentBase64) {
       alert('Document content not available');
       return;
