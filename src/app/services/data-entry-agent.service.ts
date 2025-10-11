@@ -1137,7 +1137,30 @@ For dropdown fields, provide numbered options.`;
       const documentsFromDB = response.documents;
       console.log('📥 [AI PROCESSING] Retrieved documents from DB:', documentsFromDB.length);
       
-      // ✅ Step 2: Convert database format to processing format
+      // ✅ Step 2: VALIDATE documents before processing
+      if (!documentsFromDB || documentsFromDB.length === 0) {
+        throw new Error('No documents retrieved from database!');
+      }
+      
+      documentsFromDB.forEach((doc: any, index: number) => {
+        console.log(`🔍 [VALIDATION] Checking document ${index + 1}:`, {
+          id: doc.document_id,
+          name: doc.document_name,
+          type: doc.document_type,
+          hasContent: !!doc.document_content,
+          contentLength: doc.document_content?.length || 0,
+          contentPreview: doc.document_content?.substring(0, 100) + '...'
+        });
+        
+        // ✅ Validate document has content
+        if (!doc.document_content || doc.document_content.length < 100) {
+          throw new Error(`Document ${doc.document_name} has invalid or empty content!`);
+        }
+      });
+      
+      console.log('✅ [VALIDATION] All documents validated successfully');
+      
+      // ✅ Step 3: Convert database format to processing format
       const documentsForAI = documentsFromDB.map((doc: any, index: number) => {
         console.log(`📄 [AI PROCESSING] Preparing document ${index + 1}:`, {
           id: doc.document_id,
@@ -1156,6 +1179,16 @@ For dropdown fields, provide numbered options.`;
       });
       
       console.log('🤖 [AI PROCESSING] Documents prepared for OpenAI:', documentsForAI.length);
+      
+      // ✅ Step 4: Log what's being sent to OpenAI
+      documentsForAI.forEach((doc: any, index: number) => {
+        console.log(`📤 [OPENAI INPUT] Document ${index + 1} to send:`, {
+          name: doc.name,
+          type: doc.type,
+          contentLength: doc.content?.length || 0,
+          contentStart: doc.content?.substring(0, 50) + '...'
+        });
+      });
       
       // ✅ Step 3: Send to OpenAI for extraction
       const extractedData = await this.extractDataFromDocuments(documentsForAI, undefined, false);

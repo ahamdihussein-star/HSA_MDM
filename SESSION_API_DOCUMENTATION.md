@@ -527,3 +527,4 @@ const dataUrl = `data:${doc.document_type};base64,${doc.document_content}`;
 
 هذا يضمن أن **المستند المعروض = المستند المرفوع** دائماً! ✅
 
+

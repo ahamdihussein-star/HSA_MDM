@@ -1206,6 +1206,15 @@ app.post('/api/session/save-documents-only', (req, res) => {
       return res.status(400).json({ error: 'No documents provided' });
     }
     
+    // ✅ CRITICAL FIX: Clear ALL old documents from temp table for this session first!
+    console.log('🗑️ [DOCS ONLY] Clearing old documents from session_documents_temp...');
+    const deleteStmt = db.prepare(`
+      DELETE FROM session_documents_temp 
+      WHERE session_id = ?
+    `);
+    const deleteResult = deleteStmt.run(sessionId);
+    console.log(`🗑️ [DOCS ONLY] Cleared ${deleteResult.changes} old documents`);
+    
     // Generate document IDs
     const documentIds = [];
     
@@ -1218,13 +1227,19 @@ app.post('/api/session/save-documents-only', (req, res) => {
     for (const doc of documents) {
       const documentId = `doc_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
       
-      console.log(`📄 [DOCS ONLY] Saving document: ${doc.name}`, {
+      console.log(`📄 [DOCS ONLY] Saving NEW document: ${doc.name}`, {
         documentId,
         size: doc.size,
         type: doc.type,
         contentLength: doc.content?.length || 0,
         contentPreview: doc.content?.substring(0, 50)
       });
+      
+      // ✅ Validate document has content before saving
+      if (!doc.content || doc.content.trim() === '') {
+        console.warn(`⚠️ [DOCS ONLY] Skipping document with empty content: ${doc.name}`);
+        continue;
+      }
       
       stmt.run(sessionId, documentId, doc.name, doc.content, doc.type, doc.size);
       
@@ -1234,9 +1249,12 @@ app.post('/api/session/save-documents-only', (req, res) => {
         type: doc.type,
         size: doc.size
       });
+      
+      console.log(`✅ [DOCS ONLY] Document saved with ID: ${documentId}`);
     }
     
-    console.log('✅ [DOCS ONLY] All documents saved successfully');
+    console.log('✅ [DOCS ONLY] All NEW documents saved successfully');
+    console.log('✅ [DOCS ONLY] Document IDs:', documentIds.map(d => d.documentId));
     
     res.json({
       success: true,
@@ -1287,6 +1305,69 @@ app.post('/api/session/get-documents-for-processing', (req, res) => {
     
   } catch (error) {
     console.error('❌ [GET DOCS] Error retrieving documents:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ NEW: Get all temp documents for a session
+app.post('/api/session/get-all-temp-documents', (req, res) => {
+  const { sessionId } = req.body;
+  
+  try {
+    console.log('📥 [GET ALL TEMP] Getting all temp documents for session:', sessionId);
+    
+    const documents = db.prepare(`
+      SELECT document_id, document_name, document_content, document_type, document_size, created_at
+      FROM session_documents_temp
+      WHERE session_id = ?
+      ORDER BY created_at DESC
+    `).all(sessionId);
+    
+    console.log('✅ [GET ALL TEMP] Retrieved documents:', documents.length);
+    
+    documents.forEach((doc, index) => {
+      console.log(`📄 [GET ALL TEMP] Document ${index + 1}:`, {
+        id: doc.document_id,
+        name: doc.document_name,
+        type: doc.document_type,
+        size: doc.document_size,
+        contentLength: doc.document_content?.length || 0
+      });
+    });
+    
+    res.json({
+      success: true,
+      documents
+    });
+    
+  } catch (error) {
+    console.error('❌ [GET ALL TEMP] Error retrieving temp documents:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ NEW: Clear temp documents after processing
+app.post('/api/session/clear-temp-documents', (req, res) => {
+  const { sessionId } = req.body;
+  
+  try {
+    console.log('🗑️ [CLEAR TEMP] Clearing temp documents for session:', sessionId);
+    
+    const deleteStmt = db.prepare(`
+      DELETE FROM session_documents_temp 
+      WHERE session_id = ?
+    `);
+    
+    const result = deleteStmt.run(sessionId);
+    console.log(`✅ [CLEAR TEMP] Cleared ${result.changes} temp documents`);
+    
+    res.json({
+      success: true,
+      deletedCount: result.changes
+    });
+    
+  } catch (error) {
+    console.error('❌ [CLEAR TEMP] Error clearing temp documents:', error);
     res.status(500).json({ error: error.message });
   }
 });

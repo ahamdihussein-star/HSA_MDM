@@ -376,3 +376,4 @@ Upload → session_documents_temp → Retrieve → OpenAI → session_staging
 3. ✅ **Database:** Clean (0 session records)
 
 **When you start the servers manually, you'll see the new flow in action!** 🎉
+

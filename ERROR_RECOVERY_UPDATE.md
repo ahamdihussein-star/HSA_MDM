@@ -271,3 +271,4 @@ AI communication error occurred
 
 **النظام الآن أكثر ذكاءً وواقعية!** ✅
 
+

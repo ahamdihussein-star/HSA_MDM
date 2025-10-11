@@ -1,6 +1,7 @@
 import { Component, OnInit, OnDestroy, ChangeDetectorRef, TemplateRef, ViewChild, ElementRef, Inject, PLATFORM_ID } from '@angular/core';
 import { isPlatformBrowser } from '@angular/common';
 import { FormBuilder, FormGroup, FormArray, Validators } from '@angular/forms';
+import { HttpClient } from '@angular/common/http';
 import { DataEntryAgentService, ExtractedData } from '../services/data-entry-agent.service';
 import { TranslateService } from '@ngx-translate/core';
 import { DemoDataGeneratorService, DemoCompany } from '../services/demo-data-generator.service';
@@ -8,6 +9,7 @@ import { SessionStagingService } from '../services/session-staging.service';
 import { AutoTranslateService } from '../services/auto-translate.service';
 import { Subject, Subscription } from 'rxjs';
 import { NzModalService } from 'ng-zorro-antd/modal';
+import { environment } from '../../environments/environment';
 import { 
   CUSTOMER_TYPE_OPTIONS,
   SALES_ORG_OPTIONS,
@@ -176,6 +178,7 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     private translate: TranslateService,
     private sessionStaging: SessionStagingService,
     private autoTranslate: AutoTranslateService,
+    private http: HttpClient,
     @Inject(PLATFORM_ID) private platformId: Object
   ) {
     this.initializeForms();
@@ -731,9 +734,10 @@ Please try uploading again.`,
     console.log('💾 [DB FLOW] Loading company data from database...');
     
     const companyId = this.generateCompanyId(extractedData);
-    const sessionId = this.sessionStaging['sessionId']; // Get session ID from service
+    const sessionId = this.sessionStaging.getSessionId();
     
     console.log('💾 [DB FLOW] Loading company:', companyId);
+    console.log('💾 [DB FLOW] Session ID:', sessionId);
     
     try {
       // ✅ Load company data from database
@@ -742,8 +746,34 @@ Please try uploading again.`,
       console.log('✅ [DB FLOW] Company data loaded:', companyData);
       console.log('📄 [DB FLOW] Documents from DB:', companyData.documents?.length || 0);
       
+      // ✅ ALSO load from temp table (in case documents are still there)
+      let documentsFromDB = companyData.documents || [];
+      
+      if (documentsFromDB.length === 0) {
+        console.log('📥 [DB FLOW] No documents in session_documents, checking session_documents_temp...');
+        try {
+          const tempDocs = await this.http.post<any>(`${environment.apiBaseUrl}/session/get-all-temp-documents`, {
+            sessionId
+          }).toPromise();
+          
+          if (tempDocs.documents && tempDocs.documents.length > 0) {
+            console.log('✅ [DB FLOW] Found documents in temp table:', tempDocs.documents.length);
+            documentsFromDB = tempDocs.documents.map((doc: any) => ({
+              document_name: doc.document_name,
+              document_content: doc.document_content,
+              document_type: doc.document_type,
+              document_size: doc.document_size,
+              created_at: doc.created_at
+            }));
+          }
+        } catch (error) {
+          console.warn('⚠️ [DB FLOW] Could not load from temp table:', error);
+        }
+      }
+      
+      console.log('📄 [DB FLOW] Total documents to display:', documentsFromDB.length);
+      
       // ✅ Convert base64 documents back to File objects for display
-      const documentsFromDB = companyData.documents || [];
       const fileObjects: File[] = [];
       
       for (const doc of documentsFromDB) {
@@ -5344,6 +5374,9 @@ Would you like to:
     this.progressStatus = '';
     this.cdr.detectChanges();
     
+    // ✅ Clear temp documents after modal closes
+    this.clearTempDocuments();
+    
     // Check if user wants to review or modify extracted data
     this.checkUserIntentForModalClose();
   }
@@ -5705,6 +5738,25 @@ Respond with JSON only:
     });
     
     console.log('✅ [SESSION] Data saved to session staging successfully');
+  }
+
+  /**
+   * ✅ NEW: Clear temp documents from database
+   */
+  private async clearTempDocuments(): Promise<void> {
+    try {
+      const sessionId = this.sessionStaging.getSessionId();
+      console.log('🗑️ [CLEANUP] Clearing temp documents from database...');
+      
+      await this.http.post(`${environment.apiBaseUrl}/session/clear-temp-documents`, {
+        sessionId
+      }).toPromise();
+      
+      console.log('✅ [CLEANUP] Temp documents cleared successfully');
+    } catch (error) {
+      console.warn('⚠️ [CLEANUP] Failed to clear temp documents:', error);
+      // Non-critical error, don't block user
+    }
   }
 
   // ✅ Background governance helper methods
