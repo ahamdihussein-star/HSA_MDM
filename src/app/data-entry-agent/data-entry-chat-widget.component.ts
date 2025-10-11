@@ -5406,6 +5406,46 @@ Would you like to:
       const newFiles = Array.from(files) as File[];
       console.log('🔍 [DEBUG] New files converted:', newFiles.map(f => f.name));
       
+      // ✅ FIX: Add documents to unifiedModalData FIRST (before governance check)
+      console.log('📎 [ADD DOCS] Adding documents to unifiedModalData.documents');
+      
+      // Upload files to filesystem first
+      await this.sessionStaging.saveDocumentsDirect(newFiles);
+      
+      // Get the newly uploaded documents from backend
+      if (this.currentCompanyId) {
+        const response = await this.sessionStaging.getDocumentsForModal(this.currentCompanyId);
+        console.log('📄 [ADD DOCS] Response from getDocumentsForModal:', response);
+        
+        // Extract documents array from response
+        const newDocs = (response as any).documents || response;
+        console.log('📄 [ADD DOCS] Documents array:', newDocs);
+        
+        // Convert to File objects for display
+        const newFilesForDisplay = await this.sessionStaging.convertFilesystemDocumentsToFiles(newDocs);
+        console.log('📄 [ADD DOCS] Files for display:', newFilesForDisplay.length);
+        
+        // Add to unifiedModalData.documents
+        for (let i = 0; i < newFilesForDisplay.length; i++) {
+          const file = newFilesForDisplay[i];
+          const doc = newDocs[i];
+          
+          this.unifiedModalData.documents.push({
+            value: {
+              name: file.name,
+              size: file.size,
+              mime: file.type,
+              file: file,
+              fileUrl: doc.fileUrl,
+              uploadedAt: new Date()
+            }
+          });
+        }
+        
+        console.log('✅ [ADD DOCS] Documents added to unifiedModalData:', this.unifiedModalData.documents.length);
+        this.cdr.detectChanges();
+      }
+      
       // Check if this is adding to existing documents
       if (this.uploadedFiles.length > 0) {
         console.log('🔍 [DEBUG] Adding documents to existing ones');

@@ -1259,14 +1259,8 @@ app.post('/api/session/upload-files-direct', upload.array('files', 5), async (re
       return res.status(400).json({ error: 'No files provided' });
     }
     
-    // Clear old documents for this session
-    console.log('🗑️ [DIRECT UPLOAD] Clearing old documents...');
-    const deleteStmt = db.prepare(`
-      DELETE FROM session_documents_temp 
-      WHERE session_id = ?
-    `);
-    const deleteResult = deleteStmt.run(sessionId);
-    console.log(`🗑️ [DIRECT UPLOAD] Cleared ${deleteResult.changes} old documents`);
+    // ✅ FIX: Don't clear old documents - append new ones instead!
+    console.log('📎 [DIRECT UPLOAD] Appending new documents to existing ones...');
     
     // Process uploaded files
     const documentIds = [];

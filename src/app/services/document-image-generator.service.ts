@@ -258,21 +258,63 @@ export class DocumentImageGeneratorService {
     ctx.textAlign = 'center';
     ctx.fillText(this.getDocumentName(type).toUpperCase(), this.A4_WIDTH / 2, 60);
     
-    // Content
-    let y = 150;
-    ctx.font = '18px Arial';
-    ctx.fillText(companyName, this.A4_WIDTH / 2, y);
+    // Authority
+    ctx.font = '16px Arial';
+    ctx.fillText(this.getAuthorityName(country, 'commercial'), this.A4_WIDTH / 2, 85);
+    
+    // Border
+    ctx.strokeStyle = '#0066cc';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(30, 120, this.A4_WIDTH - 60, 400);
+    
+    // Content - ONLY ESSENTIAL INFO (Simple & Clear)
+    let y = 220;
+    ctx.textAlign = 'left';
+    
+    // ✅ COMPANY NAME - Big and Clear for OpenAI
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = '#000000';
+    ctx.fillText('Company Name:', 70, y);
     
     y += 50;
-    ctx.font = '16px Arial';
-    ctx.textAlign = 'left';
-    ctx.fillText(`Company Owner: ${data?.ownerName || data?.CompanyOwner || 'N/A'}`, 50, y);
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#0066cc';
+    ctx.fillText(companyName, 70, y);
     
-    y += 30;
-    ctx.fillText(`Country: ${country}`, 50, y);
+    // ✅ COMPANY OWNER
+    y += 80;
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = '#000000';
+    ctx.fillText('Company Owner:', 70, y);
     
-    y += 30;
-    ctx.fillText(`Date: ${this.formatDate(new Date())}`, 50, y);
+    y += 50;
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#0066cc';
+    ctx.fillText(data?.ownerName || data?.CompanyOwner || 'N/A', 70, y);
+    
+    // ✅ COUNTRY
+    y += 80;
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = '#000000';
+    ctx.fillText('Country:', 70, y);
+    
+    y += 50;
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#0066cc';
+    ctx.fillText(country, 70, y);
+    
+    // Stamp
+    y += 100;
+    ctx.fillStyle = '#000000';
+    ctx.strokeStyle = '#cccccc';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(150, y, 50, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('OFFICIAL', 150, y - 10);
+    ctx.fillText('STAMP', 150, y + 10);
   }
   
   // Helper methods
