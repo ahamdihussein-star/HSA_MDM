@@ -495,10 +495,10 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
         type: 'text'
       });
       
-      // Step 2: Save documents to database FIRST
-      console.log('💾 [DB-FIRST] Saving documents to database...');
-      const saveResponse = await this.sessionStaging.saveDocumentsOnly(files);
-      console.log('✅ [DB-FIRST] Documents saved:', saveResponse);
+      // Step 2: Save documents to filesystem FIRST (NEW METHOD)
+      console.log('💾 [FILESYSTEM-FIRST] Saving documents to filesystem...');
+      const saveResponse = await this.sessionStaging.saveDocumentsDirect(files);
+      console.log('✅ [FILESYSTEM-FIRST] Documents saved:', saveResponse);
       
       // Step 3: Show success message
       this.addMessage({
@@ -522,9 +522,9 @@ Please wait while I extract the data from your documents.`,
       
       await this.animateProgressBar();
       
-      // Step 5: Process documents from database (not from memory!)
-      console.log('🤖 [DB-FIRST] Starting AI processing from database...');
-      const extractedData = await this.agentService.processDocumentsFromDatabase(
+      // Step 5: Process documents from filesystem (NEW METHOD - bypasses encoding issues!)
+      console.log('🤖 [FILESYSTEM-FIRST] Starting AI processing from filesystem...');
+      const extractedData = await this.agentService.processDocumentsFromFilesystem(
         saveResponse.sessionId,
         saveResponse.documentIds.map((d: any) => d.documentId)
       );
@@ -773,38 +773,33 @@ Please try uploading again.`,
       
       console.log('📄 [DB FLOW] Total documents to display:', documentsFromDB.length);
       
-      // ✅ Convert base64 documents back to File objects for display
-      const fileObjects: File[] = [];
+      // ✅ NEW: Get documents from filesystem for display (bypasses base64 conversion)
+      console.log('📄 [DB FLOW] Loading documents from filesystem for modal...');
+      const modalDocumentsResponse = await this.sessionStaging.getDocumentsForModal(companyData.company_id);
+      const documentsFromFS = modalDocumentsResponse.documents || [];
       
-      for (const doc of documentsFromDB) {
-        // Convert base64 to File object
-        const base64Data = doc.document_content.split(',')[1] || doc.document_content;
-        const byteCharacters = atob(base64Data);
-        const byteNumbers = new Array(byteCharacters.length);
-        for (let i = 0; i < byteCharacters.length; i++) {
-          byteNumbers[i] = byteCharacters.charCodeAt(i);
-        }
-        const byteArray = new Uint8Array(byteNumbers);
-        const blob = new Blob([byteArray], { type: doc.document_type });
-        const file = new File([blob], doc.document_name, { type: doc.document_type });
-        fileObjects.push(file);
-      }
+      console.log('📄 [DB FLOW] Documents from filesystem:', documentsFromFS.length);
+      
+      // ✅ NEW: Use service method to convert filesystem documents to File objects
+      const fileObjects = await this.sessionStaging.convertFilesystemDocumentsToFiles(documentsFromFS);
       
       console.log('✅ [DB FLOW] Converted documents to File objects:', fileObjects.length);
       
       // ✅ Update current company ID
       this.currentCompanyId = companyId;
       
-      // ✅ Store documents in unifiedModalData for getDocumentsList()
-      this.unifiedModalData.documents = documentsFromDB.map((doc: any, index: number) => ({
+      // ✅ Store documents in unifiedModalData for getDocumentsList() - with filesystem support
+      this.unifiedModalData.documents = documentsFromFS.map((fsDoc: any, index: number) => ({
         value: {
-          id: `db-doc-${index}`,
-          name: doc.document_name,
-          type: this.getDocumentType({ type: doc.document_type || '' }),
-          mime: doc.document_type,
-          size: doc.document_size || 0,
-          uploadedAt: doc.created_at || new Date().toISOString(),
-          contentBase64: doc.document_content || ''
+          id: `fs-doc-${index}`,
+          name: fsDoc.name,
+          type: this.getDocumentType({ type: fsDoc.type || '' }),
+          mime: fsDoc.mime,
+          size: fsDoc.size || 0,
+          uploadedAt: new Date().toISOString(),
+          // ✅ NEW: Include both filesystem URL and base64 for compatibility
+          fileUrl: fsDoc.fileUrl,
+          contentBase64: '' // Not needed for filesystem documents
         }
       }));
       
@@ -4566,11 +4561,20 @@ Would you like to:
    */
   canPreview(doc: any): boolean {
     const documentData = doc.value || doc;
-    if (!documentData || !documentData.mime) return false;
+    if (!documentData) return false;
     
-    const mime = documentData.mime.toLowerCase();
-    return mime === 'application/pdf' || 
-           mime.startsWith('image/');
+    // ✅ FIX: Support both mime type and file extension checking
+    if (documentData.mime) {
+      const mime = documentData.mime.toLowerCase();
+      return mime === 'application/pdf' || mime.startsWith('image/');
+    }
+    
+    // ✅ FIX: Check by file extension for filesystem documents
+    const fileName = documentData.name || documentData.fileUrl || '';
+    const fileExtension = fileName.toLowerCase().split('.').pop();
+    const previewableExtensions = ['pdf', 'jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+    
+    return previewableExtensions.includes(fileExtension);
   }
 
   /**
@@ -4578,7 +4582,16 @@ Would you like to:
    */
   isPdf(doc: any): boolean {
     const documentData = doc.value || doc;
-    return documentData?.mime?.toLowerCase() === 'application/pdf';
+    
+    // Check by MIME type first
+    if (documentData?.mime) {
+      return documentData.mime.toLowerCase() === 'application/pdf';
+    }
+    
+    // Check by file extension for filesystem documents
+    const fileName = documentData?.name || documentData?.fileUrl || '';
+    const fileExtension = fileName.toLowerCase().split('.').pop();
+    return fileExtension === 'pdf';
   }
 
   /**
@@ -4586,7 +4599,17 @@ Would you like to:
    */
   isImage(doc: any): boolean {
     const documentData = doc.value || doc;
-    return documentData?.mime?.toLowerCase().startsWith('image/');
+    
+    // Check by MIME type first
+    if (documentData?.mime) {
+      return documentData.mime.toLowerCase().startsWith('image/');
+    }
+    
+    // Check by file extension for filesystem documents
+    const fileName = documentData?.name || documentData?.fileUrl || '';
+    const fileExtension = fileName.toLowerCase().split('.').pop();
+    const imageExtensions = ['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'];
+    return imageExtensions.includes(fileExtension);
   }
 
   /**
@@ -4599,41 +4622,64 @@ Would you like to:
     console.log('Document data:', documentData);
     console.log('MIME type:', documentData?.mime);
 
-    if (!documentData || !documentData.contentBase64) {
-      console.error('❌ Document data or content missing');
-      return;
-    }
-
-    this.currentPreviewDocument = documentData;
-
-    // Determine document type
-    const mime = documentData.mime?.toLowerCase() || '';
-    
-    if (mime === 'application/pdf') {
-      this.previewDocumentType = 'pdf';
-      // For PDF: use data URL directly
-      this.previewDocumentUrl = documentData.contentBase64.startsWith('data:') 
-        ? documentData.contentBase64 
-        : `data:application/pdf;base64,${documentData.contentBase64}`;
-    } else if (mime.startsWith('image/')) {
-      this.previewDocumentType = 'image';
-      // For Image: use data URL directly
-      this.previewDocumentUrl = documentData.contentBase64.startsWith('data:') 
-        ? documentData.contentBase64 
-        : `data:${mime};base64,${documentData.contentBase64}`;
+    // ✅ NEW: Support both filesystem URLs and base64 content
+    if (documentData.fileUrl) {
+      // Filesystem-based document
+      console.log('🔍 [PREVIEW] Using filesystem URL:', documentData.fileUrl);
+      this.previewDocumentUrl = documentData.fileUrl;
+      
+      // ✅ FIX: Determine document type from file extension or mime type
+      const fileName = documentData.name || documentData.fileUrl;
+      const fileExtension = fileName.toLowerCase().split('.').pop();
+      
+      if (fileExtension === 'pdf') {
+        this.previewDocumentType = 'pdf';
+      } else if (['jpg', 'jpeg', 'png', 'gif', 'bmp', 'webp'].includes(fileExtension)) {
+        this.previewDocumentType = 'image';
+      } else {
+        this.previewDocumentType = 'other';
+      }
+      
+      console.log('🔍 [PREVIEW] File extension:', fileExtension, 'Type:', this.previewDocumentType);
+      this.currentPreviewDocument = documentData;
+    } else if (documentData.contentBase64) {
+      // Base64-based document (legacy support)
+      console.log('🔍 [PREVIEW] Using base64 content');
+      this.currentPreviewDocument = documentData;
+      
+      // Determine document type
+      const mime = documentData.mime?.toLowerCase() || '';
+      
+      if (mime === 'application/pdf') {
+        this.previewDocumentType = 'pdf';
+        this.previewDocumentUrl = documentData.contentBase64.startsWith('data:') 
+          ? documentData.contentBase64 
+          : `data:application/pdf;base64,${documentData.contentBase64}`;
+      } else if (mime.startsWith('image/')) {
+        this.previewDocumentType = 'image';
+        this.previewDocumentUrl = documentData.contentBase64.startsWith('data:') 
+          ? documentData.contentBase64 
+          : `data:${mime};base64,${documentData.contentBase64}`;
+      } else {
+        this.previewDocumentType = 'other';
+        this.previewDocumentUrl = null;
+        console.warn('⚠️ Unsupported file type for preview:', mime);
+        return;
+      }
     } else {
-      this.previewDocumentType = 'other';
-      this.previewDocumentUrl = null;
-      console.warn('⚠️ Unsupported file type for preview:', mime);
+      console.error('❌ Document data or content missing');
       return;
     }
 
     console.log('✅ Preview URL created:', this.previewDocumentUrl?.substring(0, 50) + '...');
     console.log('✅ Preview type:', this.previewDocumentType);
+    console.log('✅ Current preview document:', this.currentPreviewDocument);
 
     // Show modal
     this.showDocumentPreviewModal = true;
     this.cdr.detectChanges();
+    
+    console.log('✅ Preview modal shown:', this.showDocumentPreviewModal);
   }
 
   /**
@@ -4662,37 +4708,56 @@ Would you like to:
     try {
       const documentData = doc.value || doc;
       
-      if (!documentData || !documentData.contentBase64) {
+      // ✅ NEW: Support both filesystem URLs and base64 content
+      if (documentData.fileUrl) {
+        // Filesystem-based document - direct download
+        console.log('📥 Downloading from filesystem:', documentData.fileUrl);
+        const fileName = documentData.name || 'document';
+        
+        // Create download link
+        const link = document.createElement('a');
+        link.href = documentData.fileUrl;
+        link.download = fileName;
+        link.target = '_blank';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        
+        console.log('✅ Document downloaded from filesystem:', fileName);
+      } else if (documentData.contentBase64) {
+        // Base64-based document (legacy support)
+        console.log('📥 Downloading from base64:', documentData.name);
+
+        // Extract base64 content (remove data URL prefix if present)
+        let base64Content = documentData.contentBase64;
+        if (base64Content.includes(',')) {
+          base64Content = base64Content.split(',')[1];
+        }
+
+        // Convert base64 to blob
+        const byteCharacters = atob(base64Content);
+        const byteNumbers = new Array(byteCharacters.length);
+        for (let i = 0; i < byteCharacters.length; i++) {
+          byteNumbers[i] = byteCharacters.charCodeAt(i);
+        }
+        const byteArray = new Uint8Array(byteNumbers);
+        const blob = new Blob([byteArray], { type: documentData.mime || 'application/octet-stream' });
+
+        // Create download link
+        const url = window.URL.createObjectURL(blob);
+        const link = document.createElement('a');
+        link.href = url;
+        link.download = documentData.name || 'download';
+        document.body.appendChild(link);
+        link.click();
+        document.body.removeChild(link);
+        window.URL.revokeObjectURL(url);
+        
+        console.log('✅ Document downloaded from base64:', documentData.name);
+      } else {
         console.error('❌ Cannot download: missing document data');
         return;
       }
-
-      console.log('📥 Downloading document:', documentData.name);
-
-      // Extract base64 content (remove data URL prefix if present)
-      let base64Content = documentData.contentBase64;
-      if (base64Content.includes(',')) {
-        base64Content = base64Content.split(',')[1];
-      }
-
-      // Convert base64 to blob
-      const byteCharacters = atob(base64Content);
-      const byteNumbers = new Array(byteCharacters.length);
-      for (let i = 0; i < byteCharacters.length; i++) {
-        byteNumbers[i] = byteCharacters.charCodeAt(i);
-      }
-      const byteArray = new Uint8Array(byteNumbers);
-      const blob = new Blob([byteArray], { type: documentData.mime || 'application/octet-stream' });
-
-      // Create download link
-      const url = window.URL.createObjectURL(blob);
-      const link = document.createElement('a');
-      link.href = url;
-      link.download = documentData.name || 'download';
-      document.body.appendChild(link);
-      link.click();
-      document.body.removeChild(link);
-      window.URL.revokeObjectURL(url);
 
       console.log('✅ Download triggered:', documentData.name);
     } catch (error) {
@@ -4714,10 +4779,17 @@ Would you like to:
    * Get documents count
    */
   getDocumentsCount(): number {
+    // ✅ FIX: Use unifiedModalData.documents for modal display
+    if (this.unifiedModalData?.documents && this.unifiedModalData.documents.length > 0) {
+      return this.unifiedModalData.documents.length;
+    }
+    
+    // Fallback to service documents
     const serviceDocuments = this.agentService.getDocuments();
     if (serviceDocuments && serviceDocuments.length > 0) {
       return serviceDocuments.length;
     }
+    
     return this.uploadedFiles?.length || 0;
   }
 
@@ -4728,21 +4800,20 @@ Would you like to:
     console.log('🔍 [DB DOCUMENTS] getDocumentsList() called');
     console.log('🔍 [DB DOCUMENTS] Current company ID:', this.currentCompanyId);
     
-    // ✅ If no current company, return empty (fresh start)
-    if (!this.currentCompanyId) {
-      console.log('⚠️ [DB DOCUMENTS] No current company - returning empty array');
-      return [];
-    }
+    // ✅ FIX: Always use unifiedModalData.documents for modal display
+    const cachedDocs = this.unifiedModalData?.documents || [];
     
-    // ✅ Get documents from database synchronously using cached data
-    // Note: This will be updated by showUnifiedModalFromDatabase()
-    const cachedDocs = this.unifiedModalData.documents || [];
-    
-    console.log(`📄 [DB DOCUMENTS] Cached documents from last DB load: ${cachedDocs.length}`);
+    console.log(`📄 [DB DOCUMENTS] Cached documents from unifiedModalData: ${cachedDocs.length}`);
     
     if (cachedDocs.length > 0) {
       console.log(`📄 [DB DOCUMENTS] Document names:`, cachedDocs.map((d: any) => d.value?.name || d.name));
       return cachedDocs;
+    }
+    
+    // ✅ If no current company, return empty (fresh start)
+    if (!this.currentCompanyId) {
+      console.log('⚠️ [DB DOCUMENTS] No current company - returning empty array');
+      return [];
     }
     
     console.log('⚠️ [DB DOCUMENTS] No cached documents - modal will load from DB');

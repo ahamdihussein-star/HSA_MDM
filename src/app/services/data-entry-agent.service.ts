@@ -631,17 +631,20 @@ ${extractionContext}
 3. If a field is not visible, return empty string ""
 4. Return clean values without labels or formatting
 
-**FIELD MAPPING (Document → Output):**
+**FIELD MAPPING (Document → Output) - EXTRACT EXACTLY WHAT YOU SEE:**
 
-Document says "Company Name:" → Extract to: "companyName"
-Document says "Company Type:" → Extract to: "customerType"  
-Document says "Tax Number:" or "Registration No:" → Extract to: "taxNumber"
-Document says "Company Owner:" or "Owner:" → Extract to: "ownerName"
+Document says "Company Name:" → Extract to: "companyName" (exact text after colon)
+Document says "Company Type:" → Extract to: "companyType" (exact text after colon)
+Document says "Legal Status:" → Extract to: "companyType" (if Company Type not found)
+Document says "Tax Number:" or "Registration No:" → Extract to: "taxNumber" (exact text after colon)
+Document says "Company Owner:" or "Owner:" → Extract to: "ownerName" (exact text after colon)
 Document says "Address:" → Parse and extract:
   - Building/house number → "buildingNumber"
   - Street name → "street"
   - City name → "city"
-Document says "Country:" → Extract to: "country"
+Document says "Country:" → Extract to: "country" (exact text after colon)
+
+**CRITICAL: Read each field carefully and extract ONLY the exact text that appears after the colon (:). Do not guess or infer any values.**
 
 **IMPORTANT ADDRESS PARSING:**
 If you see "Address: 1075 Al-Qasr Street, Luxor, Egypt"
@@ -653,7 +656,7 @@ If you see "Address: 1075 Al-Qasr Street, Luxor, Egypt"
 **OUTPUT FORMAT - JSON ONLY (no markdown, no comments):**
 {
   "companyName": "exact company name from document",
-  "customerType": "company type (Joint Stock, LLC, etc.)",
+  "companyType": "company type (Joint Stock, LLC, etc.)",
   "taxNumber": "tax or registration number",
   "ownerName": "owner/CEO name",
   "buildingNumber": "building number only",
@@ -685,6 +688,7 @@ Extract now:`
         
         const requestSize = JSON.stringify(requestBody).length;
         console.log(`📊 [OPENAI] Request size: ${(requestSize / 1024).toFixed(2)} KB`);
+        console.log(`🔍 [OPENAI DEBUG] Full request body:`, JSON.stringify(requestBody, null, 2));
 
         const response = await firstValueFrom(
           this.http.post<any>('https://api.openai.com/v1/chat/completions', requestBody, {
@@ -711,7 +715,7 @@ Extract now:`
         console.log(`✅ [OPENAI] Parsed data:`, extractedData);
         
         // Validate that we got the 8 fields
-        const requiredFields = ['companyName', 'customerType', 'taxNumber', 'ownerName', 
+        const requiredFields = ['companyName', 'companyType', 'taxNumber', 'ownerName', 
                                 'buildingNumber', 'street', 'city', 'country'];
         const missingFields = requiredFields.filter(f => !(f in extractedData));
         
@@ -744,7 +748,7 @@ Extract now:`
    * Get missing fields for lightweight extraction
    */
   private getMissingFields(data: Partial<ExtractedData>): string[] {
-    const required = ['companyName', 'customerType', 'taxNumber', 'ownerName',
+    const required = ['companyName', 'companyType', 'taxNumber', 'ownerName',
                       'buildingNumber', 'street', 'city', 'country'];
     
     return required.filter(field => {
@@ -759,7 +763,7 @@ Extract now:`
   private mapFieldToOldName(newField: string): string {
     const mapping: {[key: string]: string} = {
       'companyName': 'firstName',
-      'customerType': 'CustomerType',
+      'companyType': 'CustomerType',
       'taxNumber': 'tax'
     };
     return mapping[newField] || newField;
@@ -775,7 +779,7 @@ Extract now:`
       firstName: this.cleanText(extracted.companyName),
       firstNameAR: '',
       tax: this.cleanText(extracted.taxNumber),
-      CustomerType: this.mapCustomerType(extracted.customerType),
+      CustomerType: this.mapCustomerType(extracted.companyType),
       ownerName: this.cleanText(extracted.ownerName),
       buildingNumber: this.cleanText(extracted.buildingNumber),
       street: this.cleanText(extracted.street),
@@ -1118,6 +1122,102 @@ For dropdown fields, provide numbered options.`;
   }
 
   /**
+   * ✅ NEW: Process documents from filesystem (bypasses base64 encoding issues)
+   */
+  async processDocumentsFromFilesystem(sessionId: string, documentIds: string[]): Promise<Partial<ExtractedData>> {
+    try {
+      console.log('🤖 [FILESYSTEM PROCESSING] Starting AI processing from filesystem...');
+      console.log('🤖 [FILESYSTEM PROCESSING] Session ID:', sessionId);
+      console.log('🤖 [FILESYSTEM PROCESSING] Document IDs:', documentIds);
+      
+      // ✅ Step 1: Retrieve documents from filesystem
+      const response = await firstValueFrom(
+        this.http.post<any>(`${this.apiBase}/session/get-documents-for-processing-files`, {
+          sessionId,
+          documentIds
+        })
+      );
+      
+      const documentsFromFS = response.documents;
+      console.log('📥 [FILESYSTEM PROCESSING] Retrieved documents from filesystem:', documentsFromFS.length);
+      
+      // ✅ Step 2: VALIDATE documents before processing
+      if (!documentsFromFS || documentsFromFS.length === 0) {
+        throw new Error('No documents retrieved from filesystem!');
+      }
+      
+      documentsFromFS.forEach((doc: any, index: number) => {
+        console.log(`🔍 [FILESYSTEM VALIDATION] Checking document ${index + 1}:`, {
+          id: doc.document_id,
+          name: doc.document_name,
+          type: doc.document_type,
+          hasContent: !!doc.document_content,
+          contentLength: doc.document_content?.length || 0,
+          contentPreview: doc.document_content?.substring(0, 100) + '...'
+        });
+        
+        // ✅ Validate document has content
+        if (!doc.document_content || doc.document_content.length < 100) {
+          throw new Error(`Document ${doc.document_name} has invalid or empty content!`);
+        }
+      });
+      
+      console.log('✅ [FILESYSTEM VALIDATION] All documents validated successfully');
+      
+      // ✅ Step 3: Convert filesystem format to processing format
+      const documentsForAI = documentsFromFS.map((doc: any, index: number) => {
+        console.log(`📄 [FILESYSTEM PROCESSING] Preparing document ${index + 1}:`, {
+          id: doc.document_id,
+          name: doc.document_name,
+          type: doc.document_type,
+          contentLength: doc.document_content?.length || 0
+        });
+        
+        return {
+          id: doc.document_id,
+          name: doc.document_name,
+          type: doc.document_type,
+          size: doc.document_size,
+          content: doc.document_content
+        };
+      });
+      
+      console.log('🤖 [FILESYSTEM PROCESSING] Documents prepared for OpenAI:', documentsForAI.length);
+      
+      // ✅ Step 4: Log what's being sent to OpenAI
+      documentsForAI.forEach((doc: any, index: number) => {
+        console.log(`📤 [FILESYSTEM OPENAI INPUT] Document ${index + 1} to send:`, {
+          name: doc.name,
+          type: doc.type,
+          contentLength: doc.content?.length || 0,
+          contentStart: doc.content?.substring(0, 50) + '...'
+        });
+        
+        console.log(`🔍 [FILESYSTEM OPENAI DEBUG] Base64 content start: ${doc.content?.substring(0, 50)}...`);
+        console.log(`🔍 [FILESYSTEM OPENAI DEBUG] Base64 content end: ...${doc.content?.substring(doc.content.length - 50)}`);
+      });
+      
+      // ✅ Step 5: Send to OpenAI for extraction
+      const extractedData = await this.extractDataFromDocuments(documentsForAI, undefined, false);
+      
+      console.log('✅ [FILESYSTEM PROCESSING] Extraction complete:', extractedData);
+      
+      // ✅ Step 6: Store extracted data in service
+      this.extractedData = { ...this.extractedData, ...extractedData };
+      
+      // ✅ Step 7: Clear memory arrays (filesystem is source of truth!)
+      this.uploadedDocuments = [];
+      console.log('🧹 [FILESYSTEM PROCESSING] Memory cleared - using filesystem only');
+      
+      return extractedData;
+      
+    } catch (error: any) {
+      console.error('❌ [FILESYSTEM PROCESSING] Error processing from filesystem:', error);
+      throw error;
+    }
+  }
+
+  /**
    * ✅ NEW: Process documents from database (not from memory)
    */
   async processDocumentsFromDatabase(sessionId: string, documentIds: string[]): Promise<Partial<ExtractedData>> {
@@ -1188,6 +1288,9 @@ For dropdown fields, provide numbered options.`;
           contentLength: doc.content?.length || 0,
           contentStart: doc.content?.substring(0, 50) + '...'
         });
+        
+        console.log(`🔍 [OPENAI DEBUG] Base64 content start: ${doc.content?.substring(0, 50)}...`);
+        console.log(`🔍 [OPENAI DEBUG] Base64 content end: ...${doc.content?.substring(doc.content.length - 50)}`);
       });
       
       // ✅ Step 3: Send to OpenAI for extraction

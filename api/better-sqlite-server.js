@@ -3,13 +3,66 @@ const cors = require('cors');
 const { nanoid } = require('nanoid');
 const Database = require('better-sqlite3');
 const path = require('path');
+const multer = require('multer');
+const fs = require('fs').promises;
 
 const app = express();
 const PORT = 3000;
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
 
+// ✅ NEW: File upload configuration with date-based folder structure
+const storage = multer.diskStorage({
+  destination: async (req, file, cb) => {
+    const today = new Date().toISOString().split('T')[0]; // YYYY-MM-DD
+    const sessionId = req.body.sessionId || 'temp';
+    const uploadPath = path.join(UPLOADS_DIR, today, sessionId);
+    
+    try {
+      await fs.mkdir(uploadPath, { recursive: true });
+      console.log(`📁 [FILE UPLOAD] Created directory: ${uploadPath}`);
+      cb(null, uploadPath);
+    } catch (error) {
+      console.error(`❌ [FILE UPLOAD] Error creating directory: ${error.message}`);
+      cb(error);
+    }
+  },
+  filename: (req, file, cb) => {
+    const documentId = `doc_${Date.now()}_${nanoid(8)}`;
+    const originalName = file.originalname.replace(/[^a-zA-Z0-9.-]/g, '_');
+    const fileName = `${documentId}_${originalName}`;
+    console.log(`📁 [FILE UPLOAD] Generated filename: ${fileName}`);
+    cb(null, fileName);
+  }
+});
+
+const upload = multer({
+  storage: storage,
+  limits: {
+    fileSize: 10 * 1024 * 1024, // 10MB limit
+    files: 5 // Max 5 files per request
+  },
+  fileFilter: (req, file, cb) => {
+    console.log(`🔍 [MULTER FILTER] File received:`, {
+      fieldname: file.fieldname,
+      originalname: file.originalname,
+      mimetype: file.mimetype,
+      size: file.size
+    });
+    
+    // Only allow images and PDFs
+    if (file.mimetype.startsWith('image/') || file.mimetype === 'application/pdf') {
+      console.log(`✅ [MULTER FILTER] File accepted: ${file.originalname}`);
+      cb(null, true);
+    } else {
+      console.log(`❌ [MULTER FILTER] File rejected: ${file.originalname} (type: ${file.mimetype})`);
+      cb(new Error('Only images and PDF files are allowed!'), false);
+    }
+  }
+});
+
 // Enhanced Middlewares with better limits
 app.use(cors());
+app.use('/uploads', express.static(UPLOADS_DIR)); // ✅ NEW: Serve uploaded files
 app.use(express.json({ 
   limit: '20mb',  // Reduced from 50mb for stability
   verify: (req, res, buf) => {
@@ -1193,6 +1246,193 @@ app.post('/api/login', (req, res) => {
 
 // ✅ Session Staging API Endpoints
 
+// ✅ NEW: Direct file upload endpoint (bypasses base64 encoding)
+app.post('/api/session/upload-files-direct', upload.array('files', 5), async (req, res) => {
+  const { sessionId } = req.body;
+  
+  try {
+    console.log('📁 [DIRECT UPLOAD] Starting direct file upload...');
+    console.log('📁 [DIRECT UPLOAD] Session ID:', sessionId);
+    console.log('📁 [DIRECT UPLOAD] Files count:', req.files?.length || 0);
+    
+    if (!req.files || req.files.length === 0) {
+      return res.status(400).json({ error: 'No files provided' });
+    }
+    
+    // Clear old documents for this session
+    console.log('🗑️ [DIRECT UPLOAD] Clearing old documents...');
+    const deleteStmt = db.prepare(`
+      DELETE FROM session_documents_temp 
+      WHERE session_id = ?
+    `);
+    const deleteResult = deleteStmt.run(sessionId);
+    console.log(`🗑️ [DIRECT UPLOAD] Cleared ${deleteResult.changes} old documents`);
+    
+    // Process uploaded files
+    const documentIds = [];
+    const stmt = db.prepare(`
+      INSERT INTO session_documents_temp 
+      (session_id, document_id, document_name, document_path, document_type, document_size, document_content, created_at)
+      VALUES (?, ?, ?, ?, ?, ?, '', CURRENT_TIMESTAMP)
+    `);
+    
+    for (const file of req.files) {
+      const documentId = file.filename.split('_')[1] + '_' + file.filename.split('_')[2];
+      const relativePath = path.relative(UPLOADS_DIR, file.path);
+      
+      console.log(`📁 [DIRECT UPLOAD] Processing file:`, {
+        originalName: file.originalname,
+        filename: file.filename,
+        path: file.path,
+        relativePath: relativePath,
+        size: file.size,
+        mimetype: file.mimetype
+      });
+      
+      stmt.run(sessionId, documentId, file.originalname, relativePath, file.mimetype, file.size);
+      
+      documentIds.push({
+        documentId,
+        name: file.originalname,
+        type: file.mimetype,
+        size: file.size,
+        path: relativePath
+      });
+      
+      console.log(`✅ [DIRECT UPLOAD] File saved with ID: ${documentId}`);
+    }
+    
+    console.log('✅ [DIRECT UPLOAD] All files uploaded successfully');
+    console.log('📁 [DIRECT UPLOAD] Document IDs:', documentIds.map(d => d.documentId));
+    
+    res.json({
+      success: true,
+      sessionId,
+      documentIds,
+      message: 'Files uploaded directly to filesystem. Ready for AI processing.'
+    });
+    
+  } catch (error) {
+    console.error('❌ [DIRECT UPLOAD] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ NEW: Get documents for display in modal (from filesystem)
+app.get('/api/session/documents/:sessionId/:companyId', async (req, res) => {
+  const { sessionId, companyId } = req.params;
+  
+  try {
+    console.log('📄 [MODAL DOCS] Getting documents for modal display...');
+    console.log('📄 [MODAL DOCS] Session ID:', sessionId);
+    console.log('📄 [MODAL DOCS] Company ID:', companyId);
+    
+    // Get documents from database
+    const documents = db.prepare(`
+      SELECT document_id, document_name, document_path, document_type, document_size
+      FROM session_documents_temp
+      WHERE session_id = ?
+    `).all(sessionId);
+    
+    console.log('📄 [MODAL DOCS] Retrieved documents:', documents.length);
+    
+    // Convert to display format with file URLs
+    const documentsForModal = documents.map(doc => {
+      const fileUrl = `http://localhost:3000/uploads/${doc.document_path}`;
+      
+      console.log(`📄 [MODAL DOCS] Document:`, {
+        id: doc.document_id,
+        name: doc.document_name,
+        type: doc.document_type,
+        size: doc.document_size,
+        fileUrl: fileUrl
+      });
+      
+      return {
+        id: doc.document_id,
+        name: doc.document_name,
+        type: doc.document_type,
+        size: doc.document_size,
+        fileUrl: fileUrl,
+        mime: doc.document_type
+      };
+    });
+    
+    res.json({
+      success: true,
+      documents: documentsForModal
+    });
+    
+  } catch (error) {
+    console.error('❌ [MODAL DOCS] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+// ✅ NEW: Get documents for AI processing (from filesystem)
+app.post('/api/session/get-documents-for-processing-files', async (req, res) => {
+  const { sessionId, documentIds } = req.body;
+  
+  try {
+    console.log('📥 [FILES PROCESSING] Retrieving documents from filesystem...');
+    console.log('📥 [FILES PROCESSING] Session ID:', sessionId);
+    console.log('📥 [FILES PROCESSING] Document IDs:', documentIds);
+    
+    const placeholders = documentIds.map(() => '?').join(',');
+    const documents = db.prepare(`
+      SELECT document_id, document_name, document_path, document_type, document_size
+      FROM session_documents_temp
+      WHERE session_id = ? AND document_id IN (${placeholders})
+    `).all(sessionId, ...documentIds);
+    
+    console.log('✅ [FILES PROCESSING] Retrieved documents:', documents.length);
+    
+    // Read files from filesystem and convert to base64
+    const documentsWithContent = [];
+    const fs = require('fs');
+    
+    for (const doc of documents) {
+      const fullPath = path.join(UPLOADS_DIR, doc.document_path);
+      
+      try {
+        console.log(`📁 [FILES PROCESSING] Reading file: ${fullPath}`);
+        const fileBuffer = fs.readFileSync(fullPath);
+        const base64Content = fileBuffer.toString('base64');
+        
+        console.log(`📁 [FILES PROCESSING] File read:`, {
+          id: doc.document_id,
+          name: doc.document_name,
+          type: doc.document_type,
+          size: doc.document_size,
+          contentLength: base64Content.length,
+          contentPreview: base64Content.substring(0, 50) + '...'
+        });
+        
+        documentsWithContent.push({
+          document_id: doc.document_id,
+          document_name: doc.document_name,
+          document_type: doc.document_type,
+          document_size: doc.document_size,
+          document_content: base64Content
+        });
+        
+      } catch (fileError) {
+        console.error(`❌ [FILES PROCESSING] Error reading file ${doc.document_name}:`, fileError);
+        throw new Error(`Failed to read file: ${doc.document_name}`);
+      }
+    }
+    
+    res.json({
+      success: true,
+      documents: documentsWithContent
+    });
+    
+  } catch (error) {
+    console.error('❌ [FILES PROCESSING] Error:', error);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ✅ NEW: Save documents FIRST without company data
 app.post('/api/session/save-documents-only', (req, res) => {
   const { sessionId, documents } = req.body;
@@ -1234,6 +1474,9 @@ app.post('/api/session/save-documents-only', (req, res) => {
         contentLength: doc.content?.length || 0,
         contentPreview: doc.content?.substring(0, 50)
       });
+      
+      console.log(`🔍 [BACKEND DEBUG] Base64 content start: ${doc.content?.substring(0, 50)}...`);
+      console.log(`🔍 [BACKEND DEBUG] Base64 content end: ...${doc.content?.substring(doc.content.length - 50)}`);
       
       // ✅ Validate document has content before saving
       if (!doc.content || doc.content.trim() === '') {
@@ -1296,6 +1539,9 @@ app.post('/api/session/get-documents-for-processing', (req, res) => {
         contentLength: doc.document_content?.length || 0,
         contentPreview: doc.document_content?.substring(0, 50)
       });
+      
+      console.log(`🔍 [RETRIEVAL DEBUG] Base64 content start: ${doc.document_content?.substring(0, 50)}...`);
+      console.log(`🔍 [RETRIEVAL DEBUG] Base64 content end: ...${doc.document_content?.substring(doc.document_content.length - 50)}`);
     });
     
     res.json({
