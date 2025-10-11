@@ -17,6 +17,8 @@ import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzSpinModule } from 'ng-zorro-antd/spin';
 import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
+import { NzTabsModule } from 'ng-zorro-antd/tabs'; // ← أضفت هذا السطر
+
 import { TranslateModule } from '@ngx-translate/core';
 
 // Components
@@ -47,6 +49,7 @@ import { DataEntryReviewMessageComponent } from './data-entry-review-message/dat
     NzSpinModule,
     NzAlertModule,
     NzEmptyModule,
+    NzTabsModule, // ← أضفت هذا السطر
     TranslateModule,
     // Import standalone review component so it can be used in templates
     DataEntryReviewMessageComponent

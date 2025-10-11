@@ -635,11 +635,13 @@
   [(nzVisible)]="showUnifiedModal" 
   (nzOnCancel)="onUnifiedModalClose()"
   [nzFooter]="null"
-  nzWidth="1000px"
+  nzWidth="1200px"
   [nzMaskClosable]="false"
   [nzClosable]="true"
-  [nzBodyStyle]="{'padding': '0'}">
-  
+  [nzBodyStyle]="{'padding': '0'}"
+  [nzClassName]="'unified-modal'"
+  nzTitle="📋 Review & Complete Data Entry">
+
   <div *nzModalContent>
     
     <!-- Progress Bar Section -->
@@ -667,504 +669,515 @@
         <!-- Tab 1: Extracted Data -->
         <nz-tab [nzTitle]="extractedDataTabTitle" *ngIf="unifiedModalData.extractedFields.length > 0">
           <div class="modal-section extracted-section">
-        <div class="section-header">
-          <h3>✅ {{ 'agent.sections.extractedData' | translate }}</h3>
-          <button type="button" 
-                  nz-button 
-                  [nzType]="extractedDataReadOnly ? 'default' : 'primary'"
-                  nzSize="small"
-                  (click)="toggleExtractedDataEdit(extractedDataReadOnly)">
-            <span nz-icon [nzType]="extractedDataReadOnly ? 'edit' : 'save'"></span>
-            {{ extractedDataReadOnly ? ('Edit' | translate) : ('agent.buttons.saveChanges' | translate) }}
-          </button>
-        </div>
+            <div class="section-header">
+              <h3>✅ {{ 'agent.sections.extractedData' | translate }}</h3>
+              <button type="button" 
+                      nz-button 
+                      [nzType]="extractedDataReadOnly ? 'default' : 'primary'"
+                      nzSize="small"
+                      (click)="toggleExtractedDataEdit(extractedDataReadOnly)">
+                <span nz-icon [nzType]="extractedDataReadOnly ? 'edit' : 'save'"></span>
+                {{ extractedDataReadOnly ? ('Edit' | translate) : ('agent.buttons.saveChanges' | translate) }}
+              </button>
+            </div>
+            
+            <div class="form-grid">
+              <!-- Company Information -->
+              <div class="form-row" *ngIf="isFieldExtracted('firstName') || isFieldExtracted('firstNameAR')">
+                <div class="form-group" *ngIf="isFieldExtracted('firstName')">
+                  <label>Company Name (English):</label>
+                  <input formControlName="firstName">
+                </div>
+                <div class="form-group" *ngIf="isFieldExtracted('firstNameAR')">
+                  <label>اسم الشركة (عربي):</label>
+                  <input formControlName="firstNameAR">
+                </div>
+              </div>
+              
+              <div class="form-row" *ngIf="isFieldExtracted('tax') || isFieldExtracted('CustomerType')">
+                <div class="form-group" *ngIf="isFieldExtracted('tax')">
+                  <label>Tax Number:</label>
+                  <input formControlName="tax">
+                </div>
+                <div class="form-group" *ngIf="isFieldExtracted('CustomerType')">
+                  <label>Customer Type:</label>
+                  <nz-select formControlName="CustomerType">
+                    <nz-option *ngFor="let option of customerTypeOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+              </div>
+              
+              <div class="form-row" *ngIf="isFieldExtracted('ownerName')">
+                <div class="form-group full-width">
+                  <label>Owner Name:</label>
+                  <input formControlName="ownerName">
+                </div>
+              </div>
+              
+              <!-- Address Information -->
+              <div class="form-row" *ngIf="isFieldExtracted('buildingNumber') || isFieldExtracted('street')">
+                <div class="form-group" *ngIf="isFieldExtracted('buildingNumber')">
+                  <label>Building Number:</label>
+                  <input formControlName="buildingNumber">
+                </div>
+                <div class="form-group" *ngIf="isFieldExtracted('street')">
+                  <label>Street:</label>
+                  <input formControlName="street">
+                </div>
+              </div>
+              
+              <div class="form-row" *ngIf="isFieldExtracted('country') || isFieldExtracted('city')">
+                <div class="form-group" *ngIf="isFieldExtracted('country')">
+                  <label>Country:</label>
+                  <nz-select formControlName="country" 
+                             nzShowSearch 
+                             nzAllowClear
+                             [nzPlaceHolder]="'Select or enter country'">
+                    <nz-option *ngFor="let option of countryOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+                <div class="form-group" *ngIf="isFieldExtracted('city')">
+                  <label>City:</label>
+                  <nz-select formControlName="city" 
+                             nzShowSearch 
+                             nzAllowClear
+                             [nzPlaceHolder]="'Select or enter city'">
+                    <nz-option *ngFor="let option of cityOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+              </div>
+              
+              <!-- Sales Information -->
+              <div class="form-row" *ngIf="isFieldExtracted('salesOrganization') || isFieldExtracted('distributionChannel')">
+                <div class="form-group" *ngIf="isFieldExtracted('salesOrganization')">
+                  <label>Sales Organization:</label>
+                  <nz-select formControlName="salesOrganization">
+                    <nz-option *ngFor="let option of salesOrgOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+                <div class="form-group" *ngIf="isFieldExtracted('distributionChannel')">
+                  <label>Distribution Channel:</label>
+                  <nz-select formControlName="distributionChannel">
+                    <nz-option *ngFor="let option of distributionChannelOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+              </div>
+              
+              <div class="form-row" *ngIf="isFieldExtracted('division')">
+                <div class="form-group">
+                  <label>Division:</label>
+                  <nz-select formControlName="division">
+                    <nz-option *ngFor="let option of divisionOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+              </div>
+            </div>
+          </div>
+        </nz-tab>
         
-        <div class="form-grid">
-          <!-- Company Information -->
-          <div class="form-row" *ngIf="isFieldExtracted('firstName') || isFieldExtracted('firstNameAR')">
-            <div class="form-group" *ngIf="isFieldExtracted('firstName')">
-              <label>Company Name (English):</label>
-              <input formControlName="firstName">
+        <!-- Tab 2: Missing Data -->
+        <nz-tab [nzTitle]="missingDataTabTitle" *ngIf="unifiedModalData.missingFields.length > 0">
+          <div class="modal-section missing-section">
+            <div class="section-header">
+              <h3>❌ {{ 'agent.sections.missingData' | translate }}</h3>
+              <span class="missing-count">{{ unifiedModalData.missingFields.length }} {{ 'agent.labels.fields' | translate }}</span>
             </div>
-            <div class="form-group" *ngIf="isFieldExtracted('firstNameAR')">
-              <label>اسم الشركة (عربي):</label>
-              <input formControlName="firstNameAR">
+            
+            <div class="form-grid">
+              <!-- Company Information -->
+              <div class="form-row" *ngIf="isFieldMissing('firstName') || isFieldMissing('firstNameAR')">
+                <div class="form-group" *ngIf="isFieldMissing('firstName')">
+                  <label class="required">Company Name (English):</label>
+                  <input formControlName="firstName" placeholder="Enter company name in English">
+                </div>
+                <div class="form-group" *ngIf="isFieldMissing('firstNameAR')">
+                  <label class="required">اسم الشركة (عربي):</label>
+                  <input formControlName="firstNameAR" placeholder="أدخل اسم الشركة بالعربية">
+                </div>
+              </div>
+              
+              <div class="form-row" *ngIf="isFieldMissing('tax') || isFieldMissing('CustomerType')">
+                <div class="form-group" *ngIf="isFieldMissing('tax')">
+                  <label class="required">Tax Number:</label>
+                  <input formControlName="tax" placeholder="Enter tax registration number">
+                </div>
+                <div class="form-group" *ngIf="isFieldMissing('CustomerType')">
+                  <label class="required">Customer Type:</label>
+                  <nz-select formControlName="CustomerType" nzPlaceHolder="Select customer type">
+                    <nz-option *ngFor="let option of customerTypeOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+              </div>
+              
+              <div class="form-row" *ngIf="isFieldMissing('ownerName')">
+                <div class="form-group full-width">
+                  <label class="required">Owner Name:</label>
+                  <input formControlName="ownerName" placeholder="Enter company owner full name">
+                </div>
+              </div>
+              
+              <!-- Address Information -->
+              <div class="form-row" *ngIf="isFieldMissing('buildingNumber') || isFieldMissing('street')">
+                <div class="form-group" *ngIf="isFieldMissing('buildingNumber')">
+                  <label class="required">Building Number:</label>
+                  <input formControlName="buildingNumber" placeholder="Enter building number">
+                </div>
+                <div class="form-group" *ngIf="isFieldMissing('street')">
+                  <label class="required">Street:</label>
+                  <input formControlName="street" placeholder="Enter street name">
+                </div>
+              </div>
+              
+              <div class="form-row" *ngIf="isFieldMissing('country') || isFieldMissing('city')">
+                <div class="form-group" *ngIf="isFieldMissing('country')">
+                  <label class="required">Country:</label>
+                  <nz-select formControlName="country" 
+                             nzPlaceHolder="Select or enter country"
+                             nzShowSearch 
+                             nzAllowClear>
+                    <nz-option *ngFor="let option of countryOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+                <div class="form-group" *ngIf="isFieldMissing('city')">
+                  <label class="required">City:</label>
+                  <nz-select formControlName="city" 
+                             nzPlaceHolder="Select or enter city"
+                             nzShowSearch 
+                             nzAllowClear>
+                    <nz-option *ngFor="let option of cityOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+              </div>
+              
+              <!-- Sales Information (Optional) -->
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="optional">Sales Organization (Optional):</label>
+                  <nz-select formControlName="salesOrganization" nzPlaceHolder="Select sales organization">
+                    <nz-option *ngFor="let option of salesOrgOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+                <div class="form-group">
+                  <label class="optional">Distribution Channel (Optional):</label>
+                  <nz-select formControlName="distributionChannel" nzPlaceHolder="Select distribution channel">
+                    <nz-option *ngFor="let option of distributionChannelOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="optional">Division (Optional):</label>
+                  <nz-select formControlName="division" nzPlaceHolder="Select division">
+                    <nz-option *ngFor="let option of divisionOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <div class="form-row" *ngIf="isFieldExtracted('tax') || isFieldExtracted('CustomerType')">
-            <div class="form-group" *ngIf="isFieldExtracted('tax')">
-              <label>Tax Number:</label>
-              <input formControlName="tax">
-            </div>
-            <div class="form-group" *ngIf="isFieldExtracted('CustomerType')">
-              <label>Customer Type:</label>
-              <nz-select formControlName="CustomerType">
-                <nz-option *ngFor="let option of customerTypeOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-          </div>
-          
-          <div class="form-row" *ngIf="isFieldExtracted('ownerName')">
-            <div class="form-group full-width">
-              <label>Owner Name:</label>
-              <input formControlName="ownerName">
-            </div>
-          </div>
-          
-          <!-- Address Information -->
-          <div class="form-row" *ngIf="isFieldExtracted('buildingNumber') || isFieldExtracted('street')">
-            <div class="form-group" *ngIf="isFieldExtracted('buildingNumber')">
-              <label>Building Number:</label>
-              <input formControlName="buildingNumber">
-            </div>
-            <div class="form-group" *ngIf="isFieldExtracted('street')">
-              <label>Street:</label>
-              <input formControlName="street">
-            </div>
-          </div>
-          
-          <div class="form-row" *ngIf="isFieldExtracted('country') || isFieldExtracted('city')">
-            <div class="form-group" *ngIf="isFieldExtracted('country')">
-              <label>Country:</label>
-              <nz-select formControlName="country" 
-                         nzShowSearch 
-                         nzAllowClear
-                         [nzPlaceHolder]="'Select or enter country'">
-                <nz-option *ngFor="let option of countryOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-            <div class="form-group" *ngIf="isFieldExtracted('city')">
-              <label>City:</label>
-              <nz-select formControlName="city" 
-                         nzShowSearch 
-                         nzAllowClear
-                         [nzPlaceHolder]="'Select or enter city'">
-                <nz-option *ngFor="let option of cityOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-          </div>
-          
-          <!-- Sales Information -->
-          <div class="form-row" *ngIf="isFieldExtracted('salesOrganization') || isFieldExtracted('distributionChannel')">
-            <div class="form-group" *ngIf="isFieldExtracted('salesOrganization')">
-              <label>Sales Organization:</label>
-              <nz-select formControlName="salesOrganization">
-                <nz-option *ngFor="let option of salesOrgOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-            <div class="form-group" *ngIf="isFieldExtracted('distributionChannel')">
-              <label>Distribution Channel:</label>
-              <nz-select formControlName="distributionChannel">
-                <nz-option *ngFor="let option of distributionChannelOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-          </div>
-          
-          <div class="form-row" *ngIf="isFieldExtracted('division')">
-            <div class="form-group">
-              <label>Division:</label>
-              <nz-select formControlName="division">
-                <nz-option *ngFor="let option of divisionOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Section 2: Missing Data -->
-      <div class="modal-section missing-section" *ngIf="unifiedModalData.missingFields.length > 0">
-        <div class="section-header">
-          <h3>❌ {{ 'agent.sections.missingData' | translate }}</h3>
-          <span class="missing-count">{{ unifiedModalData.missingFields.length }} {{ 'agent.labels.fields' | translate }}</span>
-        </div>
+        </nz-tab>
         
-        <div class="form-grid">
-          <!-- Company Information -->
-          <div class="form-row" *ngIf="isFieldMissing('firstName') || isFieldMissing('firstNameAR')">
-            <div class="form-group" *ngIf="isFieldMissing('firstName')">
-              <label class="required">Company Name (English):</label>
-              <input formControlName="firstName" placeholder="Enter company name in English">
+        <!-- Tab 3: Sales Data -->
+        <nz-tab [nzTitle]="salesDataTabTitle">
+          <div class="modal-section sales-section">
+            <div class="section-header">
+              <h3>💼 {{ 'agent.sections.salesData' | translate }} 
+                <span class="optional-badge">Optional</span>
+              </h3>
+              <p class="section-description">Enter sales organization details (optional)</p>
             </div>
-            <div class="form-group" *ngIf="isFieldMissing('firstNameAR')">
-              <label class="required">اسم الشركة (عربي):</label>
-              <input formControlName="firstNameAR" placeholder="أدخل اسم الشركة بالعربية">
-            </div>
-          </div>
-          
-          <div class="form-row" *ngIf="isFieldMissing('tax') || isFieldMissing('CustomerType')">
-            <div class="form-group" *ngIf="isFieldMissing('tax')">
-              <label class="required">Tax Number:</label>
-              <input formControlName="tax" placeholder="Enter tax registration number">
-            </div>
-            <div class="form-group" *ngIf="isFieldMissing('CustomerType')">
-              <label class="required">Customer Type:</label>
-              <nz-select formControlName="CustomerType" nzPlaceHolder="Select customer type">
-                <nz-option *ngFor="let option of customerTypeOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-          </div>
-          
-          <div class="form-row" *ngIf="isFieldMissing('ownerName')">
-            <div class="form-group full-width">
-              <label class="required">Owner Name:</label>
-              <input formControlName="ownerName" placeholder="Enter company owner full name">
-            </div>
-          </div>
-          
-          <!-- Address Information -->
-          <div class="form-row" *ngIf="isFieldMissing('buildingNumber') || isFieldMissing('street')">
-            <div class="form-group" *ngIf="isFieldMissing('buildingNumber')">
-              <label class="required">Building Number:</label>
-              <input formControlName="buildingNumber" placeholder="Enter building number">
-            </div>
-            <div class="form-group" *ngIf="isFieldMissing('street')">
-              <label class="required">Street:</label>
-              <input formControlName="street" placeholder="Enter street name">
+            
+            <div class="form-grid">
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="optional">Sales Organization:</label>
+                  <nz-select formControlName="salesOrganization" nzPlaceHolder="Select sales organization">
+                    <nz-option *ngFor="let option of salesOrgOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+                <div class="form-group">
+                  <label class="optional">Distribution Channel:</label>
+                  <nz-select formControlName="distributionChannel" nzPlaceHolder="Select distribution channel">
+                    <nz-option *ngFor="let option of distributionChannelOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+              </div>
+              
+              <div class="form-row">
+                <div class="form-group">
+                  <label class="optional">Division:</label>
+                  <nz-select formControlName="division" nzPlaceHolder="Select division">
+                    <nz-option *ngFor="let option of divisionOptions" 
+                              [nzValue]="option.value" 
+                              [nzLabel]="option.label">
+                    </nz-option>
+                  </nz-select>
+                </div>
+              </div>
             </div>
           </div>
-          
-          <div class="form-row" *ngIf="isFieldMissing('country') || isFieldMissing('city')">
-            <div class="form-group" *ngIf="isFieldMissing('country')">
-              <label class="required">Country:</label>
-              <nz-select formControlName="country" 
-                         nzPlaceHolder="Select or enter country"
-                         nzShowSearch 
-                         nzAllowClear>
-                <nz-option *ngFor="let option of countryOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-            <div class="form-group" *ngIf="isFieldMissing('city')">
-              <label class="required">City:</label>
-              <nz-select formControlName="city" 
-                         nzPlaceHolder="Select or enter city"
-                         nzShowSearch 
-                         nzAllowClear>
-                <nz-option *ngFor="let option of cityOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-          </div>
-          
-          <!-- Sales Information (Optional) -->
-          <div class="form-row">
-            <div class="form-group">
-              <label class="optional">Sales Organization (Optional):</label>
-              <nz-select formControlName="salesOrganization" nzPlaceHolder="Select sales organization">
-                <nz-option *ngFor="let option of salesOrgOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-            <div class="form-group">
-              <label class="optional">Distribution Channel (Optional):</label>
-              <nz-select formControlName="distributionChannel" nzPlaceHolder="Select distribution channel">
-                <nz-option *ngFor="let option of distributionChannelOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-          </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label class="optional">Division (Optional):</label>
-              <nz-select formControlName="division" nzPlaceHolder="Select division">
-                <nz-option *ngFor="let option of divisionOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
-            </div>
-          </div>
-        </div>
-      </div>
-      
-      <!-- Section 3: Sales Data (Always Visible - Optional) -->
-      <div class="modal-section sales-section">
-        <div class="section-header">
-          <h3>💼 {{ 'agent.sections.salesData' | translate }} 
-            <span class="optional-badge">Optional</span>
-          </h3>
-          <p class="section-description">Enter sales organization details (optional)</p>
-        </div>
+        </nz-tab>
         
-        <div class="form-grid">
-          <div class="form-row">
-            <div class="form-group">
-              <label class="optional">Sales Organization:</label>
-              <nz-select formControlName="salesOrganization" nzPlaceHolder="Select sales organization">
-                <nz-option *ngFor="let option of salesOrgOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
+        <!-- Tab 4: Contacts -->
+        <nz-tab [nzTitle]="contactsTabTitle">
+          <div class="modal-section contacts-section">
+            <div class="section-header">
+              <h3>👥 {{ 'agent.sections.contacts' | translate }} 
+                <span class="contact-count-badge" *ngIf="getValidContactsCount() > 0">{{ getValidContactsCount() }}</span>
+              </h3>
+              <button type="button" 
+                      nz-button 
+                      nzType="primary" 
+                      nzSize="small" 
+                      (click)="openAddContactModal()">
+                <span nz-icon nzType="plus"></span> 
+                {{ 'agent.buttons.addContact' | translate }}
+              </button>
             </div>
-            <div class="form-group">
-              <label class="optional">Distribution Channel:</label>
-              <nz-select formControlName="distributionChannel" nzPlaceHolder="Select distribution channel">
-                <nz-option *ngFor="let option of distributionChannelOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
+            
+            <!-- Contacts Table -->
+            <div class="contacts-table-container" *ngIf="getValidContactsCount() > 0">
+              <table class="contacts-table">
+                <thead>
+                  <tr>
+                    <th class="col-name">Name</th>
+                    <th class="col-job">Job Title</th>
+                    <th class="col-email">Email</th>
+                    <th class="col-mobile">Mobile</th>
+                    <th class="col-language">Language</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let contact of unifiedContactsArray.controls; let i = index" 
+                      class="contact-row"
+                      [class.hidden-row]="!isValidContact(contact)">
+                    <ng-container *ngIf="isValidContact(contact)">
+                      <td class="col-name">
+                        <span class="contact-name">{{ contact.get('name')?.value }}</span>
+                      </td>
+                      <td class="col-job">
+                        <span class="contact-job">{{ contact.get('jobTitle')?.value }}</span>
+                      </td>
+                      <td class="col-email">
+                        <span class="contact-email">{{ contact.get('email')?.value }}</span>
+                      </td>
+                      <td class="col-mobile">
+                        <span class="contact-mobile">{{ contact.get('mobile')?.value }}</span>
+                      </td>
+                      <td class="col-language">
+                        <span class="contact-language-badge">{{ contact.get('preferredLanguage')?.value }}</span>
+                      </td>
+                      <td class="col-actions">
+                        <div class="action-buttons">
+                          <button type="button" 
+                                  nz-button 
+                                  nzType="text" 
+                                  nzSize="small"
+                                  class="action-btn edit-btn"
+                                  (click)="editContactInModal(i)"
+                                  title="Edit">
+                            <span nz-icon nzType="edit"></span>
+                          </button>
+                          <button type="button" 
+                                  nz-button 
+                                  nzType="text" 
+                                  nzDanger
+                                  nzSize="small"
+                                  class="action-btn delete-btn"
+                                  (click)="removeContactFromUnifiedForm(i)"
+                                  title="Delete">
+                            <span nz-icon nzType="delete"></span>
+                          </button>
+                        </div>
+                      </td>
+                    </ng-container>
+                  </tr>
+                </tbody>
+              </table>
+            </div>
+            
+            <!-- Empty State -->
+            <div class="contacts-empty-state" *ngIf="getValidContactsCount() === 0">
+              <nz-empty
+                nzNotFoundImage="simple"
+                [nzNotFoundContent]="emptyContactsTemplate">
+              </nz-empty>
+              <ng-template #emptyContactsTemplate>
+                <p class="empty-text">{{ 'agent.messages.noContactsAdded' | translate }}</p>
+              </ng-template>
             </div>
           </div>
-          
-          <div class="form-row">
-            <div class="form-group">
-              <label class="optional">Division:</label>
-              <nz-select formControlName="division" nzPlaceHolder="Select division">
-                <nz-option *ngFor="let option of divisionOptions" 
-                          [nzValue]="option.value" 
-                          [nzLabel]="option.label">
-                </nz-option>
-              </nz-select>
+        </nz-tab>
+        
+        <!-- Tab 5: Documents -->
+        <nz-tab [nzTitle]="documentsTabTitle">
+          <div class="modal-section documents-section">
+            <div class="section-header">
+              <h4>📎 {{ 'agent.sections.attachedDocuments' | translate }}</h4>
+              <button type="button" 
+                      nz-button 
+                      nzType="primary" 
+                      nzSize="small" 
+                      (click)="triggerAddDocument()">
+                <span nz-icon nzType="plus"></span> 
+                {{ 'agent.buttons.addDocument' | translate }}
+              </button>
+            </div>
+            
+            <!-- Hidden file input for adding documents -->
+            <input type="file" 
+                   #addDocumentInput 
+                   id="addDocumentInput" 
+                   multiple 
+                   accept="image/*,.pdf" 
+                   (change)="onAddDocument($event)" 
+                   style="display: none;">
+
+            <!-- Documents Table - Professional Design (from new-request.component.html) -->
+            <div class="documents-table-container" *ngIf="getDocumentsCount() > 0">
+              <table class="documents-table">
+                <thead>
+                  <tr>
+                    <th class="col-icon">Type</th>
+                    <th class="col-name">Document Name</th>
+                    <th class="col-doc-type">Document Type</th>
+                    <th class="col-size">Size</th>
+                    <th class="col-date">Upload Date</th>
+                    <th class="col-actions">Actions</th>
+                  </tr>
+                </thead>
+                <tbody>
+                  <tr *ngFor="let doc of (unifiedModalData?.documents || []); let i = index; trackBy: trackByIndex" 
+                      class="document-row" 
+                      [class.clickable]="canPreview(doc)"
+                      (click)="handleDocumentClick(doc); $event.stopPropagation(); $event.preventDefault()">
+                    
+                    <!-- File Type Icon -->
+                    <td class="col-icon">
+                      <div class="file-type-icon" [attr.data-type]="isPdf(doc) ? 'pdf' : isImage(doc) ? 'image' : 'other'">
+                        <span *ngIf="isPdf(doc)" class="pdf-icon">📄</span>
+                        <span *ngIf="isImage(doc)" class="image-icon">🖼️</span>
+                        <span *ngIf="!isPdf(doc) && !isImage(doc)" class="other-icon">📁</span>
+                      </div>
+                    </td>
+                    
+                    <!-- Document Name -->
+                    <td class="col-name">
+                      <div class="doc-name-cell">
+                        <span class="doc-name" [title]="doc.value?.name">{{ doc.value?.name }}</span>
+                      </div>
+                    </td>
+                    
+                    <!-- Document Type (Commercial Registration, Tax Card, etc.) -->
+                    <td class="col-doc-type">
+                      <span class="doc-type-badge">{{ getDocumentTypeLabel(doc.value) }}</span>
+                    </td>
+                    
+                    <!-- File Size -->
+                    <td class="col-size">
+                      <span class="doc-size">{{ formatFileSize(doc.value?.size) }}</span>
+                    </td>
+                    
+                    <!-- Upload Date -->
+                    <td class="col-date">
+                      <span class="doc-date">{{ doc.value?.uploadedAt | date: 'short' }}</span>
+                    </td>
+                    
+                    <!-- Actions -->
+                    <td class="col-actions" (click)="$event.stopPropagation(); $event.preventDefault()">
+                      <div class="action-buttons">
+                        <!-- Preview Button -->
+                        <button 
+                                type="button"
+                                nz-button 
+                                nzType="text" 
+                                nzSize="small"
+                                class="action-btn preview-btn"
+                                (click)="previewDocument(doc); $event.stopPropagation(); $event.preventDefault()" 
+                                *ngIf="canPreview(doc)"
+                                title="Preview">
+                          <span nz-icon nzType="eye"></span>
+                        </button>
+                        
+                        <!-- Download Button -->
+                        <button 
+                                type="button"
+                                nz-button 
+                                nzType="text" 
+                                nzSize="small"
+                                class="action-btn download-btn"
+                                (click)="downloadDocument(doc); $event.stopPropagation(); $event.preventDefault()"
+                                title="Download">
+                          <span nz-icon nzType="download"></span>
+                        </button>
+                        
+                        <!-- Delete Button -->
+                        <button 
+                                type="button"
+                                nz-button 
+                                nzType="text" 
+                                nzDanger
+                                nzSize="small"
+                                class="action-btn delete-btn"
+                                (click)="removeDocument(i); $event.stopPropagation(); $event.preventDefault()"
+                                title="Delete">
+                          <span nz-icon nzType="delete"></span>
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                </tbody>
+              </table>
             </div>
           </div>
-        </div>
-      </div>
-      
-      <!-- Section 4: Contacts (Table Design) -->
-      <div class="modal-section contacts-section">
-        <div class="section-header">
-          <h3>👥 {{ 'agent.sections.contacts' | translate }} 
-            <span class="contact-count-badge" *ngIf="getValidContactsCount() > 0">{{ getValidContactsCount() }}</span>
-          </h3>
-          <button type="button" 
-                  nz-button 
-                  nzType="primary" 
-                  nzSize="small" 
-                  (click)="openAddContactModal()">
-            <span nz-icon nzType="plus"></span> 
-            {{ 'agent.buttons.addContact' | translate }}
-          </button>
-        </div>
+        </nz-tab>
         
-        <!-- Contacts Table -->
-        <div class="contacts-table-container" *ngIf="getValidContactsCount() > 0">
-          <table class="contacts-table">
-            <thead>
-              <tr>
-                <th class="col-name">Name</th>
-                <th class="col-job">Job Title</th>
-                <th class="col-email">Email</th>
-                <th class="col-mobile">Mobile</th>
-                <th class="col-language">Language</th>
-                <th class="col-actions">Actions</th>
-              </tr>
-            </thead>
-            <tbody>
-              <tr *ngFor="let contact of unifiedContactsArray.controls; let i = index" 
-                  class="contact-row"
-                  [class.hidden-row]="!isValidContact(contact)">
-                <ng-container *ngIf="isValidContact(contact)">
-                  <td class="col-name">
-                    <span class="contact-name">{{ contact.get('name')?.value }}</span>
-                  </td>
-                  <td class="col-job">
-                    <span class="contact-job">{{ contact.get('jobTitle')?.value }}</span>
-                  </td>
-                  <td class="col-email">
-                    <span class="contact-email">{{ contact.get('email')?.value }}</span>
-                  </td>
-                  <td class="col-mobile">
-                    <span class="contact-mobile">{{ contact.get('mobile')?.value }}</span>
-                  </td>
-                  <td class="col-language">
-                    <span class="contact-language-badge">{{ contact.get('preferredLanguage')?.value }}</span>
-                  </td>
-                  <td class="col-actions">
-                    <div class="action-buttons">
-                      <button type="button" 
-                              nz-button 
-                              nzType="text" 
-                              nzSize="small"
-                              class="action-btn edit-btn"
-                              (click)="editContactInModal(i)"
-                              title="Edit">
-                        <span nz-icon nzType="edit"></span>
-                      </button>
-                      <button type="button" 
-                              nz-button 
-                              nzType="text" 
-                              nzDanger
-                              nzSize="small"
-                              class="action-btn delete-btn"
-                              (click)="removeContactFromUnifiedForm(i)"
-                              title="Delete">
-                        <span nz-icon nzType="delete"></span>
-                      </button>
-                    </div>
-                  </td>
-                </ng-container>
-              </tr>
-            </tbody>
-          </table>
-        </div>
-        
-        <!-- Empty State -->
-        <div class="contacts-empty-state" *ngIf="getValidContactsCount() === 0">
-          <nz-empty
-            nzNotFoundImage="simple"
-            [nzNotFoundContent]="emptyContactsTemplate">
-          </nz-empty>
-          <ng-template #emptyContactsTemplate>
-            <p class="empty-text">{{ 'agent.messages.noContactsAdded' | translate }}</p>
-          </ng-template>
-        </div>
-      </div>
+      </nz-tabset>
       
     </form>
-    
-    <!-- Documents Section -->
-    <div class="unified-section documents-section">
-      <div class="section-header">
-        <h4>📎 {{ 'agent.sections.attachedDocuments' | translate }}</h4>
-        <button type="button" 
-                nz-button 
-                nzType="primary" 
-                nzSize="small" 
-                (click)="triggerAddDocument()">
-          <span nz-icon nzType="plus"></span> 
-          {{ 'agent.buttons.addDocument' | translate }}
-        </button>
-      </div>
-      
-      <!-- Hidden file input for adding documents -->
-      <input type="file" 
-             #addDocumentInput 
-             id="addDocumentInput" 
-             multiple 
-             accept="image/*,.pdf" 
-             (change)="onAddDocument($event)" 
-             style="display: none;">
-
-      <!-- Documents Table - Professional Design (from new-request.component.html) -->
-      <div class="documents-table-container" *ngIf="getDocumentsCount() > 0">
-        <table class="documents-table">
-          <thead>
-            <tr>
-              <th class="col-icon">Type</th>
-              <th class="col-name">Document Name</th>
-              <th class="col-doc-type">Document Type</th>
-              <th class="col-size">Size</th>
-              <th class="col-date">Upload Date</th>
-              <th class="col-actions">Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            <tr *ngFor="let doc of (unifiedModalData?.documents || []); let i = index; trackBy: trackByIndex" 
-                class="document-row" 
-                [class.clickable]="canPreview(doc)"
-                (click)="handleDocumentClick(doc); $event.stopPropagation(); $event.preventDefault()">
-              
-              <!-- File Type Icon -->
-              <td class="col-icon">
-                <div class="file-type-icon" [attr.data-type]="isPdf(doc) ? 'pdf' : isImage(doc) ? 'image' : 'other'">
-                  <span *ngIf="isPdf(doc)" class="pdf-icon">📄</span>
-                  <span *ngIf="isImage(doc)" class="image-icon">🖼️</span>
-                  <span *ngIf="!isPdf(doc) && !isImage(doc)" class="other-icon">📁</span>
-                </div>
-              </td>
-              
-              <!-- Document Name -->
-              <td class="col-name">
-                <div class="doc-name-cell">
-                  <span class="doc-name" [title]="doc.value?.name">{{ doc.value?.name }}</span>
-                </div>
-              </td>
-              
-              <!-- Document Type (Commercial Registration, Tax Card, etc.) -->
-              <td class="col-doc-type">
-                <span class="doc-type-badge">{{ getDocumentTypeLabel(doc.value) }}</span>
-              </td>
-              
-              <!-- File Size -->
-              <td class="col-size">
-                <span class="doc-size">{{ formatFileSize(doc.value?.size) }}</span>
-              </td>
-              
-              <!-- Upload Date -->
-              <td class="col-date">
-                <span class="doc-date">{{ doc.value?.uploadedAt | date: 'short' }}</span>
-              </td>
-              
-              <!-- Actions -->
-              <td class="col-actions" (click)="$event.stopPropagation(); $event.preventDefault()">
-                <div class="action-buttons">
-                  <!-- Preview Button -->
-                  <button 
-                          type="button"
-                          nz-button 
-                          nzType="text" 
-                          nzSize="small"
-                          class="action-btn preview-btn"
-                          (click)="previewDocument(doc); $event.stopPropagation(); $event.preventDefault()" 
-                          *ngIf="canPreview(doc)"
-                          title="Preview">
-                    <span nz-icon nzType="eye"></span>
-                  </button>
-                  
-                  <!-- Download Button -->
-                  <button 
-                          type="button"
-                          nz-button 
-                          nzType="text" 
-                          nzSize="small"
-                          class="action-btn download-btn"
-                          (click)="downloadDocument(doc); $event.stopPropagation(); $event.preventDefault()"
-                          title="Download">
-                    <span nz-icon nzType="download"></span>
-                  </button>
-                  
-                  <!-- Delete Button -->
-                  <button 
-                          type="button"
-                          nz-button 
-                          nzType="text" 
-                          nzDanger
-                          nzSize="small"
-                          class="action-btn delete-btn"
-                          (click)="removeDocument(i); $event.stopPropagation(); $event.preventDefault()"
-                          title="Delete">
-                    <span nz-icon nzType="delete"></span>
-                  </button>
-                </div>
-              </td>
-            </tr>
-          </tbody>
-        </table>
-      </div>
-    </div>
     
     <!-- Modal Footer -->
     <div class="modal-footer unified-footer">
@@ -1178,7 +1191,7 @@
         <span class="info-item contacts">
           👥 {{ unifiedContactsArray.length }} contacts
         </span>
-</div>
+      </div>
       
       <div class="footer-actions">
         <button nz-button nzType="default" (click)="showUnifiedModal = false">
@@ -1193,8 +1206,6 @@
         </button>
       </div>
     </div>
-
-    
   </div>
 </nz-modal>
 
@@ -1362,7 +1373,7 @@
   [nzFooter]="null"
   nzWidth="800px">
   
-  <div class="document-modal-content">
+  <div *nzModalContent class="document-modal-content">
     <!-- Step Indicator -->
     <div class="step-indicator">
       <div class="step active">
@@ -1423,21 +1434,30 @@
         </div>
       </form>
     </div>
-  </div>
-  
-  <!-- Footer Buttons -->
-  <div class="modal-footer">
-    <button nz-button nzType="default" (click)="closeDocumentModal()">
-      {{ 'agent.buttons.cancel' | translate }}
-    </button>
     
-    <button 
-      nz-button 
-      nzType="primary" 
-      (click)="saveDocuments()" 
-      [disabled]="!documentMetadataForm.valid">
-      {{ 'agent.buttons.saveAndSubmit' | translate }}
-    </button>
+    <!-- Footer Buttons -->
+    <div class="modal-footer">
+      <button nz-button nzType="default" (click)="closeDocumentModal()">
+        {{ 'agent.buttons.cancel' | translate }}
+      </button>
+      
+      <button 
+        nz-button 
+        nzType="primary" 
+        (click)="saveDocuments()" 
+        [disabled]="!documentMetadataForm.valid">
+        {{ 'agent.buttons.saveAndSubmit' | translate }}
+      </button>
+    </div>
   </div>
 </nz-modal>
 
+<!-- Hidden file input for direct upload (outside modal) -->
+<input 
+  type="file" 
+  #directFileInput
+  id="directFileInput"
+  multiple 
+  accept="image/*" 
+  (change)="onFileSelected($event)"
+  style="display: none;">

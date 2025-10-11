@@ -116,6 +116,34 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
     missingFields: [],
     contacts: []
   };
+  
+  // Tab management
+  selectedTabIndex = 0;
+  
+  // Tab title getters
+  get extractedDataTabTitle(): string {
+    const count = this.unifiedModalData?.extractedFields?.length || 0;
+    return `✅ Extracted Data (${count})`;
+  }
+  
+  get missingDataTabTitle(): string {
+    const count = this.unifiedModalData?.missingFields?.length || 0;
+    return `❌ Missing Data (${count})`;
+  }
+  
+  get salesDataTabTitle(): string {
+    return '💼 Sales Data';
+  }
+  
+  get contactsTabTitle(): string {
+    const count = this.getValidContactsCount();
+    return `👥 Contacts (${count})`;
+  }
+  
+  get documentsTabTitle(): string {
+    const count = this.getDocumentsCount();
+    return `📎 Documents (${count})`;
+  }
   // Demo data properties
   currentDemoCompany: DemoCompany | null = null;
   private keyboardListener: ((event: KeyboardEvent) => void) | null = null;
