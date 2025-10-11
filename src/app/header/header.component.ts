@@ -7,6 +7,7 @@ import { isPlatformBrowser } from "@angular/common";
 import { NotificationService } from '../services/notification.service';
 import { Observable, Subscription, fromEvent, firstValueFrom } from 'rxjs';
 import { HttpClient } from '@angular/common/http';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: "app-header",
@@ -20,7 +21,8 @@ export class HeaderComponent implements OnInit, OnDestroy, AfterViewInit {
   userAvatarUrl: string | null = null;
   currentUser: any = null;
   private subscriptions: Subscription[] = [];
-  private apiBase = 'http://localhost:3000/api';
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
+  private baseUrl = environment.apiBaseUrl?.replace('/api', '') || 'http://localhost:3000';
 
   constructor(
     private translate: TranslateService, 
@@ -157,7 +159,7 @@ export class HeaderComponent implements OnInit, OnDestroy, AfterViewInit {
         
         // Ensure absolute URL for avatar
         if (this.currentUser?.avatarUrl && !this.currentUser.avatarUrl.startsWith('http')) {
-          this.currentUser.avatarUrl = `http://localhost:3000${this.currentUser.avatarUrl}`;
+          this.currentUser.avatarUrl = `${this.baseUrl}${this.currentUser.avatarUrl}`;
         }
         
         // Set userAvatarUrl for backward compatibility

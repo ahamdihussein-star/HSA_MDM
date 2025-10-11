@@ -768,11 +768,15 @@ Please try uploading again.`,
     console.log('💾 [DB FLOW] Session ID:', sessionId);
     
     try {
+      console.log('🔍 [LOAD COMPANY] Starting loadCompanyData() for companyId:', companyId);
+      console.log('🔍 [LOAD COMPANY] Current sessionId:', this.sessionStaging.getSessionId());
+      
       // ✅ Load company data from database
       const companyData = await this.sessionStaging.getCompany(companyId);
       
       console.log('✅ [DB FLOW] Company data loaded:', companyData);
       console.log('📄 [DB FLOW] Documents from DB:', companyData.documents?.length || 0);
+      console.log('👥 [DB FLOW] Contacts from companyData.contacts:', companyData.contacts);
       
       // ✅ ALSO load from temp table (in case documents are still there)
       let documentsFromDB = companyData.documents || [];
@@ -900,7 +904,13 @@ Please try uploading again.`,
       // ✅ Update unifiedModalData with extracted/missing fields
       this.unifiedModalData.extractedFields = extractedFields.map(f => ({ field: f, value: (extractedDataFromDB as any)[f] }));
       this.unifiedModalData.missingFields = missingFields;
+      
+      // 🔍 DEBUG: Track contacts source
+      console.log('🔍 [CONTACTS DEBUG] companyData.contacts from backend:', companyData.contacts);
+      console.log('🔍 [CONTACTS DEBUG] Contacts count from backend:', companyData.contacts?.length || 0);
       this.unifiedModalData.contacts = companyData.contacts || [];
+      console.log('🔍 [CONTACTS DEBUG] unifiedModalData.contacts set to:', this.unifiedModalData.contacts);
+      console.log('🔍 [CONTACTS DEBUG] unifiedModalData.contacts.length:', this.unifiedModalData.contacts.length);
       
       // ✅ Fill form with extracted data (use extractedDataFromDB which has correct field names)
       console.log('📝 [DB FLOW] Patching form with extracted data:', extractedDataFromDB);
@@ -2092,6 +2102,16 @@ Please fill the missing data to complete the request.`,
         return;
       }
 
+      // ✅ FIX: Get documents from session with filesystem paths before submit
+      if (this.currentCompanyId) {
+        console.log('📁 [SUBMIT] Getting documents from session for submission...');
+        const documentsFromSession = await this.sessionStaging.getDocumentsForSubmit(this.currentCompanyId);
+        console.log('📁 [SUBMIT] Documents retrieved:', documentsFromSession.length);
+        
+        // Set documents in service with document_path for filesystem-based storage
+        this.agentService.setDocumentsForSubmit(documentsFromSession);
+      }
+      
       // Submit
       const loadingMsg = this.addMessage({
         id: `submitting_${Date.now()}`,
@@ -2125,6 +2145,22 @@ Please fill the missing data to complete the request.`,
           this.sessionStaging.clearSession().catch(err => console.warn('Session cleanup failed:', err));
           this.currentCompanyId = null;
         }
+        
+        // ✅ FIX: Reset unifiedModalForm to clear all contacts and fields
+        console.log('🧹 [RESET] Resetting unifiedModalForm...');
+        const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
+        console.log('🧹 [RESET] Contacts in form BEFORE clear:', contactsArray.length);
+        
+        // Clear all contacts
+        while (contactsArray.length !== 0) {
+          contactsArray.removeAt(0);
+        }
+        console.log('✅ [RESET] Contacts cleared - new length:', contactsArray.length);
+        
+        // Reset the form to initial state
+        this.unifiedModalForm.reset();
+        console.log('✅ [RESET] unifiedModalForm reset complete');
+        
         this.awaitingConfirmation = false;
         this.awaitingDataReview = false;
         console.log('🔄 [RESET] All data reset after successful submission');
@@ -3593,12 +3629,29 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
       
       // Clear and add contacts
       const contactsArray = this.unifiedModalForm.get('contacts') as FormArray;
+      
+      console.log('═══════════════════════════════════════════════');
+      console.log('🔍 [CONTACTS FORM] showUnifiedModalFromDatabase() - Contacts Section');
+      console.log('🔍 [CONTACTS FORM] Current Company ID:', this.currentCompanyId);
+      console.log('🔍 [CONTACTS FORM] Session ID:', this.sessionStaging.getSessionId());
+      console.log('🔍 [CONTACTS FORM] BEFORE CLEAR - contactsArray.length:', contactsArray.length);
+      console.log('🔍 [CONTACTS FORM] BEFORE CLEAR - contactsArray.controls:', contactsArray.controls.map((c: any) => c.value));
+      
       contactsArray.clear();
+      console.log('🔍 [CONTACTS FORM] AFTER CLEAR (using .clear()) - contactsArray.length:', contactsArray.length);
+      
+      console.log('🔍 [CONTACTS FORM] AFTER CLEAR - contactsArray.length:', contactsArray.length);
+      console.log('🔍 [CONTACTS FORM] unifiedModalData.contacts.length:', this.unifiedModalData.contacts.length);
+      console.log('🔍 [CONTACTS FORM] unifiedModalData.contacts:', this.unifiedModalData.contacts);
       
       if (this.unifiedModalData.contacts.length === 0) {
+        console.log('✅ [CONTACTS FORM] No contacts from backend - adding empty contact form');
         this.addContactToUnifiedForm();
+        console.log('🔍 [CONTACTS FORM] After adding empty - contactsArray.length:', contactsArray.length);
         } else {
-        this.unifiedModalData.contacts.forEach((contact: any) => {
+        console.log('🔍 [CONTACTS FORM] Loading contacts from unifiedModalData:', this.unifiedModalData.contacts.length);
+        this.unifiedModalData.contacts.forEach((contact: any, index: number) => {
+          console.log(`🔍 [CONTACTS FORM] Adding contact ${index + 1}:`, contact);
           const contactForm = this.fb.group({
             name: [contact.name || ''],
             jobTitle: [contact.jobTitle || ''],
@@ -3609,7 +3662,11 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
           });
           contactsArray.push(contactForm);
         });
+        console.log('✅ [CONTACTS FORM] Total contacts added to form:', contactsArray.length);
       }
+      
+      console.log('🔍 [CONTACTS FORM] FINAL - contactsArray.length:', contactsArray.length);
+      console.log('🔍 [CONTACTS FORM] FINAL - contactsArray.controls:', contactsArray.controls.map((c: any) => c.value));
       
       // Show modal
       this.showUnifiedModal = true;

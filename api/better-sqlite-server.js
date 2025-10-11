@@ -7,8 +7,11 @@ const multer = require('multer');
 const fs = require('fs').promises;
 
 const app = express();
-const PORT = 3000;
+const PORT = process.env.PORT || 3000;
+const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
+
+console.log('🌐 [SERVER] Base URL:', BASE_URL);
 
 // ✅ NEW: File upload configuration with date-based folder structure
 const storage = multer.diskStorage({
@@ -301,6 +304,7 @@ function initializeDatabase() {
       size INTEGER,
       mime TEXT,
       contentBase64 TEXT,
+      document_path TEXT,
       source TEXT,
       uploadedBy TEXT,
       uploadedAt DATETIME DEFAULT CURRENT_TIMESTAMP,
@@ -1332,7 +1336,7 @@ app.get('/api/session/documents/:sessionId/:companyId', async (req, res) => {
     
     // Convert to display format with file URLs
     const documentsForModal = documents.map(doc => {
-      const fileUrl = `http://localhost:3000/uploads/${doc.document_path}`;
+      const fileUrl = `${BASE_URL}/uploads/${doc.document_path}`;
       
       console.log(`📄 [MODAL DOCS] Document:`, {
         id: doc.document_id,
@@ -1792,7 +1796,11 @@ app.get('/api/session/company/:sessionId/:companyId', (req, res) => {
       WHERE session_id = ? AND company_id = ?
     `).all(req.params.sessionId, req.params.companyId);
     
+    console.log('👥 [GET SESSION] Contacts query params:', { sessionId: req.params.sessionId, companyId: req.params.companyId });
     console.log('👥 [GET SESSION] Contacts found:', contacts.length);
+    if (contacts.length > 0) {
+      console.log('👥 [GET SESSION] Contacts details:', contacts.map(c => ({ name: c.contact_name, email: c.contact_email })));
+    }
     
     const response = {
       ...company,
@@ -1811,9 +1819,21 @@ app.get('/api/session/company/:sessionId/:companyId', (req, res) => {
 // Clear session data by session ID
 app.delete('/api/session/:sessionId', (req, res) => {
   try {
-    db.prepare(`DELETE FROM session_staging WHERE session_id = ?`).run(req.params.sessionId);
-    db.prepare(`DELETE FROM session_documents WHERE session_id = ?`).run(req.params.sessionId);
-    db.prepare(`DELETE FROM session_contacts WHERE session_id = ?`).run(req.params.sessionId);
+    console.log('🗑️ [SESSION CLEAR] Clearing session:', req.params.sessionId);
+    
+    const stagingResult = db.prepare(`DELETE FROM session_staging WHERE session_id = ?`).run(req.params.sessionId);
+    const documentsResult = db.prepare(`DELETE FROM session_documents WHERE session_id = ?`).run(req.params.sessionId);
+    const contactsResult = db.prepare(`DELETE FROM session_contacts WHERE session_id = ?`).run(req.params.sessionId);
+    
+    // ✅ FIX: Also clear temp documents!
+    const tempDocsResult = db.prepare(`DELETE FROM session_documents_temp WHERE session_id = ?`).run(req.params.sessionId);
+    
+    console.log('✅ [SESSION CLEAR] Cleared:', {
+      staging: stagingResult.changes,
+      documents: documentsResult.changes,
+      contacts: contactsResult.changes,
+      tempDocs: tempDocsResult.changes
+    });
     
     res.json({ success: true });
   } catch (error) {
@@ -1953,6 +1973,31 @@ app.get('/api/requests/:id', (req, res) => {
     const documents = db.prepare("SELECT * FROM documents WHERE requestId = ?").all(requestId);
     const issues = db.prepare("SELECT * FROM issues WHERE requestId = ?").all(requestId);
     
+    console.log('📄 [GET REQUEST] Documents from DB:', documents.length);
+    
+    // ✅ FIX: Support both filesystem and base64 documents
+    const processedDocuments = (documents || []).map(d => {
+      const doc = {
+        ...d,
+        id: d.documentId || d.id
+      };
+      
+      // If document_path exists (filesystem), create fileUrl
+      if (d.document_path) {
+        doc.fileUrl = `${BASE_URL}/uploads/${d.document_path}`;
+        console.log('📁 [FILESYSTEM] Document:', { name: d.name, fileUrl: doc.fileUrl });
+        // Keep contentBase64 empty for filesystem docs
+        doc.contentBase64 = '';
+      } else if (d.contentBase64) {
+        // Old way: base64 in database
+        console.log('💾 [BASE64] Document:', { name: d.name, size: d.contentBase64?.length });
+      }
+      
+      return doc;
+    });
+    
+    console.log('✅ [GET REQUEST] Processed documents:', processedDocuments.length);
+    
     // Get workflow history
     const workflowHistory = db.prepare(`
       SELECT * FROM workflow_history 
@@ -1982,10 +2027,7 @@ app.get('/api/requests/:id', (req, res) => {
     const result = {
       ...request,
       contacts: contacts || [],
-      documents: (documents || []).map(d => ({
-        ...d,
-        id: d.documentId || d.id
-      })),
+      documents: processedDocuments,
       issues: issues || [],
       workflowHistory: processedHistory
     };
@@ -2124,16 +2166,25 @@ app.post('/api/requests', (req, res) => {
       
       // ENHANCED: Add documents with proper timestamps and tracking
       if (Array.isArray(body.documents) && body.documents.length > 0) {
+        console.log('📄 [SUBMIT] Saving documents:', body.documents.length);
+        
         const insertDoc = db.prepare(`
           INSERT INTO documents (
             requestId, documentId, name, type, description, 
-            size, mime, contentBase64, source, uploadedBy, uploadedAt
-          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            size, mime, contentBase64, document_path, source, uploadedBy, uploadedAt
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         `);
         
         body.documents.forEach((doc, index) => {
           // Generate unique timestamp for each document
           const docTimestamp = new Date(Date.now() + index).toISOString();
+          
+          console.log(`📄 [SUBMIT] Document ${index + 1}:`, {
+            name: doc.name,
+            hasPath: !!doc.document_path,
+            hasBase64: !!doc.contentBase64,
+            document_path: doc.document_path || null
+          });
           
           insertDoc.run(
             id,
@@ -2143,14 +2194,17 @@ app.post('/api/requests', (req, res) => {
             doc.description,
             doc.size,
             doc.mime,
-            doc.contentBase64,
+            doc.contentBase64 || '',
+            doc.document_path || null,  // ✅ NEW: Save filesystem path
             doc.source || body.sourceSystem || 'Data Steward',
             doc.uploadedBy || body.createdBy || 'data_entry',
             docTimestamp  // Unique timestamp for each document
           );
           
-          console.log(`[CREATE] Added document ${index + 1}: ${doc.name} at ${docTimestamp}`);
+          console.log(`✅ [SUBMIT] Added document ${index + 1}: ${doc.name} at ${docTimestamp}`);
         });
+        
+        console.log('✅ [SUBMIT] All documents saved successfully');
       }
       
       const workflowNote = isGoldenEdit ? 
@@ -6956,7 +7010,7 @@ app.post('/api/users/upload-avatar', (req, res) => {
     fs.writeFileSync(filePath, base64Data, 'base64');
     
     const fileUrl = `/uploads/${safeName}`;
-    const fullUrl = `http://localhost:3000${fileUrl}`;
+    const fullUrl = `${BASE_URL}${fileUrl}`;
     
     console.log('✅ Avatar uploaded successfully:', fileUrl);
     console.log('✅ Full URL:', fullUrl);

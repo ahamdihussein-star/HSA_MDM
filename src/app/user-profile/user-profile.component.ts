@@ -3,6 +3,7 @@ import { HttpClient } from '@angular/common/http';
 import { firstValueFrom } from 'rxjs';
 import { NzMessageService } from 'ng-zorro-antd/message';
 import { NzModalService } from 'ng-zorro-antd/modal';
+import { environment } from '../../environments/environment';
 
 interface User {
   id: string;
@@ -48,7 +49,8 @@ export class UserProfileComponent implements OnInit {
     { value: 'admin', label: 'System Administrator' },
     { value: 'manager', label: 'Business Manager' }
   ];
-  private apiBase = 'http://localhost:3000/api';
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
+  private baseUrl = environment.apiBaseUrl?.replace('/api', '') || 'http://localhost:3000';
 
   constructor(
     private http: HttpClient,
@@ -78,7 +80,7 @@ export class UserProfileComponent implements OnInit {
       // Ensure avatar absolute & propagate to header via session + event
       if (this.currentUser?.avatarUrl) {
         if (!this.currentUser.avatarUrl.startsWith('http')) {
-          this.currentUser.avatarUrl = `http://localhost:3000${this.currentUser.avatarUrl}`;
+          this.currentUser.avatarUrl = `${this.baseUrl}${this.currentUser.avatarUrl}`;
         }
         // Set preview for initial modal state
         this.avatarPreview = this.currentUser.avatarUrl || null;
@@ -157,7 +159,7 @@ export class UserProfileComponent implements OnInit {
       );
       
       console.log('✅ Avatar upload response:', response);
-      const fullUrl = response.url.startsWith('http') ? response.url : `http://localhost:3000${response.url}`;
+      const fullUrl = response.url.startsWith('http') ? response.url : `${this.baseUrl}${response.url}`;
 
       // 1) Update preview immediately
       this.avatarPreview = fullUrl;

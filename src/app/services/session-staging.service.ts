@@ -1,5 +1,6 @@
 import { Injectable } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
+import { firstValueFrom } from 'rxjs';
 import { environment } from '../../environments/environment';
 
 @Injectable({
@@ -112,6 +113,10 @@ export class SessionStagingService {
     console.log('🗑️ [SESSION] Clearing session data');
     await this.http.delete(`${this.apiBase}/session/${this.sessionId}`).toPromise();
     console.log('✅ [SESSION] Session data cleared');
+    
+    // ✅ FIX: Generate new session ID after clearing
+    this.sessionId = `session_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
+    console.log('🆕 [SESSION] New session ID generated:', this.sessionId);
   }
   
   getSessionId(): string {
@@ -289,5 +294,39 @@ export class SessionStagingService {
         reject(error);
       };
     });
+  }
+  
+  /**
+   * ✅ NEW: Get documents with filesystem paths for submission
+   * Returns documents with document_path for new filesystem-based approach
+   */
+  async getDocumentsForSubmit(companyId: string): Promise<any[]> {
+    try {
+      console.log('📁 [SUBMIT DOCS] Getting documents for submission...');
+      console.log('📁 [SUBMIT DOCS] Company ID:', companyId);
+      console.log('📁 [SUBMIT DOCS] Session ID:', this.sessionId);
+      
+      const response: any = await firstValueFrom(
+        this.http.get(`${this.apiBase}/session/documents/${this.sessionId}/${companyId}`)
+      );
+      
+      const documents = response.documents || response || [];
+      
+      console.log('✅ [SUBMIT DOCS] Documents retrieved:', documents.length);
+      documents.forEach((doc: any, index: number) => {
+        console.log(`📄 [SUBMIT DOCS] Document ${index + 1}:`, {
+          id: doc.id,
+          name: doc.name,
+          type: doc.type,
+          hasPath: !!doc.document_path,
+          hasUrl: !!doc.fileUrl
+        });
+      });
+      
+      return documents;
+    } catch (error) {
+      console.error('❌ [SUBMIT DOCS] Error getting documents:', error);
+      return [];
+    }
   }
 }

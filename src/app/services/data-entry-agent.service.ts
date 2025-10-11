@@ -1351,6 +1351,26 @@ For dropdown fields, provide numbered options.`;
     }
   }
 
+  /**
+   * ✅ NEW: Set documents with filesystem paths for submission
+   * This is called before submit to use filesystem-based documents
+   */
+  public setDocumentsForSubmit(documents: any[]): void {
+    console.log('📁 [SET DOCS] Setting documents for submit:', documents.length);
+    
+    // Store documents in a new property for filesystem-based submission
+    (this as any).documentsForSubmit = documents;
+    
+    documents.forEach((doc, index) => {
+      console.log(`📄 [SET DOCS] Document ${index + 1}:`, {
+        id: doc.id,
+        name: doc.name,
+        document_path: doc.document_path,
+        hasPath: !!doc.document_path
+      });
+    });
+  }
+  
   private buildRequestPayload(): any {
     const payload: any = {
       firstName: this.extractedData.firstName,
@@ -1387,8 +1407,28 @@ For dropdown fields, provide numbered options.`;
       }));
     }
 
-    // Include documents in initial payload so backend saves them
-    if (this.uploadedDocuments && this.uploadedDocuments.length > 0) {
+    // ✅ FIX: Use filesystem documents if available (new way)
+    const documentsForSubmit = (this as any).documentsForSubmit;
+    
+    if (documentsForSubmit && documentsForSubmit.length > 0) {
+      console.log('📁 [PAYLOAD] Using filesystem documents:', documentsForSubmit.length);
+      payload.documents = documentsForSubmit.map((doc: any) => ({
+        documentId: doc.id || doc.document_id,
+        name: doc.name || doc.document_name,
+        type: doc.type || doc.document_type || 'other',
+        description: `Document uploaded via AI Agent: ${doc.name || doc.document_name}`,
+        size: doc.size || doc.document_size,
+        mime: doc.type || doc.document_type,
+        document_path: doc.document_path,  // ✅ NEW: Include filesystem path
+        contentBase64: '',  // Empty for filesystem docs
+        source: 'Data Steward',
+        uploadedBy: this.currentUser?.username || 'data_entry'
+      }));
+      console.log('📎 [PAYLOAD] Including filesystem documents:', payload.documents.length);
+    }
+    // Fallback to old way (base64) for backward compatibility
+    else if (this.uploadedDocuments && this.uploadedDocuments.length > 0) {
+      console.log('💾 [PAYLOAD] Using base64 documents (old way):', this.uploadedDocuments.length);
       payload.documents = this.uploadedDocuments.map(doc => ({
         documentId: doc.id,
         name: doc.name,
@@ -1397,10 +1437,11 @@ For dropdown fields, provide numbered options.`;
         size: doc.size,
         mime: doc.type,
         contentBase64: doc.content,
+        document_path: null,  // No path for base64 docs
         source: 'Data Steward',
         uploadedBy: this.currentUser?.username || 'data_entry'
       }));
-      console.log('📎 [PAYLOAD] Including documents in payload:', payload.documents.length);
+      console.log('📎 [PAYLOAD] Including base64 documents:', payload.documents.length);
     }
 
     return payload;

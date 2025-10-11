@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { NzModalService } from 'ng-zorro-antd/modal';
 import { NzMessageService } from 'ng-zorro-antd/message';
+import { environment } from '../../environments/environment';
 
 interface User {
   id: number;
@@ -26,6 +27,9 @@ export class UserManagementComponent implements OnInit {
   isModalVisible = false;
   editingUser: User | null = null;
   isEditMode = false;
+  
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
+  private baseUrl = environment.apiBaseUrl?.replace('/api', '') || 'http://localhost:3000';
 
   // Form data
   userForm = {
@@ -66,7 +70,7 @@ export class UserManagementComponent implements OnInit {
     this.loading = true;
     console.log('🔍 Loading users...');
     console.log('🌐 HTTP GET request to /api/users');
-    this.http.get<User[]>('http://localhost:3000/api/users').subscribe({
+    this.http.get<User[]>(`${this.apiBase}/users`).subscribe({
       next: (users) => {
         console.log('✅ Users loaded:', users);
         console.log('📊 Users array length:', users.length);
@@ -131,7 +135,7 @@ export class UserManagementComponent implements OnInit {
 
     if (this.isEditMode && this.editingUser) {
       // Update existing user
-      this.http.put(`http://localhost:3000/api/users/${this.editingUser.id}`, userData).subscribe({
+      this.http.put(`${this.apiBase}/users/${this.editingUser.id}`, userData).subscribe({
         next: () => {
           this.message.success('User updated successfully');
           this.isModalVisible = false;
@@ -144,7 +148,7 @@ export class UserManagementComponent implements OnInit {
       });
     } else {
       // Create new user
-      this.http.post('http://localhost:3000/api/users', userData).subscribe({
+      this.http.post(`${this.apiBase}/users`, userData).subscribe({
         next: () => {
           this.message.success('User created successfully');
           this.isModalVisible = false;
@@ -171,13 +175,13 @@ export class UserManagementComponent implements OnInit {
     const reader = new FileReader();
     reader.onload = () => {
       const base64 = reader.result as string;
-      this.http.post<{url: string}>('http://localhost:3000/api/users/upload-avatar', {
+      this.http.post<{url: string}>(`${this.apiBase}/users/upload-avatar`, {
         fileBase64: base64,
         filename: this.userForm.username || 'avatar'
       }).subscribe({
         next: (res) => {
           this.userForm.avatarUrl = res.url;
-          this.avatarPreview = res.url.startsWith('http') ? res.url : `http://localhost:3000${res.url}`;
+          this.avatarPreview = res.url.startsWith('http') ? res.url : `${this.baseUrl}${res.url}`;
           this.message.success('Avatar uploaded');
         },
         error: () => this.message.error('Failed to upload avatar')
@@ -223,7 +227,7 @@ export class UserManagementComponent implements OnInit {
       nzOkDanger: true,
       nzCancelText: 'Cancel',
       nzOnOk: () => {
-        this.http.delete(`http://localhost:3000/api/users/${user.id}`).subscribe({
+        this.http.delete(`${this.apiBase}/users/${user.id}`).subscribe({
           next: () => {
             this.message.success('User deleted successfully');
             this.loadUsers();
@@ -239,7 +243,7 @@ export class UserManagementComponent implements OnInit {
 
   toggleUserStatus(user: User): void {
     const newStatus = user.isActive ? 0 : 1;
-    this.http.put(`http://localhost:3000/api/users/${user.id}`, { isActive: newStatus }).subscribe({
+    this.http.put(`${this.apiBase}/users/${user.id}`, { isActive: newStatus }).subscribe({
       next: () => {
         this.message.success(`User ${newStatus ? 'activated' : 'deactivated'} successfully`);
         this.loadUsers();

@@ -18,6 +18,7 @@ export class LoginComponent implements OnInit {
   loginForm!: FormGroup;
   loading = false;
   private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
+  private baseUrl = environment.apiBaseUrl?.replace('/api', '') || 'http://localhost:3000';
 
   constructor(
     private fb: FormBuilder, 
@@ -113,14 +114,13 @@ export class LoginComponent implements OnInit {
           let avatarUrl: string | null = (response as any).avatarUrl || (response.user as any).avatarUrl || null;
           if (!avatarUrl) {
             // 2) Fallback: fetch from local MDM API to get avatarUrl
-            const mdmApi = 'http://localhost:3000/api';
             const me: any = await this.http
-              .get(`${mdmApi}/auth/me`, { params: { username: response.user.username } })
+              .get(`${this.apiBase}/auth/me`, { params: { username: response.user.username } })
               .toPromise();
             avatarUrl = me?.avatarUrl || null;
           }
           if (avatarUrl) {
-            const absolute = avatarUrl.startsWith('http') ? avatarUrl : `http://localhost:3000${avatarUrl}`;
+            const absolute = avatarUrl.startsWith('http') ? avatarUrl : `${this.baseUrl}${avatarUrl}`;
             sessionStorage.setItem('userAvatarUrl', absolute);
             // Notify header to refresh instantly
             window.dispatchEvent(new CustomEvent('userAvatarUpdated', { detail: { avatarUrl: absolute } }));

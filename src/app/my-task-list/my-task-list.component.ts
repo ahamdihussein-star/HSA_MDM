@@ -2,6 +2,7 @@ import { Component, OnInit } from '@angular/core';
 import { Router } from '@angular/router';
 import { ApiRepo } from '../Core/api.repo';
 import { NotificationService } from '../services/notification.service';
+import { environment } from '../../environments/environment';
 
 @Component({
   selector: "app-my-task-list",
@@ -10,6 +11,7 @@ import { NotificationService } from '../services/notification.service';
 })
 export class MyTaskListComponent implements OnInit {
   currentUser: { id?: string; username?: string; fullName?: string; role?: string } | null = null;
+  private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
   // Arrays للطلبات
   CustomerRequests: any[] = [];
   ProductRequests: any[] = [];
@@ -78,7 +80,7 @@ export class MyTaskListComponent implements OnInit {
   ngOnInit(): void {
     console.log('MyTaskList: Loading data entry rejected requests');
     // Always fetch current user from database to ensure fresh data
-    fetch('http://localhost:3000/api/auth/me?username=' + (sessionStorage.getItem('username') || 'data_entry'))
+    fetch(`${this.apiBase}/auth/me?username=` + (sessionStorage.getItem('username') || 'data_entry'))
       .then(r => r.json())
       .then(u => {
         this.currentUser = u;
