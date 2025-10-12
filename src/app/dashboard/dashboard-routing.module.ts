@@ -199,6 +199,14 @@ const routes: Routes = [
       // === PDF Bulk Generator ===
       { path: 'pdf-bulk-generator', component: PdfBulkGeneratorComponent },
 
+      // === Compliance Agent ===
+      {
+        path: 'compliance-agent',
+        loadChildren: () =>
+          import('../compliance-agent/compliance-agent.module')
+            .then(m => m.ComplianceAgentModule)
+      },
+
       
     ]
   }

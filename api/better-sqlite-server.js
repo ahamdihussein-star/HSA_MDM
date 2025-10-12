@@ -1,3 +1,6 @@
+// Load environment variables from .env file
+require('dotenv').config();
+
 const express = require('express');
 const cors = require('cors');
 const { nanoid } = require('nanoid');
@@ -5,11 +8,115 @@ const Database = require('better-sqlite3');
 const path = require('path');
 const multer = require('multer');
 const fs = require('fs').promises;
+const axios = require('axios');
+const https = require('https');
+const xml2js = require('xml2js');
+const csvParse = require('csv-parse/sync');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 const BASE_URL = process.env.BASE_URL || `http://localhost:${PORT}`;
 const UPLOADS_DIR = path.join(__dirname, 'uploads');
+
+// ==========================================
+// Environment Configuration
+// ==========================================
+const NODE_ENV = process.env.NODE_ENV || 'development';
+const USE_REAL_APIS = process.env.USE_REAL_SANCTIONS_APIS !== 'false'; // Default true
+
+// OpenAI API Configuration
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
+
+// OpenSanctions API Configuration  
+const OPENSANCTIONS_API_KEY = process.env.OPENSANCTIONS_API_KEY;
+
+// Log API Keys configuration (without exposing full keys)
+if (OPENAI_API_KEY) {
+  console.log('✅ [SERVER] OpenAI API Key loaded:', OPENAI_API_KEY.substring(0, 20) + '...' + OPENAI_API_KEY.substring(OPENAI_API_KEY.length - 4));
+} else {
+  console.warn('⚠️ [SERVER] OpenAI API Key NOT found in environment variables');
+}
+
+if (OPENSANCTIONS_API_KEY) {
+  console.log('✅ [SERVER] OpenSanctions API Key configured');
+} else {
+  console.warn('⚠️ [SERVER] OpenSanctions API Key NOT configured');
+  console.warn('   📝 To get real sanctions data, register at: https://www.opensanctions.org/api/');
+  console.warn('   📝 Free 30-day trial available. Add OPENSANCTIONS_API_KEY to .env file');
+}
+
+// ==========================================
+// SSL Configuration for Development
+// ==========================================
+const isDevelopment = NODE_ENV === 'development';
+
+// ✅ Create axios instance with proper SSL handling
+const axiosInstance = axios.create({
+  timeout: 30000,
+  httpsAgent: new https.Agent({
+    rejectUnauthorized: !isDevelopment, // ⚠️ Disable SSL verification in dev only
+    keepAlive: true,
+    maxSockets: 10
+  }),
+  headers: {
+    'User-Agent': 'Compliance-Agent/1.0 (MDM-System)',
+    'Accept': 'application/json, application/xml, text/csv'
+  }
+});
+
+// ==========================================
+// External APIs Configuration
+// ==========================================
+const EXTERNAL_APIS = {
+  OPENSANCTIONS: {
+    name: 'OpenSanctions',
+    baseUrl: 'https://api.opensanctions.org',
+    searchEndpoint: '/search/default',  // ✅ Fixed: No /api/v1 prefix
+    timeout: 20000,
+    enabled: true,
+    requiresAuth: false,  // ✅ No API key needed
+    retries: 3,
+    params: {
+      limit: 10,
+      fuzzy: true,
+      schema: 'Company'
+    }
+  },
+  
+  OFAC: {
+    name: 'OFAC (US Treasury)',
+    baseUrl: 'https://www.treasury.gov',
+    searchEndpoint: '/ofac/downloads/sdn.xml',
+    timeout: 30000,
+    enabled: true,
+    requiresAuth: false,
+    retries: 3
+  },
+  
+  EU_SANCTIONS: {
+    name: 'EU Financial Sanctions',
+    baseUrl: 'https://webgate.ec.europa.eu',
+    searchEndpoint: '/fsd/fsf/public/files/xmlFullSanctionsList/content',
+    timeout: 25000,
+    enabled: true,
+    requiresAuth: false,
+    retries: 3,
+    params: {
+      token: 'dG9rZW4tMjAxNw'
+    }
+  }
+};
+
+console.log('🌐 [SERVER] Sanctions APIs Configuration:');
+console.log('  - Environment:', NODE_ENV);
+console.log('  - Use Real APIs:', USE_REAL_APIS);
+console.log('  - SSL Verification:', !isDevelopment ? '✅ Enabled' : '⚠️ Disabled (Dev)');
+Object.entries(EXTERNAL_APIS).forEach(([key, config]) => {
+  if (config.enabled) {
+    console.log(`  - ${config.name}: ✅ Enabled`);
+  }
+});
 
 console.log('🌐 [SERVER] Base URL:', BASE_URL);
 
@@ -6620,10 +6727,1502 @@ app.post('/api/sync/execute-selected', (req, res) => {
   }
 });
 
+// ========================================
+// COMPLIANCE AGENT API ENDPOINTS
+// ========================================
+
+/**
+ * Search company compliance using external APIs and OpenAI orchestration
+ */
+app.post('/api/compliance/search', async (req, res) => {
+  try {
+    console.log('🔍 [COMPLIANCE] Starting compliance search:', req.body);
+    
+    const { companyName, country, companyType, registrationNumber, address, searchType } = req.body;
+    
+    if (!companyName) {
+      return res.status(400).json({ error: 'Company name is required' });
+    }
+    
+    // 1. Search external APIs
+    const externalResults = await searchExternalAPIs({
+      companyName,
+      country,
+      companyType,
+      registrationNumber,
+      address
+    });
+    
+    // 2. Use OpenAI for orchestration and matching
+    const orchestratedResults = await orchestrateWithOpenAI({
+      companyName,
+      searchCriteria: req.body,
+      externalResults
+    });
+    
+    // 3. Calculate overall risk level
+    const overallRiskLevel = calculateOverallRiskLevel(orchestratedResults.sanctions);
+    
+    // 4. Prepare final result
+    const complianceResult = {
+      companyName,
+      matchConfidence: orchestratedResults.matchConfidence,
+      overallRiskLevel,
+      sanctions: orchestratedResults.sanctions,
+      sources: orchestratedResults.sources,
+      searchTimestamp: new Date().toISOString(),
+      searchCriteria: req.body
+    };
+    
+    console.log('✅ [COMPLIANCE] Search completed:', complianceResult);
+    res.json(complianceResult);
+    
+  } catch (error) {
+    console.error('❌ [COMPLIANCE] Search failed:', error);
+    res.status(500).json({ 
+      error: 'Compliance search failed', 
+      details: error.message 
+    });
+  }
+});
+
+/**
+ * Get companies from database (compliance tasks + golden records)
+ */
+app.get('/api/compliance/database-companies', async (req, res) => {
+  try {
+    console.log('📊 [COMPLIANCE] Fetching golden records only...');
+    
+    // ✅ Get ONLY golden records (not compliance tasks)
+    const goldenRecords = db.prepare(`
+      SELECT 
+        id,
+        firstName as companyName,
+        country,
+        CustomerType as companyType,
+        city,
+        street,
+        buildingNumber,
+        'golden_record' as source,
+        'Active' as status,
+        updatedAt as lastUpdated
+      FROM requests 
+      WHERE isGolden = 1
+      AND firstName IS NOT NULL
+      AND firstName != ''
+    `).all();
+    
+    console.log('✅ [COMPLIANCE] Golden records loaded:', goldenRecords.length);
+    res.json(goldenRecords);
+    
+  } catch (error) {
+    console.error('❌ [COMPLIANCE] Failed to load database companies:', error);
+    res.status(500).json({ 
+      error: 'Failed to load database companies', 
+      details: error.message 
+    });
+  }
+});
+
+/**
+ * Bulk compliance check for multiple companies
+ */
+app.post('/api/compliance/bulk-check', async (req, res) => {
+  try {
+    console.log('🔄 [COMPLIANCE] Starting bulk compliance check:', req.body);
+    
+    const { companyIds } = req.body;
+    
+    if (!companyIds || !Array.isArray(companyIds) || companyIds.length === 0) {
+      return res.status(400).json({ error: 'Company IDs array is required' });
+    }
+    
+    // Get company details from database
+    const companies = db.prepare(`
+      SELECT 
+        id, 
+        firstName as companyName, 
+        country, 
+        CustomerType as companyType,
+        city,
+        street,
+        buildingNumber
+      FROM requests 
+      WHERE id IN (${companyIds.map(() => '?').join(',')})
+    `).all(...companyIds);
+    
+    // Perform compliance check for each company
+    const results = [];
+    for (const company of companies) {
+      try {
+        const complianceResult = await performComplianceCheck(company);
+        results.push(complianceResult);
+      } catch (error) {
+        console.error(`❌ [COMPLIANCE] Failed to check company ${company.companyName}:`, error);
+        // Add error result
+        results.push({
+          companyName: company.companyName,
+          matchConfidence: 0,
+          overallRiskLevel: 'Unknown',
+          sanctions: [],
+          sources: [],
+          searchTimestamp: new Date().toISOString(),
+          searchCriteria: { companyName: company.companyName },
+          error: error.message
+        });
+      }
+    }
+    
+    console.log('✅ [COMPLIANCE] Bulk check completed:', results.length);
+    res.json(results);
+    
+  } catch (error) {
+    console.error('❌ [COMPLIANCE] Bulk check failed:', error);
+    res.status(500).json({ 
+      error: 'Bulk compliance check failed', 
+      details: error.message 
+    });
+  }
+});
+
+/**
+ * Get compliance history for a specific company
+ */
+app.get('/api/compliance/history/:companyId', async (req, res) => {
+  try {
+    console.log('📜 [COMPLIANCE] Fetching compliance history for:', req.params.companyId);
+    
+    const companyId = req.params.companyId;
+    
+    // Get compliance check history
+    const history = db.prepare(`
+      SELECT * FROM compliance_history 
+      WHERE companyId = ? 
+      ORDER BY createdAt DESC
+    `).all(companyId);
+    
+    console.log('✅ [COMPLIANCE] Compliance history loaded:', history.length);
+    res.json(history);
+    
+  } catch (error) {
+    console.error('❌ [COMPLIANCE] Failed to load compliance history:', error);
+    res.status(500).json({ 
+      error: 'Failed to load compliance history', 
+      details: error.message 
+    });
+  }
+});
+
+/**
+ * Save compliance check result
+ */
+app.post('/api/compliance/save-result', async (req, res) => {
+  try {
+    console.log('💾 [COMPLIANCE] Saving compliance result:', req.body.companyName);
+    
+    const result = req.body;
+    
+    // Save to compliance history
+    db.prepare(`
+      INSERT INTO compliance_history (
+        id, companyName, matchConfidence, overallRiskLevel, 
+        sanctions, sources, searchCriteria, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      nanoid(12),
+      result.companyName,
+      result.matchConfidence,
+      result.overallRiskLevel,
+      JSON.stringify(result.sanctions),
+      JSON.stringify(result.sources),
+      JSON.stringify(result.searchCriteria),
+      new Date().toISOString()
+    );
+    
+    console.log('✅ [COMPLIANCE] Compliance result saved');
+    res.json({ success: true });
+    
+  } catch (error) {
+    console.error('❌ [COMPLIANCE] Failed to save compliance result:', error);
+    res.status(500).json({ 
+      error: 'Failed to save compliance result', 
+      details: error.message 
+    });
+  }
+});
+
+// Insert demo sanctions data
+app.post('/api/compliance/insert-demo-data', async (req, res) => {
+  try {
+    console.log('📊 [COMPLIANCE] Inserting demo sanctions data...');
+    
+    const demoData = require('./demo-sanctions-data.js');
+    const companies = demoData.companies;
+    
+    let insertedCount = 0;
+    
+    for (const company of companies) {
+      try {
+        // Insert into requests table as compliance tasks
+        const requestId = nanoid(12);
+        const timestamp = new Date().toISOString();
+        
+        // Check if complianceStatus and sanctionsData columns exist, if not add them
+        try {
+          db.prepare('ALTER TABLE requests ADD COLUMN complianceStatus TEXT').run();
+          console.log('✅ [COMPLIANCE] Added complianceStatus column');
+        } catch (e) {
+          // Column already exists
+        }
+        
+        try {
+          db.prepare('ALTER TABLE requests ADD COLUMN sanctionsData TEXT').run();
+          console.log('✅ [COMPLIANCE] Added sanctionsData column');
+        } catch (e) {
+          // Column already exists
+        }
+
+        db.prepare(`
+          INSERT INTO requests (
+            id, firstName, CustomerType, tax, city, street, buildingNumber, 
+            country, status, isGolden, createdAt, updatedAt, createdBy, 
+            source, complianceStatus, sanctionsData
+          ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+        `).run(
+          requestId,
+          company.companyName,
+          company.companyType,
+          company.registrationNumber,
+          company.city,
+          company.street,
+          company.buildingNumber,
+          company.country,
+          'compliance_review',
+          0, // Not golden record
+          timestamp,
+          timestamp,
+          'system',
+          'compliance_demo',
+          'under_sanctions',
+          JSON.stringify(company.sanctions)
+        );
+        
+        insertedCount++;
+        console.log(`✅ [COMPLIANCE] Inserted: ${company.companyName}`);
+        
+      } catch (error) {
+        console.error(`❌ [COMPLIANCE] Failed to insert ${company.companyName}:`, error);
+      }
+    }
+    
+    res.json({
+      success: true,
+      message: `Successfully inserted ${insertedCount} demo companies`,
+      insertedCount,
+      totalCompanies: companies.length
+    });
+    
+  } catch (error) {
+    console.error('❌ [COMPLIANCE] Failed to insert demo data:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to insert demo data',
+      details: error.message
+    });
+  }
+});
+
+// Get demo sanctions data
+app.get('/api/compliance/demo-data', (req, res) => {
+  try {
+    const demoData = require('./demo-sanctions-data.js');
+    res.json(demoData);
+  } catch (error) {
+    console.error('❌ [COMPLIANCE] Failed to get demo data:', error);
+    res.status(500).json({
+      success: false,
+      error: 'Failed to get demo data',
+      details: error.message
+    });
+  }
+});
+
+// Debug endpoint to check environment variables
+app.get('/api/compliance/debug-env', (req, res) => {
+  res.json({
+    hasOpenAIKey: !!OPENAI_API_KEY,
+    openAIKeyPrefix: OPENAI_API_KEY ? OPENAI_API_KEY.substring(0, 20) + '...' : 'NOT SET',
+    nodeEnv: NODE_ENV,
+    useRealAPIs: USE_REAL_APIS,
+    isDevelopment: isDevelopment,
+    apisConfig: {
+      openSanctions: {
+        enabled: EXTERNAL_APIS.OPENSANCTIONS.enabled,
+        url: `${EXTERNAL_APIS.OPENSANCTIONS.baseUrl}${EXTERNAL_APIS.OPENSANCTIONS.searchEndpoint}`
+      },
+      ofac: {
+        enabled: EXTERNAL_APIS.OFAC.enabled,
+        url: `${EXTERNAL_APIS.OFAC.baseUrl}${EXTERNAL_APIS.OFAC.searchEndpoint}`
+      },
+      eu: {
+        enabled: EXTERNAL_APIS.EU_SANCTIONS.enabled,
+        url: `${EXTERNAL_APIS.EU_SANCTIONS.baseUrl}${EXTERNAL_APIS.EU_SANCTIONS.searchEndpoint}`
+      }
+    }
+  });
+});
+
+// ========================================
+// HELPER FUNCTIONS FOR COMPLIANCE
+// ========================================
+
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+// COUNTRY ISO CODE MAPPING (195 countries)
+// ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+const COUNTRY_CODES = {
+  // Middle East & North Africa
+  'IR': 'Iran', 'IQ': 'Iraq', 'SY': 'Syria', 'LB': 'Lebanon', 'YE': 'Yemen',
+  'SA': 'Saudi Arabia', 'AE': 'United Arab Emirates', 'BH': 'Bahrain', 'KW': 'Kuwait',
+  'QA': 'Qatar', 'OM': 'Oman', 'JO': 'Jordan', 'IL': 'Israel', 'PS': 'Palestine',
+  'EG': 'Egypt', 'LY': 'Libya', 'TN': 'Tunisia', 'DZ': 'Algeria', 'MA': 'Morocco',
+  'SD': 'Sudan', 'SS': 'South Sudan',
+  
+  // Major Powers
+  'US': 'United States', 'GB': 'United Kingdom', 'FR': 'France', 'DE': 'Germany',
+  'IT': 'Italy', 'ES': 'Spain', 'RU': 'Russia', 'CN': 'China', 'JP': 'Japan',
+  'IN': 'India', 'BR': 'Brazil', 'CA': 'Canada', 'AU': 'Australia', 'KR': 'South Korea',
+  
+  // High-Risk Countries
+  'KP': 'North Korea', 'CU': 'Cuba', 'VE': 'Venezuela', 'BY': 'Belarus', 'MM': 'Myanmar',
+  'AF': 'Afghanistan', 'SO': 'Somalia', 'ZW': 'Zimbabwe',
+  
+  // Europe
+  'AT': 'Austria', 'BE': 'Belgium', 'BG': 'Bulgaria', 'HR': 'Croatia', 'CY': 'Cyprus',
+  'CZ': 'Czech Republic', 'DK': 'Denmark', 'EE': 'Estonia', 'FI': 'Finland', 'GR': 'Greece',
+  'HU': 'Hungary', 'IE': 'Ireland', 'LV': 'Latvia', 'LT': 'Lithuania', 'LU': 'Luxembourg',
+  'MT': 'Malta', 'NL': 'Netherlands', 'PL': 'Poland', 'PT': 'Portugal', 'RO': 'Romania',
+  'SK': 'Slovakia', 'SI': 'Slovenia', 'SE': 'Sweden', 'CH': 'Switzerland', 'NO': 'Norway',
+  'IS': 'Iceland', 'UA': 'Ukraine', 'TR': 'Turkey', 'RS': 'Serbia', 'AL': 'Albania',
+  
+  // Asia-Pacific
+  'TH': 'Thailand', 'VN': 'Vietnam', 'MY': 'Malaysia', 'SG': 'Singapore', 'ID': 'Indonesia',
+  'PH': 'Philippines', 'PK': 'Pakistan', 'BD': 'Bangladesh', 'LK': 'Sri Lanka', 'NP': 'Nepal',
+  'KZ': 'Kazakhstan', 'UZ': 'Uzbekistan', 'MN': 'Mongolia', 'KH': 'Cambodia', 'LA': 'Laos',
+  
+  // Africa
+  'ZA': 'South Africa', 'NG': 'Nigeria', 'KE': 'Kenya', 'ET': 'Ethiopia', 'GH': 'Ghana',
+  'TZ': 'Tanzania', 'UG': 'Uganda', 'AO': 'Angola', 'ZM': 'Zambia', 'ZW': 'Zimbabwe',
+  'MZ': 'Mozambique', 'BW': 'Botswana', 'NA': 'Namibia', 'CI': 'Ivory Coast', 'SN': 'Senegal',
+  'CM': 'Cameroon', 'CD': 'DR Congo', 'RW': 'Rwanda',
+  
+  // Latin America
+  'MX': 'Mexico', 'AR': 'Argentina', 'CL': 'Chile', 'CO': 'Colombia', 'PE': 'Peru',
+  'EC': 'Ecuador', 'BO': 'Bolivia', 'PY': 'Paraguay', 'UY': 'Uruguay', 'CR': 'Costa Rica',
+  'PA': 'Panama', 'GT': 'Guatemala', 'HN': 'Honduras', 'SV': 'El Salvador', 'NI': 'Nicaragua',
+  
+  // Caribbean
+  'BS': 'Bahamas', 'BB': 'Barbados', 'JM': 'Jamaica', 'TT': 'Trinidad and Tobago',
+  'DO': 'Dominican Republic', 'HT': 'Haiti', 'PR': 'Puerto Rico',
+  
+  // Other
+  'NZ': 'New Zealand', 'FJ': 'Fiji', 'PG': 'Papua New Guinea'
+};
+
+/**
+ * Convert ISO country code to full name
+ */
+function getCountryName(isoCode) {
+  if (!isoCode) return 'Not specified';
+  const code = isoCode.toUpperCase();
+  return COUNTRY_CODES[code] || isoCode;
+}
+
+/**
+ * Convert country name to ISO code (reverse lookup)
+ */
+function getCountryCode(countryName) {
+  if (!countryName) return null;
+  const normalized = countryName.toLowerCase();
+  
+  for (const [code, name] of Object.entries(COUNTRY_CODES)) {
+    if (name.toLowerCase() === normalized) {
+      return code;
+    }
+  }
+  return null;
+}
+
+// ==========================================
+// External APIs Search Functions
+// ==========================================
+
+/**
+ * Search OpenSanctions API with optional country filter
+ */
+async function searchOpenSanctions(companyName, country = null, retryCount = 0) {
+  const config = EXTERNAL_APIS.OPENSANCTIONS;
+  
+  if (!config.enabled) {
+    console.log('ℹ️ [OPENSANCTIONS] API disabled');
+    return [];
+  }
+
+  try {
+    console.log(`🔍 [OPENSANCTIONS] Searching for: ${companyName}${country ? ` in ${country}` : ''}`);
+    
+    // Check if API key is configured
+    if (!OPENSANCTIONS_API_KEY) {
+      console.warn('⚠️ [OPENSANCTIONS] API key not configured - returning empty results');
+      console.warn('   📝 Get free API key from: https://www.opensanctions.org/api/');
+      return [];
+    }
+    
+    const url = `${config.baseUrl}${config.searchEndpoint}`;
+    
+    // Build search params with country filter if provided
+    const searchParams = {
+      q: companyName,
+      schema: 'Company', // Search only for companies
+      limit: 10
+    };
+    
+    // Add country filter if provided (convert to ISO code)
+    if (country) {
+      const countryCode = getCountryCode(country) || country;
+      searchParams.countries = countryCode;
+      console.log(`🌍 [OPENSANCTIONS] Filtering by country: ${country} (${countryCode})`);
+    }
+    
+    const response = await axiosInstance.get(url, {
+      params: searchParams,
+      headers: {
+        'Authorization': `ApiKey ${OPENSANCTIONS_API_KEY}`,
+        'Accept': 'application/json'
+      },
+      timeout: config.timeout
+    });
+
+    console.log('📦 [OPENSANCTIONS] Response status:', response.status);
+    
+    if (!response.data || !response.data.results) {
+      console.warn('⚠️ [OPENSANCTIONS] No results in response');
+      return [];
+    }
+
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    // Parse OpenSanctions results (Following OpenSanctions API Guide)
+    // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+    const results = response.data.results.map(item => {
+      const props = item.properties || {};
+      const topics = props.topics || [];
+      const programs = props.program || [];
+      const datasets = item.datasets || [];
+      
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // 1️⃣ NAME - Extract company name and aliases
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      const name = item.caption || props.name?.[0] || 'Unknown';
+      const aliases = props.alias || [];
+      
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // 2️⃣ COUNTRY - Priority: registrationCountry → jurisdiction → country → addressCountry
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      const countryCode = props.registrationCountry?.[0] || 
+                         props.jurisdiction?.[0] || 
+                         props.country?.[0] || 
+                         props.addressCountry?.[0] || 
+                         null;
+      const country = getCountryName(countryCode);
+      
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // 3️⃣ DATES - Extract sanction dates (Companies use createdAt, not startDate)
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      const startDate = props.createdAt?.[0] ||      // When added to sanctions list
+                       props.startDate?.[0] ||       // For persons
+                       props.listingDate?.[0] ||
+                       props.modifiedAt?.[0] ||      // Last modified
+                       item.first_seen || 
+                       null;
+      const endDate = props.endDate?.[0] || null;
+      const incorporationDate = props.incorporationDate?.[0] || null;
+      
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // 4️⃣ TOPICS - Determine sanction type from topics
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      const topicDescriptions = {
+        'sanction': 'Official Sanction',
+        'sanction.linked': 'Linked to Sanctioned Entity',
+        'crime.terror': 'Terrorism',
+        'crime.war': 'War Crimes',
+        'crime': 'Criminal Activity',
+        'crime.financial': 'Financial Crime',
+        'crime.fraud': 'Fraud',
+        'crime.traffick': 'Trafficking',
+        'crime.boss': 'Criminal Organization Leader',
+        'role.pep': 'Politically Exposed Person',
+        'role.rca': 'Related to PEP',
+        'poi': 'Person of Interest',
+        'reg.warn': 'Regulatory Warning'
+      };
+      
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // 5️⃣ RISK LEVEL - Calculate from topics
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      let riskLevel = 'Low';
+      if (topics.includes('crime.terror') || topics.includes('crime.war')) {
+        riskLevel = 'Critical';
+      } else if (topics.includes('sanction') || topics.includes('crime') || topics.includes('crime.financial')) {
+        riskLevel = 'High';
+      } else if (topics.includes('role.pep') || topics.includes('poi') || topics.includes('sanction.linked') || topics.includes('role.rca')) {
+        riskLevel = 'Medium';
+      } else if (topics.includes('reg.warn')) {
+        riskLevel = 'Low';
+      } else if (datasets.length > 0) {
+        riskLevel = 'Medium';
+      }
+      
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // 6️⃣ SOURCE - Identify from datasets
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      const datasetMapping = {
+        'us_ofac_sdn': 'US OFAC - SDN List 🇺🇸',
+        'us_ofac_sdgt': 'US OFAC - Global Terrorists 🇺🇸',
+        'eu_sanctions': 'EU Consolidated Sanctions 🇪🇺',
+        'eu_fsf': 'EU Financial Sanctions 🇪🇺',
+        'gb_hmt_sanctions': 'UK HM Treasury 🇬🇧',
+        'un_sc_sanctions': 'UN Security Council 🇺🇳',
+        'ch_seco_sanctions': 'Swiss SECO 🇨🇭',
+        'ca_dfatd_sema_sanctions': 'Canada DFATD 🇨🇦',
+        'au_dfat_sanctions': 'Australia DFAT 🇦🇺'
+      };
+      
+      const sourceDetail = datasets.length > 0 
+        ? datasets.map(ds => datasetMapping[ds] || ds).join(', ')
+        : 'OpenSanctions';
+      
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // 7️⃣ REASON - Extract sanction reason (priority order)
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      let reason = '';
+      if (props.reason && props.reason[0]) {
+        reason = props.reason[0];
+      } else if (props.description && props.description[0]) {
+        reason = props.description[0];
+      } else if (props.summary && props.summary[0]) {
+        reason = props.summary[0];
+      } else if (props.notes && props.notes.length > 0) {
+        // Use first meaningful note (skip technical notes)
+        const meaningfulNotes = props.notes.filter(note => 
+          !note.startsWith('(also') && 
+          !note.startsWith('Website:') && 
+          note.length > 20
+        );
+        reason = meaningfulNotes[0] || props.notes[0];
+      } else if (programs.length > 0) {
+        reason = `Subject to: ${programs.join(', ')}`;
+      } else if (topics.length > 0) {
+        const topicReasons = topics.map(t => topicDescriptions[t] || t);
+        reason = topicReasons.join('; ');
+      } else if (datasets.length > 0) {
+        reason = `Listed in: ${sourceDetail}`;
+      } else {
+        reason = 'Listed in international sanctions database';
+      }
+      
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // 8️⃣ PENALTY - What sanctions are imposed
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      let penalty = '';
+      if (programs.length > 0) {
+        penalty = `Sanctioned under: ${programs.join(', ')}`;
+      } else if (props.sanctionType && props.sanctionType[0]) {
+        penalty = props.sanctionType[0];
+      } else if (props.provisions && props.provisions[0]) {
+        penalty = `Subject to: ${props.provisions[0]}`;
+      } else if (datasets.some(d => d.includes('us_ofac_sdn'))) {
+        penalty = 'OFAC SDN: Asset blocking, US transaction prohibition, Criminal penalties up to $20M';
+      } else if (datasets.some(d => d.includes('eu_sanctions'))) {
+        penalty = 'EU Sanctions: Funds freeze, Travel ban to EU, Economic resource prohibition';
+      } else if (datasets.some(d => d.includes('gb_hmt'))) {
+        penalty = 'UK Sanctions: Asset freeze, UK financial service prohibition';
+      } else if (datasets.some(d => d.includes('un_sc'))) {
+        penalty = 'UN Sanctions: Asset freeze, Arms embargo, Travel ban';
+      } else if (topics.includes('crime.terror')) {
+        penalty = 'Counter-terrorism measures: Asset blocking, Travel ban, Transaction prohibitions';
+      } else if (topics.includes('sanction')) {
+        penalty = 'Asset freeze, Travel restrictions, Business prohibitions';
+      } else if (topics.includes('crime.financial')) {
+        penalty = 'Financial sanctions, Asset seizure, Banking restrictions';
+      } else {
+        penalty = 'Restrictive measures applied';
+      }
+      
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      // SANCTION TYPE - Categorize the sanction
+      // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
+      let sanctionType = 'Restrictive measures';
+      if (datasets.some(d => d.includes('us_ofac_sdn'))) {
+        sanctionType = 'SDN (Specially Designated National)';
+      } else if (datasets.some(d => d.includes('eu_sanctions'))) {
+        sanctionType = 'EU Consolidated Sanctions List';
+      } else if (datasets.some(d => d.includes('un_sc'))) {
+        sanctionType = 'UN Security Council Sanctions';
+      } else if (datasets.some(d => d.includes('gb_hmt'))) {
+        sanctionType = 'UK HM Treasury Sanctions';
+      } else if (programs.length > 0) {
+        sanctionType = programs[0];
+      } else if (topics.includes('sanction')) {
+        sanctionType = 'International sanctions';
+      } else if (topics.includes('crime')) {
+        sanctionType = 'Criminal listing';
+      }
+      
+      return {
+        // Basic Info
+        id: item.id,
+        name: name,
+        aliases: aliases,
+        type: item.schema || 'Company',
+        country: country,
+        countryCode: countryCode,
+        
+        // Descriptions
+        description: props.description?.[0] || props.summary?.[0] || 'Sanctions list entry',
+        
+        // Sanction Classification
+        datasets: datasets,
+        topics: topics,
+        programs: programs,
+        programId: props.programId || [],
+        source: 'OpenSanctions',
+        sourceDetail: sourceDetail,
+        riskLevel: riskLevel,
+        confidence: 85,
+        
+        // URLs and References
+        url: item.id ? `https://www.opensanctions.org/entities/${item.id}/` : null,
+        sourceUrl: props.sourceUrl?.[0] || null,
+        website: props.website?.[0] || null,
+        
+        // Dates
+        date: startDate,
+        sanctionDate: startDate,
+        endDate: endDate,
+        incorporationDate: incorporationDate,
+        lastModified: props.modifiedAt?.[0] || item.last_change || null,
+        lastSeen: item.last_seen || new Date().toISOString(),
+        firstSeen: item.first_seen || null,
+        
+        // Address & Contact
+        address: props.address?.[0] || null,
+        phone: props.phone?.[0] || null,
+        email: props.email?.[0] || null,
+        
+        // Registration Info
+        registrationNumber: props.registrationNumber?.[0] || null,
+        taxNumber: props.taxNumber?.[0] || null,
+        leiCode: props.leiCode?.[0] || null,
+        legalForm: props.legalForm?.[0] || null,
+        sector: props.sector?.[0] || null,
+        status: props.status?.[0] || 'Unknown',
+        
+        // ✅ Complete sanction information
+        reason: reason,
+        penalty: penalty,
+        sanctionType: sanctionType
+      };
+    });
+
+    console.log(`✅ [OPENSANCTIONS] Found ${results.length} results`);
+    
+    // 📊 LOG DETAILED MAPPING FOR TRACING
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    console.log('📊 [OPENSANCTIONS] DETAILED DATA MAPPING - FOR TRACING');
+    console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+    results.forEach((result, index) => {
+      console.log(`\n🔍 [RESULT ${index + 1}/${results.length}] ${result.name}`);
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      // Basic Info
+      console.log('📋 BASIC INFORMATION:');
+      console.log(`   • ID: ${result.id || 'N/A'}`);
+      console.log(`   • Name: ${result.name}`);
+      console.log(`   • Aliases: ${result.aliases?.length > 0 ? result.aliases.join(', ') : 'None'}`);
+      console.log(`   • Type: ${result.type}`);
+      console.log(`   • Country: ${result.country || 'Unknown'} (${result.countryCode || 'N/A'})`);
+      
+      // Classification
+      console.log('\n🔖 SANCTION CLASSIFICATION:');
+      console.log(`   • Risk Level: ${result.riskLevel}`);
+      console.log(`   • Confidence: ${result.confidence}%`);
+      console.log(`   • Source: ${result.source}`);
+      console.log(`   • Source Detail: ${result.sourceDetail}`);
+      console.log(`   • Sanction Type: ${result.sanctionType}`);
+      console.log(`   • Datasets: ${result.datasets?.length > 0 ? result.datasets.join(', ') : 'None'}`);
+      console.log(`   • Topics: ${result.topics?.length > 0 ? result.topics.join(', ') : 'None'}`);
+      console.log(`   • Programs: ${result.programs?.length > 0 ? result.programs.join(', ') : 'None'}`);
+      
+      // Descriptions
+      console.log('\n📝 DESCRIPTIONS:');
+      console.log(`   • Description: ${result.description}`);
+      console.log(`   • Reason: ${result.reason}`);
+      console.log(`   • Penalty: ${result.penalty}`);
+      
+      // Dates
+      console.log('\n📅 DATES:');
+      console.log(`   • Sanction Date: ${result.sanctionDate || 'N/A'}`);
+      console.log(`   • End Date: ${result.endDate || 'N/A'}`);
+      console.log(`   • Incorporation Date: ${result.incorporationDate || 'N/A'}`);
+      console.log(`   • Last Modified: ${result.lastModified || 'N/A'}`);
+      console.log(`   • First Seen: ${result.firstSeen || 'N/A'}`);
+      console.log(`   • Last Seen: ${result.lastSeen || 'N/A'}`);
+      
+      // Address & Contact
+      console.log('\n📍 ADDRESS & CONTACT:');
+      console.log(`   • Address: ${result.address || 'N/A'}`);
+      console.log(`   • Phone: ${result.phone || 'N/A'}`);
+      console.log(`   • Email: ${result.email || 'N/A'}`);
+      console.log(`   • Website: ${result.website || 'N/A'}`);
+      
+      // Registration
+      console.log('\n🏢 REGISTRATION INFO:');
+      console.log(`   • Registration Number: ${result.registrationNumber || 'N/A'}`);
+      console.log(`   • Tax Number: ${result.taxNumber || 'N/A'}`);
+      console.log(`   • LEI Code: ${result.leiCode || 'N/A'}`);
+      console.log(`   • Legal Form: ${result.legalForm || 'N/A'}`);
+      console.log(`   • Sector: ${result.sector || 'N/A'}`);
+      console.log(`   • Status: ${result.status}`);
+      
+      // URLs
+      console.log('\n🔗 REFERENCE URLS:');
+      console.log(`   • OpenSanctions URL: ${result.url || 'N/A'}`);
+      console.log(`   • Source URL: ${result.sourceUrl || 'N/A'}`);
+    });
+    console.log('\n━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━\n');
+
+    // Use OpenAI for fuzzy matching
+    const matchedResults = await performFuzzyMatch(companyName, results);
+    
+    return matchedResults.slice(0, 5); // Return top 5 matches
+
+  } catch (error) {
+    console.error('❌ [OPENSANCTIONS] Search failed:', {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status,
+      url: error.config?.url
+    });
+
+    // Retry logic
+    if (retryCount < config.retries && error.code !== 'ENOTFOUND') {
+      console.log(`🔄 [OPENSANCTIONS] Retrying... (${retryCount + 1}/${config.retries})`);
+      await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
+      return searchOpenSanctions(companyName, retryCount + 1);
+    }
+
+    return [];
+  }
+}
+
+/**
+ * Search OFAC SDN List
+ */
+async function searchOFAC(companyName, retryCount = 0) {
+  const config = EXTERNAL_APIS.OFAC;
+  
+  if (!config.enabled) {
+    console.log('ℹ️ [OFAC] API disabled');
+    return [];
+  }
+
+  try {
+    console.log(`🔍 [OFAC] Downloading SDN list...`);
+    
+    const url = `${config.baseUrl}${config.searchEndpoint}`;
+    const response = await axiosInstance.get(url, {
+      timeout: config.timeout,
+      responseType: 'text'
+    });
+
+    console.log('📦 [OFAC] Downloaded XML, size:', response.data.length);
+
+    // ✅ Parse XML properly using xml2js
+    const parser = new xml2js.Parser({
+      explicitArray: false,
+      ignoreAttrs: false,
+      mergeAttrs: true
+    });
+
+    const parsedData = await parser.parseStringPromise(response.data);
+    
+    if (!parsedData || !parsedData.sdnList || !parsedData.sdnList.sdnEntry) {
+      console.warn('⚠️ [OFAC] Invalid XML structure');
+      return [];
+    }
+
+    // Extract SDN entries
+    const sdnEntries = Array.isArray(parsedData.sdnList.sdnEntry) 
+      ? parsedData.sdnList.sdnEntry 
+      : [parsedData.sdnList.sdnEntry];
+
+    console.log(`📋 [OFAC] Parsed ${sdnEntries.length} SDN entries`);
+
+    // Filter for companies/entities
+    const companyEntries = sdnEntries
+      .filter(entry => {
+        const sdnType = entry.sdnType?.toLowerCase() || '';
+        return sdnType.includes('entity') || sdnType.includes('company') || !sdnType.includes('individual');
+      })
+      .map(entry => ({
+        id: entry.uid,
+        name: [entry.firstName, entry.lastName].filter(Boolean).join(' ').trim() || 'Unknown',
+        aliases: [], // OFAC has akaList but complex to parse
+        type: entry.sdnType || 'Entity',
+        country: entry.addressList?.address?.country || '',
+        description: `OFAC SDN List - ${entry.programList?.program || 'Sanctions Program'}`,
+        programs: Array.isArray(entry.programList?.program) 
+          ? entry.programList.program 
+          : [entry.programList?.program].filter(Boolean),
+        source: 'OFAC',
+        riskLevel: 'High',
+        confidence: 95,
+        remarks: entry.remarks || '',
+        url: `https://sanctionssearch.ofac.treas.gov/Details.aspx?id=${entry.uid}`
+      }));
+
+    console.log(`✅ [OFAC] Found ${companyEntries.length} company entries`);
+
+    // Use OpenAI for fuzzy matching
+    const matchedResults = await performFuzzyMatch(companyName, companyEntries);
+    
+    return matchedResults.slice(0, 5);
+
+  } catch (error) {
+    console.error('❌ [OFAC] Search failed:', {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status
+    });
+
+    // Retry logic
+    if (retryCount < config.retries && error.code !== 'ENOTFOUND') {
+      console.log(`🔄 [OFAC] Retrying... (${retryCount + 1}/${config.retries})`);
+      await new Promise(resolve => setTimeout(resolve, 2000 * (retryCount + 1)));
+      return searchOFAC(companyName, retryCount + 1);
+    }
+
+    return [];
+  }
+}
+
+/**
+ * Search EU Sanctions List
+ */
+async function searchEUSanctions(companyName, retryCount = 0) {
+  const config = EXTERNAL_APIS.EU_SANCTIONS;
+  
+  if (!config.enabled) {
+    console.log('ℹ️ [EU] API disabled');
+    return [];
+  }
+
+  try {
+    console.log(`🔍 [EU] Downloading sanctions list...`);
+    
+    const url = `${config.baseUrl}${config.searchEndpoint}`;
+    const response = await axiosInstance.get(url, {
+      params: config.params,
+      timeout: config.timeout,
+      responseType: 'text'
+    });
+
+    console.log('📦 [EU] Downloaded data, size:', response.data.length);
+
+    // Check if XML or CSV
+    const isXML = response.data.trim().startsWith('<');
+    
+    let results = [];
+    
+    if (isXML) {
+      // ✅ Parse XML
+      const parser = new xml2js.Parser({
+        explicitArray: false,
+        ignoreAttrs: false
+      });
+      
+      const parsedData = await parser.parseStringPromise(response.data);
+      
+      // EU XML structure varies, adapt as needed
+      const sanctionEntities = parsedData?.export?.sanctionEntity || [];
+      const entities = Array.isArray(sanctionEntities) ? sanctionEntities : [sanctionEntities];
+      
+      results = entities
+        .filter(entity => {
+          const subjectType = entity.subjectType?.classificationCode || entity.subjectType;
+          return subjectType === 'E' || subjectType === 'enterprise' || subjectType === 'entity';
+        })
+        .map(entity => ({
+          id: entity.euReferenceNumber,
+          name: entity.nameAlias?.wholeName || entity.nameAlias?.firstName || 'Unknown',
+          aliases: [],
+          type: 'Entity',
+          country: entity.citizenship?.countryDescription || '',
+          description: entity.remark || 'EU Sanctions List Entry',
+          programs: [entity.regulation?.programme || 'EU Sanctions'],
+          source: 'EU Sanctions',
+          riskLevel: 'High',
+          confidence: 88,
+          url: entity.euReferenceNumber ? `https://webgate.ec.europa.eu/fsd/fsf/public/files/htmlPages/fsf_en.html#${entity.euReferenceNumber}` : null
+        }));
+        
+    } else {
+      // ✅ Parse CSV
+      const records = csvParse.parse(response.data, {
+        columns: true,
+        skip_empty_lines: true,
+        trim: true
+      });
+      
+      results = records
+        .filter(record => {
+          const subjectType = record.Entity_SubjectType || record.SubjectType || '';
+          return subjectType.toLowerCase().includes('enterprise') || 
+                 subjectType.toLowerCase().includes('entity') ||
+                 subjectType.toLowerCase() === 'e';
+        })
+        .map(record => ({
+          id: record.Entity_Id || record.Id,
+          name: record.Entity_Name || record.Name || 'Unknown',
+          aliases: [],
+          type: 'Entity',
+          country: record.Entity_Country || record.Country || '',
+          description: record.Entity_Remark || record.Remark || 'EU Sanctions List Entry',
+          programs: [record.Entity_Programme || record.Programme || 'EU Sanctions'],
+          source: 'EU Sanctions',
+          riskLevel: 'High',
+          confidence: 88,
+          url: record.Entity_Id ? `https://webgate.ec.europa.eu/fsd/fsf/public/files/htmlPages/fsf_en.html#${record.Entity_Id}` : null
+        }));
+    }
+
+    console.log(`✅ [EU] Found ${results.length} entities`);
+
+    // Use OpenAI for fuzzy matching
+    const matchedResults = await performFuzzyMatch(companyName, results);
+    
+    return matchedResults.slice(0, 5);
+
+  } catch (error) {
+    console.error('❌ [EU] Search failed:', {
+      message: error.message,
+      code: error.code,
+      status: error.response?.status
+    });
+
+    // Retry logic
+    if (retryCount < config.retries) {
+      console.log(`🔄 [EU] Retrying... (${retryCount + 1}/${config.retries})`);
+      await new Promise(resolve => setTimeout(resolve, 1500 * (retryCount + 1)));
+      return searchEUSanctions(companyName, retryCount + 1);
+    }
+
+    return [];
+  }
+}
+
+/**
+ * Main search function - combines all APIs
+ */
+async function searchExternalAPIs(searchCriteria) {
+  console.log('🌐 [COMPLIANCE] Searching external APIs:', searchCriteria);
+  
+  // ✅ Always use real APIs - NO DEMO DATA FALLBACK
+  console.log('🌐 [COMPLIANCE] Using REAL APIs only - no demo data');
+  console.log('📋 [COMPLIANCE] Search criteria:', searchCriteria);
+  
+  // Extract country from search criteria
+  const country = searchCriteria.country || null;
+  
+  if (country) {
+    console.log(`🌍 [COMPLIANCE] Country filter applied: ${country}`);
+  }
+  
+  // Search all APIs in parallel with country filter
+  const [openSanctions, ofac, euUk] = await Promise.all([
+    searchOpenSanctions(searchCriteria.companyName, country),
+    searchOFAC(searchCriteria.companyName),
+    searchEUSanctions(searchCriteria.companyName)
+  ]);
+
+  // ✅ Return ONLY real API results (empty arrays if no results found)
+  const results = {
+    openSanctions: openSanctions,
+    ofac: ofac,
+    euUk: euUk
+  };
+
+  console.log('✅ [COMPLIANCE] Search completed:', {
+    openSanctions: results.openSanctions.length,
+    ofac: results.ofac.length,
+    euUk: results.euUk.length
+  });
+
+  return results;
+}
+
+// ==========================================
+// ✅ NO DEMO DATA - Using REAL APIs only
+// ==========================================
+// Demo data functions removed - system now returns only real sanctions data
+// If no sanctions found, returns empty array (will show "No sanctions found" message)
+
+// ==========================================
+// OpenAI Fuzzy Matching
+// ==========================================
+
+/**
+ * Use OpenAI to perform intelligent fuzzy matching
+ * between user query and sanctions data
+ */
+async function performFuzzyMatch(userQuery, sanctionsData) {
+  if (!sanctionsData || sanctionsData.length === 0) {
+    return [];
+  }
+
+  if (!OPENAI_API_KEY) {
+    console.warn('⚠️ [FUZZY] OpenAI API key not configured, using exact matching');
+    return sanctionsData.filter(item => 
+      item.name.toLowerCase().includes(userQuery.toLowerCase())
+    );
+  }
+
+  try {
+    console.log('🤖 [FUZZY] Using OpenAI for intelligent matching...');
+    console.log(`   Query: "${userQuery}"`);
+    console.log(`   Data items: ${sanctionsData.length}`);
+    
+    // Prepare sanctions names for comparison (limit to 50 for cost control)
+    const limitedData = sanctionsData.slice(0, 50);
+    const sanctionsList = limitedData.map((item, idx) => ({
+      index: idx,
+      name: item.name,
+      aliases: item.aliases || [],
+      country: item.country || ''
+    }));
+
+    const prompt = `You are a sanctions matching expert. Your task is to find companies from a sanctions list that match a user's search query, even if the names are not exactly the same.
+
+User is searching for: "${userQuery}"
+
+Available sanctions entries:
+${JSON.stringify(sanctionsList, null, 2)}
+
+Instructions:
+1. Find ALL entries that could match the search query
+2. Consider:
+   - Exact matches (highest priority)
+   - Similar spellings or transliterations
+   - Abbreviations or acronyms  
+   - Companies with similar names in the same country
+   - Aliases or alternate names
+3. Assign a confidence score (0-100) for each match
+4. Return ONLY matches with confidence >= 60
+
+Respond with a JSON object containing a "matches" array:
+{
+  "matches": [
+    {
+      "index": 0,
+      "confidence": 95,
+      "reason": "Exact match"
+    },
+    {
+      "index": 2,
+      "confidence": 85,
+      "reason": "Similar name with common transliteration variation"
+    }
+  ]
+}
+
+If no good matches found, return: {"matches": []}`;
+
+    const response = await axios.post(
+      OPENAI_API_URL,
+      {
+        model: 'gpt-4o-mini', // Fast and cost-effective
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a sanctions list matching expert. Always respond with valid JSON only.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.3, // Low temperature for consistent matching
+        max_tokens: 1000,
+        response_format: { type: "json_object" }
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 15000
+      }
+    );
+
+    const aiResponse = response.data.choices[0].message.content;
+    console.log('🤖 [FUZZY] OpenAI raw response:', aiResponse);
+
+    let matches;
+    try {
+      const parsed = JSON.parse(aiResponse);
+      matches = Array.isArray(parsed) ? parsed : (parsed.matches || []);
+    } catch (parseError) {
+      console.error('❌ [FUZZY] Failed to parse OpenAI response:', parseError);
+      // Fallback to basic matching
+      return sanctionsData.filter(item => 
+        item.name.toLowerCase().includes(userQuery.toLowerCase())
+      );
+    }
+
+    // Map matches back to original data with confidence scores
+    const matchedResults = matches
+      .filter(match => match.confidence >= 60 && match.index < limitedData.length)
+      .map(match => ({
+        ...limitedData[match.index],
+        matchConfidence: match.confidence,
+        matchReason: match.reason
+      }))
+      .sort((a, b) => b.matchConfidence - a.matchConfidence);
+
+    console.log(`✅ [FUZZY] Found ${matchedResults.length} matches using OpenAI`);
+    
+    return matchedResults;
+
+  } catch (error) {
+    console.error('❌ [FUZZY] OpenAI matching failed:', {
+      message: error.message,
+      status: error.response?.status
+    });
+    
+    // Fallback to simple string matching
+    return sanctionsData.filter(item => 
+      item.name.toLowerCase().includes(userQuery.toLowerCase())
+    );
+  }
+}
+
+/**
+ * Use OpenAI for orchestration and matching
+ */
+async function orchestrateWithOpenAI(data) {
+  console.log('🤖 [COMPLIANCE] OpenAI orchestration started');
+  
+  // ⚡ TEMPORARILY DISABLED - Use basic matching for faster response
+  console.warn('⚡ [COMPLIANCE] Using basic matching (OpenAI disabled for performance)');
+  return performBasicMatching(data);
+  
+  /* ORIGINAL CODE - Enable when needed
+  if (!OPENAI_API_KEY) {
+    console.warn('⚠️ [COMPLIANCE] OpenAI API key not configured, using basic matching');
+    return performBasicMatching(data);
+  }
+  
+  try {
+    // ✅ Reduce data sent to OpenAI to avoid timeout
+    const simplifiedResults = {
+      openSanctions: data.externalResults.openSanctions?.map(s => ({
+        id: s.id,
+        name: s.name,
+        country: s.country,
+        datasets: s.datasets,
+        topics: s.topics,
+        reason: s.reason,
+        penalty: s.penalty,
+        allFields: s  // Keep full data
+      })),
+      ofac: data.externalResults.ofac?.slice(0, 3),
+      euUk: data.externalResults.euUk?.slice(0, 3)
+    };
+    
+    const prompt = `
+Analyze the following company compliance data and provide structured results:
+
+Company: ${data.companyName}
+Search Criteria: ${JSON.stringify(data.searchCriteria, null, 2)}
+
+External API Results (simplified):
+${JSON.stringify(simplifiedResults, null, 2)}
+
+Please analyze and return a JSON response with:
+1. matchConfidence: number (0-100) indicating how confident you are in the match
+2. sanctions: array - **COPY ALL FIELDS** from external results exactly as they are, including:
+   - All basic fields (id, name, type, country, countryCode, source, confidence, riskLevel, description)
+   - All sanction fields (reason, penalty, sanctionType, programId, datasets, topics)
+   - All date fields (date, sanctionDate, endDate, incorporationDate, lastModified, firstSeen, lastSeen)
+   - All contact fields (address, phone, email, website)
+   - All registration fields (registrationNumber, taxNumber, leiCode, legalForm, sector, status)
+   - All other fields present in the external results
+3. sources: array of source database names used
+
+CRITICAL INSTRUCTIONS:
+- **DO NOT create new fields or modify existing ones**
+- **COPY the entire sanction object as-is from external results**
+- **PRESERVE ALL fields including reason, penalty, date, address, programId, etc.**
+- Only filter by company name match - keep all other data intact
+- If you find a matching company, return its complete data structure
+
+Focus on:
+- Finding companies that match the search name (exact or similar)
+- Keeping ALL original fields from the API response
+- Not modifying or summarizing any data
+
+Return only valid JSON.
+`;
+
+    const response = await axios.post(OPENAI_API_URL, {
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a compliance expert specializing in sanctions screening. Analyze company data and return ONLY valid JSON results for compliance checking. Do not include any text before or after the JSON.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.1,
+      max_tokens: 2000
+    }, {
+      headers: {
+        'Authorization': `Bearer ${OPENAI_API_KEY}`,
+        'Content-Type': 'application/json'
+      },
+      timeout: 30000
+    });
+    
+    const rawContent = response.data.choices[0].message.content.trim();
+    console.log('🤖 [COMPLIANCE] OpenAI raw response:', rawContent);
+
+    // Try to extract JSON from the response
+    let aiResult;
+    try {
+      // First, try direct parsing
+      aiResult = JSON.parse(rawContent);
+    } catch (parseError) {
+      // If direct parsing fails, try to extract JSON from the text
+      const jsonMatch = rawContent.match(/\{[\s\S]*\}/);
+      if (jsonMatch) {
+        aiResult = JSON.parse(jsonMatch[0]);
+      } else {
+        console.warn('❌ [COMPLIANCE] Could not extract JSON from OpenAI response, falling back to basic matching');
+        return performBasicMatching(data);
+      }
+    }
+
+    console.log('✅ [COMPLIANCE] OpenAI orchestration completed');
+    
+    return aiResult;
+    
+  } catch (error) {
+    console.error('❌ [COMPLIANCE] OpenAI orchestration failed:', error);
+    return performBasicMatching(data);
+  }
+  */
+}
+
+/**
+ * Perform basic matching when OpenAI is not available
+ */
+function performBasicMatching(data) {
+  console.log('🔍 [COMPLIANCE] Performing basic matching');
+  
+  const sanctions = [];
+  const sources = [];
+  let matchConfidence = 0;
+  
+  // Process OpenSanctions results
+  if (data.externalResults.openSanctions?.length > 0) {
+    sources.push('OpenSanctions');
+    data.externalResults.openSanctions.forEach((result, index) => {
+      sanctions.push({
+        id: result.id || `opensanctions_${index}`,
+        name: result.name || 'Unknown',
+        type: result.type || 'Unknown',
+        country: result.country || 'Unknown',
+        source: 'OpenSanctions',
+        confidence: calculateBasicConfidence(data.companyName, result.name),
+        riskLevel: result.riskLevel || 'Medium',
+        description: result.description || 'Sanctioned entity',
+        // ✅ Include enhanced fields
+        reason: result.reason,
+        penalty: result.penalty,
+        sanctionType: result.sanctionType,
+        date: result.date,
+        sanctionDate: result.sanctionDate
+      });
+    });
+    matchConfidence = Math.max(matchConfidence, 70);
+  }
+  
+  // Process OFAC results
+  if (data.externalResults.ofac?.length > 0) {
+    sources.push('OFAC');
+    data.externalResults.ofac.forEach((result, index) => {
+      sanctions.push({
+        id: result.id || `ofac_${index}`,
+        name: result.name || 'Unknown',
+        type: result.type || 'Unknown',
+        country: result.country || 'Unknown',
+        source: 'OFAC',
+        confidence: calculateBasicConfidence(data.companyName, result.name),
+        riskLevel: result.riskLevel || 'High',
+        description: result.description || 'OFAC sanctioned entity',
+        // ✅ Include enhanced fields
+        reason: result.reason,
+        penalty: result.penalty,
+        sanctionType: result.sanctionType,
+        date: result.date,
+        sanctionDate: result.sanctionDate
+      });
+    });
+    matchConfidence = Math.max(matchConfidence, 80);
+  }
+  
+  // Process EU/UK results
+  if (data.externalResults.euUk?.length > 0) {
+    sources.push('EU/UK OFSI');
+    data.externalResults.euUk.forEach((result, index) => {
+      sanctions.push({
+        id: result.id || `euuk_${index}`,
+        name: result.name || 'Unknown',
+        type: result.type || 'Unknown',
+        country: result.country || 'Unknown',
+        source: 'EU/UK OFSI',
+        confidence: calculateBasicConfidence(data.companyName, result.name),
+        riskLevel: result.riskLevel || 'Medium',
+        description: result.description || 'EU/UK sanctioned entity',
+        // ✅ Include enhanced fields
+        reason: result.reason,
+        penalty: result.penalty,
+        sanctionType: result.sanctionType,
+        date: result.date,
+        sanctionDate: result.sanctionDate
+      });
+    });
+    matchConfidence = Math.max(matchConfidence, 75);
+  }
+  
+  return {
+    matchConfidence,
+    sanctions,
+    sources
+  };
+}
+
+/**
+ * Calculate basic confidence score
+ */
+function calculateBasicConfidence(searchName, resultName) {
+  if (!searchName || !resultName) return 0;
+  
+  const search = searchName.toLowerCase();
+  const result = resultName.toLowerCase();
+  
+  // Exact match
+  if (search === result) return 100;
+  
+  // Contains match
+  if (result.includes(search) || search.includes(result)) return 80;
+  
+  // Word overlap
+  const searchWords = search.split(/\s+/);
+  const resultWords = result.split(/\s+/);
+  const commonWords = searchWords.filter(word => resultWords.includes(word));
+  
+  if (commonWords.length > 0) {
+    return Math.min(70, (commonWords.length / searchWords.length) * 100);
+  }
+  
+  return 30; // Low confidence for any match
+}
+
+/**
+ * Calculate overall risk level
+ */
+function calculateOverallRiskLevel(sanctions) {
+  if (!sanctions || sanctions.length === 0) return 'Low';
+  
+  const riskLevels = sanctions.map(s => s.riskLevel);
+  
+  if (riskLevels.includes('Critical')) return 'Critical';
+  if (riskLevels.includes('High')) return 'High';
+  if (riskLevels.includes('Medium')) return 'Medium';
+  return 'Low';
+}
+
+/**
+ * Perform compliance check for a single company
+ */
+async function performComplianceCheck(company) {
+  console.log('🔍 [COMPLIANCE] Checking company:', company.companyName);
+  
+  // Search external APIs
+  const externalResults = await searchExternalAPIs(company);
+  
+  // Use OpenAI for orchestration
+  const orchestratedResults = await orchestrateWithOpenAI({
+    companyName: company.companyName,
+    searchCriteria: company,
+    externalResults
+  });
+  
+  // Calculate overall risk level
+  const overallRiskLevel = calculateOverallRiskLevel(orchestratedResults.sanctions);
+  
+  return {
+    companyName: company.companyName,
+    matchConfidence: orchestratedResults.matchConfidence,
+    overallRiskLevel,
+    sanctions: orchestratedResults.sanctions,
+    sources: orchestratedResults.sources,
+    searchTimestamp: new Date().toISOString(),
+    searchCriteria: company
+  };
+}
+
+// ========================================
+// DATABASE SCHEMA FOR COMPLIANCE
+// ========================================
+
+// Create compliance_history table if it doesn't exist
+try {
+  db.exec(`
+    CREATE TABLE IF NOT EXISTS compliance_history (
+      id TEXT PRIMARY KEY,
+      companyName TEXT NOT NULL,
+      matchConfidence INTEGER NOT NULL,
+      overallRiskLevel TEXT NOT NULL,
+      sanctions TEXT NOT NULL,
+      sources TEXT NOT NULL,
+      searchCriteria TEXT NOT NULL,
+      createdAt TEXT NOT NULL
+    )
+  `);
+  console.log('✅ [COMPLIANCE] Database schema initialized');
+} catch (error) {
+  console.error('❌ [COMPLIANCE] Failed to initialize database schema:', error);
+}
+
 // Start server
 app.listen(PORT, () => {
   console.log(`\nSQLite MDM Server (better-sqlite3) running at http://localhost:${PORT}`);
   console.log(`Database saved at: ${dbPath}`);
+  console.log(`🔍 [COMPLIANCE] Compliance Agent ready`);
   console.log(`\nDefault Users:`);
   console.log(`   data_entry / pass123`);
   console.log(`   reviewer / pass123`);

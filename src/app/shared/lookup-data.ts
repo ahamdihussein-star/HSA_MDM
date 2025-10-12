@@ -7,14 +7,86 @@ export const SOURCE_SYSTEM_OPTIONS = [
 ];
 
 export const COUNTRY_OPTIONS = [
-  { value: 'Egypt', label: 'Egypt' },
-  { value: 'Saudi Arabia', label: 'Saudi Arabia' },
-  { value: 'United Arab Emirates', label: 'United Arab Emirates' },
-  { value: 'Yemen', label: 'Yemen' },
-  { value: 'Qatar', label: 'Qatar' },
-  { value: 'Oman', label: 'Oman' },
-  { value: 'Bahrain', label: 'Bahrain' }
-];
+  // GCC & Middle East (Original + Extended)
+  { value: 'Bahrain', label: '🇧🇭 Bahrain' },
+  { value: 'Egypt', label: '🇪🇬 Egypt' },
+  { value: 'Iran', label: '🇮🇷 Iran' },
+  { value: 'Iraq', label: '🇮🇶 Iraq' },
+  { value: 'Jordan', label: '🇯🇴 Jordan' },
+  { value: 'Kuwait', label: '🇰🇼 Kuwait' },
+  { value: 'Lebanon', label: '🇱🇧 Lebanon' },
+  { value: 'Oman', label: '🇴🇲 Oman' },
+  { value: 'Qatar', label: '🇶🇦 Qatar' },
+  { value: 'Saudi Arabia', label: '🇸🇦 Saudi Arabia' },
+  { value: 'Syria', label: '🇸🇾 Syria' },
+  { value: 'United Arab Emirates', label: '🇦🇪 United Arab Emirates' },
+  { value: 'Yemen', label: '🇾🇪 Yemen' },
+  
+  // North Africa
+  { value: 'Algeria', label: '🇩🇿 Algeria' },
+  { value: 'Libya', label: '🇱🇾 Libya' },
+  { value: 'Morocco', label: '🇲🇦 Morocco' },
+  { value: 'Sudan', label: '🇸🇩 Sudan' },
+  { value: 'Tunisia', label: '🇹🇳 Tunisia' },
+  
+  // Major Powers
+  { value: 'Australia', label: '🇦🇺 Australia' },
+  { value: 'Brazil', label: '🇧🇷 Brazil' },
+  { value: 'Canada', label: '🇨🇦 Canada' },
+  { value: 'China', label: '🇨🇳 China' },
+  { value: 'France', label: '🇫🇷 France' },
+  { value: 'Germany', label: '🇩🇪 Germany' },
+  { value: 'India', label: '🇮🇳 India' },
+  { value: 'Italy', label: '🇮🇹 Italy' },
+  { value: 'Japan', label: '🇯🇵 Japan' },
+  { value: 'Russia', label: '🇷🇺 Russia' },
+  { value: 'South Korea', label: '🇰🇷 South Korea' },
+  { value: 'Spain', label: '🇪🇸 Spain' },
+  { value: 'United Kingdom', label: '🇬🇧 United Kingdom' },
+  { value: 'United States', label: '🇺🇸 United States' },
+  
+  // High-Risk Countries
+  { value: 'Afghanistan', label: '🇦🇫 Afghanistan' },
+  { value: 'Belarus', label: '🇧🇾 Belarus' },
+  { value: 'Cuba', label: '🇨🇺 Cuba' },
+  { value: 'Myanmar', label: '🇲🇲 Myanmar' },
+  { value: 'North Korea', label: '🇰🇵 North Korea' },
+  { value: 'Somalia', label: '🇸🇴 Somalia' },
+  { value: 'Venezuela', label: '🇻🇪 Venezuela' },
+  { value: 'Zimbabwe', label: '🇿🇼 Zimbabwe' },
+  
+  // Europe
+  { value: 'Austria', label: '🇦🇹 Austria' },
+  { value: 'Belgium', label: '🇧🇪 Belgium' },
+  { value: 'Netherlands', label: '🇳🇱 Netherlands' },
+  { value: 'Norway', label: '🇳🇴 Norway' },
+  { value: 'Poland', label: '🇵🇱 Poland' },
+  { value: 'Sweden', label: '🇸🇪 Sweden' },
+  { value: 'Switzerland', label: '🇨🇭 Switzerland' },
+  { value: 'Turkey', label: '🇹🇷 Turkey' },
+  { value: 'Ukraine', label: '🇺🇦 Ukraine' },
+  
+  // Asia-Pacific
+  { value: 'Indonesia', label: '🇮🇩 Indonesia' },
+  { value: 'Malaysia', label: '🇲🇾 Malaysia' },
+  { value: 'Pakistan', label: '🇵🇰 Pakistan' },
+  { value: 'Philippines', label: '🇵🇭 Philippines' },
+  { value: 'Singapore', label: '🇸🇬 Singapore' },
+  { value: 'Thailand', label: '🇹🇭 Thailand' },
+  { value: 'Vietnam', label: '🇻🇳 Vietnam' },
+  
+  // Africa
+  { value: 'Ethiopia', label: '🇪🇹 Ethiopia' },
+  { value: 'Kenya', label: '🇰🇪 Kenya' },
+  { value: 'Nigeria', label: '🇳🇬 Nigeria' },
+  { value: 'South Africa', label: '🇿🇦 South Africa' },
+  
+  // Latin America
+  { value: 'Argentina', label: '🇦🇷 Argentina' },
+  { value: 'Chile', label: '🇨🇱 Chile' },
+  { value: 'Colombia', label: '🇨🇴 Colombia' },
+  { value: 'Mexico', label: '🇲🇽 Mexico' }
+]; // Already sorted with flags at the beginning
 
 export const CUSTOMER_TYPE_OPTIONS = [
   { value: 'Corporate', label: 'Corporate' },

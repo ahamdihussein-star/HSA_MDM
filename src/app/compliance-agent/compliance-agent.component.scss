@@ -1,0 +1,483 @@
+/* Compliance Agent Component Styles */
+
+.compliance-agent-container {
+  padding: 24px;
+  max-width: 1400px;
+  margin: 0 auto;
+  
+  .header-section {
+    margin-bottom: 24px;
+    
+    .header-content {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      
+      .title-section {
+        .page-title {
+          font-size: 28px;
+          font-weight: 600;
+          color: #1890ff;
+          margin: 0 0 8px 0;
+          display: flex;
+          align-items: center;
+          gap: 12px;
+          
+          i {
+            font-size: 32px;
+          }
+        }
+        
+        .page-description {
+          font-size: 16px;
+          color: #666;
+          margin: 0;
+        }
+      }
+      
+      .header-actions {
+        .ant-btn-group {
+          .ant-btn {
+            height: 40px;
+            padding: 0 20px;
+            font-weight: 500;
+          }
+        }
+      }
+    }
+  }
+  
+  .search-mode-toggle {
+    margin-bottom: 24px;
+    display: flex;
+    justify-content: center;
+  }
+  
+  .database-modal-content {
+    padding: 20px 0;
+    min-height: 400px;
+    max-height: 600px;
+    overflow-y: auto;
+    
+    .database-filters {
+      margin-bottom: 20px;
+      max-width: 600px;
+      margin-left: auto;
+      margin-right: auto;
+    }
+    
+    .database-companies-grid {
+      .companies-list {
+        display: grid;
+        grid-template-columns: repeat(auto-fill, minmax(350px, 1fr));
+        gap: 16px;
+        margin-bottom: 20px;
+        
+        .company-card {
+          cursor: pointer;
+          transition: all 0.3s ease;
+          border: 2px solid transparent;
+          
+          &:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+          }
+          
+          &.selected {
+            border-color: #1890ff;
+            background-color: #e6f7ff;
+          }
+          
+          .company-info {
+            .company-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 12px;
+              
+              h3 {
+                margin: 0;
+                font-size: 16px;
+                font-weight: 600;
+                color: #1890ff;
+              }
+            }
+            
+            .company-details {
+              p {
+                margin: 8px 0;
+                font-size: 14px;
+                color: #666;
+                
+                strong {
+                  color: #333;
+                  margin-right: 8px;
+                }
+              }
+            }
+          }
+        }
+      }
+      
+      .selection-actions {
+        display: flex;
+        justify-content: center;
+        padding: 20px 0;
+      }
+      
+      .no-companies {
+        padding: 40px 20px;
+      }
+    }
+  }
+  
+  .modal-footer-actions {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+    
+    .selection-info {
+      font-size: 14px;
+      color: #666;
+      
+      strong {
+        color: #1890ff;
+        font-size: 18px;
+      }
+    }
+    
+    .action-buttons {
+      display: flex;
+      gap: 12px;
+    }
+  }
+  
+  .search-section {
+    margin-bottom: 24px;
+    
+    .search-form {
+      .advanced-fields {
+        margin-top: 24px;
+        padding: 20px;
+        background: #f8f9fa;
+        border-radius: 8px;
+        border: 1px solid #e8e8e8;
+        
+        .ant-divider {
+          margin: 16px 0 24px 0;
+          color: #1890ff;
+          font-weight: 600;
+        }
+      }
+      
+      .search-actions {
+        margin-top: 24px;
+        text-align: center;
+        
+        .ant-btn {
+          height: 48px;
+          padding: 0 32px;
+          font-size: 16px;
+          font-weight: 600;
+          
+          i {
+            margin-right: 8px;
+          }
+        }
+      }
+    }
+  }
+  
+  .results-section {
+    .tab-content {
+      padding: 24px 0;
+      
+      .loading-container {
+        text-align: center;
+        padding: 60px 0;
+        
+        .loading-content {
+          i {
+            font-size: 48px;
+            color: #1890ff;
+            margin-bottom: 16px;
+          }
+          
+          p {
+            font-size: 16px;
+            color: #666;
+            margin: 8px 0;
+          }
+          
+          .loading-subtitle {
+            font-size: 14px;
+            color: #999;
+          }
+        }
+      }
+      
+      .results-container {
+        .result-card {
+          margin-bottom: 24px;
+          
+          .result-card-content {
+            .risk-header {
+              display: flex;
+              justify-content: space-between;
+              align-items: center;
+              margin-bottom: 20px;
+              padding-bottom: 16px;
+              border-bottom: 1px solid #f0f0f0;
+              
+              .risk-indicator {
+                display: flex;
+                align-items: center;
+                gap: 16px;
+                
+                .confidence-score {
+                  font-size: 14px;
+                  color: #666;
+                  
+                  .ant-tag {
+                    margin-left: 8px;
+                  }
+                }
+              }
+              
+              .search-info {
+                small {
+                  color: #999;
+                }
+              }
+            }
+            
+            .sanctions-section {
+              margin-bottom: 20px;
+              
+              h4 {
+                color: #1890ff;
+                margin-bottom: 16px;
+                font-weight: 600;
+              }
+              
+              .ant-table {
+                .ant-table-thead > tr > th {
+                  background: #fafafa;
+                  font-weight: 600;
+                  color: #1890ff;
+                }
+              }
+            }
+            
+            .no-sanctions {
+              text-align: center;
+              padding: 40px 0;
+            }
+            
+            .sources-section {
+              margin-top: 20px;
+              padding-top: 16px;
+              border-top: 1px solid #f0f0f0;
+              
+              h4 {
+                color: #1890ff;
+                margin-bottom: 12px;
+                font-weight: 600;
+              }
+              
+              .ant-tag {
+                margin-right: 8px;
+                margin-bottom: 8px;
+              }
+            }
+          }
+        }
+      }
+      
+      .no-results {
+        text-align: center;
+        padding: 60px 0;
+      }
+    }
+  }
+  
+  .bulk-actions {
+    margin-bottom: 24px;
+    
+    .bulk-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      
+      .selection-info {
+        .ant-checkbox-wrapper {
+          font-size: 16px;
+          font-weight: 500;
+        }
+      }
+      
+      .bulk-buttons {
+        .ant-btn {
+          height: 40px;
+          padding: 0 24px;
+          font-weight: 500;
+          
+          i {
+            margin-right: 8px;
+          }
+        }
+      }
+    }
+  }
+  
+  .companies-table {
+    .ant-table {
+      .ant-table-thead > tr > th {
+        background: #fafafa;
+        font-weight: 600;
+        color: #1890ff;
+        
+        &:first-child {
+          text-align: center;
+        }
+      }
+      
+      .ant-table-tbody > tr > td {
+        vertical-align: middle;
+        
+        &:first-child {
+          text-align: center;
+        }
+        
+        .ant-tag {
+          font-size: 12px;
+          padding: 2px 8px;
+        }
+      }
+    }
+  }
+  
+  .no-companies {
+    text-align: center;
+    padding: 60px 0;
+  }
+}
+
+/* Animations */
+.slideInOut {
+  transition: all 0.3s ease-in-out;
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+  .compliance-agent-container {
+    padding: 16px;
+    
+    .header-section {
+      .header-content {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+        
+        .title-section {
+          .page-title {
+            font-size: 24px;
+          }
+        }
+      }
+    }
+    
+    .search-section {
+      .search-form {
+        .advanced-fields {
+          padding: 16px;
+          
+          .ant-row {
+            .ant-col {
+              margin-bottom: 16px;
+            }
+          }
+        }
+      }
+    }
+    
+    .results-section {
+      .tab-content {
+        padding: 16px 0;
+        
+        .result-card {
+          .result-card-content {
+            .risk-header {
+              flex-direction: column;
+              gap: 12px;
+              text-align: center;
+            }
+          }
+        }
+      }
+    }
+    
+    .bulk-actions {
+      .bulk-header {
+        flex-direction: column;
+        gap: 16px;
+        text-align: center;
+      }
+    }
+  }
+}
+
+/* Dark Theme Support */
+@media (prefers-color-scheme: dark) {
+  .compliance-agent-container {
+    .header-section {
+      .header-content {
+        .title-section {
+          .page-title {
+            color: #40a9ff;
+          }
+          
+          .page-description {
+            color: #ccc;
+          }
+        }
+      }
+    }
+    
+    .search-section {
+      .search-form {
+        .advanced-fields {
+          background: #1f1f1f;
+          border-color: #434343;
+        }
+      }
+    }
+    
+    .results-section {
+      .tab-content {
+        .result-card {
+          .result-card-content {
+            .risk-header {
+              border-bottom-color: #434343;
+            }
+            
+            .sanctions-section {
+              h4 {
+                color: #40a9ff;
+              }
+            }
+            
+            .sources-section {
+              border-top-color: #434343;
+              
+              h4 {
+                color: #40a9ff;
+              }
+            }
+          }
+        }
+      }
+    }
+  }
+}

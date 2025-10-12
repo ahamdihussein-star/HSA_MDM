@@ -138,24 +138,32 @@
 
      </div>
 
-     <!-- ==== user3 (Compliance) ==== -->
-     <div *ngIf="user == '3'">
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'compliance-task-list']"
-          [ngClass]="[router.url.startsWith('/dashboard/compliance-task-list') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeGrey.svg" alt="compliance Icon" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeYellow.svg" alt="compliance Icon" class="navIcon" />
-         {{ "MyTaskList" | translate }}
-       </p>
+    <!-- ==== user3 (Compliance) ==== -->
+    <div *ngIf="user == '3'">
+      <p class="navTab"
+         [routerLink]="['/dashboard', 'compliance-task-list']"
+         [ngClass]="[router.url.startsWith('/dashboard/compliance-task-list') ? 'activeTab' : '']">
+        <img *ngIf="!router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeGrey.svg" alt="compliance Icon" class="navIcon" />
+        <img *ngIf="router.url.startsWith('/dashboard/compliance-task-list')" src="assets/img/homeYellow.svg" alt="compliance Icon" class="navIcon" />
+        {{ "MyTaskList" | translate }}
+      </p>
 
-       <p class="navTab"
-          [routerLink]="['/dashboard', 'golden-requests']"
-          [ngClass]="[router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage') ? 'activeTab' : '']">
-         <img *ngIf="!router.url.startsWith('/dashboard/golden-requests') && !router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenGrey.svg" alt="Home Icon" class="navIcon" />
-         <img *ngIf="router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenYellow.svg" alt="Home Icon" class="navIcon" />
-         {{ "GoldenRecords" | translate }}
-       </p>
-     </div>
+      <p class="navTab"
+         [routerLink]="['/dashboard', 'compliance-agent']"
+         [ngClass]="[router.url.startsWith('/dashboard/compliance-agent') ? 'activeTab' : '']">
+        <img *ngIf="!router.url.startsWith('/dashboard/compliance-agent')" src="assets/img/homeGrey.svg" alt="Compliance Agent Icon" class="navIcon" />
+        <img *ngIf="router.url.startsWith('/dashboard/compliance-agent')" src="assets/img/homeYellow.svg" alt="Compliance Agent Icon" class="navIcon" />
+        {{ "Compliance Agent" | translate }}
+      </p>
+
+      <p class="navTab"
+         [routerLink]="['/dashboard', 'golden-requests']"
+         [ngClass]="[router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage') ? 'activeTab' : '']">
+        <img *ngIf="!router.url.startsWith('/dashboard/golden-requests') && !router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenGrey.svg" alt="Home Icon" class="navIcon" />
+        <img *ngIf="router.url.startsWith('/dashboard/golden-requests') || router.url.startsWith('/dashboard/data-lineage')" src="assets/img/goldenYellow.svg" alt="Home Icon" class="navIcon" />
+        {{ "GoldenRecords" | translate }}
+      </p>
+    </div>
 
      <!-- ==== user4 (System Admin) ==== -->
      <div *ngIf="user == '4' || isAdmin">

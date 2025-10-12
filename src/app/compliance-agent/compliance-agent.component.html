@@ -1,0 +1,799 @@
+<!-- Compliance Agent Component -->
+<div class="compliance-agent-container">
+  
+  <!-- Header Section -->
+  <div class="header-section">
+    <nz-card>
+      <div class="header-content">
+        <div class="title-section">
+          <h1 class="page-title">
+            <i nz-icon nzType="security-scan" nzTheme="outline"></i>
+            Compliance Agent
+          </h1>
+          <p class="page-description">
+            Search for company sanctions and compliance information using multiple databases
+          </p>
+        </div>
+        
+        <div class="header-actions">
+          <button nz-button nzType="default" nzSize="large" (click)="clearSearch()">
+            <i nz-icon nzType="clear"></i>
+            Clear
+          </button>
+        </div>
+      </div>
+    </nz-card>
+  </div>
+  
+  <!-- Search Form Section -->
+  <div class="search-section">
+    <nz-card>
+      <!-- Search Mode Toggle -->
+      <div class="search-mode-toggle">
+        <nz-button-group>
+          <button 
+            nz-button 
+            [nzType]="searchMode === 'manual' ? 'primary' : 'default'"
+            (click)="switchSearchMode('manual')"
+          >
+            <i nz-icon nzType="edit"></i>
+            Manual Search
+          </button>
+          <button 
+            nz-button 
+            [nzType]="searchMode === 'database' ? 'primary' : 'default'"
+            (click)="switchSearchMode('database')"
+          >
+            <i nz-icon nzType="database"></i>
+            Select from Database
+          </button>
+        </nz-button-group>
+        
+        <!-- Demo Data Button -->
+        <button 
+          nz-button
+          nzType="dashed" 
+          nzSize="small"
+          (click)="insertDemoData()"
+          [nzLoading]="isInsertingDemoData"
+          style="margin-left: 16px;">
+          <i nz-icon nzType="database"></i>
+          Insert Demo Data
+        </button>
+      </div>
+
+      <!-- Manual Search Form -->
+      <form 
+        *ngIf="searchMode === 'manual'" 
+        nz-form 
+        [formGroup]="searchForm" 
+        (ngSubmit)="performSearch()"
+        [@slideInOut]
+      >
+        
+        <!-- Simplified Search Form (Company Name + Country Only) -->
+        <div class="search-form">
+          <div nz-row [nzGutter]="24">
+            <!-- Company Name -->
+            <div nz-col [nzSpan]="12">
+              <nz-form-item>
+                <nz-form-label [nzSpan]="24" nzRequired>
+                  <span style="font-size: 16px; font-weight: 600;">Company Name</span>
+                </nz-form-label>
+                <nz-form-control [nzSpan]="24" nzErrorTip="Company name is required (minimum 2 characters)">
+                  <nz-input-group nzSize="large" [nzPrefix]="prefixIconTpl">
+                    <input 
+                      nz-input 
+                      formControlName="companyName" 
+                      placeholder="e.g., Rosneft, ABC Corporation, Adoon"
+                      style="font-size: 16px;"
+                    />
+                  </nz-input-group>
+                  <ng-template #prefixIconTpl>
+                    <i nz-icon nzType="search" style="font-size: 18px; color: #1890ff;"></i>
+                  </ng-template>
+                </nz-form-control>
+              </nz-form-item>
+            </div>
+            
+            <!-- Country -->
+            <div nz-col [nzSpan]="12">
+              <nz-form-item>
+                <nz-form-label [nzSpan]="24">
+                  <span style="font-size: 16px; font-weight: 600;">Country (Optional)</span>
+                </nz-form-label>
+                <nz-form-control [nzSpan]="24">
+                  <nz-select 
+                    formControlName="country" 
+                    nzSize="large"
+                    nzShowSearch
+                    nzAllowClear
+                    nzPlaceHolder="Select country to filter results"
+                    style="width: 100%;"
+                  >
+                    <nz-option 
+                      *ngFor="let country of countries" 
+                      [nzValue]="country.value" 
+                      [nzLabel]="country.label"
+                    >
+                    </nz-option>
+                  </nz-select>
+                </nz-form-control>
+              </nz-form-item>
+            </div>
+          </div>
+          
+          <!-- Search Button -->
+          <div class="search-actions" style="margin-top: 32px;">
+            <button
+              nz-button
+              nzType="primary"
+              nzSize="large"
+              type="submit"
+              [nzLoading]="isLoading"
+              [disabled]="!searchForm.valid"
+              style="height: 50px; padding: 0 40px; font-size: 16px;"
+            >
+              <i nz-icon nzType="search" style="font-size: 20px;"></i>
+              <span style="margin-left: 8px;">Search Compliance</span>
+            </button>
+            <div style="margin-top: 12px; text-align: center; color: #999; font-size: 14px;">
+              <i nz-icon nzType="info-circle"></i>
+              Search by company name only, or add country to filter results
+            </div>
+          </div>
+        </div>
+        
+      </form>
+    </nz-card>
+  </div>
+  
+  <!-- Database Companies Modal -->
+  <nz-modal
+    [(nzVisible)]="isDatabaseModalVisible"
+    nzTitle="Select Companies from Database"
+    [nzWidth]="1000"
+    [nzBodyStyle]="{ 'max-height': '70vh', 'overflow-y': 'auto', 'padding': '20px' }"
+    [nzFooter]="modalFooter"
+    (nzOnCancel)="closeDatabaseModal()"
+  >
+    <ng-container *nzModalContent>
+      <div class="database-modal-content">
+        
+        <!-- Debug Info -->
+        <nz-alert 
+          nzType="info" 
+          nzShowIcon
+          style="margin-bottom: 16px;"
+        >
+          <span nz-alert-description>
+            <strong>📊 Status:</strong> 
+            {{ filteredDatabaseCompanies.length }} companies loaded
+            <span *ngIf="selectedCount > 0"> | {{ selectedCount }} selected</span>
+          </span>
+        </nz-alert>
+        
+        <!-- Search Filter -->
+        <div class="database-filters" style="margin-bottom: 16px;">
+          <nz-input-group [nzPrefix]="prefixIconSearch" nzSize="large">
+            <input 
+              nz-input 
+              placeholder="Search companies by name, country, or city..." 
+              [(ngModel)]="databaseSearchText"
+              (ngModelChange)="filterDatabaseCompanies()"
+            />
+          </nz-input-group>
+          <ng-template #prefixIconSearch>
+            <i nz-icon nzType="search"></i>
+          </ng-template>
+        </div>
+
+        <!-- Select All -->
+        <div style="margin-bottom: 16px; padding: 12px; background: #f5f5f5; border-radius: 4px;">
+          <label nz-checkbox 
+                 [(ngModel)]="isAllSelected"
+                 [nzIndeterminate]="isIndeterminate"
+                 (ngModelChange)="toggleSelectAll($event)">
+            <strong>Select All ({{ selectedCount }}/{{ filteredDatabaseCompanies.length }})</strong>
+          </label>
+        </div>
+
+        <!-- Loading -->
+        <div *ngIf="isLoading" style="text-align: center; padding: 40px;">
+          <nz-spin nzSize="large" nzTip="Loading companies..."></nz-spin>
+        </div>
+
+        <!-- Companies Grid -->
+        <ng-container *ngIf="!isLoading">
+          
+          <!-- Empty State -->
+          <nz-empty 
+            *ngIf="filteredDatabaseCompanies.length === 0"
+            nzNotFoundContent="No companies found"
+          >
+            <button nz-button nzType="primary" (click)="loadDatabaseCompanies()">
+              <i nz-icon nzType="reload"></i>
+              Reload Companies
+            </button>
+          </nz-empty>
+
+          <!-- Companies List -->
+          <div *ngIf="filteredDatabaseCompanies.length > 0" style="display: grid; gap: 12px;">
+            
+            <nz-card 
+              *ngFor="let company of filteredDatabaseCompanies; trackBy: trackByCompany" 
+              [nzBodyStyle]="{ padding: '16px' }"
+              style="cursor: pointer; transition: all 0.3s;"
+              [style.border-color]="company.selected ? '#1890ff' : '#d9d9d9'"
+              [style.background-color]="company.selected ? '#e6f7ff' : '#fff'"
+              [style.box-shadow]="company.selected ? '0 2px 8px rgba(24, 144, 255, 0.3)' : 'none'"
+              (click)="toggleCompanySelection(company)"
+            >
+              <!-- Company Header -->
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 12px;">
+                <h3 style="margin: 0; font-size: 16px; font-weight: 600; color: #262626;">
+                  {{ company.companyName }}
+                </h3>
+                
+                <!-- Checkbox - FIXED BINDING -->
+                <label 
+                  nz-checkbox
+                  [ngModel]="company.selected"
+                  (ngModelChange)="onCheckboxChange(company, $event, $event)"
+                  [ngModelOptions]="{standalone: true}"
+                  (click)="$event.stopPropagation()"
+                  style="margin: 0;"
+                ></label>
+              </div>
+              
+              <!-- Company Details -->
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 14px; color: #595959;">
+                <div>
+                  <strong style="color: #262626;">Country:</strong> 
+                  {{ company.country || '-' }}
+                </div>
+                <div>
+                  <strong style="color: #262626;">Type:</strong> 
+                  {{ company.companyType || '-' }}
+                </div>
+                <div>
+                  <strong style="color: #262626;">City:</strong> 
+                  {{ company.city || '-' }}
+                </div>
+                <div>
+                  <strong style="color: #262626;">Source:</strong> 
+                  <nz-tag [nzColor]="company.source === 'compliance_task' ? 'orange' : 'green'">
+                    {{ company.source === 'compliance_task' ? 'Task' : 'Record' }}
+                  </nz-tag>
+                </div>
+              </div>
+            </nz-card>
+            
+          </div>
+        </ng-container>
+        
+      </div>
+    </ng-container>
+    
+    <!-- Modal Footer -->
+    <ng-template #modalFooter>
+      <div style="display: flex; justify-content: space-between; align-items: center; width: 100%;">
+        <div>
+          <strong style="color: #1890ff; font-size: 16px;">{{ selectedCount }}</strong> 
+          <span style="color: #595959;">companies selected</span>
+        </div>
+        <div>
+          <button 
+            nz-button 
+            nzType="default" 
+            (click)="closeDatabaseModal()"
+            style="margin-right: 8px;"
+          >
+            <i nz-icon nzType="close"></i>
+            Cancel
+          </button>
+          <button 
+            nz-button 
+            nzType="primary"
+            [nzLoading]="isLoading"
+            [disabled]="selectedCount === 0"
+            (click)="bulkCheckSelectedCompanies()"
+          >
+            <i nz-icon nzType="security-scan"></i>
+            Check Selected ({{ selectedCount }})
+          </button>
+        </div>
+      </div>
+    </ng-template>
+  </nz-modal>
+  
+  <!-- Results Section -->
+  <div class="results-section" *ngIf="searchPerformed || isLoading">
+    <nz-tabset [(nzSelectedIndex)]="selectedTabIndex" [nzAnimated]="false">
+
+      <!-- Search Results Tab -->
+      <nz-tab nzTitle="Search Results" [nzDisabled]="isLoading">
+        <div class="tab-content" style="min-height: 400px; padding: 20px;">
+
+          <!-- Loading State -->
+          <div *ngIf="isLoading" class="loading-container">
+            <nz-spin nzSize="large">
+              <div class="loading-content">
+                <i nz-icon nzType="loading" nzTheme="outline"></i>
+                <p>Searching compliance databases...</p>
+                <p class="loading-subtitle">Checking OpenSanctions, OFAC, EU/UK sanctions</p>
+              </div>
+            </nz-spin>
+          </div>
+          
+          <!-- Results Display -->
+          <ng-container *ngIf="!isLoading && searchResults && searchResults.length > 0">
+            <div class="results-container">
+              <div *ngFor="let result of searchResults; let i = index; trackBy: trackByResult" class="result-card">
+                <nz-card class="result-card-content">
+                  <h2 style="margin: 0 0 16px 0; color: #1890ff; font-size: 20px; font-weight: 600;">{{ result.companyName }}</h2>
+                
+                <!-- Risk Assessment Header -->
+                <div class="risk-header" style="margin-top: 16px;">
+                  <div class="risk-indicator">
+                    <nz-tag [nzColor]="getRiskLevelColor(result.overallRiskLevel)">
+                      {{ result.overallRiskLevel }} Risk
+                    </nz-tag>
+                    <span class="confidence-score">
+                      Confidence: 
+                      <nz-tag [nzColor]="getConfidenceColor(result.matchConfidence)">
+                        {{ formatConfidence(result.matchConfidence) }}
+                      </nz-tag>
+                    </span>
+                  </div>
+                  <div class="search-info">
+                    <small>Searched: {{ result.searchTimestamp | date:'medium' }}</small>
+                  </div>
+                </div>
+                
+                <!-- Sanctions List -->
+                <div class="sanctions-section" *ngIf="result.sanctions && result.sanctions.length > 0" style="margin-top: 20px;">
+                  <h4>Sanctions Found: ({{ result.sanctions.length }})</h4>
+                  <nz-table 
+                    #expandTable
+                    [nzData]="result.sanctions" 
+                    [nzSize]="'small'" 
+                    nzBordered 
+                    [nzShowPagination]="false" 
+                    [nzScroll]="{ x: '1400px' }"
+                  >
+                    <thead>
+                      <tr>
+                        <th nzWidth="60px">Details</th>
+                        <th nzWidth="180px">Name</th>
+                        <th nzWidth="120px">Type</th>
+                        <th nzWidth="130px">Country</th>
+                        <th nzWidth="120px">Source</th>
+                        <th nzWidth="250px">Reason</th>
+                        <th nzWidth="200px">Penalty/Sanction</th>
+                        <th nzWidth="120px">Date</th>
+                        <th nzWidth="100px">Risk Level</th>
+                        <th nzWidth="120px">Confidence</th>
+                        <th nzWidth="100px">Actions</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      <tr *ngFor="let sanction of result.sanctions; let i = index">
+                        <!-- View Details Button -->
+                        <td style="text-align: center;">
+                          <button 
+                            nz-button 
+                            nzType="link" 
+                            nzSize="small"
+                            (click)="viewSanctionDetails(sanction)"
+                            nz-tooltip 
+                            nzTooltipTitle="View all details"
+                          >
+                            <i nz-icon nzType="eye" style="font-size: 16px; color: #1890ff;"></i>
+                          </button>
+                        </td>
+                        
+                        <!-- Name -->
+                        <td>
+                          <strong style="color: #1890ff;">{{ sanction.name }}</strong>
+                        </td>
+                        <td>
+                          <nz-tag [nzColor]="getTypeColor(sanction.type)">
+                            {{ sanction.type }}
+                          </nz-tag>
+                        </td>
+                        <td>
+                          <div style="display: flex; align-items: center; gap: 8px;">
+                            <span style="font-size: 20px;">{{ getCountryFlag(sanction.country) }}</span>
+                            <div>
+                              <strong style="color: #1890ff;">{{ sanction.country }}</strong>
+                              <div *ngIf="sanction.countryCode" style="font-size: 11px; color: #999;">
+                                {{ sanction.countryCode }}
+                              </div>
+                            </div>
+                          </div>
+                        </td>
+                        <td>
+                          <nz-tag [nzColor]="getSourceColor(sanction.source)">
+                            {{ sanction.source }}
+                          </nz-tag>
+                        </td>
+                        <td>
+                          <div style="max-width: 250px; word-wrap: break-word; white-space: normal;">
+                            {{ sanction.reason || 'Not specified' }}
+                          </div>
+                        </td>
+                        <td>
+                          <div style="max-width: 200px; word-wrap: break-word; white-space: normal;">
+                            {{ sanction.penalty || sanction.sanctionType || 'Asset freeze, Travel ban' }}
+                          </div>
+                        </td>
+                        <td>
+                          <div style="font-size: 12px;">
+                            <ng-container *ngIf="sanction.date || sanction.sanctionDate; else noDate">
+                              {{ (sanction.date || sanction.sanctionDate) | date:'mediumDate' }}
+                            </ng-container>
+                            <ng-template #noDate>
+                              <span style="color: #999;">N/A</span>
+                            </ng-template>
+                          </div>
+                        </td>
+                        <td>
+                          <nz-tag [nzColor]="getRiskLevelColor(sanction.riskLevel)">
+                            {{ sanction.riskLevel || 'Unknown' }}
+                          </nz-tag>
+                        </td>
+                        <td>
+                          <nz-progress 
+                            [nzPercent]="sanction.confidence" 
+                            [nzStrokeColor]="getConfidenceColor(sanction.confidence)"
+                            [nzSize]="'small'"
+                          ></nz-progress>
+                        </td>
+                        <td>
+                          <button 
+                            nz-button 
+                            nzType="link" 
+                            nzSize="small"
+                            (click)="viewSanctionDetails(sanction)"
+                            style="padding: 0; color: #1890ff;"
+                          >
+                            <span nz-icon nzType="eye" nzTheme="outline"></span> View Details
+                          </button>
+                        </td>
+                      </tr>
+                    </tbody>
+                  </nz-table>
+                </div>
+                
+                <!-- No Sanctions Found -->
+                <div class="no-sanctions" *ngIf="!result.sanctions || result.sanctions.length === 0" style="margin-top: 20px;">
+                  <nz-empty nzNotFoundContent="No sanctions found for this company">
+                    <button nz-button nzType="primary" (click)="clearSearch()">Search Again</button>
+                  </nz-empty>
+                </div>
+                
+                <!-- Sources -->
+                <div class="sources-section" *ngIf="result.sources && result.sources.length > 0" style="margin-top: 20px;">
+                  <h4>Data Sources: ({{ result.sources.length }})</h4>
+                  <nz-tag *ngFor="let source of result.sources" nzColor="blue">{{ source }}</nz-tag>
+                </div>
+                
+              </nz-card>
+            </div>
+          </div>
+          </ng-container>
+          
+          <!-- No Results -->
+          <div *ngIf="!isLoading && (!searchResults || searchResults.length === 0)" class="no-results">
+            <nz-empty nzNotFoundContent="No compliance data found">
+              <button nz-button nzType="primary" (click)="clearSearch()">Try Different Search</button>
+            </nz-empty>
+          </div>
+          
+        </div>
+      </nz-tab>
+      
+      <!-- Database Companies Tab -->
+      <nz-tab nzTitle="Database Companies" [nzDisabled]="isLoading">
+        <div class="tab-content" style="padding: 20px;">
+          
+          <!-- Bulk Actions -->
+          <div class="bulk-actions" *ngIf="filteredDatabaseCompanies.length > 0">
+            <nz-card>
+              <div class="bulk-header">
+                <div class="selection-info">
+                  <nz-checkbox 
+                    [(ngModel)]="isAllSelected" 
+                    (ngModelChange)="toggleSelectAll($event)"
+                    [ngModelOptions]="{standalone: true}"
+                  >
+                    Select All ({{ selectedCount }}/{{ filteredDatabaseCompanies.length }})
+                  </nz-checkbox>
+                </div>
+                
+                <div class="bulk-buttons">
+                  <button 
+                    nz-button 
+                    nzType="primary" 
+                    [nzLoading]="isLoading"
+                    [disabled]="selectedCount === 0"
+                    (click)="performBulkCheck()"
+                  >
+                    <i nz-icon nzType="security-scan"></i>
+                    Check Selected ({{ selectedCount }})
+                  </button>
+                </div>
+              </div>
+            </nz-card>
+          </div>
+          
+          <!-- Companies Table -->
+          <div class="companies-table">
+            <nz-table [nzData]="filteredDatabaseCompanies" [nzSize]="'small'" nzBordered>
+              <thead>
+                <tr>
+                  <th nzWidth="50px">
+                    <nz-checkbox 
+                      [(ngModel)]="isAllSelected" 
+                      (ngModelChange)="toggleSelectAll($event)"
+                      [ngModelOptions]="{standalone: true}"
+                    ></nz-checkbox>
+                  </th>
+                  <th>Company Name</th>
+                  <th>Country</th>
+                  <th>Type</th>
+                  <th>City</th>
+                  <th>Street</th>
+                  <th>Building</th>
+                  <th>Source</th>
+                  <th>Status</th>
+                  <th>Last Updated</th>
+                  <th>Actions</th>
+                </tr>
+              </thead>
+              <tbody>
+                <tr *ngFor="let company of filteredDatabaseCompanies">
+                  <td>
+                    <nz-checkbox 
+                      [(ngModel)]="company.selected"
+                      [ngModelOptions]="{standalone: true}"
+                    ></nz-checkbox>
+                  </td>
+                  <td>{{ company.companyName }}</td>
+                  <td>{{ company.country || '-' }}</td>
+                  <td>{{ company.companyType || '-' }}</td>
+                  <td>{{ company.city || '-' }}</td>
+                  <td>{{ company.street || '-' }}</td>
+                  <td>{{ company.buildingNumber || '-' }}</td>
+                  <td>
+                    <nz-tag [nzColor]="company.source === 'compliance_task' ? 'orange' : 'green'">
+                      {{ company.source === 'compliance_task' ? 'Compliance Task' : 'Golden Record' }}
+                    </nz-tag>
+                  </td>
+                  <td>{{ company.status || '-' }}</td>
+                  <td>{{ company.lastUpdated | date:'short' }}</td>
+                  <td>
+                    <nz-button-group nzSize="small">
+                      <button 
+                        nz-button 
+                        nzType="primary" 
+                        nzSize="small" 
+                        (click)="searchSpecificCompany(company)"
+                        nzTooltipTitle="Search this company"
+                      >
+                        <i nz-icon nzType="search"></i>
+                      </button>
+                    </nz-button-group>
+                  </td>
+                </tr>
+              </tbody>
+            </nz-table>
+          </div>
+          
+          <!-- Empty State -->
+          <div *ngIf="filteredDatabaseCompanies.length === 0" class="no-companies">
+            <nz-empty nzNotFoundContent="No companies found in database">
+              <button nz-button nzType="primary" (click)="loadDatabaseCompanies()">Refresh</button>
+            </nz-empty>
+          </div>
+          
+        </div>
+      </nz-tab>
+      
+    </nz-tabset>
+  </div>
+  
+  <!-- Sanction Details Modal -->
+  <nz-modal
+    [(nzVisible)]="isDetailsModalVisible"
+    nzTitle="Complete Sanction Details"
+    [nzFooter]="null"
+    nzWidth="900px"
+    (nzOnCancel)="closeDetailsModal()"
+  >
+    <ng-container *nzModalContent>
+      <div *ngIf="selectedSanction" style="max-height: 70vh; overflow-y: auto;">
+        
+        <!-- Basic Information -->
+        <nz-card nzTitle="Basic Information" [nzSize]="'small'" style="margin-bottom: 16px;">
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+            <div>
+              <strong>Name:</strong> {{ selectedSanction.name }}
+            </div>
+            <div>
+              <strong>Type:</strong> {{ selectedSanction.type }}
+            </div>
+            <div>
+              <strong>Country:</strong> {{ getCountryFlag(selectedSanction.country) }} {{ selectedSanction.country }}
+              <span *ngIf="selectedSanction.countryCode" style="color: #999;"> ({{ selectedSanction.countryCode }})</span>
+            </div>
+            <div>
+              <strong>Source:</strong> {{ selectedSanction.source }}
+            </div>
+            <div>
+              <strong>Risk Level:</strong>
+              <nz-tag [nzColor]="getRiskLevelColor(selectedSanction.riskLevel)">
+                {{ selectedSanction.riskLevel || 'Unknown' }}
+              </nz-tag>
+            </div>
+            <div>
+              <strong>Match Confidence:</strong>
+              <nz-tag [nzColor]="getConfidenceColor(selectedSanction.confidence)">
+                {{ selectedSanction.confidence }}%
+              </nz-tag>
+            </div>
+          </div>
+        </nz-card>
+
+        <!-- Sanction Details -->
+        <nz-card nzTitle="Sanction Details" [nzSize]="'small'" style="margin-bottom: 16px;">
+          <div style="display: grid; gap: 12px;">
+            <div>
+              <strong>Reason:</strong>
+              <p style="margin: 8px 0; padding: 12px; background: #f5f5f5; border-left: 3px solid #1890ff; border-radius: 4px;">
+                {{ selectedSanction.reason || 'Not specified' }}
+              </p>
+            </div>
+            <div>
+              <strong>Penalty/Sanctions Imposed:</strong>
+              <p style="margin: 8px 0; padding: 12px; background: #fff1f0; border-left: 3px solid #ff4d4f; border-radius: 4px;">
+                {{ selectedSanction.penalty || 'Not specified' }}
+              </p>
+            </div>
+            <div>
+              <strong>Sanction Type:</strong> {{ selectedSanction.sanctionType || 'N/A' }}
+            </div>
+            <div>
+              <strong>Description:</strong>
+              <p style="margin: 8px 0; color: #666;">{{ selectedSanction.description || 'N/A' }}</p>
+            </div>
+          </div>
+        </nz-card>
+
+        <!-- Dates -->
+        <nz-card nzTitle="Timeline" [nzSize]="'small'" style="margin-bottom: 16px;">
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+            <div>
+              <strong>Sanction Date:</strong> 
+              <ng-container *ngIf="selectedSanction.date || selectedSanction.sanctionDate; else noSanctionDate">
+                {{ (selectedSanction.date || selectedSanction.sanctionDate) | date:'fullDate' }}
+              </ng-container>
+              <ng-template #noSanctionDate>N/A</ng-template>
+            </div>
+            <div *ngIf="selectedSanction.endDate">
+              <strong>End Date:</strong> {{ selectedSanction.endDate | date:'fullDate' }}
+            </div>
+            <div *ngIf="selectedSanction.incorporationDate">
+              <strong>Incorporation Date:</strong> {{ selectedSanction.incorporationDate | date:'fullDate' }}
+            </div>
+            <div *ngIf="selectedSanction.lastModified">
+              <strong>Last Modified:</strong> {{ selectedSanction.lastModified | date:'medium' }}
+            </div>
+          </div>
+        </nz-card>
+
+        <!-- Contact & Address -->
+        <nz-card nzTitle="Contact Information" [nzSize]="'small'" style="margin-bottom: 16px;" *ngIf="selectedSanction.address || selectedSanction.phone || selectedSanction.email || selectedSanction.website">
+          <div style="display: grid; gap: 12px;">
+            <div *ngIf="selectedSanction.address">
+              <strong>Address:</strong>
+              <p style="margin: 8px 0; color: #666;">{{ selectedSanction.address }}</p>
+            </div>
+            <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+              <div *ngIf="selectedSanction.phone">
+                <strong>Phone:</strong> {{ selectedSanction.phone }}
+              </div>
+              <div *ngIf="selectedSanction.email">
+                <strong>Email:</strong> {{ selectedSanction.email }}
+              </div>
+              <div *ngIf="selectedSanction.website" style="grid-column: 1 / -1;">
+                <strong>Website:</strong> 
+                <a [href]="selectedSanction.website" target="_blank" style="color: #1890ff;">
+                  {{ selectedSanction.website }}
+                </a>
+              </div>
+            </div>
+          </div>
+        </nz-card>
+
+        <!-- Registration Info -->
+        <nz-card nzTitle="Registration Details" [nzSize]="'small'" style="margin-bottom: 16px;" *ngIf="selectedSanction.registrationNumber || selectedSanction.taxNumber || selectedSanction.leiCode || selectedSanction.legalForm || selectedSanction.sector">
+          <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+            <div *ngIf="selectedSanction.registrationNumber">
+              <strong>Registration Number:</strong> {{ selectedSanction.registrationNumber }}
+            </div>
+            <div *ngIf="selectedSanction.taxNumber">
+              <strong>Tax Number:</strong> {{ selectedSanction.taxNumber }}
+            </div>
+            <div *ngIf="selectedSanction.leiCode">
+              <strong>LEI Code:</strong> {{ selectedSanction.leiCode }}
+            </div>
+            <div *ngIf="selectedSanction.legalForm">
+              <strong>Legal Form:</strong> {{ selectedSanction.legalForm }}
+            </div>
+            <div *ngIf="selectedSanction.sector">
+              <strong>Sector:</strong> {{ selectedSanction.sector }}
+            </div>
+            <div *ngIf="selectedSanction.status">
+              <strong>Status:</strong> 
+              <nz-tag [nzColor]="selectedSanction.status === 'Active' ? 'green' : 'orange'">
+                {{ selectedSanction.status }}
+              </nz-tag>
+            </div>
+          </div>
+        </nz-card>
+
+        <!-- Programs & Datasets -->
+        <nz-card nzTitle="Sanction Programs & Sources" [nzSize]="'small'" style="margin-bottom: 16px;" *ngIf="selectedSanction.datasets || selectedSanction.topics || selectedSanction.programId">
+          <div style="display: grid; gap: 16px;">
+            <div *ngIf="selectedSanction.datasets && selectedSanction.datasets.length > 0">
+              <strong>Datasets ({{ selectedSanction.datasets.length }}):</strong>
+              <div style="margin-top: 8px;">
+                <nz-tag *ngFor="let dataset of selectedSanction.datasets" nzColor="blue" style="margin: 4px;">
+                  {{ dataset }}
+                </nz-tag>
+              </div>
+            </div>
+            <div *ngIf="selectedSanction.topics && selectedSanction.topics.length > 0">
+              <strong>Topics ({{ selectedSanction.topics.length }}):</strong>
+              <div style="margin-top: 8px;">
+                <nz-tag *ngFor="let topic of selectedSanction.topics" nzColor="orange" style="margin: 4px;">
+                  {{ topic }}
+                </nz-tag>
+              </div>
+            </div>
+            <div *ngIf="selectedSanction.programId && selectedSanction.programId.length > 0">
+              <strong>Program IDs ({{ selectedSanction.programId.length }}):</strong>
+              <div style="margin-top: 8px;">
+                <nz-tag *ngFor="let program of selectedSanction.programId" nzColor="red" style="margin: 4px;">
+                  {{ program }}
+                </nz-tag>
+              </div>
+            </div>
+          </div>
+        </nz-card>
+
+        <!-- External Links -->
+        <nz-card nzTitle="External Resources" [nzSize]="'small'" *ngIf="selectedSanction.url || selectedSanction.sourceUrl">
+          <div style="display: grid; gap: 12px;">
+            <div *ngIf="selectedSanction.url">
+              <strong>OpenSanctions Profile:</strong>
+              <a [href]="selectedSanction.url" target="_blank" style="color: #1890ff; margin-left: 8px;">
+                View on OpenSanctions <i nz-icon nzType="link"></i>
+              </a>
+            </div>
+            <div *ngIf="selectedSanction.sourceUrl">
+              <strong>Original Source:</strong>
+              <a [href]="selectedSanction.sourceUrl" target="_blank" style="color: #1890ff; margin-left: 8px;">
+                View Source Document <i nz-icon nzType="link"></i>
+              </a>
+            </div>
+          </div>
+        </nz-card>
+
+      </div>
+    </ng-container>
+  </nz-modal>
+  
+</div>
