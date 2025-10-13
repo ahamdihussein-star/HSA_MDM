@@ -49,3 +49,16 @@ Thumbs.db
 *.mov
 *.wmv
 
+# Large database and data files
+*.db
+*.db-shm
+*.db-wal
+api/mdm_database.db
+api/sanctions/
+database.db
+mdm_database.db
+
+# Environment files
+.env
+src/environments/environment.ts
+
