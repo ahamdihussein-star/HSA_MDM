@@ -1241,7 +1241,7 @@
       "contactAdded": "✅ Contact added: {{name}}\n\nWould you like to add another contact?",
       "dataReview": "📊 **Data Review**\n\n**Extracted Data (✅ Complete):**\n{{extractedFields}}\n\n**Missing Data (❌ Missing):**\n{{missingFields}}\n\n📝 Please fill the missing data to complete the request.",
       "autoOpenedForm": "🚀 **Form Auto-Opened**\n\nThe missing data form has been opened automatically.\nPlease fill the highlighted required fields.",
-      "submittedSuccessfully": "🎉 **Submitted Successfully!**\n\nRequest ID: {{id}}\nStatus: Pending Review\n\nYou can track the request from your task list.",
+      "submittedSuccessfully": "🎉 **Submitted Successfully!**",
       "submissionFailed": "❌ Submission failed: {{error}}",
       "requestSubmittedForReview": "Your request has been submitted for review and will be processed by our team.",
       "manualEntry": "📝 **Manual Entry**\n\nI will help you enter the data step by step.\nWe can add contacts and documents as needed.\n\nLet's start!",
@@ -1253,11 +1253,11 @@
       "completeMissingData": "📝 **Complete Missing Data**\n\nPlease fill the missing fields in the popup. Pre-filled fields are for reference only.",
       "missingFormError": "❌ Error opening missing fields form: {{error}}",
       "genericError": "❌ Error: {{error}}",
-      "allDataSaved": "✅ **All data saved successfully!**\n\nWill now check for duplicates then submit the request.",
+      "allDataSaved": "Will now check for duplicates then submit the request.",
       "dataConfirmed": "✅ Data confirmed. Will now continue to ask for missing data.",
       "dataCancelled": "Cancelled. You can review and try again.",
       "changesSaved": "✅ **Changes saved successfully**\n\nWill now check for missing data.",
-      "missingDataSaved": "✅ **Missing data saved successfully**\n\nWill now check data completeness."
+      "missingDataSaved": "Will now check data completeness."
     },
     "labels": {
       "document": "Document",

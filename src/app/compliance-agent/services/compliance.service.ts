@@ -6,10 +6,12 @@ import { environment } from '../../../environments/environment';
 export interface ComplianceSearchRequest {
   companyName: string;
   country?: string;
+  legalForm?: string;
   companyType?: string;
   city?: string;
   street?: string;
   buildingNumber?: string;
+  selectedSources?: string[]; // Data sources to search (opensanctions, ofac, eu)
   searchType: 'basic' | 'enhanced';
 }
 
@@ -44,6 +46,8 @@ export interface SanctionInfo {
   legalForm?: string;                 // الشكل القانوني
   sector?: string;                    // القطاع
   status?: string;                    // الحالة
+  matchExplanation?: string;          // ✅ Technical match explanation (English)
+  storyExplanation?: string;          // ✅ Narrative story explanation (Arabic)
   incorporationDate?: string;         // تاريخ التأسيس
   sourceUrl?: string;                 // رابط المصدر
   url?: string;                       // رابط OpenSanctions

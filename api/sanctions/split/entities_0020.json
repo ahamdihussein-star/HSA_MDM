@@ -1,0 +1,4499 @@
+[
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 9,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 12256,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9070,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN-HR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134094,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12256,
+    "ProfileID": 12256,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 9,
+          "Day": 29,
+          "CalendarTypeID": 1
+        },
+        "ID": 12257,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 1829
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 9,
+          "Day": 29,
+          "CalendarTypeID": 1
+        },
+        "ID": 1012257,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91746
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6037,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN-HR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134095,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IRGC",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134096,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 149286,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12257,
+    "ProfileID": 12257,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 10,
+        "Day": 13,
+        "CalendarTypeID": 1
+      },
+      "ID": 12274,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5446,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134839,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12274,
+    "ProfileID": 12274,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 10,
+        "Day": 13,
+        "CalendarTypeID": 1
+      },
+      "ID": 12277,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8262,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134837,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12277,
+    "ProfileID": 12277,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 10,
+        "Day": 13,
+        "CalendarTypeID": 1
+      },
+      "ID": 12278,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9206,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134841,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12278,
+    "ProfileID": 12278,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 10,
+        "Day": 13,
+        "CalendarTypeID": 1
+      },
+      "ID": 12279,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5419,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134838,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12279,
+    "ProfileID": 12279,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 10,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12293,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4907,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134141,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12293,
+    "ProfileID": 12293,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 11,
+        "Day": 4,
+        "CalendarTypeID": 1
+      },
+      "ID": 12294,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8595,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134143,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12294,
+    "ProfileID": 12294,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 11,
+        "Day": 4,
+        "CalendarTypeID": 1
+      },
+      "ID": 12295,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8150,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134144,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12295,
+    "ProfileID": 12295,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 4,
+        "Day": 28,
+        "CalendarTypeID": 1
+      },
+      "ID": 12296,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7966,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134145,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12296,
+    "ProfileID": 12296,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 4,
+        "Day": 28,
+        "CalendarTypeID": 1
+      },
+      "ID": 12297,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5884,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134146,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12297,
+    "ProfileID": 12297,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 4,
+        "Day": 28,
+        "CalendarTypeID": 1
+      },
+      "ID": 12298,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4352,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134147,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12298,
+    "ProfileID": 12298,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 11,
+        "Day": 3,
+        "CalendarTypeID": 1
+      },
+      "ID": 12299,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 1872,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134149,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "FTO",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134150,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12299,
+    "ProfileID": 12299,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 23,
+        "CalendarTypeID": 1
+      },
+      "ID": 12306,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7402,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134157,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12306,
+    "ProfileID": 12306,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 23,
+        "CalendarTypeID": 1
+      },
+      "ID": 12309,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7267,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134160,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12309,
+    "ProfileID": 12309,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 11,
+        "Day": 18,
+        "CalendarTypeID": 1
+      },
+      "ID": 12312,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91245
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8622,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "DPRK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134163,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12312,
+    "ProfileID": 12312,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 11,
+        "Day": 18,
+        "CalendarTypeID": 1
+      },
+      "ID": 12313,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8450,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "DPRK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134164,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12313,
+    "ProfileID": 12313,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 23,
+        "CalendarTypeID": 1
+      },
+      "ID": 12314,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5471,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134165,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12314,
+    "ProfileID": 12314,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 2,
+        "CalendarTypeID": 1
+      },
+      "ID": 12321,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5798,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "DRCONGO",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134172,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12321,
+    "ProfileID": 12321,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 2,
+        "CalendarTypeID": 1
+      },
+      "ID": 12322,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 2089,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "DRCONGO",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134173,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12322,
+    "ProfileID": 12322,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 2,
+        "CalendarTypeID": 1
+      },
+      "ID": 12326,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4312,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "DRCONGO",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134177,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12326,
+    "ProfileID": 12326,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 11,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 12327,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8436,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134178,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12327,
+    "ProfileID": 12327,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 2,
+        "CalendarTypeID": 1
+      },
+      "ID": 12328,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7869,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "DRCONGO",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134179,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12328,
+    "ProfileID": 12328,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 11,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 12329,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 2953,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134180,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12329,
+    "ProfileID": 12329,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 11,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 12330,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4671,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134181,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12330,
+    "ProfileID": 12330,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 23,
+        "CalendarTypeID": 1
+      },
+      "ID": 12379,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4843,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134230,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12379,
+    "ProfileID": 12379,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 2,
+        "CalendarTypeID": 1
+      },
+      "ID": 12402,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6930,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134253,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12402,
+    "ProfileID": 12402,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 2,
+        "CalendarTypeID": 1
+      },
+      "ID": 12403,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7653,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134254,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12403,
+    "ProfileID": 12403,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 2,
+        "CalendarTypeID": 1
+      },
+      "ID": 12404,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9100,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134255,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12404,
+    "ProfileID": 12404,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 14,
+        "CalendarTypeID": 1
+      },
+      "ID": 12416,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6365,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134289,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12416,
+    "ProfileID": 12416,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 14,
+        "CalendarTypeID": 1
+      },
+      "ID": 12418,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4235,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134287,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12418,
+    "ProfileID": 12418,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 14,
+        "CalendarTypeID": 1
+      },
+      "ID": 12419,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4316,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134286,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12419,
+    "ProfileID": 12419,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 14,
+        "CalendarTypeID": 1
+      },
+      "ID": 12423,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7429,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134282,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12423,
+    "ProfileID": 12423,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 14,
+        "CalendarTypeID": 1
+      },
+      "ID": 12425,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 2856,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134280,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12425,
+    "ProfileID": 12425,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 14,
+        "CalendarTypeID": 1
+      },
+      "ID": 12426,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7230,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134279,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12426,
+    "ProfileID": 12426,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 14,
+        "CalendarTypeID": 1
+      },
+      "ID": 12437,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7009,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134268,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12437,
+    "ProfileID": 12437,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 14,
+        "CalendarTypeID": 1
+      },
+      "ID": 12440,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8400,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134265,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12440,
+    "ProfileID": 12440,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 14,
+        "CalendarTypeID": 1
+      },
+      "ID": 12446,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8942,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134259,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12446,
+    "ProfileID": 12446,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 14,
+        "CalendarTypeID": 1
+      },
+      "ID": 12449,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6954,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134256,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12449,
+    "ProfileID": 12449,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 12450,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6013,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134304,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12450,
+    "ProfileID": 12450,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 12451,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7376,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134305,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12451,
+    "ProfileID": 12451,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 12452,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6726,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134306,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12452,
+    "ProfileID": 12452,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 12453,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7260,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134307,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12453,
+    "ProfileID": 12453,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 12454,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4749,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134308,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12454,
+    "ProfileID": 12454,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 12455,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7890,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134309,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12455,
+    "ProfileID": 12455,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 12456,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7513,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134310,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12456,
+    "ProfileID": 12456,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 12457,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4801,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134311,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12457,
+    "ProfileID": 12457,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 12458,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4598,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134312,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12458,
+    "ProfileID": 12458,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 12460,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6255,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134314,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12460,
+    "ProfileID": 12460,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12463,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4231,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134317,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12463,
+    "ProfileID": 12463,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12464,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4121,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134318,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12464,
+    "ProfileID": 12464,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12465,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9120,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134319,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12465,
+    "ProfileID": 12465,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12466,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5306,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134320,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12466,
+    "ProfileID": 12466,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12467,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9341,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134321,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12467,
+    "ProfileID": 12467,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12468,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7071,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134322,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12468,
+    "ProfileID": 12468,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12469,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5388,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134323,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12469,
+    "ProfileID": 12469,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12470,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5624,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134324,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12470,
+    "ProfileID": 12470,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12471,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5953,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134325,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12471,
+    "ProfileID": 12471,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12472,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4708,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134326,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12472,
+    "ProfileID": 12472,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12473,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8668,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134327,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12473,
+    "ProfileID": 12473,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12474,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6105,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134328,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12474,
+    "ProfileID": 12474,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12475,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4512,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134329,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12475,
+    "ProfileID": 12475,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2010,
+        "Month": 12,
+        "Day": 21,
+        "CalendarTypeID": 1
+      },
+      "ID": 12476,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1823
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4077,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134330,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12476,
+    "ProfileID": 12476,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 12477,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 1829
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 1012477,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91426
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 2012477,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91746
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 1035,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRGC",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134338,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134339,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140754,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 149300,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IRAN-HR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 168733,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12477,
+    "ProfileID": 12477,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 12478,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 1811
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 1012478,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 1823
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 2012478,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 1828
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 3012478,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91426
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 283,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134334,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134340,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IRAN",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 135112,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IRGC",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 153267,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 153268,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12478,
+    "ProfileID": 12478,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 12479,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 1811
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 1012479,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 1828
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 2012479,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91426
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 3012479,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91746
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 4012479,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91861
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 1065,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134335,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IRGC",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134343,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140786,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 149301,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IRAN-EO13876",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 157915,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12479,
+    "ProfileID": 12479,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 12480,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 1828
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 1012480,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91426
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 1170,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134336,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140887,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12480,
+    "ProfileID": 12480,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 12481,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91426
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2010,
+          "Month": 12,
+          "Day": 21,
+          "CalendarTypeID": 1
+        },
+        "ID": 1012481,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91746
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 959,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134337,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134341,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IRGC",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134342,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 149302,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12481,
+    "ProfileID": 12481,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12483,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7425,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134345,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12483,
+    "ProfileID": 12483,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12484,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1849
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 748,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134346,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12484,
+    "ProfileID": 12484,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12485,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6158,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134347,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12485,
+    "ProfileID": 12485,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12486,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6981,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134348,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12486,
+    "ProfileID": 12486,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12487,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7877,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134349,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12487,
+    "ProfileID": 12487,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 13,
+        "CalendarTypeID": 1
+      },
+      "ID": 12523,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 1118,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134385,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140835,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12523,
+    "ProfileID": 12523,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 13,
+        "CalendarTypeID": 1
+      },
+      "ID": 12524,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 940,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140654,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140949,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12524,
+    "ProfileID": 12524,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 10,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 12527,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6458,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134393,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12527,
+    "ProfileID": 12527,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 10,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 12528,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4635,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134392,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12528,
+    "ProfileID": 12528,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 10,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 12529,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6625,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134391,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12529,
+    "ProfileID": 12529,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 10,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 12530,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7703,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134390,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12530,
+    "ProfileID": 12530,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 10,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 12531,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8629,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134389,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12531,
+    "ProfileID": 12531,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12533,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8828,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134410,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12533,
+    "ProfileID": 12533,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12534,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6443,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134409,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12534,
+    "ProfileID": 12534,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12535,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9321,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134408,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12535,
+    "ProfileID": 12535,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12540,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5529,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134403,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12540,
+    "ProfileID": 12540,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12541,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7055,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134402,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12541,
+    "ProfileID": 12541,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12543,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9189,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134400,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12543,
+    "ProfileID": 12543,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12544,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4982,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134399,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12544,
+    "ProfileID": 12544,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12545,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 3959,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134398,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12545,
+    "ProfileID": 12545,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12547,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7476,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134396,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12547,
+    "ProfileID": 12547,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 1,
+        "Day": 26,
+        "CalendarTypeID": 1
+      },
+      "ID": 12549,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4438,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDNTK",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134394,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12549,
+    "ProfileID": 12549,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12550,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 947,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134412,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140661,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12550,
+    "ProfileID": 12550,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12551,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 1142,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134413,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140859,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12551,
+    "ProfileID": 12551,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12552,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 979,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140693,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140951,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12552,
+    "ProfileID": 12552,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12553,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 1037,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134415,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140756,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12553,
+    "ProfileID": 12553,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12554,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 944,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134416,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140658,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12554,
+    "ProfileID": 12554,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12555,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 937,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134417,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140651,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12555,
+    "ProfileID": 12555,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12556,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 939,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134418,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140653,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12556,
+    "ProfileID": 12556,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12557,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 1061,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134419,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140782,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12557,
+    "ProfileID": 12557,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12558,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 936,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134420,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140650,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12558,
+    "ProfileID": 12558,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2011,
+        "Month": 2,
+        "Day": 1,
+        "CalendarTypeID": 1
+      },
+      "ID": 12559,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91426
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 1048,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 134421,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 140769,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 12559,
+    "ProfileID": 12559,
+    "ListID": 1550
+  }
+]

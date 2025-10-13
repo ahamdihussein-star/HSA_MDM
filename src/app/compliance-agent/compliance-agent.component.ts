@@ -3,7 +3,7 @@ import { FormBuilder, FormGroup, Validators } from '@angular/forms';
 import { Subscription } from 'rxjs';
 import { trigger, transition, style, animate } from '@angular/animations';
 import { ComplianceService, ComplianceSearchRequest, ComplianceResult, DatabaseCompany } from './services/compliance.service';
-import { COUNTRY_OPTIONS, CUSTOMER_TYPE_OPTIONS } from '../shared/lookup-data';
+import { COUNTRY_OPTIONS, CUSTOMER_TYPE_OPTIONS, LEGAL_FORM_MAPPING } from '../shared/lookup-data';
 
 interface CompanyType {
   value: string;
@@ -57,6 +57,13 @@ export class ComplianceAgentComponent implements OnInit, OnDestroy {
   companyTypes: CompanyType[] = CUSTOMER_TYPE_OPTIONS;
   countries: Country[] = COUNTRY_OPTIONS;
   
+  // Data sources selection
+  dataSources = [
+    { value: 'opensanctions', label: 'OpenSanctions', checked: true },
+    { value: 'ofac', label: 'OFAC (US Treasury)', checked: false },
+    { value: 'eu', label: 'EU Sanctions', checked: false }
+  ];
+  
   // Subscriptions
   private subscriptions: Subscription[] = [];
   
@@ -65,10 +72,21 @@ export class ComplianceAgentComponent implements OnInit, OnDestroy {
     private complianceService: ComplianceService,
     private cdr: ChangeDetectorRef
   ) {
+    console.log('🚀 [COMPLIANCE] Component Constructor Called');
+    console.log('📦 [COMPLIANCE] COUNTRY_OPTIONS imported:', COUNTRY_OPTIONS.length);
+    console.log('📦 [COMPLIANCE] Countries array:', this.countries.length);
+    console.log('🔍 [COMPLIANCE] Sample countries:', this.countries.slice(0, 3));
+    
     this.initializeForm();
   }
   
   ngOnInit(): void {
+    // ✅ Log countries to verify they're loaded from shared lookup
+    console.log('🌍 [COMPLIANCE] Countries loaded from shared lookup:', this.countries.length);
+    console.log('🌍 [COMPLIANCE] First 5 countries:', this.countries.slice(0, 5));
+    console.log('🇪🇬 [COMPLIANCE] Egypt exists?', this.countries.find(c => c.value === 'Egypt'));
+    console.log('🇾🇪 [COMPLIANCE] Yemen exists?', this.countries.find(c => c.value === 'Yemen'));
+    
     this.setupSubscriptions();
     this.loadDatabaseCompanies();
   }
@@ -96,8 +114,18 @@ export class ComplianceAgentComponent implements OnInit, OnDestroy {
   private initializeForm(): void {
     this.searchForm = this.fb.group({
       companyName: ['', [Validators.required, Validators.minLength(2)]],
-      country: ['']  // Only company name and country
+      country: [''],  // Optional country filter
+      legalForm: [''] // Optional legal form filter
     });
+  }
+  
+  /**
+   * Get selected data sources
+   */
+  getSelectedSources(): string[] {
+    return this.dataSources
+      .filter(source => source.checked)
+      .map(source => source.value);
   }
   
   /**
@@ -161,6 +189,42 @@ export class ComplianceAgentComponent implements OnInit, OnDestroy {
         this.cdr.detectChanges();
       })
     );
+    
+    // Subscribe to country changes for automatic search
+    this.subscriptions.push(
+      this.searchForm.get('country')?.valueChanges.subscribe(selectedCountry => {
+        console.log('🌍 [COMPLIANCE] Country changed to:', selectedCountry || 'All Countries');
+        
+        // Only auto-search if company name is already entered and valid
+        const companyName = this.searchForm.get('companyName')?.value;
+        if (companyName && companyName.length >= 2 && !this.isLoading) {
+          console.log('🔄 [COMPLIANCE] Auto-searching with new country filter...');
+          
+          // Add small delay to ensure form value is updated
+          setTimeout(() => {
+            this.performSearch();
+          }, 100);
+        }
+      }) || new Subscription()
+    );
+    
+    // Subscribe to legal form changes for automatic search
+    this.subscriptions.push(
+      this.searchForm.get('legalForm')?.valueChanges.subscribe(selectedLegalForm => {
+        console.log('🏢 [COMPLIANCE] Legal form changed to:', selectedLegalForm || 'All Types');
+        
+        // Only auto-search if company name is already entered and valid
+        const companyName = this.searchForm.get('companyName')?.value;
+        if (companyName && companyName.length >= 2 && !this.isLoading) {
+          console.log('🔄 [COMPLIANCE] Auto-searching with new legal form filter...');
+          
+          // Add small delay to ensure form value is updated
+          setTimeout(() => {
+            this.performSearch();
+          }, 100);
+        }
+      }) || new Subscription()
+    );
   }
   
   /**
@@ -200,13 +264,28 @@ export class ComplianceAgentComponent implements OnInit, OnDestroy {
     try {
       const formData = this.searchForm.value;
       console.log('🔍 [COMPLIANCE] Starting search:', formData.companyName, formData.country ? `in ${formData.country}` : '');
+      console.log('🔍 [COMPLIANCE] Form data country value:', `"${formData.country}"`, 'Type:', typeof formData.country);
 
-      // Simple search: always basic, with optional country filter
+      // Get selected data sources
+      const selectedSources = this.getSelectedSources();
+      console.log('📊 [COMPLIANCE] Selected sources:', selectedSources);
+      
+      // Validate at least one source is selected
+      if (selectedSources.length === 0) {
+        alert('⚠️ Please select at least one data source');
+        return;
+      }
+
+      // Simple search: always basic, with optional filters
       const searchRequest: ComplianceSearchRequest = {
         companyName: formData.companyName,
-        country: formData.country || undefined,
+        country: (formData.country && formData.country.trim() !== '') ? formData.country : undefined,
+        legalForm: (formData.legalForm && formData.legalForm.trim() !== '') ? formData.legalForm : undefined,
+        selectedSources: selectedSources,
         searchType: 'basic'
       };
+      
+      console.log('🔍 [COMPLIANCE] Search request:', searchRequest);
 
       // Service will automatically update searchResults via subscription
       const result = await this.complianceService.searchCompanyCompliance(searchRequest);
@@ -286,8 +365,29 @@ export class ComplianceAgentComponent implements OnInit, OnDestroy {
 
       console.log('✅ [COMPLIANCE] Search and save completed');
 
-    } catch (error) {
+    } catch (error: any) {
       console.error('❌ [COMPLIANCE] Search failed:', error);
+      
+      // Check if it's a 429 Rate Limit error AND OpenSanctions was selected
+      const selectedSources = this.getSelectedSources();
+      const opensanctionsSelected = selectedSources.includes('opensanctions');
+      
+      if ((error?.status === 429 || error?.error?.status === 429) && opensanctionsSelected) {
+        // Show user-friendly error message
+        alert(`⚠️ OpenSanctions API Limit Reached
+
+The monthly API quota for OpenSanctions has been exceeded. 
+
+📅 Service will automatically resume at the start of next month.
+
+💡 To increase your limit, please contact OpenSanctions support at:
+   https://www.opensanctions.org/contact/
+
+📊 Tip: You can try searching with other data sources (OFAC, EU) instead.`);
+      } else if (error?.status === 429 || error?.error?.status === 429) {
+        // Rate limit but OpenSanctions not selected (shouldn't happen, but handle it)
+        alert(`⚠️ API Limit Reached\n\nOne of the selected data sources has exceeded its quota.`);
+      }
     }
   }
   
@@ -386,6 +486,31 @@ export class ComplianceAgentComponent implements OnInit, OnDestroy {
    */
   trackByResult(index: number, result: any): any {
     return result.companyName || result.searchTimestamp || index;
+  }
+
+  /**
+   * TrackBy function for countries dropdown
+   */
+  trackByCountry(index: number, country: Country): any {
+    return country.value || index;
+  }
+
+  /**
+   * TrackBy function for company types dropdown
+   */
+  trackByType(index: number, type: CompanyType): any {
+    return type.value || index;
+  }
+
+  /**
+   * Debug: Log when dropdown opens
+   */
+  onDropdownOpen(isOpen: boolean): void {
+    if (isOpen) {
+      console.log('📂 [COMPLIANCE] Country dropdown opened');
+      console.log('📋 [COMPLIANCE] Countries available:', this.countries.length);
+      console.log('🔍 [COMPLIANCE] All countries:', this.countries.map(c => c.value));
+    }
   }
 
   /**
@@ -590,12 +715,43 @@ export class ComplianceAgentComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Get mapped company type label from legal form
+   * Maps API legal forms (PJSC, LLC, etc.) to user-friendly company type labels
+   */
+  getMappedCompanyType(legalForm: string): string {
+    if (!legalForm) {
+      return 'N/A';
+    }
+
+    // Check if we have a direct mapping
+    const mappedValue = LEGAL_FORM_MAPPING[legalForm];
+    if (mappedValue) {
+      // Find the label from CUSTOMER_TYPE_OPTIONS
+      const companyType = this.companyTypes.find(ct => ct.value === mappedValue);
+      return companyType ? companyType.label : legalForm;
+    }
+
+    // If no direct mapping, check for partial matches
+    const lowerLegalForm = legalForm.toLowerCase();
+    for (const [key, value] of Object.entries(LEGAL_FORM_MAPPING)) {
+      if (lowerLegalForm.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerLegalForm)) {
+        const companyType = this.companyTypes.find(ct => ct.value === value);
+        return companyType ? companyType.label : legalForm;
+      }
+    }
+
+    // If no mapping found, return the original legal form
+    return legalForm;
+  }
+
+  /**
    * View complete sanction details in modal
    */
   viewSanctionDetails(sanction: any): void {
     console.log('👁️ [COMPLIANCE] Viewing sanction details:', sanction);
     this.selectedSanction = sanction;
     this.isDetailsModalVisible = true;
+    this.cdr.detectChanges(); // Force change detection
   }
 
   /**

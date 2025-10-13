@@ -97,7 +97,7 @@
             </div>
             
             <!-- Country -->
-            <div nz-col [nzSpan]="12">
+            <div nz-col [nzSpan]="8">
               <nz-form-item>
                 <nz-form-label [nzSpan]="24">
                   <span style="font-size: 16px; font-weight: 600;">Country (Optional)</span>
@@ -108,11 +108,25 @@
                     nzSize="large"
                     nzShowSearch
                     nzAllowClear
-                    nzPlaceHolder="Select country to filter results"
+                    nzPlaceHolder="Select country to filter results ({{ countries.length }} countries available)"
                     style="width: 100%;"
+                    [nzDropdownStyle]="{ 'max-height': '300px', 'overflow-y': 'auto' }"
+                    (nzOpenChange)="onDropdownOpen($event)"
                   >
+                    <!-- Clear Option -->
                     <nz-option 
-                      *ngFor="let country of countries" 
+                      nzValue="" 
+                      nzLabel="🌍 All Countries (No Filter)"
+                      nzCustomContent
+                    >
+                      <span style="color: #999; font-style: italic;">
+                        🌍 All Countries (No Filter)
+                      </span>
+                    </nz-option>
+                    
+                    <!-- Countries Options -->
+                    <nz-option 
+                      *ngFor="let country of countries; trackBy: trackByCountry" 
                       [nzValue]="country.value" 
                       [nzLabel]="country.label"
                     >
@@ -121,10 +135,77 @@
                 </nz-form-control>
               </nz-form-item>
             </div>
+            
+            <!-- Legal Form -->
+            <div nz-col [nzSpan]="4">
+              <nz-form-item>
+                <nz-form-label [nzSpan]="24">
+                  <span style="font-size: 16px; font-weight: 600;">Company Type (Optional)</span>
+                </nz-form-label>
+                <nz-form-control [nzSpan]="24">
+                  <nz-select 
+                    formControlName="legalForm" 
+                    nzSize="large"
+                    nzShowSearch
+                    nzAllowClear
+                    nzPlaceHolder="Select company type"
+                    style="width: 100%;"
+                    [nzDropdownStyle]="{ 'max-height': '300px', 'overflow-y': 'auto' }"
+                  >
+                    <!-- Clear Option -->
+                    <nz-option 
+                      nzValue="" 
+                      nzLabel="🏢 All Types (No Filter)"
+                      nzCustomContent
+                    >
+                      <span style="color: #999; font-style: italic;">
+                        🏢 All Types (No Filter)
+                      </span>
+                    </nz-option>
+                    
+                    <!-- Company Types Options -->
+                    <nz-option 
+                      *ngFor="let type of companyTypes; trackBy: trackByType" 
+                      [nzValue]="type.value" 
+                      [nzLabel]="type.label"
+                    >
+                    </nz-option>
+                  </nz-select>
+                </nz-form-control>
+              </nz-form-item>
+            </div>
+          </div>
+          
+          <!-- Data Sources Selection -->
+          <div nz-row [nzGutter]="16" style="margin-top: 24px;">
+            <div nz-col [nzSpan]="24">
+              <div style="background: #f5f5f5; padding: 16px; border-radius: 8px;">
+                <div style="margin-bottom: 12px;">
+                  <span style="font-size: 16px; font-weight: 600; color: #262626;">
+                    <i nz-icon nzType="database" style="margin-right: 8px;"></i>
+                    Data Sources
+                  </span>
+                  <span style="margin-left: 8px; font-size: 12px; color: #999;">
+                    (Select at least one source to search)
+                  </span>
+                </div>
+                <div style="display: flex; gap: 24px; flex-wrap: wrap;">
+                  <label 
+                    *ngFor="let source of dataSources" 
+                    nz-checkbox 
+                    [(ngModel)]="source.checked"
+                    [ngModelOptions]="{standalone: true}"
+                    style="font-size: 14px;"
+                  >
+                    {{ source.label }}
+                  </label>
+                </div>
+              </div>
+            </div>
           </div>
           
           <!-- Search Button -->
-          <div class="search-actions" style="margin-top: 32px;">
+          <div class="search-actions" style="margin-top: 24px;">
             <button
               nz-button
               nzType="primary"
@@ -366,7 +447,8 @@
                       <tr>
                         <th nzWidth="60px">Details</th>
                         <th nzWidth="180px">Name</th>
-                        <th nzWidth="120px">Type</th>
+                        <th nzWidth="120px">Entity Type</th>
+                        <th nzWidth="150px">Company Type</th>
                         <th nzWidth="130px">Country</th>
                         <th nzWidth="120px">Source</th>
                         <th nzWidth="250px">Reason</th>
@@ -396,12 +478,41 @@
                         <!-- Name -->
                         <td>
                           <strong style="color: #1890ff;">{{ sanction.name }}</strong>
+                          
+                          <!-- Match Explanation (Technical) -->
+                          <div *ngIf="sanction.matchExplanation" style="margin-top: 8px; padding: 6px 8px; background: #f6ffed; border-left: 3px solid #52c41a; border-radius: 4px;">
+                            <div style="display: flex; align-items: flex-start; gap: 6px;">
+                              <i nz-icon nzType="search" style="color: #52c41a; font-size: 12px; margin-top: 2px;"></i>
+                              <div style="font-size: 11px; color: #595959; line-height: 1.5; font-family: monospace;">
+                                {{ sanction.matchExplanation }}
+                              </div>
+                            </div>
+                          </div>
                         </td>
+                        
+                        <!-- Entity Type (Person/Company/Vessel) -->
                         <td>
                           <nz-tag [nzColor]="getTypeColor(sanction.type)">
                             {{ sanction.type }}
                           </nz-tag>
                         </td>
+                        
+                        <!-- Company Type (Mapped Legal Form) -->
+                        <td>
+                          <div *ngIf="sanction.legalForm; else noCompanyType">
+                            <nz-tag nzColor="green">
+                              {{ getMappedCompanyType(sanction.legalForm) }}
+                            </nz-tag>
+                            <div style="font-size: 10px; color: #999; margin-top: 4px;">
+                              {{ sanction.legalForm }}
+                            </div>
+                          </div>
+                          <ng-template #noCompanyType>
+                            <span style="color: #999;">N/A</span>
+                          </ng-template>
+                        </td>
+                        
+                        <!-- Country -->
                         <td>
                           <div style="display: flex; align-items: center; gap: 8px;">
                             <span style="font-size: 20px;">{{ getCountryFlag(sanction.country) }}</span>
@@ -619,25 +730,37 @@
         <nz-card nzTitle="Basic Information" [nzSize]="'small'" style="margin-bottom: 16px;">
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
             <div>
-              <strong>Name:</strong> {{ selectedSanction.name }}
+              <strong>Name:</strong> {{ selectedSanction.name || selectedSanction.first_name }}
             </div>
             <div>
-              <strong>Type:</strong> {{ selectedSanction.type }}
+              <strong>Type:</strong> {{ selectedSanction.type || (selectedSanction.source === 'UN' ? 'Entity' : 'N/A') }}
             </div>
             <div>
-              <strong>Country:</strong> {{ getCountryFlag(selectedSanction.country) }} {{ selectedSanction.country }}
-              <span *ngIf="selectedSanction.countryCode" style="color: #999;"> ({{ selectedSanction.countryCode }})</span>
+              <strong>Country:</strong> 
+              <ng-container *ngIf="selectedSanction.country">
+                {{ getCountryFlag(selectedSanction.country) }} {{ selectedSanction.country }}
+                <span *ngIf="selectedSanction.countryCode" style="color: #999;"> ({{ selectedSanction.countryCode }})</span>
+              </ng-container>
+              <ng-container *ngIf="!selectedSanction.country && selectedSanction.addresses && selectedSanction.addresses.length > 0">
+                {{ selectedSanction.addresses[0].country || 'N/A' }}
+              </ng-container>
+              <ng-container *ngIf="!selectedSanction.country && (!selectedSanction.addresses || selectedSanction.addresses.length === 0)">
+                N/A
+              </ng-container>
             </div>
             <div>
-              <strong>Source:</strong> {{ selectedSanction.source }}
+              <strong>Source:</strong> 
+              <nz-tag [nzColor]="selectedSanction.source === 'UN' ? 'blue' : 'red'">
+                {{ selectedSanction.source === 'UN' ? '🇺🇳 UN' : '🇺🇸 OFAC' }}
+              </nz-tag>
             </div>
-            <div>
+            <div *ngIf="selectedSanction.riskLevel">
               <strong>Risk Level:</strong>
               <nz-tag [nzColor]="getRiskLevelColor(selectedSanction.riskLevel)">
                 {{ selectedSanction.riskLevel || 'Unknown' }}
               </nz-tag>
             </div>
-            <div>
+            <div *ngIf="selectedSanction.confidence">
               <strong>Match Confidence:</strong>
               <nz-tag [nzColor]="getConfidenceColor(selectedSanction.confidence)">
                 {{ selectedSanction.confidence }}%
@@ -646,8 +769,194 @@
           </div>
         </nz-card>
 
-        <!-- Sanction Details -->
-        <nz-card nzTitle="Sanction Details" [nzSize]="'small'" style="margin-bottom: 16px;">
+        <!-- OFAC Sanctions Information -->
+        <nz-card *ngIf="selectedSanction?.sanctionsInfo" nzTitle="🚫 OFAC Sanctions Information" [nzSize]="'small'" style="margin-bottom: 16px; background: linear-gradient(135deg, #fff1f0 0%, #ffccc7 100%); border: 2px solid #ff4d4f;">
+          <div style="display: grid; gap: 16px;">
+            
+            <!-- Entry Information -->
+            <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ffa39e;">
+              <h4 style="margin: 0 0 12px 0; color: #cf1322; font-size: 14px; font-weight: 600;">
+                📋 Entry Information
+              </h4>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                <div>
+                  <strong style="color: #595959;">📅 Entry Date:</strong>
+                  <div style="margin-top: 4px; color: #262626; font-weight: 500;">
+                    {{ selectedSanction.sanctionsInfo.entryDate || 'N/A' }}
+                  </div>
+                </div>
+                <div>
+                  <strong style="color: #595959;">📋 Sanctions List:</strong>
+                  <div style="margin-top: 4px; color: #262626;">
+                    <nz-tag nzColor="red" style="font-size: 12px;">
+                      {{ selectedSanction.sanctionsInfo.listName || selectedSanction.sanctionsInfo.listId || 'N/A' }}
+                    </nz-tag>
+                  </div>
+                </div>
+                <div style="grid-column: 1 / -1;">
+                  <strong style="color: #595959;">⚖️ Legal Basis:</strong>
+                  <div style="margin-top: 4px; padding: 8px; background: #fff2e8; border-radius: 4px; color: #262626; font-weight: 500;">
+                    {{ selectedSanction.sanctionsInfo.legalBasis || 'N/A' }}
+                  </div>
+                </div>
+                <div>
+                  <strong style="color: #595959;">📝 Event Type:</strong>
+                  <div style="margin-top: 4px; color: #262626;">
+                    <nz-tag nzColor="blue">{{ selectedSanction.sanctionsInfo.entryEventType || 'N/A' }}</nz-tag>
+                  </div>
+                </div>
+              </div>
+              <div *ngIf="selectedSanction.sanctionsInfo.comment" style="margin-top: 12px;">
+                <strong style="color: #595959;">Comment:</strong>
+                <p style="margin: 4px 0 0 0; padding: 8px; background: #f5f5f5; border-radius: 4px; color: #262626;">
+                  {{ selectedSanction.sanctionsInfo.comment }}
+                </p>
+              </div>
+            </div>
+
+            <!-- Sanctions Measures -->
+            <div *ngIf="selectedSanction.sanctionsInfo.measures && selectedSanction.sanctionsInfo.measures.length > 0" style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #ffa39e;">
+              <h4 style="margin: 0 0 12px 0; color: #cf1322; font-size: 14px; font-weight: 600;">
+                ⚖️ Sanctions Measures ({{ selectedSanction.sanctionsInfo.measures.length }})
+              </h4>
+              <div style="display: grid; gap: 12px;">
+                <div *ngFor="let measure of selectedSanction.sanctionsInfo.measures; let i = index" 
+                     style="padding: 12px; background: #fafafa; border-left: 4px solid #ff4d4f; border-radius: 4px;">
+                  <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                    <div style="display: flex; align-items: center; gap: 8px;">
+                      <span style="background: #ff4d4f; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                        #{{ i + 1 }}
+                      </span>
+                      <strong style="color: #262626; font-size: 14px;">{{ measure.type }}</strong>
+                    </div>
+                    <nz-tag nzColor="volcano">{{ measure.typeId }}</nz-tag>
+                  </div>
+                  
+                  <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; font-size: 12px;">
+                    <div *ngIf="measure.startDate">
+                      <span style="color: #8c8c8c;">Start Date:</span>
+                      <span style="color: #262626; margin-left: 4px;">{{ measure.startDate }}</span>
+                    </div>
+                    <div *ngIf="measure.endDate">
+                      <span style="color: #8c8c8c;">End Date:</span>
+                      <span style="color: #262626; margin-left: 4px;">{{ measure.endDate }}</span>
+                    </div>
+                  </div>
+                  
+                  <div *ngIf="measure.comment" style="margin-top: 8px; padding: 8px; background: white; border-radius: 4px; border: 1px solid #d9d9d9;">
+                    <strong style="color: #595959; font-size: 11px;">Program:</strong>
+                    <div style="color: #262626; margin-top: 4px; font-size: 12px; font-weight: 600;">
+                      {{ measure.comment }}
+                    </div>
+                  </div>
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </nz-card>
+
+        <!-- UN Sanctions Information -->
+        <nz-card *ngIf="selectedSanction?.source === 'UN'" nzTitle="🇺🇳 UN Sanctions Information" [nzSize]="'small'" style="margin-bottom: 16px; background: linear-gradient(135deg, #e6f7ff 0%, #bae7ff 100%); border: 2px solid #1890ff;">
+          <div style="display: grid; gap: 16px;">
+            
+            <!-- UN Entry Information -->
+            <div style="background: white; padding: 12px; border-radius: 6px; border: 1px solid #91d5ff;">
+              <h4 style="margin: 0 0 12px 0; color: #096dd9; font-size: 14px; font-weight: 600;">
+                📋 UN Entry Information
+              </h4>
+              <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
+                <div>
+                  <strong style="color: #595959;">Reference Number:</strong>
+                  <div style="margin-top: 4px; color: #262626; font-weight: 500;">
+                    {{ selectedSanction.reference_number || 'N/A' }}
+                  </div>
+                </div>
+                <div>
+                  <strong style="color: #595959;">📅 Listed On:</strong>
+                  <div style="margin-top: 4px; color: #262626; font-weight: 500;">
+                    {{ selectedSanction.listed_on || 'N/A' }}
+                  </div>
+                </div>
+                <div>
+                  <strong style="color: #595959;">📋 List Type:</strong>
+                  <div style="margin-top: 4px; color: #262626;">
+                    <nz-tag nzColor="blue" style="font-size: 12px;">
+                      {{ selectedSanction.un_list_type || 'N/A' }}
+                    </nz-tag>
+                  </div>
+                </div>
+                <div>
+                  <strong style="color: #595959;">📅 Last Updated:</strong>
+                  <div style="margin-top: 4px; color: #262626; font-size: 12px;">
+                    {{ selectedSanction.last_updated || 'N/A' }}
+                  </div>
+                </div>
+              </div>
+              
+              <!-- UN Comments/Reasons -->
+              <div *ngIf="selectedSanction.comments" style="margin-top: 12px;">
+                <strong style="color: #595959;">📝 Reason & Details:</strong>
+                <p style="margin: 4px 0 0 0; padding: 12px; background: #f5f5f5; border-radius: 4px; color: #262626; line-height: 1.6;">
+                  {{ selectedSanction.comments }}
+                </p>
+              </div>
+              
+              <!-- Arabic Name -->
+              <div *ngIf="selectedSanction.name_original_script" style="margin-top: 12px;">
+                <strong style="color: #595959;">🔤 Arabic Name:</strong>
+                <div dir="rtl" style="margin-top: 4px; padding: 8px; background: #fff7e6; border-radius: 4px; color: #262626; font-weight: 600; font-size: 14px;">
+                  {{ selectedSanction.name_original_script }}
+                </div>
+              </div>
+            </div>
+
+          </div>
+        </nz-card>
+
+        <!-- Match Explanation (Technical) -->
+        <nz-card *ngIf="selectedSanction.matchExplanation" [nzSize]="'small'" style="margin-bottom: 16px; background: linear-gradient(135deg, #f6ffed 0%, #d9f7be 100%); border: 1px solid #95de64;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <i nz-icon nzType="search" nzTheme="outline" style="font-size: 20px; color: #52c41a; margin-top: 4px;"></i>
+            <div style="flex: 1;">
+              <h4 style="margin: 0 0 8px 0; color: #237804; font-size: 13px; font-weight: 600;">
+                🔍 Match Details (Technical)
+              </h4>
+              <p style="margin: 0; color: #262626; line-height: 1.6; font-size: 12px; font-family: 'Monaco', 'Courier New', monospace;">
+                {{ selectedSanction.matchExplanation }}
+              </p>
+            </div>
+          </div>
+        </nz-card>
+
+        <!-- Story Explanation (Narrative) -->
+        <nz-card *ngIf="selectedSanction.storyExplanation" [nzSize]="'small'" style="margin-bottom: 16px; background: linear-gradient(135deg, #fff7e6 0%, #ffe7ba 100%); border: 1px solid #ffc53d;">
+          <div style="display: flex; align-items: flex-start; gap: 12px;">
+            <i nz-icon nzType="read" nzTheme="outline" style="font-size: 22px; color: #fa8c16; margin-top: 4px;"></i>
+            <div style="flex: 1;">
+              <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 8px;">
+                <h4 style="margin: 0; color: #ad4e00; font-size: 14px; font-weight: 600;">
+                  📖 القصة الكاملة (The Full Story)
+                </h4>
+                <button 
+                  nz-button 
+                  nzType="link" 
+                  nzSize="small"
+                  style="padding: 0; font-size: 11px;"
+                  nz-tooltip 
+                  nzTooltipTitle="Coming soon: Translate to English">
+                  <i nz-icon nzType="translation"></i> Translate
+                </button>
+              </div>
+              <p style="margin: 0; color: #262626; line-height: 1.9; font-size: 13px; text-align: justify;" dir="rtl">
+                {{ selectedSanction.storyExplanation }}
+              </p>
+            </div>
+          </div>
+        </nz-card>
+
+        <!-- Sanction Details (OFAC Only) -->
+        <nz-card *ngIf="selectedSanction?.source !== 'UN'" nzTitle="Sanction Details" [nzSize]="'small'" style="margin-bottom: 16px;">
           <div style="display: grid; gap: 12px;">
             <div>
               <strong>Reason:</strong>
@@ -671,8 +980,8 @@
           </div>
         </nz-card>
 
-        <!-- Dates -->
-        <nz-card nzTitle="Timeline" [nzSize]="'small'" style="margin-bottom: 16px;">
+        <!-- Dates (OFAC Only) -->
+        <nz-card *ngIf="selectedSanction?.source !== 'UN'" nzTitle="Timeline" [nzSize]="'small'" style="margin-bottom: 16px;">
           <div style="display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px;">
             <div>
               <strong>Sanction Date:</strong> 
@@ -689,6 +998,54 @@
             </div>
             <div *ngIf="selectedSanction.lastModified">
               <strong>Last Modified:</strong> {{ selectedSanction.lastModified | date:'medium' }}
+            </div>
+          </div>
+        </nz-card>
+
+        <!-- Aliases (Alternative Names) -->
+        <nz-card *ngIf="selectedSanction.aliases && selectedSanction.aliases.length > 0" nzTitle="📝 Alternative Names (Aliases)" [nzSize]="'small'" style="margin-bottom: 16px;">
+          <div style="display: flex; flex-wrap: wrap; gap: 8px;">
+            <nz-tag *ngFor="let alias of selectedSanction.aliases" nzColor="blue" style="margin: 0;">
+              {{ alias }}
+            </nz-tag>
+          </div>
+        </nz-card>
+
+        <!-- Addresses -->
+        <nz-card *ngIf="selectedSanction.addresses && selectedSanction.addresses.length > 0" nzTitle="📍 Addresses" [nzSize]="'small'" style="margin-bottom: 16px;">
+          <div style="display: grid; gap: 12px;">
+            <div *ngFor="let addr of selectedSanction.addresses; let i = index" 
+                 style="padding: 12px; background: #fafafa; border-left: 3px solid #1890ff; border-radius: 4px;">
+              <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 8px;">
+                <span style="background: #1890ff; color: white; padding: 2px 8px; border-radius: 12px; font-size: 11px; font-weight: 600;">
+                  #{{ i + 1 }}
+                </span>
+                <strong style="color: #262626;">{{ addr.city || 'Unknown City' }}, {{ addr.country || 'Unknown Country' }}</strong>
+              </div>
+              <div *ngIf="addr.address" style="color: #595959; font-size: 13px; margin-top: 4px;">
+                {{ addr.address }}
+              </div>
+              <div *ngIf="addr.postal_code" style="color: #8c8c8c; font-size: 12px; margin-top: 4px;">
+                Postal Code: {{ addr.postal_code }}
+              </div>
+            </div>
+          </div>
+        </nz-card>
+
+        <!-- ID Numbers -->
+        <nz-card *ngIf="selectedSanction.idNumbers && selectedSanction.idNumbers.length > 0" nzTitle="🆔 Identification Numbers" [nzSize]="'small'" style="margin-bottom: 16px;">
+          <div style="display: grid; gap: 8px;">
+            <div *ngFor="let idNum of selectedSanction.idNumbers" 
+                 style="padding: 10px; background: #fafafa; border-radius: 4px; display: flex; justify-content: space-between; align-items: center;">
+              <div>
+                <strong style="color: #262626;">{{ idNum.id_number }}</strong>
+                <div style="color: #8c8c8c; font-size: 12px; margin-top: 2px;">
+                  Type: {{ idNum.id_type || 'N/A' }}
+                </div>
+              </div>
+              <div *ngIf="idNum.issuing_country" style="text-align: right;">
+                <nz-tag nzColor="default">{{ idNum.issuing_country }}</nz-tag>
+              </div>
             </div>
           </div>
         </nz-card>
@@ -797,3 +1154,8 @@
   </nz-modal>
   
 </div>
+
+<!-- Compliance Chat Widget (New Modal-Based Interface) -->
+<app-compliance-chat-widget 
+  (viewDetailsRequested)="viewSanctionDetails($event)">
+</app-compliance-chat-widget>

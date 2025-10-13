@@ -97,6 +97,46 @@ export const CUSTOMER_TYPE_OPTIONS = [
   { value: 'Retail Chain', label: 'Retail Chain' }
 ];
 
+// Legal Forms mapping for OpenSanctions API
+export const LEGAL_FORM_MAPPING: { [key: string]: string } = {
+  // Limited Liability Company variations
+  'Limited Liability Company': 'limited_liability',
+  'Limited Liability': 'limited_liability',
+  'LLC': 'limited_liability',
+  'Ltd.': 'limited_liability',
+  'L.L.C.': 'limited_liability',
+  'Limited': 'limited_liability',
+  'Private Limited Company': 'limited_liability',
+  'Private Limited': 'limited_liability',
+  
+  // Joint Stock Companies
+  'PJSC': 'joint_stock',
+  'SJSC': 'joint_stock',
+  'Joint Stock Company': 'joint_stock',
+  'Public Joint Stock Company': 'joint_stock',
+  'Saudi Joint Stock Company': 'joint_stock',
+  'JSC': 'joint_stock',
+  'Public Company': 'joint_stock',
+  'Closed Joint Stock Company': 'joint_stock',
+  'CJSC': 'joint_stock',
+  
+  // Sole Proprietorship
+  'Sole Proprietorship': 'sole_proprietorship',
+  'Individual': 'sole_proprietorship',
+  'Sole Trader': 'sole_proprietorship',
+  'Individual Entrepreneur': 'sole_proprietorship',
+  
+  // Corporate (catch-all for other types)
+  'Corporation': 'Corporate',
+  'Corp.': 'Corporate',
+  'Inc.': 'Corporate',
+  'Incorporated': 'Corporate',
+  'Partnership': 'Corporate',
+  'General Partnership': 'Corporate',
+  'Limited Partnership': 'Corporate',
+  'Company': 'Corporate'
+};
+
 export const CITY_OPTIONS: { [key: string]: any[] } = {
   'Egypt': [
     { value: 'Cairo', label: 'Cairo' },

@@ -27,6 +27,7 @@ export interface ChatMessage {
   timestamp: Date;
   type: 'text' | 'loading' | 'progress' | 'dropdown' | 'contact-form' | 'confirmation' | 'actions';
   data?: any;
+  isThinking?: boolean;
 }
 
 @Component({
@@ -528,18 +529,14 @@ export class DataEntryChatWidgetComponent implements OnInit, OnDestroy {
       const saveResponse = await this.sessionStaging.saveDocumentsDirect(files);
       console.log('✅ [FILESYSTEM-FIRST] Documents saved:', saveResponse);
       
-      // Step 3: Show success message
+      // Step 3: Show thinking animation only
       this.addMessage({
-        id: `saved_${Date.now()}`,
+        id: `thinking_${Date.now()}`,
         role: 'assistant',
-        content: `✅ **Documents Saved Successfully!**
-
-📄 ${files.length} document(s) have been securely saved to the database.
-
-🤖 **Now Processing with AI...**
-Please wait while I extract the data from your documents.`,
+        content: '',
         timestamp: new Date(),
-        type: 'text'
+        type: 'text',
+        isThinking: true
       });
       
       // Step 4: Show progress
@@ -559,7 +556,11 @@ Please wait while I extract the data from your documents.`,
       
       console.log('✅ [DB-FIRST] AI processing complete:', extractedData);
       
-      // Step 6: Hide progress
+      // Step 6: Remove thinking animation from message and hide progress
+      const thinkingMessage = this.messages.find(m => m.isThinking);
+      if (thinkingMessage) {
+        thinkingMessage.isThinking = false;
+      }
       this.showProgressBar = false;
       this.cdr.detectChanges();
       
@@ -576,6 +577,11 @@ Please wait while I extract the data from your documents.`,
     } catch (error: any) {
       console.error('❌ [DB-FIRST] Error in Database-First flow:', error);
       
+      // Remove thinking animation from message and hide progress on error
+      const thinkingMessage = this.messages.find(m => m.isThinking);
+      if (thinkingMessage) {
+        thinkingMessage.isThinking = false;
+      }
       this.showProgressBar = false;
       this.cdr.detectChanges();
       
@@ -606,15 +612,23 @@ Please try uploading again.`,
         type: 'text'
       });
 
-      const progressMessage = this.addMessage({
-        id: `progress_${Date.now()}`,
-        role: 'assistant',
-        content: `🤖 ${this.translate.instant('agent.autoProcessing.processing')}
+      // Show thinking animation first
+      this.addThinkingMessage();
+      
+      // Replace thinking with progress message after delay
+      let progressMessage: ChatMessage | null = null;
+      setTimeout(() => {
+        this.removeThinkingMessages();
+        progressMessage = this.addMessage({
+          id: `progress_${Date.now()}`,
+          role: 'assistant',
+          content: `🤖 ${this.translate.instant('agent.autoProcessing.processing')}
 
 ⚡ ${this.translate.instant('agent.autoProcessing.detecting')}`,
-        timestamp: new Date(),
-        type: 'loading'
-      });
+          timestamp: new Date(),
+          type: 'loading'
+        });
+      }, 1000);
 
       const extractedData = await Promise.race([
         this.agentService.uploadAndProcessDocuments(files),
@@ -622,7 +636,9 @@ Please try uploading again.`,
       ]);
 
       // Remove loading message
-      this.messages = this.messages.filter(m => m.id !== progressMessage.id);
+      if (progressMessage) {
+        this.messages = this.messages.filter(m => m.id !== progressMessage!.id);
+      }
 
       // ✅ Save to database first
       console.log('💾 [DB FLOW] Saving extracted data to database...');
@@ -1391,14 +1407,21 @@ Please try uploading again.`,
         type: 'text'
       });
 
-      // Progress message
-      const progressMessage = this.addMessage({
-        id: `progress_${Date.now()}`,
-        role: 'assistant',
-        content: this.translate.instant('agent.processingDocuments'),
-        timestamp: new Date(),
-        type: 'loading'
-      });
+      // Show thinking animation first
+      this.addThinkingMessage();
+      
+      // Replace thinking with progress message after delay
+      let progressMessage: ChatMessage | null = null;
+      setTimeout(() => {
+        this.removeThinkingMessages();
+        progressMessage = this.addMessage({
+          id: `progress_${Date.now()}`,
+          role: 'assistant',
+          content: this.translate.instant('agent.processingDocuments'),
+          timestamp: new Date(),
+          type: 'loading'
+        });
+      }, 1000);
 
       // Process with timeout
       const extractedData = await Promise.race([
@@ -1410,7 +1433,9 @@ Please try uploading again.`,
       console.log('🧪 [Chat] processDocumentsWithMetadata success. Extracted keys =', Object.keys(extractedData || {}));
 
       // Remove progress
-      this.messages = this.messages.filter(m => m.id !== progressMessage.id);
+      if (progressMessage) {
+        this.messages = this.messages.filter(m => m.id !== progressMessage!.id);
+      }
 
       // Display results and wait for user review
       this.displayExtractedDataWithLabels(extractedData);
@@ -1714,15 +1739,17 @@ Please try uploading again.`,
   }
 
   private confirmDataBeforeSubmission(): void {
+    // Show thinking animation first
     this.addMessage({
-      id: `confirm_${Date.now()}`,
+      id: `thinking_${Date.now()}`,
       role: 'assistant',
       content: this.t(
-        '✅ جميع البيانات مكتملة!\nسيتم الآن التحقق من عدم وجود تكرار ثم إرسال الطلب.\nهل تريد المتابعة؟',
-        '✅ All data complete!\nWill now check for duplicates then submit the request.\nDo you want to proceed?'
+        'سيتم الآن التحقق من عدم وجود تكرار ثم إرسال الطلب.\nهل تريد المتابعة؟',
+        'Will now check for duplicates then submit the request.\nDo you want to proceed?'
       ),
       timestamp: new Date(),
       type: 'confirmation',
+      isThinking: true,
       data: {
         buttons: [
           { text: this.t('✅ نعم، أرسل', '✅ Yes, submit'), action: 'submit_request' },
@@ -1730,6 +1757,15 @@ Please try uploading again.`,
         ]
       }
     });
+
+    // Remove thinking animation after delay
+    setTimeout(() => {
+      const thinkingMessage = this.messages.find(m => m.isThinking);
+      if (thinkingMessage) {
+        thinkingMessage.isThinking = false;
+      }
+      this.cdr.detectChanges();
+    }, 2000);
   }
 
   async sendMessage(message?: string): Promise<void> {
@@ -2129,7 +2165,7 @@ Please fill the missing data to complete the request.`,
         this.addMessage({
           id: `success_${Date.now()}`,
           role: 'assistant',
-          content: `✅ ${this.translate.instant('agent.messages.submittedSuccessfully', { id: response.id })}\n\n🎯 ${this.translate.instant('agent.messages.requestSubmittedForReview')}`,
+          content: `${this.translate.instant('agent.messages.submittedSuccessfully')}\n\n🎯 ${this.translate.instant('agent.messages.requestSubmittedForReview')}`,
           timestamp: new Date(),
           type: 'text'
         });
@@ -3506,6 +3542,25 @@ Please fill the missing fields in the popup form. Pre-filled fields are for refe
 
     this.scrollToBottom();
     return message;
+  }
+
+  // Add thinking animation to AI messages
+  private addThinkingMessage(): ChatMessage {
+    const thinkingMessage: ChatMessage = {
+      id: `thinking_${Date.now()}`,
+      role: 'assistant',
+      content: '',
+      timestamp: new Date(),
+      type: 'text',
+      isThinking: true
+    };
+    return this.addMessage(thinkingMessage);
+  }
+
+  // Remove thinking animation
+  private removeThinkingMessages(): void {
+    this.messages = this.messages.filter(msg => !msg.isThinking);
+    this.cdr.detectChanges();
   }
 
   private scrollToBottom(): void {

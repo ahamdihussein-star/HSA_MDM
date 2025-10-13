@@ -1,0 +1,1106 @@
+{
+  "totalEntities": 18253,
+  "totalFiles": 183,
+  "entitiesPerFile": 100,
+  "createdAt": "2025-10-12T15:29:21.063Z",
+  "files": [
+    {
+      "file": "entities_0001.json",
+      "start": 0,
+      "end": 100,
+      "count": 100
+    },
+    {
+      "file": "entities_0002.json",
+      "start": 100,
+      "end": 200,
+      "count": 100
+    },
+    {
+      "file": "entities_0003.json",
+      "start": 200,
+      "end": 300,
+      "count": 100
+    },
+    {
+      "file": "entities_0004.json",
+      "start": 300,
+      "end": 400,
+      "count": 100
+    },
+    {
+      "file": "entities_0005.json",
+      "start": 400,
+      "end": 500,
+      "count": 100
+    },
+    {
+      "file": "entities_0006.json",
+      "start": 500,
+      "end": 600,
+      "count": 100
+    },
+    {
+      "file": "entities_0007.json",
+      "start": 600,
+      "end": 700,
+      "count": 100
+    },
+    {
+      "file": "entities_0008.json",
+      "start": 700,
+      "end": 800,
+      "count": 100
+    },
+    {
+      "file": "entities_0009.json",
+      "start": 800,
+      "end": 900,
+      "count": 100
+    },
+    {
+      "file": "entities_0010.json",
+      "start": 900,
+      "end": 1000,
+      "count": 100
+    },
+    {
+      "file": "entities_0011.json",
+      "start": 1000,
+      "end": 1100,
+      "count": 100
+    },
+    {
+      "file": "entities_0012.json",
+      "start": 1100,
+      "end": 1200,
+      "count": 100
+    },
+    {
+      "file": "entities_0013.json",
+      "start": 1200,
+      "end": 1300,
+      "count": 100
+    },
+    {
+      "file": "entities_0014.json",
+      "start": 1300,
+      "end": 1400,
+      "count": 100
+    },
+    {
+      "file": "entities_0015.json",
+      "start": 1400,
+      "end": 1500,
+      "count": 100
+    },
+    {
+      "file": "entities_0016.json",
+      "start": 1500,
+      "end": 1600,
+      "count": 100
+    },
+    {
+      "file": "entities_0017.json",
+      "start": 1600,
+      "end": 1700,
+      "count": 100
+    },
+    {
+      "file": "entities_0018.json",
+      "start": 1700,
+      "end": 1800,
+      "count": 100
+    },
+    {
+      "file": "entities_0019.json",
+      "start": 1800,
+      "end": 1900,
+      "count": 100
+    },
+    {
+      "file": "entities_0020.json",
+      "start": 1900,
+      "end": 2000,
+      "count": 100
+    },
+    {
+      "file": "entities_0021.json",
+      "start": 2000,
+      "end": 2100,
+      "count": 100
+    },
+    {
+      "file": "entities_0022.json",
+      "start": 2100,
+      "end": 2200,
+      "count": 100
+    },
+    {
+      "file": "entities_0023.json",
+      "start": 2200,
+      "end": 2300,
+      "count": 100
+    },
+    {
+      "file": "entities_0024.json",
+      "start": 2300,
+      "end": 2400,
+      "count": 100
+    },
+    {
+      "file": "entities_0025.json",
+      "start": 2400,
+      "end": 2500,
+      "count": 100
+    },
+    {
+      "file": "entities_0026.json",
+      "start": 2500,
+      "end": 2600,
+      "count": 100
+    },
+    {
+      "file": "entities_0027.json",
+      "start": 2600,
+      "end": 2700,
+      "count": 100
+    },
+    {
+      "file": "entities_0028.json",
+      "start": 2700,
+      "end": 2800,
+      "count": 100
+    },
+    {
+      "file": "entities_0029.json",
+      "start": 2800,
+      "end": 2900,
+      "count": 100
+    },
+    {
+      "file": "entities_0030.json",
+      "start": 2900,
+      "end": 3000,
+      "count": 100
+    },
+    {
+      "file": "entities_0031.json",
+      "start": 3000,
+      "end": 3100,
+      "count": 100
+    },
+    {
+      "file": "entities_0032.json",
+      "start": 3100,
+      "end": 3200,
+      "count": 100
+    },
+    {
+      "file": "entities_0033.json",
+      "start": 3200,
+      "end": 3300,
+      "count": 100
+    },
+    {
+      "file": "entities_0034.json",
+      "start": 3300,
+      "end": 3400,
+      "count": 100
+    },
+    {
+      "file": "entities_0035.json",
+      "start": 3400,
+      "end": 3500,
+      "count": 100
+    },
+    {
+      "file": "entities_0036.json",
+      "start": 3500,
+      "end": 3600,
+      "count": 100
+    },
+    {
+      "file": "entities_0037.json",
+      "start": 3600,
+      "end": 3700,
+      "count": 100
+    },
+    {
+      "file": "entities_0038.json",
+      "start": 3700,
+      "end": 3800,
+      "count": 100
+    },
+    {
+      "file": "entities_0039.json",
+      "start": 3800,
+      "end": 3900,
+      "count": 100
+    },
+    {
+      "file": "entities_0040.json",
+      "start": 3900,
+      "end": 4000,
+      "count": 100
+    },
+    {
+      "file": "entities_0041.json",
+      "start": 4000,
+      "end": 4100,
+      "count": 100
+    },
+    {
+      "file": "entities_0042.json",
+      "start": 4100,
+      "end": 4200,
+      "count": 100
+    },
+    {
+      "file": "entities_0043.json",
+      "start": 4200,
+      "end": 4300,
+      "count": 100
+    },
+    {
+      "file": "entities_0044.json",
+      "start": 4300,
+      "end": 4400,
+      "count": 100
+    },
+    {
+      "file": "entities_0045.json",
+      "start": 4400,
+      "end": 4500,
+      "count": 100
+    },
+    {
+      "file": "entities_0046.json",
+      "start": 4500,
+      "end": 4600,
+      "count": 100
+    },
+    {
+      "file": "entities_0047.json",
+      "start": 4600,
+      "end": 4700,
+      "count": 100
+    },
+    {
+      "file": "entities_0048.json",
+      "start": 4700,
+      "end": 4800,
+      "count": 100
+    },
+    {
+      "file": "entities_0049.json",
+      "start": 4800,
+      "end": 4900,
+      "count": 100
+    },
+    {
+      "file": "entities_0050.json",
+      "start": 4900,
+      "end": 5000,
+      "count": 100
+    },
+    {
+      "file": "entities_0051.json",
+      "start": 5000,
+      "end": 5100,
+      "count": 100
+    },
+    {
+      "file": "entities_0052.json",
+      "start": 5100,
+      "end": 5200,
+      "count": 100
+    },
+    {
+      "file": "entities_0053.json",
+      "start": 5200,
+      "end": 5300,
+      "count": 100
+    },
+    {
+      "file": "entities_0054.json",
+      "start": 5300,
+      "end": 5400,
+      "count": 100
+    },
+    {
+      "file": "entities_0055.json",
+      "start": 5400,
+      "end": 5500,
+      "count": 100
+    },
+    {
+      "file": "entities_0056.json",
+      "start": 5500,
+      "end": 5600,
+      "count": 100
+    },
+    {
+      "file": "entities_0057.json",
+      "start": 5600,
+      "end": 5700,
+      "count": 100
+    },
+    {
+      "file": "entities_0058.json",
+      "start": 5700,
+      "end": 5800,
+      "count": 100
+    },
+    {
+      "file": "entities_0059.json",
+      "start": 5800,
+      "end": 5900,
+      "count": 100
+    },
+    {
+      "file": "entities_0060.json",
+      "start": 5900,
+      "end": 6000,
+      "count": 100
+    },
+    {
+      "file": "entities_0061.json",
+      "start": 6000,
+      "end": 6100,
+      "count": 100
+    },
+    {
+      "file": "entities_0062.json",
+      "start": 6100,
+      "end": 6200,
+      "count": 100
+    },
+    {
+      "file": "entities_0063.json",
+      "start": 6200,
+      "end": 6300,
+      "count": 100
+    },
+    {
+      "file": "entities_0064.json",
+      "start": 6300,
+      "end": 6400,
+      "count": 100
+    },
+    {
+      "file": "entities_0065.json",
+      "start": 6400,
+      "end": 6500,
+      "count": 100
+    },
+    {
+      "file": "entities_0066.json",
+      "start": 6500,
+      "end": 6600,
+      "count": 100
+    },
+    {
+      "file": "entities_0067.json",
+      "start": 6600,
+      "end": 6700,
+      "count": 100
+    },
+    {
+      "file": "entities_0068.json",
+      "start": 6700,
+      "end": 6800,
+      "count": 100
+    },
+    {
+      "file": "entities_0069.json",
+      "start": 6800,
+      "end": 6900,
+      "count": 100
+    },
+    {
+      "file": "entities_0070.json",
+      "start": 6900,
+      "end": 7000,
+      "count": 100
+    },
+    {
+      "file": "entities_0071.json",
+      "start": 7000,
+      "end": 7100,
+      "count": 100
+    },
+    {
+      "file": "entities_0072.json",
+      "start": 7100,
+      "end": 7200,
+      "count": 100
+    },
+    {
+      "file": "entities_0073.json",
+      "start": 7200,
+      "end": 7300,
+      "count": 100
+    },
+    {
+      "file": "entities_0074.json",
+      "start": 7300,
+      "end": 7400,
+      "count": 100
+    },
+    {
+      "file": "entities_0075.json",
+      "start": 7400,
+      "end": 7500,
+      "count": 100
+    },
+    {
+      "file": "entities_0076.json",
+      "start": 7500,
+      "end": 7600,
+      "count": 100
+    },
+    {
+      "file": "entities_0077.json",
+      "start": 7600,
+      "end": 7700,
+      "count": 100
+    },
+    {
+      "file": "entities_0078.json",
+      "start": 7700,
+      "end": 7800,
+      "count": 100
+    },
+    {
+      "file": "entities_0079.json",
+      "start": 7800,
+      "end": 7900,
+      "count": 100
+    },
+    {
+      "file": "entities_0080.json",
+      "start": 7900,
+      "end": 8000,
+      "count": 100
+    },
+    {
+      "file": "entities_0081.json",
+      "start": 8000,
+      "end": 8100,
+      "count": 100
+    },
+    {
+      "file": "entities_0082.json",
+      "start": 8100,
+      "end": 8200,
+      "count": 100
+    },
+    {
+      "file": "entities_0083.json",
+      "start": 8200,
+      "end": 8300,
+      "count": 100
+    },
+    {
+      "file": "entities_0084.json",
+      "start": 8300,
+      "end": 8400,
+      "count": 100
+    },
+    {
+      "file": "entities_0085.json",
+      "start": 8400,
+      "end": 8500,
+      "count": 100
+    },
+    {
+      "file": "entities_0086.json",
+      "start": 8500,
+      "end": 8600,
+      "count": 100
+    },
+    {
+      "file": "entities_0087.json",
+      "start": 8600,
+      "end": 8700,
+      "count": 100
+    },
+    {
+      "file": "entities_0088.json",
+      "start": 8700,
+      "end": 8800,
+      "count": 100
+    },
+    {
+      "file": "entities_0089.json",
+      "start": 8800,
+      "end": 8900,
+      "count": 100
+    },
+    {
+      "file": "entities_0090.json",
+      "start": 8900,
+      "end": 9000,
+      "count": 100
+    },
+    {
+      "file": "entities_0091.json",
+      "start": 9000,
+      "end": 9100,
+      "count": 100
+    },
+    {
+      "file": "entities_0092.json",
+      "start": 9100,
+      "end": 9200,
+      "count": 100
+    },
+    {
+      "file": "entities_0093.json",
+      "start": 9200,
+      "end": 9300,
+      "count": 100
+    },
+    {
+      "file": "entities_0094.json",
+      "start": 9300,
+      "end": 9400,
+      "count": 100
+    },
+    {
+      "file": "entities_0095.json",
+      "start": 9400,
+      "end": 9500,
+      "count": 100
+    },
+    {
+      "file": "entities_0096.json",
+      "start": 9500,
+      "end": 9600,
+      "count": 100
+    },
+    {
+      "file": "entities_0097.json",
+      "start": 9600,
+      "end": 9700,
+      "count": 100
+    },
+    {
+      "file": "entities_0098.json",
+      "start": 9700,
+      "end": 9800,
+      "count": 100
+    },
+    {
+      "file": "entities_0099.json",
+      "start": 9800,
+      "end": 9900,
+      "count": 100
+    },
+    {
+      "file": "entities_0100.json",
+      "start": 9900,
+      "end": 10000,
+      "count": 100
+    },
+    {
+      "file": "entities_0101.json",
+      "start": 10000,
+      "end": 10100,
+      "count": 100
+    },
+    {
+      "file": "entities_0102.json",
+      "start": 10100,
+      "end": 10200,
+      "count": 100
+    },
+    {
+      "file": "entities_0103.json",
+      "start": 10200,
+      "end": 10300,
+      "count": 100
+    },
+    {
+      "file": "entities_0104.json",
+      "start": 10300,
+      "end": 10400,
+      "count": 100
+    },
+    {
+      "file": "entities_0105.json",
+      "start": 10400,
+      "end": 10500,
+      "count": 100
+    },
+    {
+      "file": "entities_0106.json",
+      "start": 10500,
+      "end": 10600,
+      "count": 100
+    },
+    {
+      "file": "entities_0107.json",
+      "start": 10600,
+      "end": 10700,
+      "count": 100
+    },
+    {
+      "file": "entities_0108.json",
+      "start": 10700,
+      "end": 10800,
+      "count": 100
+    },
+    {
+      "file": "entities_0109.json",
+      "start": 10800,
+      "end": 10900,
+      "count": 100
+    },
+    {
+      "file": "entities_0110.json",
+      "start": 10900,
+      "end": 11000,
+      "count": 100
+    },
+    {
+      "file": "entities_0111.json",
+      "start": 11000,
+      "end": 11100,
+      "count": 100
+    },
+    {
+      "file": "entities_0112.json",
+      "start": 11100,
+      "end": 11200,
+      "count": 100
+    },
+    {
+      "file": "entities_0113.json",
+      "start": 11200,
+      "end": 11300,
+      "count": 100
+    },
+    {
+      "file": "entities_0114.json",
+      "start": 11300,
+      "end": 11400,
+      "count": 100
+    },
+    {
+      "file": "entities_0115.json",
+      "start": 11400,
+      "end": 11500,
+      "count": 100
+    },
+    {
+      "file": "entities_0116.json",
+      "start": 11500,
+      "end": 11600,
+      "count": 100
+    },
+    {
+      "file": "entities_0117.json",
+      "start": 11600,
+      "end": 11700,
+      "count": 100
+    },
+    {
+      "file": "entities_0118.json",
+      "start": 11700,
+      "end": 11800,
+      "count": 100
+    },
+    {
+      "file": "entities_0119.json",
+      "start": 11800,
+      "end": 11900,
+      "count": 100
+    },
+    {
+      "file": "entities_0120.json",
+      "start": 11900,
+      "end": 12000,
+      "count": 100
+    },
+    {
+      "file": "entities_0121.json",
+      "start": 12000,
+      "end": 12100,
+      "count": 100
+    },
+    {
+      "file": "entities_0122.json",
+      "start": 12100,
+      "end": 12200,
+      "count": 100
+    },
+    {
+      "file": "entities_0123.json",
+      "start": 12200,
+      "end": 12300,
+      "count": 100
+    },
+    {
+      "file": "entities_0124.json",
+      "start": 12300,
+      "end": 12400,
+      "count": 100
+    },
+    {
+      "file": "entities_0125.json",
+      "start": 12400,
+      "end": 12500,
+      "count": 100
+    },
+    {
+      "file": "entities_0126.json",
+      "start": 12500,
+      "end": 12600,
+      "count": 100
+    },
+    {
+      "file": "entities_0127.json",
+      "start": 12600,
+      "end": 12700,
+      "count": 100
+    },
+    {
+      "file": "entities_0128.json",
+      "start": 12700,
+      "end": 12800,
+      "count": 100
+    },
+    {
+      "file": "entities_0129.json",
+      "start": 12800,
+      "end": 12900,
+      "count": 100
+    },
+    {
+      "file": "entities_0130.json",
+      "start": 12900,
+      "end": 13000,
+      "count": 100
+    },
+    {
+      "file": "entities_0131.json",
+      "start": 13000,
+      "end": 13100,
+      "count": 100
+    },
+    {
+      "file": "entities_0132.json",
+      "start": 13100,
+      "end": 13200,
+      "count": 100
+    },
+    {
+      "file": "entities_0133.json",
+      "start": 13200,
+      "end": 13300,
+      "count": 100
+    },
+    {
+      "file": "entities_0134.json",
+      "start": 13300,
+      "end": 13400,
+      "count": 100
+    },
+    {
+      "file": "entities_0135.json",
+      "start": 13400,
+      "end": 13500,
+      "count": 100
+    },
+    {
+      "file": "entities_0136.json",
+      "start": 13500,
+      "end": 13600,
+      "count": 100
+    },
+    {
+      "file": "entities_0137.json",
+      "start": 13600,
+      "end": 13700,
+      "count": 100
+    },
+    {
+      "file": "entities_0138.json",
+      "start": 13700,
+      "end": 13800,
+      "count": 100
+    },
+    {
+      "file": "entities_0139.json",
+      "start": 13800,
+      "end": 13900,
+      "count": 100
+    },
+    {
+      "file": "entities_0140.json",
+      "start": 13900,
+      "end": 14000,
+      "count": 100
+    },
+    {
+      "file": "entities_0141.json",
+      "start": 14000,
+      "end": 14100,
+      "count": 100
+    },
+    {
+      "file": "entities_0142.json",
+      "start": 14100,
+      "end": 14200,
+      "count": 100
+    },
+    {
+      "file": "entities_0143.json",
+      "start": 14200,
+      "end": 14300,
+      "count": 100
+    },
+    {
+      "file": "entities_0144.json",
+      "start": 14300,
+      "end": 14400,
+      "count": 100
+    },
+    {
+      "file": "entities_0145.json",
+      "start": 14400,
+      "end": 14500,
+      "count": 100
+    },
+    {
+      "file": "entities_0146.json",
+      "start": 14500,
+      "end": 14600,
+      "count": 100
+    },
+    {
+      "file": "entities_0147.json",
+      "start": 14600,
+      "end": 14700,
+      "count": 100
+    },
+    {
+      "file": "entities_0148.json",
+      "start": 14700,
+      "end": 14800,
+      "count": 100
+    },
+    {
+      "file": "entities_0149.json",
+      "start": 14800,
+      "end": 14900,
+      "count": 100
+    },
+    {
+      "file": "entities_0150.json",
+      "start": 14900,
+      "end": 15000,
+      "count": 100
+    },
+    {
+      "file": "entities_0151.json",
+      "start": 15000,
+      "end": 15100,
+      "count": 100
+    },
+    {
+      "file": "entities_0152.json",
+      "start": 15100,
+      "end": 15200,
+      "count": 100
+    },
+    {
+      "file": "entities_0153.json",
+      "start": 15200,
+      "end": 15300,
+      "count": 100
+    },
+    {
+      "file": "entities_0154.json",
+      "start": 15300,
+      "end": 15400,
+      "count": 100
+    },
+    {
+      "file": "entities_0155.json",
+      "start": 15400,
+      "end": 15500,
+      "count": 100
+    },
+    {
+      "file": "entities_0156.json",
+      "start": 15500,
+      "end": 15600,
+      "count": 100
+    },
+    {
+      "file": "entities_0157.json",
+      "start": 15600,
+      "end": 15700,
+      "count": 100
+    },
+    {
+      "file": "entities_0158.json",
+      "start": 15700,
+      "end": 15800,
+      "count": 100
+    },
+    {
+      "file": "entities_0159.json",
+      "start": 15800,
+      "end": 15900,
+      "count": 100
+    },
+    {
+      "file": "entities_0160.json",
+      "start": 15900,
+      "end": 16000,
+      "count": 100
+    },
+    {
+      "file": "entities_0161.json",
+      "start": 16000,
+      "end": 16100,
+      "count": 100
+    },
+    {
+      "file": "entities_0162.json",
+      "start": 16100,
+      "end": 16200,
+      "count": 100
+    },
+    {
+      "file": "entities_0163.json",
+      "start": 16200,
+      "end": 16300,
+      "count": 100
+    },
+    {
+      "file": "entities_0164.json",
+      "start": 16300,
+      "end": 16400,
+      "count": 100
+    },
+    {
+      "file": "entities_0165.json",
+      "start": 16400,
+      "end": 16500,
+      "count": 100
+    },
+    {
+      "file": "entities_0166.json",
+      "start": 16500,
+      "end": 16600,
+      "count": 100
+    },
+    {
+      "file": "entities_0167.json",
+      "start": 16600,
+      "end": 16700,
+      "count": 100
+    },
+    {
+      "file": "entities_0168.json",
+      "start": 16700,
+      "end": 16800,
+      "count": 100
+    },
+    {
+      "file": "entities_0169.json",
+      "start": 16800,
+      "end": 16900,
+      "count": 100
+    },
+    {
+      "file": "entities_0170.json",
+      "start": 16900,
+      "end": 17000,
+      "count": 100
+    },
+    {
+      "file": "entities_0171.json",
+      "start": 17000,
+      "end": 17100,
+      "count": 100
+    },
+    {
+      "file": "entities_0172.json",
+      "start": 17100,
+      "end": 17200,
+      "count": 100
+    },
+    {
+      "file": "entities_0173.json",
+      "start": 17200,
+      "end": 17300,
+      "count": 100
+    },
+    {
+      "file": "entities_0174.json",
+      "start": 17300,
+      "end": 17400,
+      "count": 100
+    },
+    {
+      "file": "entities_0175.json",
+      "start": 17400,
+      "end": 17500,
+      "count": 100
+    },
+    {
+      "file": "entities_0176.json",
+      "start": 17500,
+      "end": 17600,
+      "count": 100
+    },
+    {
+      "file": "entities_0177.json",
+      "start": 17600,
+      "end": 17700,
+      "count": 100
+    },
+    {
+      "file": "entities_0178.json",
+      "start": 17700,
+      "end": 17800,
+      "count": 100
+    },
+    {
+      "file": "entities_0179.json",
+      "start": 17800,
+      "end": 17900,
+      "count": 100
+    },
+    {
+      "file": "entities_0180.json",
+      "start": 17900,
+      "end": 18000,
+      "count": 100
+    },
+    {
+      "file": "entities_0181.json",
+      "start": 18000,
+      "end": 18100,
+      "count": 100
+    },
+    {
+      "file": "entities_0182.json",
+      "start": 18100,
+      "end": 18200,
+      "count": 100
+    },
+    {
+      "file": "entities_0183.json",
+      "start": 18200,
+      "end": 18253,
+      "count": 53
+    }
+  ]
+}

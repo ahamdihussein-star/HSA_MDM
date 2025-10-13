@@ -1,0 +1,4722 @@
+[
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 16,
+        "CalendarTypeID": 1
+      },
+      "ID": 28961,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91711
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21119,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156216,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 28961,
+    "ProfileID": 28961,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 16,
+        "CalendarTypeID": 1
+      },
+      "ID": 28962,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91711
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21120,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156217,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 28962,
+    "ProfileID": 28962,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 16,
+        "CalendarTypeID": 1
+      },
+      "ID": 28963,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91711
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21121,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156218,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 28963,
+    "ProfileID": 28963,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 16,
+        "CalendarTypeID": 1
+      },
+      "ID": 28964,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91711
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21122,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156219,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 28964,
+    "ProfileID": 28964,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 16,
+        "CalendarTypeID": 1
+      },
+      "ID": 28965,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91711
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21123,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156220,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 28965,
+    "ProfileID": 28965,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 5,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 28978,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21136,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156250,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156251,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 28978,
+    "ProfileID": 28978,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 5,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 28979,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21137,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156252,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156253,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 28979,
+    "ProfileID": 28979,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 28980,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91500
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21138,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CAR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156254,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 28980,
+    "ProfileID": 28980,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 23,
+        "CalendarTypeID": 1
+      },
+      "ID": 29040,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91706
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21198,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156434,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29040,
+    "ProfileID": 29040,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 23,
+        "CalendarTypeID": 1
+      },
+      "ID": 29041,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91706
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21199,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156435,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29041,
+    "ProfileID": 29041,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 29046,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91894
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029046,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91937
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029046,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 92823
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21204,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SYRIA-CAESAR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156441,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 184015,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29046,
+    "ProfileID": 29046,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 29047,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91894
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029047,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91937
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029047,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 92823
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21205,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SYRIA-CAESAR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156443,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 184014,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29047,
+    "ProfileID": 29047,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 29049,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91894
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029049,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91937
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029049,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 92823
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21207,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 184005,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SYRIA-CAESAR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 184028,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29049,
+    "ProfileID": 29049,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 29052,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91894
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029052,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91937
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 6,
+          "Day": 17,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029052,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 92823
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21210,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 184007,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SYRIA-CAESAR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 184029,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29052,
+    "ProfileID": 29052,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 18,
+        "CalendarTypeID": 1
+      },
+      "ID": 29060,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21218,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA-EO13850",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156473,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29060,
+    "ProfileID": 29060,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 18,
+        "CalendarTypeID": 1
+      },
+      "ID": 29063,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21221,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA-EO13850",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156477,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29063,
+    "ProfileID": 29063,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 18,
+        "CalendarTypeID": 1
+      },
+      "ID": 29064,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21222,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA-EO13850",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156478,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29064,
+    "ProfileID": 29064,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 17,
+        "CalendarTypeID": 1
+      },
+      "ID": 29067,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21225,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156484,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29067,
+    "ProfileID": 29067,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 17,
+        "CalendarTypeID": 1
+      },
+      "ID": 29068,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21226,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156485,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29068,
+    "ProfileID": 29068,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 17,
+        "CalendarTypeID": 1
+      },
+      "ID": 29069,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21227,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156486,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29069,
+    "ProfileID": 29069,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 17,
+        "CalendarTypeID": 1
+      },
+      "ID": 29070,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21228,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156488,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29070,
+    "ProfileID": 29070,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 17,
+        "CalendarTypeID": 1
+      },
+      "ID": 29071,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21229,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156489,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29071,
+    "ProfileID": 29071,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 17,
+        "CalendarTypeID": 1
+      },
+      "ID": 29072,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21230,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156490,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29072,
+    "ProfileID": 29072,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 17,
+        "CalendarTypeID": 1
+      },
+      "ID": 29074,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21232,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156492,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29074,
+    "ProfileID": 29074,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 17,
+        "CalendarTypeID": 1
+      },
+      "ID": 29075,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21233,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156493,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29075,
+    "ProfileID": 29075,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 17,
+        "CalendarTypeID": 1
+      },
+      "ID": 29076,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21234,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156494,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29076,
+    "ProfileID": 29076,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 29099,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1823
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21257,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156532,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29099,
+    "ProfileID": 29099,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 29100,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1823
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21258,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156533,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29100,
+    "ProfileID": 29100,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 29101,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91498
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029101,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91711
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029101,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91870
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21259,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156534,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "ELECTION-EO13848",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156535,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "UKRAINE-EO13661",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156536,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29101,
+    "ProfileID": 29101,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 29102,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1823
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21260,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156537,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29102,
+    "ProfileID": 29102,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 29103,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1823
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21261,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156538,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29103,
+    "ProfileID": 29103,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 29104,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1823
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21262,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156539,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29104,
+    "ProfileID": 29104,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 25,
+        "CalendarTypeID": 1
+      },
+      "ID": 29105,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91856
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21263,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN-EO13871",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156540,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29105,
+    "ProfileID": 29105,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 25,
+        "CalendarTypeID": 1
+      },
+      "ID": 29106,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91856
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21264,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN-EO13871",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156541,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29106,
+    "ProfileID": 29106,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 29107,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91498
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029107,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91711
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029107,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91870
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21265,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156542,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "ELECTION-EO13848",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156543,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "UKRAINE-EO13661",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156544,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29107,
+    "ProfileID": 29107,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 25,
+        "CalendarTypeID": 1
+      },
+      "ID": 29108,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91856
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21266,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN-EO13871",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156545,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29108,
+    "ProfileID": 29108,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 25,
+        "CalendarTypeID": 1
+      },
+      "ID": 29109,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91856
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21267,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN-EO13871",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156546,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29109,
+    "ProfileID": 29109,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 25,
+        "CalendarTypeID": 1
+      },
+      "ID": 29110,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91856
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21268,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN-EO13871",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156547,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29110,
+    "ProfileID": 29110,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 25,
+        "CalendarTypeID": 1
+      },
+      "ID": 29112,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91856
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21270,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN-EO13871",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156549,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29112,
+    "ProfileID": 29112,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 29113,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91498
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029113,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91711
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029113,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91870
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21271,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156550,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "ELECTION-EO13848",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156551,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "UKRAINE-EO13661",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156552,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29113,
+    "ProfileID": 29113,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 25,
+        "CalendarTypeID": 1
+      },
+      "ID": 29114,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91856
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21272,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN-EO13871",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156553,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29114,
+    "ProfileID": 29114,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 29115,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91498
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029115,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91711
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029115,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91870
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21273,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "ELECTION-EO13848",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156554,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "UKRAINE-EO13661",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156555,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156556,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29115,
+    "ProfileID": 29115,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 29116,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91498
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029116,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91711
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029116,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91870
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21274,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156557,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "ELECTION-EO13848",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156558,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "UKRAINE-EO13661",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156559,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29116,
+    "ProfileID": 29116,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 29117,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91498
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029117,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91711
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029117,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91870
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21275,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "UKRAINE-EO13661",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156560,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156561,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "ELECTION-EO13848",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156562,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29117,
+    "ProfileID": 29117,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 29118,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91498
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029118,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91711
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029118,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91870
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21276,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156563,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "ELECTION-EO13848",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156564,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "UKRAINE-EO13661",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156565,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29118,
+    "ProfileID": 29118,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 11,
+        "Day": 25,
+        "CalendarTypeID": 1
+      },
+      "ID": 29119,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21277,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156566,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29119,
+    "ProfileID": 29119,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 29120,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91498
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029120,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91711
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 7,
+          "Day": 15,
+          "CalendarTypeID": 1
+        },
+        "ID": 2029120,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91870
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21278,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "CYBER2",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156568,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "ELECTION-EO13848",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156569,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "UKRAINE-EO13661",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156570,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29120,
+    "ProfileID": 29120,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 6,
+        "Day": 25,
+        "CalendarTypeID": 1
+      },
+      "ID": 29139,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91784
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21297,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IFCA",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156572,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29139,
+    "ProfileID": 29139,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 29159,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21317,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156592,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29159,
+    "ProfileID": 29159,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 29160,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21318,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156593,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29160,
+    "ProfileID": 29160,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 29162,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21320,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156595,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29162,
+    "ProfileID": 29162,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 29219,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21377,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156652,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29219,
+    "ProfileID": 29219,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 9,
+        "CalendarTypeID": 1
+      },
+      "ID": 29220,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21378,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156653,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29220,
+    "ProfileID": 29220,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 9,
+        "Day": 4,
+        "CalendarTypeID": 1
+      },
+      "ID": 29221,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91706
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21379,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156654,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29221,
+    "ProfileID": 29221,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 29242,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91989
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21400,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "HK-EO13936",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156675,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29242,
+    "ProfileID": 29242,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 29243,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91989
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21401,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "HK-EO13936",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156676,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29243,
+    "ProfileID": 29243,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 29244,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91989
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21402,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "HK-EO13936",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156677,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29244,
+    "ProfileID": 29244,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 29246,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91989
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21404,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "HK-EO13936",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156679,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29246,
+    "ProfileID": 29246,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 29249,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91989
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21407,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "HK-EO13936",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156682,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29249,
+    "ProfileID": 29249,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 29250,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91989
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21408,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "HK-EO13936",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156683,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29250,
+    "ProfileID": 29250,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 29259,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91989
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21417,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "HK-EO13936",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156692,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29259,
+    "ProfileID": 29259,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 29260,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91989
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21418,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "HK-EO13936",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156693,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29260,
+    "ProfileID": 29260,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 29261,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91989
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21419,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "HK-EO13936",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156694,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29261,
+    "ProfileID": 29261,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 29262,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91989
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21420,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "HK-EO13936",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156695,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29262,
+    "ProfileID": 29262,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 29263,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91989
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21421,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "HK-EO13936",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156696,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29263,
+    "ProfileID": 29263,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 29279,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21437,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156732,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29279,
+    "ProfileID": 29279,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 29280,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21438,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156733,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29280,
+    "ProfileID": 29280,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 29281,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21439,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156734,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29281,
+    "ProfileID": 29281,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 31,
+        "CalendarTypeID": 1
+      },
+      "ID": 29299,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21457,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156752,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29299,
+    "ProfileID": 29299,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 31,
+        "CalendarTypeID": 1
+      },
+      "ID": 29300,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21458,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156753,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29300,
+    "ProfileID": 29300,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 31,
+        "CalendarTypeID": 1
+      },
+      "ID": 29319,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21477,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156772,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29319,
+    "ProfileID": 29319,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 7,
+        "Day": 28,
+        "CalendarTypeID": 1
+      },
+      "ID": 29340,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21498,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156793,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29340,
+    "ProfileID": 29340,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 5,
+        "CalendarTypeID": 1
+      },
+      "ID": 29360,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21518,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 176534,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29360,
+    "ProfileID": 29360,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 5,
+        "CalendarTypeID": 1
+      },
+      "ID": 29361,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21519,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 176543,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29361,
+    "ProfileID": 29361,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 9,
+        "Day": 4,
+        "CalendarTypeID": 1
+      },
+      "ID": 29362,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91706
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21520,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156815,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29362,
+    "ProfileID": 29362,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 9,
+        "Day": 4,
+        "CalendarTypeID": 1
+      },
+      "ID": 29363,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91706
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21521,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156816,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29363,
+    "ProfileID": 29363,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 9,
+        "Day": 4,
+        "CalendarTypeID": 1
+      },
+      "ID": 29365,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91706
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21523,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156818,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29365,
+    "ProfileID": 29365,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 9,
+        "Day": 10,
+        "CalendarTypeID": 1
+      },
+      "ID": 29366,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91870
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21524,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "ELECTION-EO13848",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156819,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29366,
+    "ProfileID": 29366,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 11,
+        "Day": 25,
+        "CalendarTypeID": 1
+      },
+      "ID": 29368,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91749
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21526,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "GLOMAG",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156821,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29368,
+    "ProfileID": 29368,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 29382,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21540,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156835,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156836,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29382,
+    "ProfileID": 29382,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 29383,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21541,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156837,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156838,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29383,
+    "ProfileID": 29383,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 29384,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1828
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21542,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156839,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156840,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29384,
+    "ProfileID": 29384,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 9,
+        "Day": 21,
+        "CalendarTypeID": 1
+      },
+      "ID": 29385,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21543,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156847,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156848,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29385,
+    "ProfileID": 29385,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 9,
+        "Day": 21,
+        "CalendarTypeID": 1
+      },
+      "ID": 29386,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21544,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156849,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156850,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29386,
+    "ProfileID": 29386,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 9,
+        "Day": 21,
+        "CalendarTypeID": 1
+      },
+      "ID": 29387,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21545,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156851,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "NPWMD",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156852,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29387,
+    "ProfileID": 29387,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 8,
+          "Day": 20,
+          "CalendarTypeID": 1
+        },
+        "ID": 29404,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91894
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 8,
+          "Day": 20,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029404,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 92823
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21562,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 183911,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29404,
+    "ProfileID": 29404,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 20,
+        "CalendarTypeID": 1
+      },
+      "ID": 29405,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21563,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156858,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29405,
+    "ProfileID": 29405,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 20,
+        "CalendarTypeID": 1
+      },
+      "ID": 29406,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21564,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156859,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29406,
+    "ProfileID": 29406,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 20,
+        "CalendarTypeID": 1
+      },
+      "ID": 29407,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21565,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156860,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29407,
+    "ProfileID": 29407,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 9,
+        "Day": 3,
+        "CalendarTypeID": 1
+      },
+      "ID": 29422,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91784
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21580,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN-EO13846",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156875,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29422,
+    "ProfileID": 29422,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2021,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 29443,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21601,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA-EO13850",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156896,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29443,
+    "ProfileID": 29443,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2020,
+        "Month": 8,
+        "Day": 20,
+        "CalendarTypeID": 1
+      },
+      "ID": 29462,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91894
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21620,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "PAARSSR-EO13894",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156915,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29462,
+    "ProfileID": 29462,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2021,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 29483,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21641,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA-EO13850",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156937,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29483,
+    "ProfileID": 29483,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2021,
+          "Month": 1,
+          "Day": 19,
+          "CalendarTypeID": 1
+        },
+        "ID": 29484,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 1828
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2021,
+          "Month": 1,
+          "Day": 19,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029484,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91811
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21642,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA-EO13850",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156938,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 180546,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29484,
+    "ProfileID": 29484,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2021,
+          "Month": 1,
+          "Day": 19,
+          "CalendarTypeID": 1
+        },
+        "ID": 29485,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 1828
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2021,
+          "Month": 1,
+          "Day": 19,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029485,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91811
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21643,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA-EO13850",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156939,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 180572,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29485,
+    "ProfileID": 29485,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2021,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 29486,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21644,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA-EO13850",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156940,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29486,
+    "ProfileID": 29486,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2021,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 29487,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21645,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA-EO13850",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156941,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29487,
+    "ProfileID": 29487,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2021,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 29506,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21664,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA-EO13850",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156959,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29506,
+    "ProfileID": 29506,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2021,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 29507,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 91811
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21665,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "VENEZUELA-EO13850",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156960,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29507,
+    "ProfileID": 29507,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": [
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 9,
+          "Day": 3,
+          "CalendarTypeID": 1
+        },
+        "ID": 29522,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 1828
+      },
+      {
+        "Comment": "",
+        "Date": {
+          "Year": 2020,
+          "Month": 9,
+          "Day": 3,
+          "CalendarTypeID": 1
+        },
+        "ID": 1029522,
+        "EntryEventTypeID": 1,
+        "LegalBasisID": 91784
+      }
+    ],
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 21680,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "IRAN-EO13846",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 156975,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "IFSR",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 157683,
+        "SanctionsTypeID": 1
+      },
+      {
+        "Comment": "SDGT",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 157684,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 29522,
+    "ProfileID": 29522,
+    "ListID": 1550
+  }
+]

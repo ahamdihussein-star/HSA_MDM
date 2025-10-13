@@ -1,5 +1,5 @@
 // Load environment variables from .env file
-require('dotenv').config();
+require('dotenv').config({ path: require('path').join(__dirname, '..', '.env') });
 
 const express = require('express');
 const cors = require('cors');
@@ -73,14 +73,14 @@ const EXTERNAL_APIS = {
     name: 'OpenSanctions',
     baseUrl: 'https://api.opensanctions.org',
     searchEndpoint: '/search/default',  // ✅ Fixed: No /api/v1 prefix
-    timeout: 20000,
+    timeout: 15000,  // ⚡ Reduced from 20s to 15s for faster timeout
     enabled: true,
     requiresAuth: false,  // ✅ No API key needed
-    retries: 3,
+    retries: 1,  // ⚡ Reduced from 2 to 1 retry to save API calls (with cache, fewer retries needed)
     params: {
-      limit: 10,
+      limit: 5,  // ⚡ Reduced from 10 to 5 for faster response (most relevant matches are in top 5)
       fuzzy: true,
-      schema: 'Company'
+      schema: 'Company'  // ⚡ Filter: Only companies (excludes Persons, Vessels, etc.)
     }
   },
   
@@ -89,9 +89,10 @@ const EXTERNAL_APIS = {
     baseUrl: 'https://www.treasury.gov',
     searchEndpoint: '/ofac/downloads/sdn.xml',
     timeout: 30000,
-    enabled: true,
+    enabled: false,  // ⚡ Available as fallback - User can enable on-demand if OpenSanctions fails
     requiresAuth: false,
-    retries: 3
+    retries: 2,
+    fallbackOnly: true  // ✅ Only use as fallback when OpenSanctions fails
   },
   
   EU_SANCTIONS: {
@@ -99,9 +100,10 @@ const EXTERNAL_APIS = {
     baseUrl: 'https://webgate.ec.europa.eu',
     searchEndpoint: '/fsd/fsf/public/files/xmlFullSanctionsList/content',
     timeout: 25000,
-    enabled: true,
+    enabled: false,  // ⚡ Available as fallback - User can enable on-demand if OpenSanctions fails
     requiresAuth: false,
-    retries: 3,
+    retries: 2,
+    fallbackOnly: true,  // ✅ Only use as fallback when OpenSanctions fails
     params: {
       token: 'dG9rZW4tMjAxNw'
     }
@@ -566,6 +568,176 @@ function initializeDatabase() {
     )
   `);
   console.log('Notifications table ready');
+
+  // 8. Unified Sanctions Database Schema (OFAC + EU + UK + UN)
+  // ═══════════════════════════════════════════════════════════════════
+  db.exec(`
+    -- Main entities table (Unified: supports OFAC, EU, UK, UN)
+    CREATE TABLE IF NOT EXISTS ofac_entities (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      uid TEXT UNIQUE NOT NULL,                    -- Unique ID (OFAC-12345, EU-67890, UK-111, UN-222)
+      source TEXT NOT NULL DEFAULT 'OFAC',         -- 🔥 Source: OFAC, EU, UK, UN
+      source_id TEXT,                              -- Original ID in source system
+      name TEXT NOT NULL,
+      type TEXT NOT NULL CHECK(type IN ('Entity', 'Individual', 'Organization', 'Vessel', 'Aircraft')),
+      sector TEXT CHECK(sector IN ('Food & Agriculture', 'Construction', NULL)),
+      listed_date TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      UNIQUE(source, source_id)                    -- Prevent duplicates per source
+    );
+
+    -- Countries (with source tracking)
+    CREATE TABLE IF NOT EXISTS entity_countries (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_uid TEXT NOT NULL,
+      country TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'OFAC',         -- 🔥 Track which source provided this country
+      FOREIGN KEY (entity_uid) REFERENCES ofac_entities(uid) ON DELETE CASCADE
+    );
+
+    -- Programs (SDN, SDGT, etc.)
+    CREATE TABLE IF NOT EXISTS entity_programs (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_uid TEXT NOT NULL,
+      program TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'OFAC',         -- 🔥 Track program source
+      FOREIGN KEY (entity_uid) REFERENCES ofac_entities(uid) ON DELETE CASCADE
+    );
+
+    -- Legal Basis (Executive Orders, etc.)
+    CREATE TABLE IF NOT EXISTS entity_legal_basis (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_uid TEXT NOT NULL,
+      legal_basis TEXT NOT NULL,
+      reason TEXT,
+      source TEXT NOT NULL DEFAULT 'OFAC',         -- 🔥 Track source
+      FOREIGN KEY (entity_uid) REFERENCES ofac_entities(uid) ON DELETE CASCADE
+    );
+
+    -- Aliases (alternative names)
+    CREATE TABLE IF NOT EXISTS entity_aliases (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_uid TEXT NOT NULL,
+      alias TEXT NOT NULL,
+      alias_type TEXT,
+      source TEXT NOT NULL DEFAULT 'OFAC',         -- 🔥 Track which source provided this alias
+      FOREIGN KEY (entity_uid) REFERENCES ofac_entities(uid) ON DELETE CASCADE
+    );
+
+    -- Addresses
+    CREATE TABLE IF NOT EXISTS entity_addresses (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_uid TEXT NOT NULL,
+      address TEXT NOT NULL,
+      country TEXT,
+      city TEXT,
+      street TEXT,
+      province TEXT,
+      postal_code TEXT,
+      source TEXT NOT NULL DEFAULT 'OFAC',         -- 🔥 Track address source
+      FOREIGN KEY (entity_uid) REFERENCES ofac_entities(uid) ON DELETE CASCADE
+    );
+
+    -- ID Numbers (registration numbers, tax IDs, etc.)
+    CREATE TABLE IF NOT EXISTS entity_id_numbers (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_uid TEXT NOT NULL,
+      id_type TEXT NOT NULL,
+      id_number TEXT NOT NULL,
+      issuing_authority TEXT,
+      issuing_country TEXT,
+      issued_date TEXT,
+      source TEXT NOT NULL DEFAULT 'OFAC',         -- 🔥 Track ID source
+      FOREIGN KEY (entity_uid) REFERENCES ofac_entities(uid) ON DELETE CASCADE
+    );
+
+    -- Remarks (additional information)
+    CREATE TABLE IF NOT EXISTS entity_remarks (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_uid TEXT NOT NULL,
+      remark TEXT NOT NULL,
+      source TEXT NOT NULL DEFAULT 'OFAC',         -- 🔥 Track remark source
+      FOREIGN KEY (entity_uid) REFERENCES ofac_entities(uid) ON DELETE CASCADE
+    );
+
+    -- Sanctions Entry (links entity to sanctions info)
+    CREATE TABLE IF NOT EXISTS sanctions_entry (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entry_id TEXT NOT NULL UNIQUE,              -- SanctionsEntry ID from XML
+      profile_id TEXT NOT NULL,                    -- ProfileID from XML
+      entity_uid TEXT NOT NULL,                    -- Link to ofac_entities
+      list_id TEXT,                                -- ListID (e.g., SDN, SSI, etc.)
+      entry_event_date TEXT,                       -- Date when entity was added to list
+      entry_event_type_id TEXT,                    -- Type of entry event
+      legal_basis_id TEXT,                         -- Legal basis for sanctions
+      entry_event_comment TEXT,                    -- Additional comments
+      source TEXT NOT NULL DEFAULT 'OFAC',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (entity_uid) REFERENCES ofac_entities(uid) ON DELETE CASCADE
+    );
+
+    -- Sanctions Measures (types of sanctions imposed)
+    CREATE TABLE IF NOT EXISTS sanctions_measures (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entry_id TEXT NOT NULL,                      -- Link to sanctions_entry
+      measure_id TEXT NOT NULL,                    -- Measure ID from XML
+      sanctions_type_id TEXT NOT NULL,             -- Type ID (e.g., 1=travel ban, 2=asset freeze)
+      sanctions_type_name TEXT,                    -- Human-readable type name
+      date_period_start TEXT,                      -- When sanction started
+      date_period_end TEXT,                        -- When sanction ends (if applicable)
+      comment TEXT,                                -- Additional comments
+      source TEXT NOT NULL DEFAULT 'OFAC',
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+      FOREIGN KEY (entry_id) REFERENCES sanctions_entry(entry_id) ON DELETE CASCADE
+    );
+
+    -- Sync metadata (per source)
+    CREATE TABLE IF NOT EXISTS ofac_sync_metadata (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      source TEXT NOT NULL DEFAULT 'OFAC',         -- 🔥 OFAC, EU, UK, UN
+      last_sync_date DATETIME,
+      total_entities INTEGER DEFAULT 0,
+      filtered_entities INTEGER DEFAULT 0,
+      sync_status TEXT DEFAULT 'pending',
+      error_message TEXT,
+      created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+    );
+
+    -- Source tracking summary (useful for queries)
+    CREATE TABLE IF NOT EXISTS entity_sources (
+      id INTEGER PRIMARY KEY AUTOINCREMENT,
+      entity_uid TEXT NOT NULL,
+      source TEXT NOT NULL,                        -- OFAC, EU, UK, UN
+      first_seen_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+      last_updated_date DATETIME DEFAULT CURRENT_TIMESTAMP,
+      is_active INTEGER DEFAULT 1,                 -- 1=active, 0=removed from source
+      FOREIGN KEY (entity_uid) REFERENCES ofac_entities(uid) ON DELETE CASCADE,
+      UNIQUE(entity_uid, source)                   -- One entry per entity per source
+    );
+
+    -- Indexes for performance
+    CREATE INDEX IF NOT EXISTS idx_ofac_uid ON ofac_entities(uid);
+    CREATE INDEX IF NOT EXISTS idx_ofac_source ON ofac_entities(source);
+    CREATE INDEX IF NOT EXISTS idx_ofac_source_id ON ofac_entities(source, source_id);
+    CREATE INDEX IF NOT EXISTS idx_ofac_sector ON ofac_entities(sector);
+    CREATE INDEX IF NOT EXISTS idx_ofac_name ON ofac_entities(name);
+    CREATE INDEX IF NOT EXISTS idx_country ON entity_countries(country);
+    CREATE INDEX IF NOT EXISTS idx_country_source ON entity_countries(source);
+    CREATE INDEX IF NOT EXISTS idx_entity_country ON entity_countries(entity_uid);
+    CREATE INDEX IF NOT EXISTS idx_program ON entity_programs(program);
+    CREATE INDEX IF NOT EXISTS idx_program_source ON entity_programs(source);
+    CREATE INDEX IF NOT EXISTS idx_alias ON entity_aliases(alias);
+    CREATE INDEX IF NOT EXISTS idx_alias_source ON entity_aliases(source);
+    CREATE INDEX IF NOT EXISTS idx_id_number ON entity_id_numbers(id_number);
+    CREATE INDEX IF NOT EXISTS idx_remark ON entity_remarks(remark);
+    CREATE INDEX IF NOT EXISTS idx_entity_sources ON entity_sources(entity_uid);
+    CREATE INDEX IF NOT EXISTS idx_source_filter ON entity_sources(source, is_active);
+    CREATE INDEX IF NOT EXISTS idx_sanctions_entry_uid ON sanctions_entry(entity_uid);
+    CREATE INDEX IF NOT EXISTS idx_sanctions_entry_id ON sanctions_entry(entry_id);
+    CREATE INDEX IF NOT EXISTS idx_sanctions_measures_entry ON sanctions_measures(entry_id);
+  `);
+  console.log('✅ Unified Sanctions tables ready (OFAC + EU + UK + UN support)');
 
   // Create indexes for notifications
   db.exec(`
@@ -6728,6 +6900,781 @@ app.post('/api/sync/execute-selected', (req, res) => {
 });
 
 // ========================================
+// OFAC LOCAL DATABASE ENDPOINTS
+// ========================================
+
+const { syncOFACData, searchLocalOFAC, searchLocalOFACWithAI } = require('./ofac-sync');
+
+/**
+ * Sync OFAC data to local database
+ */
+app.post('/api/ofac/sync', async (req, res) => {
+  try {
+    console.log('🔄 [API] Starting OFAC sync...');
+    const result = await syncOFACData(db);
+    res.json(result);
+  } catch (error) {
+    console.error('❌ [API] OFAC sync failed:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+});
+
+/**
+ * Get OFAC sync status
+ */
+app.get('/api/ofac/status', (req, res) => {
+  try {
+    const status = db.prepare(`
+      SELECT * FROM ofac_sync_metadata 
+      ORDER BY created_at DESC LIMIT 1
+    `).get();
+    
+    const count = db.prepare(`
+      SELECT COUNT(*) as total FROM ofac_entities
+    `).get();
+    
+    res.json({
+      lastSync: status,
+      totalEntities: count.total
+    });
+  } catch (error) {
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Search local OFAC database with OpenAI fuzzy matching
+ */
+app.post('/api/ofac/search', async (req, res) => {
+  try {
+    const { companyName, country, useAI = true } = req.body;
+    
+    if (!companyName) {
+      return res.status(400).json({ error: 'Company name required' });
+    }
+    
+    console.log(`🔍 [OFAC SEARCH] Searching: "${companyName}"${country ? ` in ${country}` : ''}`);
+    console.log(`🤖 [OFAC SEARCH] AI Fuzzy Matching: ${useAI ? 'Enabled ✅' : 'Disabled ❌'}`);
+    
+    // Use AI-powered search if enabled
+    const results = useAI 
+      ? await searchLocalOFACWithAI(db, companyName, country)
+      : searchLocalOFAC(db, companyName, country);
+    
+    console.log(`✓ [OFAC SEARCH] Found ${results.length} results`);
+    
+    res.json(results);
+  } catch (error) {
+    console.error(`❌ [OFAC SEARCH] Error:`, error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get full OFAC entity details by ID or UID
+ */
+app.get('/api/ofac/entity/:id', (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log(`🔍 [OFAC DETAILS] Fetching details for: ${id}`);
+    
+    // Get basic entity info
+    const entity = db.prepare(`
+      SELECT * FROM ofac_entities 
+      WHERE id = ? OR uid = ?
+    `).get(id, id);
+    
+    if (!entity) {
+      return res.status(404).json({ error: 'Entity not found' });
+    }
+    
+    // Get countries
+    const countries = db.prepare(`
+      SELECT country FROM entity_countries 
+      WHERE entity_uid = ?
+    `).all(entity.uid).map(r => r.country);
+    
+    // Get aliases
+    const aliases = db.prepare(`
+      SELECT alias, alias_type FROM entity_aliases 
+      WHERE entity_uid = ?
+    `).all(entity.uid);
+    
+    // Get addresses
+    const addresses = db.prepare(`
+      SELECT * FROM entity_addresses 
+      WHERE entity_uid = ?
+    `).all(entity.uid);
+    
+    // Get ID numbers
+    const idNumbers = db.prepare(`
+      SELECT * FROM entity_id_numbers 
+      WHERE entity_uid = ?
+    `).all(entity.uid);
+    
+    // Get programs
+    const programs = db.prepare(`
+      SELECT program FROM entity_programs 
+      WHERE entity_uid = ?
+    `).all(entity.uid).map(r => r.program);
+    
+    // Get remarks
+    const remarks = db.prepare(`
+      SELECT remark FROM entity_remarks 
+      WHERE entity_uid = ?
+    `).all(entity.uid).map(r => r.remark);
+    
+    // Get sanctions entry info
+    const sanctionsEntry = db.prepare(`
+      SELECT * FROM sanctions_entry 
+      WHERE entity_uid = ?
+    `).get(entity.uid);
+    
+    // Get sanctions measures (if entry exists)
+    let sanctionsMeasures = [];
+    if (sanctionsEntry) {
+      sanctionsMeasures = db.prepare(`
+        SELECT * FROM sanctions_measures 
+        WHERE entry_id = ?
+      `).all(sanctionsEntry.entry_id);
+    }
+    
+    // Get reference data for human-readable names
+    let legalBasisName = null;
+    let entryEventTypeName = null;
+    let listName = null;
+    
+    if (sanctionsEntry) {
+      // Get legal basis name
+      const legalBasis = db.prepare('SELECT full_name, short_ref FROM ofac_legal_basis WHERE id = ?')
+        .get(sanctionsEntry.legal_basis_id);
+      legalBasisName = legalBasis ? legalBasis.short_ref : null;
+      
+      // Get entry event type name
+      const eventType = db.prepare('SELECT name FROM ofac_entry_event_types WHERE id = ?')
+        .get(sanctionsEntry.entry_event_type_id);
+      entryEventTypeName = eventType ? eventType.name : null;
+      
+      // List ID 1550 is SDN (Specially Designated Nationals)
+      if (sanctionsEntry.list_id === '1550') {
+        listName = 'SDN (Specially Designated Nationals)';
+      } else {
+        listName = `List ${sanctionsEntry.list_id}`;
+      }
+    }
+    
+    const fullDetails = {
+      ...entity,
+      countries,
+      aliases: aliases.map(a => a.alias),
+      aliasDetails: aliases,
+      addresses,
+      idNumbers,
+      programs,
+      remarks,
+      sanctionsInfo: sanctionsEntry ? {
+        entryDate: sanctionsEntry.entry_event_date,
+        entryEventType: entryEventTypeName || sanctionsEntry.entry_event_type_id,
+        entryEventTypeId: sanctionsEntry.entry_event_type_id,
+        legalBasis: legalBasisName || sanctionsEntry.legal_basis_id,
+        legalBasisId: sanctionsEntry.legal_basis_id,
+        listId: sanctionsEntry.list_id,
+        listName: listName,
+        comment: sanctionsEntry.entry_event_comment,
+        measures: sanctionsMeasures.map(m => ({
+          type: m.sanctions_type_name || m.sanctions_type_id,
+          typeId: m.sanctions_type_id,
+          startDate: m.date_period_start,
+          endDate: m.date_period_end,
+          comment: m.comment
+        }))
+      } : null
+    };
+    
+    console.log(`✓ [OFAC DETAILS] Found entity: ${entity.name} with ${sanctionsMeasures.length} sanctions measures`);
+    res.json(fullDetails);
+    
+  } catch (error) {
+    console.error(`❌ [OFAC DETAILS] Error:`, error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Upload and parse OFAC XML file manually
+ */
+app.post('/api/ofac/upload', upload.single('file'), async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({ error: 'No file uploaded' });
+    }
+    
+    console.log('📁 [OFAC UPLOAD] File received:', req.file.originalname);
+    console.log('📊 [OFAC UPLOAD] File size:', (req.file.size / 1024 / 1024).toFixed(2), 'MB');
+    
+    // Read file content
+    const fs = require('fs').promises;
+    const xmlContent = await fs.readFile(req.file.path, 'utf-8');
+    
+    console.log('✅ [OFAC UPLOAD] File read successfully');
+    
+    // Parse and import using ofac-sync module
+    const { syncOFACData } = require('./ofac-sync');
+    
+    // Create a custom sync that uses the uploaded file
+    const result = await syncOFACDataFromXML(db, xmlContent);
+    
+    // Clean up uploaded file
+    await fs.unlink(req.file.path);
+    
+    res.json(result);
+  } catch (error) {
+    console.error('❌ [OFAC UPLOAD] Upload failed:', error);
+    res.status(500).json({ 
+      success: false,
+      error: error.message 
+    });
+  }
+});
+
+/**
+ * =====================================================
+ * AI COMPLIANCE ANALYSIS ENDPOINT
+ * =====================================================
+ */
+
+const { analyzeComplianceWithAI, ConversationContext } = require('./ai-compliance-agent');
+const { 
+  searchOFACWithPrecomputedEmbeddings, 
+  searchUNWithPrecomputedEmbeddings 
+} = require('./search-with-precomputed-embeddings');
+
+// Store conversation contexts (in production, use Redis or DB)
+const conversations = new Map();
+
+/**
+ * Intelligent compliance analysis with Claude Sonnet 4
+ */
+app.post('/api/compliance/ai-analyze', async (req, res) => {
+  try {
+    const { companyName, country, sector, requestType, sessionId } = req.body;
+    
+    if (!companyName) {
+      return res.status(400).json({ error: 'Company name required' });
+    }
+    
+    console.log(`🤖 [AI ANALYSIS] Starting intelligent analysis for: ${companyName}`);
+    
+    // Get or create conversation context
+    let context = conversations.get(sessionId || 'default');
+    if (!context) {
+      context = new ConversationContext();
+      conversations.set(sessionId || 'default', context);
+    }
+    
+    // Search OFAC and UN using pre-computed embeddings
+    const API_KEY = process.env.OPENAI_API_KEY;
+    const [ofacResults, unResults] = await Promise.all([
+      searchOFACWithPrecomputedEmbeddings(db, companyName, API_KEY, country),
+      searchUNWithPrecomputedEmbeddings(db, companyName, API_KEY, country)
+    ]);
+    
+    const allResults = [...ofacResults, ...unResults];
+    console.log(`📊 [AI ANALYSIS] Total results: ${allResults.length} (OFAC: ${ofacResults.length}, UN: ${unResults.length})`);
+    
+    // Use AI to analyze results
+    const analysis = await analyzeComplianceWithAI(
+      companyName,
+      allResults,
+      { country, sector, requestType }
+    );
+    
+    // Add to conversation context
+    context.addMessage('user', `Check company: ${companyName}`, {
+      country,
+      sector
+    });
+    context.addMessage('assistant', analysis.explanation, {
+      recommendation: analysis.recommendation,
+      confidence: analysis.confidence
+    });
+    
+    console.log(`✅ [AI ANALYSIS] Complete: ${analysis.recommendation} (${analysis.confidence}% confidence)`);
+    
+    res.json(analysis);
+    
+  } catch (error) {
+    console.error(`❌ [AI ANALYSIS] Error:`, error.message);
+    res.status(500).json({ 
+      error: error.message,
+      fallback: true
+    });
+  }
+});
+
+/**
+ * Get conversation history
+ */
+app.get('/api/compliance/conversation/:sessionId', (req, res) => {
+  try {
+    const { sessionId } = req.params;
+    const context = conversations.get(sessionId);
+    
+    if (!context) {
+      return res.json({ history: [] });
+    }
+    
+    res.json({
+      history: context.getSummary()
+    });
+  } catch (error) {
+    console.error(`❌ [CONVERSATION] Error:`, error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * =====================================================
+ * UN SANCTIONS ENDPOINTS
+ * =====================================================
+ */
+
+/**
+ * Search UN sanctions with OpenAI fuzzy matching
+ */
+app.post('/api/un/search', async (req, res) => {
+  try {
+    const { companyName, country, useAI = true } = req.body;
+    
+    if (!companyName) {
+      return res.status(400).json({ error: 'Company name required' });
+    }
+    
+    console.log(`🇺🇳 [UN SEARCH] Searching: "${companyName}"${country ? ` in ${country}` : ''}`);
+    console.log(`🤖 [UN SEARCH] AI Fuzzy Matching: ${useAI ? 'Enabled ✅' : 'Disabled ❌'}`);
+    
+    // Use AI-powered search if enabled
+    const results = useAI 
+      ? await searchUNWithAI(db, companyName, country)
+      : searchLocalUN(db, companyName, country);
+    
+    console.log(`✓ [UN SEARCH] Found ${results.length} results`);
+    
+    res.json(results);
+  } catch (error) {
+    console.error(`❌ [UN SEARCH] Error:`, error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Get full UN entity details by DATAID
+ */
+app.get('/api/un/entity/:dataid', (req, res) => {
+  try {
+    const { dataid } = req.params;
+    console.log(`🇺🇳 [UN DETAILS] Fetching details for: ${dataid}`);
+    
+    // Get basic entity info
+    const entity = db.prepare(`
+      SELECT * FROM un_entities 
+      WHERE dataid = ?
+    `).get(dataid);
+    
+    if (!entity) {
+      return res.status(404).json({ error: 'Entity not found' });
+    }
+    
+    // Get aliases
+    const aliases = db.prepare(`
+      SELECT quality, alias_name FROM un_entity_aliases 
+      WHERE entity_dataid = ?
+    `).all(dataid);
+    
+    // Get addresses
+    const addresses = db.prepare(`
+      SELECT * FROM un_entity_addresses 
+      WHERE entity_dataid = ?
+    `).all(dataid);
+    
+    const fullDetails = {
+      ...entity,
+      aliases: aliases.map(a => a.alias_name),
+      aliasDetails: aliases,
+      addresses,
+      source: 'UN'
+    };
+    
+    console.log(`✓ [UN DETAILS] Found entity: ${entity.first_name}`);
+    res.json(fullDetails);
+    
+  } catch (error) {
+    console.error(`❌ [UN DETAILS] Error:`, error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Basic UN search without AI (SQL LIKE)
+ */
+function searchLocalUN(db, companyName, country = null) {
+  let query = `
+    SELECT DISTINCT
+      e.id,
+      e.dataid,
+      e.first_name as name,
+      e.reference_number,
+      e.un_list_type,
+      e.listed_on,
+      e.comments,
+      e.last_updated,
+      GROUP_CONCAT(DISTINCT a.country) as countries
+    FROM un_entities e
+    LEFT JOIN un_entity_addresses a ON e.dataid = a.entity_dataid
+    WHERE (
+      e.first_name LIKE ? 
+      OR EXISTS (
+        SELECT 1 FROM un_entity_aliases al 
+        WHERE al.entity_dataid = e.dataid 
+        AND al.alias_name LIKE ?
+      )
+    )
+  `;
+  
+  const params = [`%${companyName}%`, `%${companyName}%`];
+  
+  if (country) {
+    query += ` AND EXISTS (
+      SELECT 1 FROM un_entity_addresses ad 
+      WHERE ad.entity_dataid = e.dataid 
+      AND ad.country LIKE ?
+    )`;
+    params.push(`%${country}%`);
+  }
+  
+  query += ` GROUP BY e.dataid ORDER BY e.first_name LIMIT 50`;
+  
+  return db.prepare(query).all(...params);
+}
+
+/**
+ * AI-powered UN search with OpenAI Embeddings
+ */
+async function searchUNWithAI(db, companyName, country = null) {
+  // First get candidates using SQL LIKE
+  const candidates = searchLocalUN(db, companyName, country);
+  
+  if (candidates.length === 0) {
+    return [];
+  }
+  
+  if (candidates.length === 1) {
+    return candidates.map(c => ({
+      ...c,
+      matchScore: 95,
+      matchReason: 'Only match found',
+      source: 'UN'
+    }));
+  }
+  
+  // Use OpenAI Embeddings for semantic search
+  try {
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    if (!openaiApiKey) {
+      console.warn('⚠️  OpenAI API key not found, using basic search');
+      return candidates.map(c => ({
+        ...c,
+        matchScore: 70,
+        matchReason: 'Basic SQL match',
+        source: 'UN'
+      }));
+    }
+    
+    // Use embeddings module
+    const { searchOFACWithEmbeddings } = require('./ofac-embeddings');
+    const embeddingResults = await searchOFACWithEmbeddings(companyName, candidates, openaiApiKey);
+    
+    // Add source tag
+    return embeddingResults.map(r => ({
+      ...r,
+      source: 'UN'
+    }));
+    
+  } catch (error) {
+    console.error('❌ [UN AI] Embeddings error:', error.message);
+    return candidates.map(c => ({
+      ...c,
+      matchScore: 70,
+      matchReason: 'Basic SQL match (AI failed)',
+      source: 'UN'
+    }));
+  }
+}
+
+// OLD GPT-based approach (deprecated - kept for reference)
+async function searchUNWithAI_OLD_GPT(db, companyName, country = null) {
+  const candidates = searchLocalUN(db, companyName, country);
+  
+  if (candidates.length === 0) return [];
+  if (candidates.length === 1) {
+    return candidates.map(c => ({
+      ...c,
+      matchScore: 95,
+      matchReason: 'Only match found',
+      source: 'UN'
+    }));
+  }
+  
+  try {
+    const openaiApiKey = process.env.OPENAI_API_KEY;
+    if (!openaiApiKey) {
+      console.warn('⚠️  OpenAI API key not found, using basic search');
+      return candidates.map(c => ({
+        ...c,
+        matchScore: 70,
+        matchReason: 'Basic SQL match',
+        source: 'UN'
+      }));
+    }
+    
+    const prompt = `You are a sanctions screening expert. Compare the search query with UN entities and rank them by relevance.
+
+Search Query: "${companyName}"${country ? ` (Country: ${country})` : ''}
+
+UN Entities to compare:
+${candidates.map((c, i) => `${i + 1}. ${c.name} (${c.reference_number})
+   - List Type: ${c.un_list_type}
+   - Countries: ${c.countries || 'N/A'}
+   - Listed: ${c.listed_on}
+   - Reason: ${c.comments ? c.comments.substring(0, 150) : 'N/A'}`).join('\n\n')}
+
+Return a JSON array with each entity's match score (0-100) and reason. Consider:
+- Name similarity (exact, partial, transliteration, abbreviation)
+- Country match
+- Context and comments relevance
+- List type relevance
+
+Format: [{"index": 1, "score": 95, "reason": "Exact name match"}, ...]`;
+
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${openaiApiKey}`
+      },
+      body: JSON.stringify({
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a sanctions compliance expert. Return ONLY valid JSON array, no markdown or explanation.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.3,
+        max_tokens: 1000
+      })
+    });
+    
+    const data = await response.json();
+    const content = data.choices[0].message.content.trim();
+    
+    // Remove markdown if present
+    const jsonStr = content.replace(/```json\n?/g, '').replace(/```\n?/g, '').trim();
+    const rankings = JSON.parse(jsonStr);
+    
+    // Merge scores with candidates
+    const rankedResults = candidates.map((candidate, idx) => {
+      const ranking = rankings.find(r => r.index === idx + 1);
+      return {
+        ...candidate,
+        matchScore: ranking?.score || 50,
+        matchReason: ranking?.reason || 'No AI analysis',
+        source: 'UN'
+      };
+    });
+    
+    // Sort by score and filter low scores
+    return rankedResults
+      .sort((a, b) => b.matchScore - a.matchScore)
+      .filter(r => r.matchScore >= 40);
+    
+  } catch (error) {
+    console.error('❌ [UN AI] OpenAI error:', error.message);
+    return candidates.map(c => ({
+      ...c,
+      matchScore: 70,
+      matchReason: 'Basic SQL match (AI failed)',
+      source: 'UN'
+    }));
+  }
+}
+
+// Helper function to sync from uploaded XML
+async function syncOFACDataFromXML(db, xmlContent) {
+  const xml2js = require('xml2js');
+  const startTime = Date.now();
+  
+  console.log('🔍 [OFAC PARSE] Parsing XML...');
+  
+  const parser = new xml2js.Parser({ explicitArray: false });
+  const result = await parser.parseStringPromise(xmlContent);
+  
+  // Parse entities from XML
+  const sdnList = result?.sdnList?.sdnEntry || [];
+  const entries = Array.isArray(sdnList) ? sdnList : [sdnList];
+  
+  console.log(`✓ [OFAC PARSE] Found ${entries.length} entries`);
+  
+  // Transform and filter
+  const entities = entries
+    .filter(entry => entry)
+    .map(entry => parseOFACEntry(entry))
+    .filter(entity => entity && shouldIncludeEntity(entity));
+  
+  console.log(`✓ [OFAC PARSE] Filtered to ${entities.length} matching entities`);
+  
+  // Clear old data
+  clearOFACData(db);
+  
+  // Insert new data
+  insertOFACEntities(db, entities);
+  
+  const duration = ((Date.now() - startTime) / 1000).toFixed(2);
+  
+  return {
+    success: true,
+    totalEntries: entries.length,
+    filteredEntities: entities.length,
+    duration: duration + 's'
+  };
+}
+
+// Parse single OFAC entry
+function parseOFACEntry(entry) {
+  try {
+    // Determine type
+    const sdnType = (entry.sdnType || '').toLowerCase();
+    let type = 'Entity';
+    if (sdnType.includes('individual')) type = 'Individual';
+    if (sdnType.includes('vessel')) type = 'Vessel';
+    if (sdnType.includes('aircraft')) type = 'Aircraft';
+    
+    // Extract countries from addresses
+    const countries = [];
+    const addressList = entry.addressList?.address || [];
+    const addresses = Array.isArray(addressList) ? addressList : [addressList];
+    addresses.forEach(addr => {
+      if (addr && addr.country) countries.push(addr.country);
+    });
+    
+    // Extract aliases
+    const aliases = [];
+    const akaList = entry.akaList?.aka || [];
+    const akas = Array.isArray(akaList) ? akaList : [akaList];
+    akas.forEach(aka => {
+      if (aka && aka.firstName && aka.lastName) {
+        aliases.push(`${aka.firstName} ${aka.lastName}`.trim());
+      } else if (aka && aka.name) {
+        aliases.push(aka.name);
+      }
+    });
+    
+    return {
+      uid: entry.uid || `OFAC-${Date.now()}-${Math.random()}`,
+      name: entry.firstName && entry.lastName ? `${entry.firstName} ${entry.lastName}`.trim() : (entry.name || 'Unknown'),
+      type: type,
+      countries: [...new Set(countries)],
+      aliases: aliases,
+      programs: extractPrograms(entry),
+      remarks: entry.remarks ? [entry.remarks] : []
+    };
+  } catch (error) {
+    console.error('Error parsing entry:', error);
+    return null;
+  }
+}
+
+// Check if entity should be included (target countries + sectors)
+function shouldIncludeEntity(entity) {
+  if (!entity || entity.type !== 'Entity') return false;
+  
+  const TARGET_COUNTRIES = ['Egypt', 'Yemen', 'United Arab Emirates', 'Saudi Arabia', 'Oman', 'Qatar', 'Bahrain', 'Kuwait', 'UAE'];
+  
+  // Check country
+  const hasTargetCountry = entity.countries.some(c => 
+    TARGET_COUNTRIES.some(target => 
+      c.toLowerCase().includes(target.toLowerCase()) || 
+      target.toLowerCase().includes(c.toLowerCase())
+    )
+  );
+  
+  if (!hasTargetCountry) return false;
+  
+  // Check sector
+  const FOOD_KEYWORDS = ['food', 'agriculture', 'farming', 'dairy', 'meat', 'poultry', 'grain', 'flour', 'bakery', 'beverage', 'restaurant'];
+  const CONSTRUCTION_KEYWORDS = ['construction', 'building', 'cement', 'concrete', 'contractor', 'infrastructure', 'engineering', 'real estate', 'steel'];
+  
+  const allText = [entity.name, ...entity.aliases, ...entity.remarks].join(' ').toLowerCase();
+  
+  if (FOOD_KEYWORDS.some(k => allText.includes(k))) {
+    entity.sector = 'Food & Agriculture';
+    return true;
+  }
+  if (CONSTRUCTION_KEYWORDS.some(k => allText.includes(k))) {
+    entity.sector = 'Construction';
+    return true;
+  }
+  
+  return false;
+}
+
+function clearOFACData(db) {
+  db.prepare('DELETE FROM entity_remarks').run();
+  db.prepare('DELETE FROM entity_id_numbers').run();
+  db.prepare('DELETE FROM entity_addresses').run();
+  db.prepare('DELETE FROM entity_aliases').run();
+  db.prepare('DELETE FROM entity_legal_basis').run();
+  db.prepare('DELETE FROM entity_programs').run();
+  db.prepare('DELETE FROM entity_countries').run();
+  db.prepare('DELETE FROM ofac_entities').run();
+}
+
+function insertOFACEntities(db, entities) {
+  const insertEntity = db.prepare('INSERT INTO ofac_entities (uid, name, type, sector, listed_date) VALUES (?, ?, ?, ?, ?)');
+  const insertCountry = db.prepare('INSERT INTO entity_countries (entity_uid, country) VALUES (?, ?)');
+  const insertAlias = db.prepare('INSERT INTO entity_aliases (entity_uid, alias) VALUES (?, ?)');
+  const insertProgram = db.prepare('INSERT INTO entity_programs (entity_uid, program) VALUES (?, ?)');
+  const insertRemark = db.prepare('INSERT INTO entity_remarks (entity_uid, remark) VALUES (?, ?)');
+  
+  const insertAll = db.transaction(() => {
+    entities.forEach(e => {
+      insertEntity.run(e.uid, e.name, e.type, e.sector, '2023-01-01');
+      e.countries.forEach(c => insertCountry.run(e.uid, c));
+      e.aliases.forEach(a => insertAlias.run(e.uid, a));
+      e.programs.forEach(p => insertProgram.run(e.uid, p));
+      e.remarks.forEach(r => insertRemark.run(e.uid, r));
+    });
+  });
+  
+  insertAll();
+}
+
+function extractPrograms(entry) {
+  const programList = entry.programList?.program || [];
+  const programs = Array.isArray(programList) ? programList : [programList];
+  return programs.filter(Boolean).map(p => typeof p === 'string' ? p : (p._ || p));
+}
+
+// Demo data endpoint removed - use real OFAC data only via upload
+
+// ========================================
 // COMPLIANCE AGENT API ENDPOINTS
 // ========================================
 
@@ -6738,19 +7685,22 @@ app.post('/api/compliance/search', async (req, res) => {
   try {
     console.log('🔍 [COMPLIANCE] Starting compliance search:', req.body);
     
-    const { companyName, country, companyType, registrationNumber, address, searchType } = req.body;
+    const { companyName, country, legalForm, companyType, registrationNumber, address, searchType, fallbackSources, selectedSources } = req.body;
     
     if (!companyName) {
       return res.status(400).json({ error: 'Company name is required' });
     }
     
-    // 1. Search external APIs
+    // 1. Search external APIs (with optional fallback sources and selected sources)
     const externalResults = await searchExternalAPIs({
       companyName,
       country,
+      legalForm,
       companyType,
       registrationNumber,
-      address
+      address,
+      fallbackSources,  // ✅ ['ofac', 'eu'] if user requested fallback
+      selectedSources: selectedSources || ['opensanctions']  // ✅ Default to opensanctions if not specified
     });
     
     // 2. Use OpenAI for orchestration and matching
@@ -6763,7 +7713,7 @@ app.post('/api/compliance/search', async (req, res) => {
     // 3. Calculate overall risk level
     const overallRiskLevel = calculateOverallRiskLevel(orchestratedResults.sanctions);
     
-    // 4. Prepare final result
+    // 4. Prepare final result with API statuses
     const complianceResult = {
       companyName,
       matchConfidence: orchestratedResults.matchConfidence,
@@ -6771,7 +7721,8 @@ app.post('/api/compliance/search', async (req, res) => {
       sanctions: orchestratedResults.sanctions,
       sources: orchestratedResults.sources,
       searchTimestamp: new Date().toISOString(),
-      searchCriteria: req.body
+      searchCriteria: req.body,
+      apiStatuses: externalResults.statuses  // ✅ Include API statuses for UI
     };
     
     console.log('✅ [COMPLIANCE] Search completed:', complianceResult);
@@ -6779,6 +7730,16 @@ app.post('/api/compliance/search', async (req, res) => {
     
   } catch (error) {
     console.error('❌ [COMPLIANCE] Search failed:', error);
+    
+    // Check if it's a rate limit error from external API
+    if (error.rateLimitError || error.status === 429 || error.message?.includes('429')) {
+      return res.status(429).json({ 
+        error: 'API Rate Limit Exceeded', 
+        details: 'Monthly API quota has been exceeded. Service will resume next month.',
+        message: error.message
+      });
+    }
+    
     res.status(500).json({ 
       error: 'Compliance search failed', 
       details: error.message 
@@ -7072,6 +8033,173 @@ app.get('/api/compliance/debug-env', (req, res) => {
   });
 });
 
+/**
+ * Smart Match with OpenAI - Compare request data with OFAC results
+ */
+app.post('/api/compliance/smart-match', async (req, res) => {
+  try {
+    const { requestData, ofacResults } = req.body;
+    
+    if (!requestData || !ofacResults || ofacResults.length === 0) {
+      return res.json({
+        matches: [],
+        recommendation: 'approve',
+        reasoning: 'No OFAC results to compare'
+      });
+    }
+    
+    console.log(`🤖 [COMPLIANCE AI] Smart matching ${ofacResults.length} OFAC results`);
+    
+    if (!OPENAI_API_KEY) {
+      console.warn('⚠️ [COMPLIANCE AI] No OpenAI key - using simple matching');
+      return res.json({
+        matches: ofacResults.map(result => ({
+          entity: result,
+          confidence: 50,
+          explanation: 'Simple name match (OpenAI not available)'
+        })),
+        recommendation: 'review',
+        reasoning: 'Manual review required'
+      });
+    }
+    
+    // Build prompt for OpenAI
+    const prompt = `أنت خبير في فحص العقوبات. قارن معلومات الشركة التالية مع قوائم العقوبات.
+
+معلومات الطلب:
+- الاسم: ${requestData.name || 'غير محدد'}
+- الدولة: ${requestData.country || 'غير محدد'}
+- القطاع: ${requestData.sector || 'غير محدد'}
+- الرقم الضريبي: ${requestData.taxNumber || 'غير محدد'}
+
+الكيانات المشتبه بها من OFAC (${ofacResults.length}):
+${ofacResults.map((r, i) => `${i + 1}. ${r.name}
+   الدولة: ${r.countries?.[0] || 'غير محدد'}
+   القطاع: ${r.sector || 'غير محدد'}
+   الأسماء البديلة: ${r.aliases?.slice(0, 3).join(', ') || 'لا يوجد'}`).join('\n\n')}
+
+المطلوب:
+1. حدد أي من هذه الكيانات يطابق الطلب
+2. احسب نسبة التطابق لكل كيان (0-100%)
+3. اعط توصية نهائية: "approve" أو "block" أو "review"
+4. اشرح السبب بالعربي
+
+أرجع JSON فقط (بدون markdown):
+{
+  "matches": [
+    {
+      "entityIndex": 1,
+      "confidence": 85,
+      "explanation": "تطابق قوي: نفس الاسم والدولة"
+    }
+  ],
+  "recommendation": "block",
+  "reasoning": "تم العثور على تطابق قوي مع قائمة OFAC"
+}
+
+JSON:`;
+
+    const response = await axios.post(
+      'https://api.openai.com/v1/chat/completions',
+      {
+        model: 'gpt-4o-mini',
+        messages: [
+          { role: 'system', content: 'أنت خبير امتثال. أرجع JSON فقط بدون markdown.' },
+          { role: 'user', content: prompt }
+        ],
+        temperature: 0.2,
+        max_tokens: 500
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 15000
+      }
+    );
+    
+    let content = response.data.choices[0].message.content.trim();
+    content = content.replace(/```json\s*/g, '').replace(/```\s*/g, '').trim();
+    
+    const aiResult = JSON.parse(content);
+    
+    // Enrich with full entity data
+    aiResult.matches = aiResult.matches.map(match => ({
+      entity: ofacResults[match.entityIndex - 1],
+      confidence: match.confidence,
+      explanation: match.explanation
+    }));
+    
+    console.log(`✅ [COMPLIANCE AI] Smart match complete: ${aiResult.matches.length} matches`);
+    
+    res.json(aiResult);
+    
+  } catch (error) {
+    console.error('❌ [COMPLIANCE AI] Smart match failed:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
+/**
+ * Enhanced Block Endpoint - Save sanctions info
+ */
+app.post('/api/compliance/block-with-sanctions', async (req, res) => {
+  try {
+    const { requestId, blockReason, sanctionsInfo } = req.body;
+    
+    console.log(`🚫 [COMPLIANCE] Blocking request ${requestId} with sanctions info`);
+    
+    // Update request status
+    db.prepare(`
+      UPDATE requests 
+      SET status = 'Blocked',
+          ComplianceStatus = 'Blocked',
+          blockReason = ?,
+          sanctionsData = ?,
+          ComplianceCheckedAt = datetime('now'),
+          ComplianceMatchedEntity = ?,
+          ComplianceMatchConfidence = ?,
+          updatedAt = datetime('now')
+      WHERE id = ?
+    `).run(
+      blockReason,
+      JSON.stringify(sanctionsInfo),
+      sanctionsInfo.entityId || null,
+      sanctionsInfo.matchConfidence || null,
+      requestId
+    );
+    
+    // Log to compliance history
+    db.prepare(`
+      INSERT INTO compliance_history (
+        id, companyName, matchConfidence, overallRiskLevel,
+        sanctions, sources, searchCriteria, createdAt
+      ) VALUES (?, ?, ?, ?, ?, ?, ?, ?)
+    `).run(
+      nanoid(12),
+      sanctionsInfo.companyName || '',
+      sanctionsInfo.matchConfidence || 0,
+      'Critical',
+      JSON.stringify([sanctionsInfo]),
+      JSON.stringify(['OFAC']),
+      JSON.stringify({ requestId }),
+      new Date().toISOString()
+    );
+    
+    console.log('✅ [COMPLIANCE] Request blocked and sanctions info saved');
+    
+    res.json({ 
+      success: true,
+      message: 'Request blocked successfully'
+    });
+    
+  } catch (error) {
+    console.error('❌ [COMPLIANCE] Block failed:', error.message);
+    res.status(500).json({ error: error.message });
+  }
+});
+
 // ========================================
 // HELPER FUNCTIONS FOR COMPLIANCE
 // ========================================
@@ -7141,7 +8269,7 @@ function getCountryName(isoCode) {
  * Convert country name to ISO code (reverse lookup)
  */
 function getCountryCode(countryName) {
-  if (!countryName) return null;
+  if (!countryName || typeof countryName !== 'string') return null;
   const normalized = countryName.toLowerCase();
   
   for (const [code, name] of Object.entries(COUNTRY_CODES)) {
@@ -7152,14 +8280,123 @@ function getCountryCode(countryName) {
   return null;
 }
 
+/**
+ * In-Memory Cache for Search Results
+ * TTL: 1 hour (3600000 ms)
+ * Purpose: Reduce API calls for repeated searches
+ */
+const searchCache = new Map();
+const CACHE_TTL = 3600000; // 1 hour in milliseconds
+
+function getCachedSearch(cacheKey) {
+  const cached = searchCache.get(cacheKey);
+  if (cached && (Date.now() - cached.timestamp) < CACHE_TTL) {
+    console.log(`✅ [CACHE] Hit for key: ${cacheKey}`);
+    return cached.data;
+  }
+  if (cached) {
+    console.log(`🕐 [CACHE] Expired for key: ${cacheKey}`);
+    searchCache.delete(cacheKey);
+  }
+  return null;
+}
+
+function setCachedSearch(cacheKey, data) {
+  console.log(`💾 [CACHE] Storing key: ${cacheKey}`);
+  searchCache.set(cacheKey, {
+    data,
+    timestamp: Date.now()
+  });
+  
+  // Clean up old entries (keep cache size manageable)
+  if (searchCache.size > 100) {
+    const firstKey = searchCache.keys().next().value;
+    searchCache.delete(firstKey);
+    console.log(`🧹 [CACHE] Cleaned up old entry: ${firstKey}`);
+  }
+}
+
+/**
+ * Legal Form Mapping - Maps various legal forms from API to standard company types
+ * This mapping ensures consistent filtering and display of company types
+ */
+const LEGAL_FORM_MAPPING = {
+  // Limited Liability Company variations
+  'Limited Liability Company': 'limited_liability',
+  'Limited Liability': 'limited_liability',
+  'LLC': 'limited_liability',
+  'Ltd.': 'limited_liability',
+  'L.L.C.': 'limited_liability',
+  'Limited': 'limited_liability',
+  'Private Limited Company': 'limited_liability',
+  'Private Limited': 'limited_liability',
+  
+  // Joint Stock Companies
+  'PJSC': 'joint_stock',
+  'SJSC': 'joint_stock',
+  'Joint Stock Company': 'joint_stock',
+  'Public Joint Stock Company': 'joint_stock',
+  'Saudi Joint Stock Company': 'joint_stock',
+  'JSC': 'joint_stock',
+  'Public Company': 'joint_stock',
+  'Closed Joint Stock Company': 'joint_stock',
+  'CJSC': 'joint_stock',
+  
+  // Sole Proprietorship
+  'Sole Proprietorship': 'sole_proprietorship',
+  'Individual': 'sole_proprietorship',
+  'Sole Trader': 'sole_proprietorship',
+  'Individual Entrepreneur': 'sole_proprietorship',
+  
+  // Corporate (catch-all for other types)
+  'Corporation': 'Corporate',
+  'Corp.': 'Corporate',
+  'Inc.': 'Corporate',
+  'Incorporated': 'Corporate',
+  'Partnership': 'Corporate',
+  'General Partnership': 'Corporate',
+  'Limited Partnership': 'Corporate',
+  'Company': 'Corporate'
+};
+
+/**
+ * Check if a legal form matches the selected company type filter
+ * Uses fuzzy matching with the LEGAL_FORM_MAPPING
+ */
+function matchesLegalFormFilter(legalForm, selectedCompanyType) {
+  if (!legalForm || !selectedCompanyType) {
+    return false;
+  }
+  
+  const lowerLegalForm = legalForm.toLowerCase();
+  const lowerSelectedType = selectedCompanyType.toLowerCase();
+  
+  // Check direct mapping
+  const mappedValue = LEGAL_FORM_MAPPING[legalForm];
+  if (mappedValue && mappedValue.toLowerCase() === lowerSelectedType) {
+    return true;
+  }
+  
+  // Check partial matches in mapping keys
+  for (const [key, value] of Object.entries(LEGAL_FORM_MAPPING)) {
+    if (lowerLegalForm.includes(key.toLowerCase()) || key.toLowerCase().includes(lowerLegalForm)) {
+      if (value.toLowerCase() === lowerSelectedType) {
+        return true;
+      }
+    }
+  }
+  
+  return false;
+}
+
 // ==========================================
 // External APIs Search Functions
 // ==========================================
 
 /**
- * Search OpenSanctions API with optional country filter
+ * Search OpenSanctions API with optional filters
  */
-async function searchOpenSanctions(companyName, country = null, retryCount = 0) {
+async function searchOpenSanctions(companyName, country = null, legalForm = null, retryCount = 0) {
   const config = EXTERNAL_APIS.OPENSANCTIONS;
   
   if (!config.enabled) {
@@ -7168,7 +8405,18 @@ async function searchOpenSanctions(companyName, country = null, retryCount = 0) 
   }
 
   try {
-    console.log(`🔍 [OPENSANCTIONS] Searching for: ${companyName}${country ? ` in ${country}` : ''}`);
+    const filterInfo = [];
+    if (country) filterInfo.push(`Country: ${country}`);
+    if (legalForm) filterInfo.push(`Legal Form: ${legalForm}`);
+    console.log(`🔍 [OPENSANCTIONS] Searching for: ${companyName}${filterInfo.length ? ` | Filters: ${filterInfo.join(', ')}` : ''}`);
+    
+    // Check cache first
+    const cacheKey = `opensanctions:${companyName}:${country || 'all'}:${legalForm || 'all'}`.toLowerCase();
+    const cachedResult = getCachedSearch(cacheKey);
+    if (cachedResult) {
+      console.log(`⚡ [OPENSANCTIONS] Returning cached results (${cachedResult.length} items)`);
+      return cachedResult;
+    }
     
     // Check if API key is configured
     if (!OPENSANCTIONS_API_KEY) {
@@ -7182,8 +8430,8 @@ async function searchOpenSanctions(companyName, country = null, retryCount = 0) 
     // Build search params with country filter if provided
     const searchParams = {
       q: companyName,
-      schema: 'Company', // Search only for companies
-      limit: 10
+      schema: 'Company',  // ⚡ Filter: Only companies (excludes Persons, Vessels, Organizations, etc.)
+      limit: 5  // ⚡ Reduced from 10 to 5 for faster response
     };
     
     // Add country filter if provided (convert to ISO code)
@@ -7191,6 +8439,9 @@ async function searchOpenSanctions(companyName, country = null, retryCount = 0) 
       const countryCode = getCountryCode(country) || country;
       searchParams.countries = countryCode;
       console.log(`🌍 [OPENSANCTIONS] Filtering by country: ${country} (${countryCode})`);
+      console.log(`🌍 [OPENSANCTIONS] Search params with country filter:`, searchParams);
+    } else {
+      console.log(`🌍 [OPENSANCTIONS] No country filter applied`);
     }
     
     const response = await axiosInstance.get(url, {
@@ -7208,11 +8459,79 @@ async function searchOpenSanctions(companyName, country = null, retryCount = 0) 
       console.warn('⚠️ [OPENSANCTIONS] No results in response');
       return [];
     }
+    
+    console.log(`📊 [OPENSANCTIONS] Found ${response.data.results.length} results`);
+    
+    // Debug: Log countries of returned results
+    if (response.data.results.length > 0) {
+      console.log('🌍 [OPENSANCTIONS] Countries in results:');
+      response.data.results.forEach((result, index) => {
+        const resultCountry = result.countries?.[0] || 'Unknown';
+        console.log(`  ${index + 1}. ${result.name} - Country: ${resultCountry}`);
+      });
+    }
+    
+    // ✅ CLIENT-SIDE FILTERING (Country + Legal Form)
+    let filteredResults = response.data.results;
+    
+    // Country filtering
+    if (country && response.data.results.length > 0) {
+      const countryCode = getCountryCode(country);
+      console.log(`🔍 [OPENSANCTIONS] Applying client-side country filter: ${country} (${countryCode})`);
+      
+      filteredResults = filteredResults.filter(result => {
+        const resultCountries = result.countries || [];
+        const hasMatchingCountry = resultCountries.includes(countryCode) || 
+                                  resultCountries.some(code => getCountryName(code).toLowerCase() === country.toLowerCase());
+        
+        if (hasMatchingCountry) {
+          console.log(`✅ [OPENSANCTIONS] Country match found: ${result.name} - Countries: ${resultCountries.join(', ')}`);
+        } else {
+          console.log(`❌ [OPENSANCTIONS] Country filtered out: ${result.name} - Countries: ${resultCountries.join(', ')}`);
+        }
+        
+        return hasMatchingCountry;
+      });
+      
+      console.log(`🔍 [OPENSANCTIONS] After country filtering: ${filteredResults.length}/${response.data.results.length} results`);
+    }
+    
+    // Legal Form filtering (using LEGAL_FORM_MAPPING)
+    if (legalForm && filteredResults.length > 0) {
+      console.log(`🏢 [OPENSANCTIONS] Applying client-side legal form filter: ${legalForm}`);
+      
+      filteredResults = filteredResults.filter(result => {
+        const resultLegalForm = result.properties?.legalForm?.[0] || null;
+        
+        if (!resultLegalForm) {
+          console.log(`❌ [OPENSANCTIONS] No legal form: ${result.name}`);
+          return false;
+        }
+        
+        // Use the matchesLegalFormFilter function for proper mapping
+        const hasMatchingLegalForm = matchesLegalFormFilter(resultLegalForm, legalForm);
+        
+        if (hasMatchingLegalForm) {
+          console.log(`✅ [OPENSANCTIONS] Legal form match found: ${result.name} - Legal Form: "${resultLegalForm}" → Mapped to: "${legalForm}"`);
+        } else {
+          console.log(`❌ [OPENSANCTIONS] Legal form filtered out: ${result.name} - Legal Form: "${resultLegalForm}" (doesn't match "${legalForm}")`);
+        }
+        
+        return hasMatchingLegalForm;
+      });
+      
+      console.log(`🏢 [OPENSANCTIONS] After legal form filtering: ${filteredResults.length} results`);
+    }
 
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
     // Parse OpenSanctions results (Following OpenSanctions API Guide)
     // ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━
-    const results = response.data.results.map(item => {
+    // ✅ Accept ALL results from OpenSanctions - they include:
+    //    - Direct sanctions (OFAC, EU, UN, etc.)
+    //    - Monitored entities (energy sector, ownership tracking)
+    //    - Related/linked entities
+    // If OpenSanctions returns it, it's relevant for compliance screening
+    const results = filteredResults.map(item => {
       const props = item.properties || {};
       const topics = props.topics || [];
       const programs = props.program || [];
@@ -7502,8 +8821,12 @@ async function searchOpenSanctions(companyName, country = null, retryCount = 0) 
 
     // Use OpenAI for fuzzy matching
     const matchedResults = await performFuzzyMatch(companyName, results);
+    const finalResults = matchedResults.slice(0, 5); // Top 5 matches
     
-    return matchedResults.slice(0, 5); // Return top 5 matches
+    // Cache the results for 1 hour
+    setCachedSearch(cacheKey, finalResults);
+    
+    return finalResults;
 
   } catch (error) {
     console.error('❌ [OPENSANCTIONS] Search failed:', {
@@ -7513,25 +8836,132 @@ async function searchOpenSanctions(companyName, country = null, retryCount = 0) 
       url: error.config?.url
     });
 
-    // Retry logic
+    // Check if it's a 429 Rate Limit error
+    const isRateLimit = error.response?.status === 429 || error.message?.includes('429');
+    
+    if (isRateLimit) {
+      console.error('🚨 [OPENSANCTIONS] Rate limit exceeded! Monthly quota reached.');
+      // Don't retry on rate limit - throw error to propagate to frontend
+      const rateLimitError = new Error('OpenSanctions API rate limit exceeded');
+      rateLimitError.rateLimitError = true;
+      rateLimitError.status = 429;
+      throw rateLimitError;
+    }
+
+    // Retry logic for other errors
     if (retryCount < config.retries && error.code !== 'ENOTFOUND') {
       console.log(`🔄 [OPENSANCTIONS] Retrying... (${retryCount + 1}/${config.retries})`);
       await new Promise(resolve => setTimeout(resolve, 1000 * (retryCount + 1)));
-      return searchOpenSanctions(companyName, retryCount + 1);
+      return searchOpenSanctions(companyName, country, legalForm, retryCount + 1);
     }
 
     return [];
   }
 }
 
+// ═══════════════════════════════════════════════════════════════════
+// OFAC Helper Functions
+// ═══════════════════════════════════════════════════════════════════
+
+function buildEntityDescription(entity) {
+  const parts = [];
+  
+  if (entity.sector) {
+    parts.push(`Sector: ${entity.sector}`);
+  }
+  
+  if (entity.listed_date) {
+    parts.push(`Listed: ${entity.listed_date}`);
+  }
+  
+  if (entity.countries && entity.countries.length > 0) {
+    parts.push(`Countries: ${entity.countries.join(', ')}`);
+  }
+  
+  if (parts.length === 0) {
+    return 'OFAC Sanctions List Entry';
+  }
+  
+  return parts.join(' | ');
+}
+
+function calculateRiskLevel(entity) {
+  // Higher risk if:
+  // - Multiple countries
+  // - Recently listed
+  // - Many aliases
+  
+  const countryCount = entity.countries?.length || 0;
+  const aliasCount = entity.aliases?.length || 0;
+  
+  if (countryCount >= 5 || aliasCount >= 10) {
+    return 'Critical';
+  }
+  
+  if (countryCount >= 3 || aliasCount >= 5) {
+    return 'High';
+  }
+  
+  return 'Medium';
+}
+
+function calculateConfidence(index, total) {
+  // AI-ranked results: first result = highest confidence
+  if (total === 0) return 50;
+  
+  const baseConfidence = 95;
+  const penalty = (index * 5); // -5% per position
+  
+  return Math.max(50, baseConfidence - penalty);
+}
+
 /**
- * Search OFAC SDN List
+ * Search OFAC SDN List (using local database with AI fuzzy matching)
  */
-async function searchOFAC(companyName, retryCount = 0) {
+async function searchOFAC(companyName, country = null, retryCount = 0) {
+  console.log(`🔍 [OFAC] Searching local database: "${companyName}"${country ? ` in ${country}` : ''}`);
+  
+  // Use local database with AI-powered search
+  try {
+    // Use the new AI-powered search from ofac-sync.js
+    const results = await searchLocalOFACWithAI(db, companyName, country);
+    console.log(`✅ [OFAC] AI search returned ${results.length} ranked results`);
+    
+    // Transform to compliance service expected format
+    const formattedResults = results.map((entity, index) => ({
+      id: entity.uid,
+      name: entity.name,
+      aliases: entity.aliases || [],
+      type: entity.type || 'Entity',
+      country: entity.countries?.[0] || 'Unknown',
+      countries: entity.countries || [],
+      description: buildEntityDescription(entity),
+      programs: entity.programs || ['SDN'],
+      source: 'OFAC',
+      sourceDetail: 'OFAC Sanctions List (Local Database - 917 Arab Entities)',
+      riskLevel: calculateRiskLevel(entity),
+      confidence: calculateConfidence(index, results.length),
+      sector: entity.sector,
+      listed_date: entity.listed_date,
+      url: `https://sanctionssearch.ofac.treas.gov/Details.aspx?id=${entity.uid.replace('OFAC-', '')}`,
+      // Additional fields
+      address: entity.addresses?.[0] || null,
+      registrationNumber: entity.id_numbers?.[0] || null
+    }));
+    
+    console.log(`🎯 [OFAC] Returning ${formattedResults.length} formatted results`);
+    return formattedResults.slice(0, 10); // Top 10 results
+    
+  } catch (error) {
+    console.error('❌ [OFAC] Search failed:', error);
+    return [];
+  }
+  
+  // Old API code (kept as fallback if needed)
   const config = EXTERNAL_APIS.OFAC;
   
   if (!config.enabled) {
-    console.log('ℹ️ [OFAC] API disabled');
+    console.log('ℹ️ [OFAC] API disabled (using local database instead)');
     return [];
   }
 
@@ -7740,18 +9170,37 @@ async function searchExternalAPIs(searchCriteria) {
   console.log('🌐 [COMPLIANCE] Using REAL APIs only - no demo data');
   console.log('📋 [COMPLIANCE] Search criteria:', searchCriteria);
   
-  // Extract country from search criteria
+  // Extract filters from search criteria
   const country = searchCriteria.country || null;
+  const legalForm = searchCriteria.legalForm || null;
+  const selectedSources = searchCriteria.selectedSources || ['opensanctions'];
+  
+  console.log(`📊 [COMPLIANCE] Selected sources: ${selectedSources.join(', ')}`);
   
   if (country) {
     console.log(`🌍 [COMPLIANCE] Country filter applied: ${country}`);
   }
+  if (legalForm) {
+    console.log(`🏢 [COMPLIANCE] Legal Form filter applied: ${legalForm}`);
+  }
   
-  // Search all APIs in parallel with country filter
+  // Search selected APIs in parallel with filters
+  const searchPromises = {
+    openSanctions: selectedSources.includes('opensanctions') 
+      ? searchOpenSanctions(searchCriteria.companyName, country, legalForm) 
+      : Promise.resolve([]),
+    ofac: selectedSources.includes('ofac') 
+      ? searchOFAC(searchCriteria.companyName, country) 
+      : Promise.resolve([]),
+    euUk: selectedSources.includes('eu') 
+      ? searchEUSanctions(searchCriteria.companyName) 
+      : Promise.resolve([])
+  };
+  
   const [openSanctions, ofac, euUk] = await Promise.all([
-    searchOpenSanctions(searchCriteria.companyName, country),
-    searchOFAC(searchCriteria.companyName),
-    searchEUSanctions(searchCriteria.companyName)
+    searchPromises.openSanctions,
+    searchPromises.ofac,
+    searchPromises.euUk
   ]);
 
   // ✅ Return ONLY real API results (empty arrays if no results found)
@@ -7810,7 +9259,7 @@ async function performFuzzyMatch(userQuery, sanctionsData) {
       country: item.country || ''
     }));
 
-    const prompt = `You are a sanctions matching expert. Your task is to find companies from a sanctions list that match a user's search query, even if the names are not exactly the same.
+    const prompt = `You are an AI-powered multilingual sanctions matching expert. Your task is to find companies from a sanctions list that match a user's search query in ANY language (English, Arabic, French, Spanish, etc.).
 
 User is searching for: "${userQuery}"
 
@@ -7818,15 +9267,28 @@ Available sanctions entries:
 ${JSON.stringify(sanctionsList, null, 2)}
 
 Instructions:
-1. Find ALL entries that could match the search query
-2. Consider:
+1. **Understand the search query in ANY language:**
+   - If query is in Arabic (e.g., "مصانع القاهرة"), translate it to English
+   - If query is in English with Arabic transliteration (e.g., "Masane3 Cairo"), understand the meaning
+   - If query uses different dialects (Egyptian, Gulf, etc.), understand the intent
+   
+2. **Find ALL entries that could match:**
    - Exact matches (highest priority)
-   - Similar spellings or transliterations
-   - Abbreviations or acronyms  
-   - Companies with similar names in the same country
+   - Translated names (e.g., "Cairo Food" matches "مصانع القاهرة للأغذية")
+   - Similar spellings, typos, or transliterations
+   - Abbreviations or acronyms (LLC, Corp, Ltd, PJSC, etc.)
+   - Semantic matches (e.g., "restaurant" matches "food industries")
+   - Companies in the same sector/country
    - Aliases or alternate names
-3. Assign a confidence score (0-100) for each match
-4. Return ONLY matches with confidence >= 60
+   
+3. **Smart matching examples:**
+   - "مصانع القاهرة" → "Cairo Food Industries" (translation match)
+   - "Dubai للتجارة" → "Dubai Trading Company" (mixed language)
+   - "Food Cairo" → "Cairo Food Industries" (word order)
+   - "Cario Foods" → "Cairo Food Industries" (typo correction)
+   
+4. Assign a confidence score (0-100) for each match
+5. Return ONLY matches with confidence >= 50 (lowered for multilingual matching)
 
 Respond with a JSON object containing a "matches" array:
 {
@@ -7834,7 +9296,7 @@ Respond with a JSON object containing a "matches" array:
     {
       "index": 0,
       "confidence": 95,
-      "reason": "Exact match"
+      "reason": "Exact match or translation match"
     },
     {
       "index": 2,
@@ -8038,7 +9500,7 @@ Return only valid JSON.
 /**
  * Perform basic matching when OpenAI is not available
  */
-function performBasicMatching(data) {
+async function performBasicMatching(data) {
   console.log('🔍 [COMPLIANCE] Performing basic matching');
   
   const sanctions = [];
@@ -8050,20 +9512,17 @@ function performBasicMatching(data) {
     sources.push('OpenSanctions');
     data.externalResults.openSanctions.forEach((result, index) => {
       sanctions.push({
+        ...result,  // ✅ Include ALL fields from OpenSanctions API
+        // Override/add specific fields
         id: result.id || `opensanctions_${index}`,
+        source: 'OpenSanctions',
+        confidence: calculateBasicConfidence(data.companyName, result.name),
+        // Ensure critical fields have fallbacks
         name: result.name || 'Unknown',
         type: result.type || 'Unknown',
         country: result.country || 'Unknown',
-        source: 'OpenSanctions',
-        confidence: calculateBasicConfidence(data.companyName, result.name),
         riskLevel: result.riskLevel || 'Medium',
-        description: result.description || 'Sanctioned entity',
-        // ✅ Include enhanced fields
-        reason: result.reason,
-        penalty: result.penalty,
-        sanctionType: result.sanctionType,
-        date: result.date,
-        sanctionDate: result.sanctionDate
+        description: result.description || 'Sanctioned entity'
       });
     });
     matchConfidence = Math.max(matchConfidence, 70);
@@ -8074,20 +9533,17 @@ function performBasicMatching(data) {
     sources.push('OFAC');
     data.externalResults.ofac.forEach((result, index) => {
       sanctions.push({
+        ...result,  // ✅ Include ALL fields from OFAC API
+        // Override/add specific fields
         id: result.id || `ofac_${index}`,
+        source: 'OFAC',
+        confidence: calculateBasicConfidence(data.companyName, result.name),
+        // Ensure critical fields have fallbacks
         name: result.name || 'Unknown',
         type: result.type || 'Unknown',
         country: result.country || 'Unknown',
-        source: 'OFAC',
-        confidence: calculateBasicConfidence(data.companyName, result.name),
         riskLevel: result.riskLevel || 'High',
-        description: result.description || 'OFAC sanctioned entity',
-        // ✅ Include enhanced fields
-        reason: result.reason,
-        penalty: result.penalty,
-        sanctionType: result.sanctionType,
-        date: result.date,
-        sanctionDate: result.sanctionDate
+        description: result.description || 'OFAC sanctioned entity'
       });
     });
     matchConfidence = Math.max(matchConfidence, 80);
@@ -8117,11 +9573,129 @@ function performBasicMatching(data) {
     matchConfidence = Math.max(matchConfidence, 75);
   }
   
+  // ✅ Add AI explanations for each sanction
+  const sanctionsWithExplanations = await addAIExplanations(data.companyName, sanctions);
+  
   return {
     matchConfidence,
-    sanctions,
+    sanctions: sanctionsWithExplanations,
     sources
   };
+}
+
+/**
+ * Add AI-generated explanations for why each entity matched
+ */
+async function addAIExplanations(searchQuery, sanctions) {
+  if (!OPENAI_API_KEY || !sanctions || sanctions.length === 0) {
+    return sanctions;
+  }
+  
+  try {
+    console.log(`🤖 [EXPLANATION] Generating dual explanations for ${sanctions.length} results...`);
+    
+    // Prepare detailed data for OpenAI
+    const sanctionsData = sanctions.map(s => ({
+      name: s.name,
+      aliases: s.aliases || [],
+      datasets: s.datasets || [],
+      topics: s.topics || [],
+      programs: s.programs || [],
+      riskLevel: s.riskLevel,
+      country: s.country,
+      reason: s.reason,
+      penalty: s.penalty,
+      sanctionType: s.sanctionType,
+      sanctionDate: s.sanctionDate || s.date,
+      endDate: s.endDate,
+      address: s.address,
+      legalForm: s.legalForm,
+      sector: s.sector,
+      incorporationDate: s.incorporationDate
+    }));
+    
+    const prompt = `You are a compliance screening expert. User searched for: "${searchQuery}"
+
+For EACH entity, provide TWO types of explanations:
+
+1. MATCH EXPLANATION (Technical, English):
+   - Brief technical explanation of HOW the match occurred
+   - Format: "Search: '${searchQuery}' matched with [Name/Alias/Related] '[specific match]' in company '[Company Name]'"
+   - Include match type and confidence
+   - Keep it 1-2 sentences, technical and precise
+
+2. STORY EXPLANATION (Narrative, Arabic):
+   - A comprehensive narrative story about the entity and sanctions
+   - WHO is this company? (name, aliases, sector, country)
+   - WHAT sanctions? (type, datasets like OFAC, EU, UN)
+   - WHY sanctioned? (reason, context, background)
+   - WHEN? (sanction date, incorporation date, timeline)
+   - PENALTIES? (what restrictions, fines, measures)
+   - DURATION? (ongoing, end date if temporary)
+   - Tell it like a story, engaging and informative
+   - 3-5 sentences in Arabic
+
+Entities:
+${JSON.stringify(sanctionsData, null, 2)}
+
+Return JSON in this EXACT format:
+{
+  "explanations": [
+    {
+      "index": 0,
+      "matchExplanation": "Search: 'Arkan' matched with Alias 'Arkan' in company 'Emsteel Building Materials'. This is an alias match with 95% confidence from gem_energy_ownership dataset.",
+      "storyExplanation": "شركة Emsteel Building Materials (المعروفة أيضاً باسم أركان) هي شركة مساهمة عامة في الإمارات العربية المتحدة تعمل في قطاع مواد البناء والطاقة. الشركة مدرجة في قاعدة بيانات ملكية الطاقة (gem_energy_ownership) منذ 30 يونيو 2024، مما يشير إلى أنها تخضع للمراقبة والمتابعة في قطاع الطاقة. تصنف الشركة بمستوى مخاطر متوسط نظراً لنشاطها في قطاع حساس، وتحمل رمز LEI دولي ورقم تسجيل رسمي في دبي."
+    }
+  ]
+}`;
+
+    const response = await axios.post(
+      OPENAI_API_URL,
+      {
+        model: 'gpt-4o-mini',
+        messages: [
+          {
+            role: 'system',
+            content: 'You are a compliance screening expert. Provide technical match explanations in English and narrative story explanations in Arabic. Always respond with valid JSON.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.4,
+        max_tokens: 3000,
+        response_format: { type: "json_object" }
+      },
+      {
+        headers: {
+          'Authorization': `Bearer ${OPENAI_API_KEY}`,
+          'Content-Type': 'application/json'
+        },
+        timeout: 20000
+      }
+    );
+
+    const aiResponse = JSON.parse(response.data.choices[0].message.content);
+    console.log('🤖 [EXPLANATION] Dual explanations generated:', aiResponse.explanations?.length || 0);
+
+    // Add both types of explanations to sanctions
+    if (aiResponse.explanations && Array.isArray(aiResponse.explanations)) {
+      aiResponse.explanations.forEach(exp => {
+        if (sanctions[exp.index]) {
+          sanctions[exp.index].matchExplanation = exp.matchExplanation;     // 🔍 Technical (English)
+          sanctions[exp.index].storyExplanation = exp.storyExplanation;     // 📖 Narrative (Arabic)
+        }
+      });
+    }
+
+    return sanctions;
+
+  } catch (error) {
+    console.error('❌ [EXPLANATION] Failed to generate AI explanations:', error.message);
+    // Return original sanctions without explanations
+    return sanctions;
+  }
 }
 
 /**

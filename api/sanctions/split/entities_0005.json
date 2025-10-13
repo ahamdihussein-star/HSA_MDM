@@ -1,0 +1,4002 @@
+[
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7681,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5050,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127834,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7681,
+    "ProfileID": 7681,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7682,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9399,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127835,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7682,
+    "ProfileID": 7682,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 1995,
+        "Month": 2,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 7683,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5864,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127836,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7683,
+    "ProfileID": 7683,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7686,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5561,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127839,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7686,
+    "ProfileID": 7686,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7687,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6626,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127840,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7687,
+    "ProfileID": 7687,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7688,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7745,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127841,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7688,
+    "ProfileID": 7688,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2002,
+        "Month": 7,
+        "Day": 3,
+        "CalendarTypeID": 1
+      },
+      "ID": 7689,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7095,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127842,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7689,
+    "ProfileID": 7689,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7691,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 3685,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127844,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7691,
+    "ProfileID": 7691,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7692,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6602,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127845,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7692,
+    "ProfileID": 7692,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2002,
+        "Month": 7,
+        "Day": 3,
+        "CalendarTypeID": 1
+      },
+      "ID": 7693,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8446,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127846,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7693,
+    "ProfileID": 7693,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7695,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4995,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127848,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7695,
+    "ProfileID": 7695,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7696,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6300,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127849,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7696,
+    "ProfileID": 7696,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7697,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6771,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127850,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7697,
+    "ProfileID": 7697,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7698,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5874,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127851,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7698,
+    "ProfileID": 7698,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7699,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8426,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127852,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7699,
+    "ProfileID": 7699,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7700,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4427,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127853,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7700,
+    "ProfileID": 7700,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7701,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9284,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127854,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7701,
+    "ProfileID": 7701,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7704,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5751,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127857,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7704,
+    "ProfileID": 7704,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7705,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6620,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127858,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7705,
+    "ProfileID": 7705,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7706,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4183,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127859,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7706,
+    "ProfileID": 7706,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7707,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6974,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127860,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7707,
+    "ProfileID": 7707,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7708,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4216,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127861,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7708,
+    "ProfileID": 7708,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7709,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7229,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127862,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7709,
+    "ProfileID": 7709,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7710,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8759,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127863,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7710,
+    "ProfileID": 7710,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7712,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5793,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127865,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7712,
+    "ProfileID": 7712,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7713,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7462,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127866,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7713,
+    "ProfileID": 7713,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7714,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7846,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127867,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7714,
+    "ProfileID": 7714,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7715,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6862,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127868,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7715,
+    "ProfileID": 7715,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7716,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5608,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127869,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7716,
+    "ProfileID": 7716,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7717,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5964,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127870,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7717,
+    "ProfileID": 7717,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7718,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5658,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127871,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7718,
+    "ProfileID": 7718,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7720,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5499,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127873,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7720,
+    "ProfileID": 7720,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7721,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7057,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127874,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7721,
+    "ProfileID": 7721,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7723,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5754,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127876,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7723,
+    "ProfileID": 7723,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7724,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8515,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127877,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7724,
+    "ProfileID": 7724,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7725,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5110,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127878,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7725,
+    "ProfileID": 7725,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7726,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7211,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127879,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7726,
+    "ProfileID": 7726,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7727,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4964,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127880,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7727,
+    "ProfileID": 7727,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 3,
+        "Day": 7,
+        "CalendarTypeID": 1
+      },
+      "ID": 7728,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7103,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127881,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7728,
+    "ProfileID": 7728,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7729,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4032,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127882,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7729,
+    "ProfileID": 7729,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7731,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7946,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127884,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7731,
+    "ProfileID": 7731,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7732,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8652,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127885,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7732,
+    "ProfileID": 7732,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7733,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5055,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127886,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7733,
+    "ProfileID": 7733,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7734,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6132,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127887,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7734,
+    "ProfileID": 7734,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7735,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7388,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127888,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7735,
+    "ProfileID": 7735,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7736,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5768,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127889,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7736,
+    "ProfileID": 7736,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7737,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8382,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127890,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7737,
+    "ProfileID": 7737,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 1995,
+        "Month": 2,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 7738,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4733,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127891,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7738,
+    "ProfileID": 7738,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7739,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6905,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127892,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7739,
+    "ProfileID": 7739,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7740,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7823,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127893,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7740,
+    "ProfileID": 7740,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7741,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6329,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127894,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7741,
+    "ProfileID": 7741,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 1999,
+        "Month": 5,
+        "Day": 28,
+        "CalendarTypeID": 1
+      },
+      "ID": 7742,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8398,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127895,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7742,
+    "ProfileID": 7742,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 1995,
+        "Month": 2,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 7744,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6774,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127897,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7744,
+    "ProfileID": 7744,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7745,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9095,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127898,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7745,
+    "ProfileID": 7745,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7746,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4966,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127899,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7746,
+    "ProfileID": 7746,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7749,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4807,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127902,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7749,
+    "ProfileID": 7749,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7751,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8998,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127904,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7751,
+    "ProfileID": 7751,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7752,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4358,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127905,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7752,
+    "ProfileID": 7752,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7753,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 3950,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127906,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7753,
+    "ProfileID": 7753,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 12,
+        "Day": 3,
+        "CalendarTypeID": 1
+      },
+      "ID": 7754,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4477,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127907,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7754,
+    "ProfileID": 7754,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7755,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4701,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127908,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7755,
+    "ProfileID": 7755,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7756,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7789,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127909,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7756,
+    "ProfileID": 7756,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7757,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6162,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127910,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7757,
+    "ProfileID": 7757,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7760,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6188,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127913,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7760,
+    "ProfileID": 7760,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7761,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7848,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127914,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7761,
+    "ProfileID": 7761,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7762,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6700,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127915,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7762,
+    "ProfileID": 7762,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7765,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4093,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127918,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7765,
+    "ProfileID": 7765,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 1999,
+        "Month": 8,
+        "Day": 18,
+        "CalendarTypeID": 1
+      },
+      "ID": 7766,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9025,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127919,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7766,
+    "ProfileID": 7766,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7767,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5531,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127920,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7767,
+    "ProfileID": 7767,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 1995,
+        "Month": 2,
+        "Day": 24,
+        "CalendarTypeID": 1
+      },
+      "ID": 7768,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8266,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127921,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7768,
+    "ProfileID": 7768,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7769,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4925,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127922,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7769,
+    "ProfileID": 7769,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7770,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6941,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127923,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7770,
+    "ProfileID": 7770,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7771,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7527,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127924,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7771,
+    "ProfileID": 7771,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7772,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8640,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127925,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7772,
+    "ProfileID": 7772,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7774,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 5830,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127927,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7774,
+    "ProfileID": 7774,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7775,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8823,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127928,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7775,
+    "ProfileID": 7775,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7776,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4201,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127929,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7776,
+    "ProfileID": 7776,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7777,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6753,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127930,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7777,
+    "ProfileID": 7777,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7778,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4249,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127931,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7778,
+    "ProfileID": 7778,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7779,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8880,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127932,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7779,
+    "ProfileID": 7779,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7780,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6665,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127933,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7780,
+    "ProfileID": 7780,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7782,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4976,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127935,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7782,
+    "ProfileID": 7782,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7783,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 3936,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127936,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7783,
+    "ProfileID": 7783,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7784,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8244,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127937,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7784,
+    "ProfileID": 7784,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7785,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7612,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127938,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7785,
+    "ProfileID": 7785,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7786,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8116,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127939,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7786,
+    "ProfileID": 7786,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 1999,
+        "Month": 6,
+        "Day": 17,
+        "CalendarTypeID": 1
+      },
+      "ID": 7787,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8046,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127940,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7787,
+    "ProfileID": 7787,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7788,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6937,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127941,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7788,
+    "ProfileID": 7788,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7789,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8512,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127942,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7789,
+    "ProfileID": 7789,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7790,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4305,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127943,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7790,
+    "ProfileID": 7790,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7791,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7531,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127944,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7791,
+    "ProfileID": 7791,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7792,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6442,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127945,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7792,
+    "ProfileID": 7792,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7793,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4717,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127946,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7793,
+    "ProfileID": 7793,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7794,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6690,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127947,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7794,
+    "ProfileID": 7794,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7795,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 8930,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127948,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7795,
+    "ProfileID": 7795,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7796,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7973,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127949,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7796,
+    "ProfileID": 7796,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 1,
+        "Day": 19,
+        "CalendarTypeID": 1
+      },
+      "ID": 7797,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 4061,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127950,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7797,
+    "ProfileID": 7797,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2003,
+        "Month": 5,
+        "Day": 29,
+        "CalendarTypeID": 1
+      },
+      "ID": 7798,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 7481,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127951,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7798,
+    "ProfileID": 7798,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7801,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 9377,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127954,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7801,
+    "ProfileID": 7801,
+    "ListID": 1550
+  },
+  {
+    "EntryEvent": {
+      "Comment": "",
+      "Date": {
+        "Year": 2001,
+        "Month": 6,
+        "Day": 27,
+        "CalendarTypeID": 1
+      },
+      "ID": 7802,
+      "EntryEventTypeID": 1,
+      "LegalBasisID": 1
+    },
+    "SanctionsMeasure": [
+      {
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 6100,
+        "SanctionsTypeID": 1705
+      },
+      {
+        "Comment": "BALKANS",
+        "DatePeriod": {
+          "CalendarTypeID": 1,
+          "YearFixed": true,
+          "MonthFixed": true,
+          "DayFixed": true
+        },
+        "ID": 127955,
+        "SanctionsTypeID": 1
+      }
+    ],
+    "ID": 7802,
+    "ProfileID": 7802,
+    "ListID": 1550
+  }
+]

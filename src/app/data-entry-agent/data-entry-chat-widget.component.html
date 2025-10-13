@@ -16,11 +16,10 @@
     <!-- Header -->
     <div class="chat-header">
       <div class="header-content">
-        <h3>
+        <h3 class="agent-title">
           <img src="assets/img/agent-icon.png" alt="AI Agent" class="header-agent-icon">
-          {{ 'agent.title' | translate }}
+          HSA Customer Requests Agent Assistant
         </h3>
-        <p class="user-greeting">{{ getCurrentUserName() }}</p>
       </div>
       <div class="header-actions">
         <button 
@@ -52,7 +51,22 @@
           [ngClass]="{'user-message': message.role === 'user', 'assistant-message': message.role === 'assistant'}">
           
           <!-- Text Messages -->
-          <div *ngIf="message.type === 'text'" [innerHTML]="formatMessage(message.content)"></div>
+          <div *ngIf="message.type === 'text' && !message.isThinking" [innerHTML]="formatMessage(message.content)"></div>
+          
+          <!-- Text Messages with Thinking Animation -->
+          <div *ngIf="message.type === 'text' && message.isThinking" class="message-with-thinking">
+            <div [innerHTML]="formatMessage(message.content)"></div>
+            <div class="thinking-indicator">
+              <div class="smart-thinking">
+                <div class="thinking-dots">
+                  <span></span>
+                  <span></span>
+                  <span></span>
+                </div>
+                <span class="thinking-text">AI Processing The Document</span>
+              </div>
+            </div>
+          </div>
 
           <!-- Actions (Quick Buttons) -->
           <ng-container *ngIf="message.type === 'actions'">
@@ -69,7 +83,7 @@
           
           <!-- Confirmation Messages -->
           <div *ngIf="message.type === 'confirmation'" class="confirmation-wrapper">
-            <div class="confirmation-message">
+            <div class="confirmation-message" [ngClass]="{'with-thinking': message.isThinking}">
               <ng-container *ngIf="message.data?.component === 'review'; else legacyConfirmation">
                 <div class="message-content">
                   <app-data-entry-review-message
@@ -81,6 +95,18 @@
               <ng-template #legacyConfirmation>
                 <div [innerHTML]="formatMessage(message.content)"></div>
               </ng-template>
+              
+              <!-- Thinking Animation for Confirmation -->
+              <div *ngIf="message.isThinking" class="thinking-indicator">
+                <div class="smart-thinking">
+                  <div class="thinking-dots">
+                    <span></span>
+                    <span></span>
+                    <span></span>
+                  </div>
+                  <span class="thinking-text">Processing with AI...</span>
+                </div>
+              </div>
             </div>
             <!-- Button OUTSIDE the message bubble - floating below -->
             <div class="floating-action-buttons" *ngIf="message.data?.buttons">
@@ -93,10 +119,14 @@
             </div>
           </div>
           
-          <!-- Loading Messages -->
-          <div *ngIf="message.type === 'loading'" class="loading-message">
-            <i nz-icon nzType="loading" nzTheme="outline"></i>
-            {{ message.content }}
+          <!-- Loading Messages with Smart Animation -->
+          <div *ngIf="message.type === 'loading'" class="loading-message smart-thinking">
+            <div class="thinking-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <span class="thinking-text">{{ message.content }}</span>
           </div>
           
           <!-- Progress Messages -->

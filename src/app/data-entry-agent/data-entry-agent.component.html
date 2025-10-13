@@ -15,10 +15,14 @@
         <!-- Text Messages -->
         <div *ngIf="message.type === 'text'" [innerHTML]="formatMessage(message.content)"></div>
         
-        <!-- Loading Messages -->
-        <div *ngIf="message.type === 'loading'" class="loading-message">
-          <i nz-icon nzType="loading" nzTheme="outline"></i>
-          {{ message.content }}
+        <!-- Loading Messages with Smart Animation -->
+        <div *ngIf="message.type === 'loading'" class="loading-message smart-thinking">
+          <div class="thinking-dots">
+            <span></span>
+            <span></span>
+            <span></span>
+          </div>
+          <span class="thinking-text">{{ message.content }}</span>
         </div>
         
         <!-- Progress Messages -->

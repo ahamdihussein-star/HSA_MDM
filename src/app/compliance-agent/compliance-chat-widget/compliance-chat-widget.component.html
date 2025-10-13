@@ -1,0 +1,183 @@
+<!-- Floating Chat Widget (Same as Data Entry Agent) -->
+<div class="chat-widget-container">
+  <!-- Toggle Button -->
+  <button 
+    class="chat-toggle-button" 
+    (click)="toggleChat()"
+    *ngIf="isMinimized || !isOpen"
+    nz-tooltip
+    [nzTooltipTitle]="t('وكيل الامتثال', 'Compliance Agent')"
+    nzTooltipPlacement="left">
+    <img src="assets/img/agent-icon.png" alt="Compliance Agent" class="agent-icon">
+  </button>
+
+  <!-- Chat Window -->
+  <div class="chat-window" *ngIf="isOpen && !isMinimized">
+    <!-- Header -->
+    <div class="chat-header">
+      <div class="header-content">
+        <h3>
+          <img src="assets/img/agent-icon.png" alt="Compliance Agent" class="header-agent-icon">
+          {{ t('وكيل الامتثال', 'Compliance Agent') }}
+        </h3>
+      </div>
+      <div class="header-actions">
+        <button 
+          class="minimize-btn" 
+          (click)="minimizeChat()"
+          nz-tooltip
+          [nzTooltipTitle]="t('تصغير', 'Minimize')">
+          <span aria-hidden="true">–</span>
+        </button>
+        <button 
+          class="close-btn" 
+          (click)="closeChat()"
+          nz-tooltip
+          [nzTooltipTitle]="t('إغلاق', 'Close')">
+          <span aria-hidden="true">×</span>
+        </button>
+      </div>
+    </div>
+
+    <!-- Chat Body (Same as Data Entry Agent) -->
+    <div class="chat-body" #messagesContainer>
+      <div class="messages-container">
+        
+        <!-- Message Loop -->
+        <div 
+          *ngFor="let message of messages" 
+          class="message"
+          [ngClass]="{'user-message': message.role === 'user', 'assistant-message': message.role === 'assistant'}">
+          
+          <!-- Thinking Indicator -->
+          <div *ngIf="message.isThinking" class="thinking-indicator-message">
+            <div class="thinking-dots">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+            <span class="thinking-text">{{ message.content }}</span>
+          </div>
+          
+          <!-- Text Content -->
+          <div *ngIf="!message.isThinking && message.type !== 'search_results'" [innerHTML]="message.content"></div>
+          
+          <!-- Search Results Message -->
+          <div *ngIf="message.type === 'search_results'">
+            <div [innerHTML]="message.content"></div>
+            
+            <div class="search-results" *ngIf="message.data?.results && message.data.results.length > 0">
+              <div 
+                class="result-card" 
+                *ngFor="let result of message.data.results.slice(0, 5)"
+                (click)="viewSanctionDetails(result)"
+                style="cursor: pointer;">
+                <div class="result-header">
+                  <strong>{{ result.name || result.first_name }}</strong>
+                  <span class="badge" [style.background]="result.source === 'UN' ? '#1890ff' : '#ff4d4f'">
+                    {{ result.source === 'UN' ? '🇺🇳 UN' : '🇺🇸 OFAC' }}
+                  </span>
+                </div>
+                <div class="result-details">
+                  <!-- OFAC-specific fields -->
+                  <div class="detail-row" *ngIf="result.source !== 'UN' && result.countries && result.countries.length > 0">
+                    <span class="label">{{ t('الدولة:', 'Country:') }}</span>
+                    <span>{{ result.countries[0] }}</span>
+                  </div>
+                  <div class="detail-row" *ngIf="result.source !== 'UN' && result.sector">
+                    <span class="label">{{ t('القطاع:', 'Sector:') }}</span>
+                    <span>{{ t(getSectorArabic(result.sector), result.sector) }}</span>
+                  </div>
+                  
+                  <!-- UN-specific fields -->
+                  <div class="detail-row" *ngIf="result.source === 'UN' && result.un_list_type">
+                    <span class="label">{{ t('نوع القائمة:', 'List Type:') }}</span>
+                    <span>{{ result.un_list_type }}</span>
+                  </div>
+                  <div class="detail-row" *ngIf="result.source === 'UN' && result.countries">
+                    <span class="label">{{ t('الدول:', 'Countries:') }}</span>
+                    <span>{{ result.countries }}</span>
+                  </div>
+                  
+                  <!-- Common fields -->
+                  <div class="detail-row" *ngIf="result.aliases && result.aliases.length > 0">
+                    <span class="label">{{ t('أسماء بديلة:', 'Aliases:') }}</span>
+                    <span class="aliases">{{ result.aliases.slice(0, 2).join(', ') }}</span>
+                  </div>
+                  <div class="detail-row" *ngIf="result.matchScore">
+                    <span class="label">{{ t('نسبة التطابق:', 'Match:') }}</span>
+                    <span [style.color]="result.matchScore >= 80 ? '#52c41a' : result.matchScore >= 60 ? '#faad14' : '#ff4d4f'">
+                      {{ result.matchScore }}%
+                    </span>
+                  </div>
+                </div>
+                <div class="view-details-hint">
+                  <i>{{ t('اضغط لعرض التفاصيل الكاملة', 'Click to view full details') }}</i>
+                </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Smart Action Buttons -->
+          <div *ngIf="message.buttons && message.buttons.length > 0" class="smart-action-buttons">
+            <!-- Thinking Indicator -->
+            <div *ngIf="message.isThinking" class="thinking-indicator">
+              <div class="thinking-dots">
+                <span></span>
+                <span></span>
+                <span></span>
+              </div>
+              <span class="thinking-text">{{ message.content }}</span>
+            </div>
+            
+            <!-- Regular Buttons -->
+            <ng-container *ngIf="!message.isThinking">
+              <button 
+                *ngFor="let button of message.buttons"
+                class="smart-btn"
+                [ngClass]="'btn-' + (button.style || 'primary')"
+                (click)="handleButtonAction(button.action, button.value)">
+                {{ button.text }}
+              </button>
+            </ng-container>
+          </div>
+          
+        </div>
+        
+        <!-- Loading Message -->
+        <div class="message assistant-message" *ngIf="loading">
+          <div class="loading-message">
+            <div class="typing-indicator">
+              <span></span>
+              <span></span>
+              <span></span>
+            </div>
+          </div>
+        </div>
+        
+      </div>
+    </div>
+    
+    <!-- Chat Footer (Input Area) -->
+    <div class="chat-footer" *ngIf="currentWorkflow === 'manual'">
+      <div class="input-container">
+        <input 
+          type="text" 
+          name="chatInput"
+          [(ngModel)]="newMessage"
+          (keyup.enter)="sendMessage()"
+          [placeholder]="t('اكتب اسم الشركة...', 'Type company name...')"
+          [disabled]="loading"
+        />
+        <button 
+          class="send-button" 
+          (click)="sendMessage()"
+          [disabled]="loading || !newMessage.trim()">
+          <span>➤</span>
+        </button>
+      </div>
+    </div>
+    
+  </div>
+</div>
+
