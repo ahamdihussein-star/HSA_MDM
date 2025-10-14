@@ -517,3 +517,45 @@
     grid-template-columns: 1fr !important;
   }
 }
+
+// Tabs Styling
+.dashboard-tabs {
+  margin: 20px;
+  background: white;
+  border-radius: 8px;
+  padding: 20px;
+  box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+
+  ::ng-deep {
+    .ant-tabs-nav {
+      margin-bottom: 20px;
+      
+      .ant-tabs-tab {
+        padding: 12px 24px;
+        font-size: 15px;
+        font-weight: 500;
+        
+        i {
+          margin-right: 8px;
+        }
+      }
+      
+      .ant-tabs-tab-active {
+        .ant-tabs-tab-btn {
+          color: #722ed1;
+        }
+      }
+    }
+    
+    .ant-tabs-content {
+      padding: 0;
+    }
+  }
+}
+
+.rtl .dashboard-tabs ::ng-deep {
+  .ant-tabs-tab i {
+    margin-right: 0;
+    margin-left: 8px;
+  }
+}

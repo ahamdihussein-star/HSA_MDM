@@ -1957,12 +1957,21 @@ body, .main, .requestForm, .doc-card, .summary-card, .doc-table {
 .contact-info {
   display: flex;
   gap: 8px;
+  align-items: flex-start;
 }
 
 .contact-info label {
   font-weight: 600;
   color: #6c757d;
   min-width: 80px;
+  flex-shrink: 0;
+}
+
+.contact-info span {
+  word-break: break-word;
+  overflow-wrap: break-word;
+  flex: 1;
+  min-width: 0;
 }
 
 /* Documents Grid - Enhanced */

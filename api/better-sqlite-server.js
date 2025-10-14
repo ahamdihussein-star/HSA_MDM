@@ -4533,9 +4533,9 @@ app.get('/api/dashboard/technical-stats', (req, res) => {
       AND assignedTo = 'data_entry'
     `).get().count;
     
-    // 3. Unprocessed Duplicate Records (مع sourceSystem فقط)
+    // 3. Unprocessed Duplicate Groups (count by tax number, not individual records)
     const unprocessedDuplicates = db.prepare(`
-      SELECT COUNT(*) as count 
+      SELECT COUNT(DISTINCT tax) as count 
       FROM requests 
       WHERE requestType = 'duplicate' 
       AND status = 'Duplicate'
@@ -4543,14 +4543,15 @@ app.get('/api/dashboard/technical-stats', (req, res) => {
       AND sourceSystem IS NOT NULL
       AND sourceSystem != ''
       AND sourceSystem != 'Master Builder'
+      AND tax IS NOT NULL
+      AND tax != ''
     `).get().count;
     
     // 4. New Requests Created (NOT quarantine AND NOT duplicate)
     const newRequests = db.prepare(`
       SELECT COUNT(*) as count 
       FROM requests 
-      WHERE requestType NOT IN ('quarantine', 'duplicate')
-      AND (requestType = 'new' OR requestType IS NULL)
+      WHERE LOWER(requestType) = 'new'
       AND createdBy IN ('data_entry', 'Data Entry')
     `).get().count;
     
@@ -4587,21 +4588,25 @@ app.get('/api/dashboard/technical-stats', (req, res) => {
       AND (status = 'Quarantine' OR originalRequestType = 'quarantine')
     `).get().count;
 
-    // System Sources Duplicates Calculations
-    // Oracle Forms - Unprocessed + Processed
+    // System Sources Duplicate Groups Calculations (count by tax, not individual records)
+    // Oracle Forms - Unprocessed + Processed Groups
     const oracleFormsUnprocessed = db.prepare(`
-      SELECT COUNT(*) as count 
+      SELECT COUNT(DISTINCT tax) as count 
       FROM requests 
       WHERE sourceSystem = 'Oracle Forms'
       AND requestType = 'duplicate'
       AND status = 'Duplicate'
+      AND tax IS NOT NULL
+      AND tax != ''
     `).get().count;
 
     const oracleFormsProcessed = db.prepare(`
-      SELECT COUNT(*) as count 
+      SELECT COUNT(DISTINCT tax) as count 
       FROM requests 
       WHERE sourceSystem = 'Oracle Forms'
       AND status = 'Linked'
+      AND tax IS NOT NULL
+      AND tax != ''
     `).get().count;
 
     const oracleFormsDuplicate = oracleFormsUnprocessed + oracleFormsProcessed;
@@ -4616,20 +4621,24 @@ app.get('/api/dashboard/technical-stats', (req, res) => {
       AND (status = 'Quarantine' OR originalRequestType = 'quarantine')
     `).get().count;
 
-    // SAP S/4HANA - Unprocessed + Processed
+    // SAP S/4HANA - Unprocessed + Processed Groups
     const sapS4HanaUnprocessed = db.prepare(`
-      SELECT COUNT(*) as count 
+      SELECT COUNT(DISTINCT tax) as count 
       FROM requests 
       WHERE sourceSystem = 'SAP S/4HANA'
       AND requestType = 'duplicate'
       AND status = 'Duplicate'
+      AND tax IS NOT NULL
+      AND tax != ''
     `).get().count;
 
     const sapS4HanaProcessed = db.prepare(`
-      SELECT COUNT(*) as count 
+      SELECT COUNT(DISTINCT tax) as count 
       FROM requests 
       WHERE sourceSystem = 'SAP S/4HANA'
       AND status = 'Linked'
+      AND tax IS NOT NULL
+      AND tax != ''
     `).get().count;
 
     const sapS4HanaDuplicate = sapS4HanaUnprocessed + sapS4HanaProcessed;
@@ -4640,24 +4649,28 @@ app.get('/api/dashboard/technical-stats', (req, res) => {
     const sapByDesignQuarantine = db.prepare(`
       SELECT COUNT(*) as count 
       FROM requests 
-      WHERE sourceSystem = 'SAP ByD'
+      WHERE sourceSystem = 'SAP ByDesign'
       AND (status = 'Quarantine' OR originalRequestType = 'quarantine')
     `).get().count;
 
-    // SAP ByD - Unprocessed + Processed
+    // SAP ByDesign - Unprocessed + Processed Groups
     const sapByDesignUnprocessed = db.prepare(`
-      SELECT COUNT(*) as count 
+      SELECT COUNT(DISTINCT tax) as count 
       FROM requests 
-      WHERE sourceSystem = 'SAP ByD'
+      WHERE sourceSystem = 'SAP ByDesign'
       AND requestType = 'duplicate'
       AND status = 'Duplicate'
+      AND tax IS NOT NULL
+      AND tax != ''
     `).get().count;
 
     const sapByDesignProcessed = db.prepare(`
-      SELECT COUNT(*) as count 
+      SELECT COUNT(DISTINCT tax) as count 
       FROM requests 
-      WHERE sourceSystem = 'SAP ByD'
+      WHERE sourceSystem = 'SAP ByDesign'
       AND status = 'Linked'
+      AND tax IS NOT NULL
+      AND tax != ''
     `).get().count;
 
     const sapByDesignDuplicate = sapByDesignUnprocessed + sapByDesignProcessed;
@@ -4680,16 +4693,16 @@ app.get('/api/dashboard/technical-stats', (req, res) => {
       )
     `).get().count;
     
-    // 9. Processed Duplicates - محسّن
-    // عد Master records والـ linked/merged records
-    // 9. Processed Duplicates (مع sourceSystem فقط - Linked records)
+    // 9. Processed Duplicate Groups (count by tax number - Linked records)
     const processedDuplicates = db.prepare(`
-      SELECT COUNT(*) as count 
+      SELECT COUNT(DISTINCT tax) as count 
       FROM requests 
       WHERE status = 'Linked'
       AND sourceSystem IS NOT NULL
       AND sourceSystem != ''
       AND sourceSystem != 'Master Builder'
+      AND tax IS NOT NULL
+      AND tax != ''
     `).get().count;
     
     console.log('[TECH-DASHBOARD] Statistics:', {
@@ -4790,7 +4803,7 @@ app.get('/api/debug/source-systems', (req, res) => {
 app.get('/api/debug/duplicate-counts', (req, res) => {
   try {
     // عد كل أنواع الـ duplicates لكل system
-    const systems = ['Oracle Forms', 'SAP S/4HANA', 'SAP ByD'];
+    const systems = ['Oracle Forms', 'SAP S/4HANA', 'SAP ByDesign'];
     const result = {};
     
     systems.forEach(system => {
@@ -5221,7 +5234,7 @@ app.post('/api/requests/admin/generate-duplicates', (req, res) => {
     
     // OLD CODE - مش محتاجينه دلوقتي
     /*
-    const sourceSystems = ['Oracle Forms', 'SAP S/4HANA', 'SAP ByD'];
+    const sourceSystems = ['Oracle Forms', 'SAP S/4HANA', 'SAP ByDesign'];
     const customerTypes = ['Limited Liability Company', 'Joint Stock Company', 'Partnership', 'Wholesale Distributor'];
     const salesOrgs = ['HSA Saudi Arabia 2000', 'HSA UAE 3000', 'HSA Yemen 4000'];
     const distributionChannels = ['Modern Trade', 'Traditional Trade', 'HoReCa', 'Key Accounts', 'B2B'];

@@ -19,9 +19,11 @@ import { NzMessageModule } from 'ng-zorro-antd/message';
 import { NzDropDownModule } from 'ng-zorro-antd/dropdown';
 import { NzMenuModule } from 'ng-zorro-antd/menu';
 import { NzEmptyModule } from 'ng-zorro-antd/empty';
+// import { NzTabsModule } from 'ng-zorro-antd/tabs';
 
 // Components
 import { TechnicalDashboardComponent } from './technical-dashboard.component';
+// import { ExecutiveDashboardModule } from '../executive-dashboard/executive-dashboard.module';
 
 const routes: Routes = [
   {
@@ -55,7 +57,10 @@ const routes: Routes = [
     NzMessageModule,
     NzDropDownModule,
     NzMenuModule,
-    NzEmptyModule
+    NzEmptyModule,
+    
+    // Import Executive Dashboard Module
+    // ExecutiveDashboardModule // Temporarily disabled due to routing conflict
   ]
 })
 export class TechnicalDashboardModule { }

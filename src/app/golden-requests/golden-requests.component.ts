@@ -672,4 +672,20 @@ export class GoldenRequestsComponent implements OnInit {
       }
     } catch {}
   }
+
+  // Get current user role
+  getCurrentUserRole(): string {
+    return sessionStorage.getItem('userRole') || '';
+  }
+
+  // Check if current user is admin
+  isAdmin(): boolean {
+    return this.getCurrentUserRole() === 'admin';
+  }
+
+  // Check if current user is reviewer or admin
+  isReviewerOrAdmin(): boolean {
+    const role = this.getCurrentUserRole();
+    return role === 'reviewer' || role === 'admin';
+  }
 }

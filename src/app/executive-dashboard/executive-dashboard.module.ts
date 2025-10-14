@@ -34,13 +34,15 @@ import { NzMenuModule } from 'ng-zorro-antd/menu';
 
 // Components
 import { ExecutiveDashboardComponent } from './executive-dashboard.component';
+import { ExecutiveDashboardRoutingModule } from './executive-dashboard-routing.module';
 
-const routes: Routes = [
-  {
-    path: '',
-    component: ExecutiveDashboardComponent
-  }
-];
+// Remove routing since this module will be imported into other modules
+// const routes: Routes = [
+//   {
+//     path: '',
+//     component: ExecutiveDashboardComponent
+//   }
+// ];
 
 @NgModule({
   declarations: [
@@ -50,7 +52,8 @@ const routes: Routes = [
     CommonModule,
     FormsModule,
     ReactiveFormsModule,
-    RouterModule.forChild(routes),
+    // RouterModule.forChild(routes), // Removed to avoid routing conflicts when imported
+    ExecutiveDashboardRoutingModule, // Use separate routing module
     TranslateModule,
     
     // Ant Design Modules
@@ -79,6 +82,9 @@ const routes: Routes = [
     NzMenuModule
     
     // Charts - Using Chart.js directly
+  ],
+  exports: [
+    ExecutiveDashboardComponent
   ]
 })
 export class ExecutiveDashboardModule { }

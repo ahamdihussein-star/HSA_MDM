@@ -13,8 +13,10 @@
     </div>
     <img src="./assets/img/filter.svg" alt="" />
     
-    <!-- Sync Button -->
-    <button nz-button nzType="primary" class="sync-btn" (click)="goToSyncPage()">
+    <!-- Sync Button (Only for Reviewer and Admin) -->
+    <button nz-button nzType="primary" class="sync-btn" 
+            *ngIf="isReviewerOrAdmin()"
+            (click)="goToSyncPage()">
       <i nz-icon nzType="sync"></i>
       {{ 'Sync Records' | translate }}
     </button>

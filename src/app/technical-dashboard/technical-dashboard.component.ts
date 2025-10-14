@@ -1,4 +1,4 @@
-import { Component, OnInit, OnDestroy } from '@angular/core';
+import { Component, OnInit, OnDestroy, AfterViewInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { Router } from '@angular/router';
 import { NzModalService } from 'ng-zorro-antd/modal';
@@ -35,7 +35,7 @@ interface SystemSourceStat {
   templateUrl: './technical-dashboard.component.html',
   styleUrls: ['./technical-dashboard.component.scss', './additional-styles.scss', './technical-dashboard-rtl.scss']
 })
-export class TechnicalDashboardComponent implements OnInit, OnDestroy {
+export class TechnicalDashboardComponent implements OnInit, OnDestroy, AfterViewInit {
   
   private apiBase = environment.apiBaseUrl || 'http://localhost:3000/api';
   private refreshSubscription?: Subscription;
@@ -48,6 +48,7 @@ export class TechnicalDashboardComponent implements OnInit, OnDestroy {
   dataStatCards: StatCard[] = [];
   taskListCards: StatCard[] = [];
   systemSources: SystemSourceStat[] = [];
+  selectedTabIndex = 0;
   
   // Modal States
   isModalVisible = false;
@@ -68,11 +69,17 @@ export class TechnicalDashboardComponent implements OnInit, OnDestroy {
     private message: NzMessageService,
     private translate: TranslateService
   ) {
+    console.log('🔧 [Technical Dashboard] Constructor called');
     // Language detection
     this.isArabic = localStorage.getItem('lang') === 'ar';
+    console.log('🔧 [Technical Dashboard] Language:', this.isArabic ? 'Arabic' : 'English');
+    console.log('🔧 [Technical Dashboard] Initial selectedTabIndex:', this.selectedTabIndex);
   }
 
   ngOnInit(): void {
+    console.log('🔧 [Technical Dashboard] Component initialized');
+    console.log('🔧 [Technical Dashboard] selectedTabIndex:', this.selectedTabIndex);
+    console.log('🔧 [Technical Dashboard] isLoading:', this.isLoading);
     this.loadDashboardData();
     this.setupAutoRefresh();
   }
@@ -93,26 +100,78 @@ export class TechnicalDashboardComponent implements OnInit, OnDestroy {
     }
   }
 
+  ngAfterViewInit(): void {
+    console.log('🔧 [Technical Dashboard] AfterViewInit called');
+    console.log('🔧 [Technical Dashboard] Checking for tabs element...');
+    
+        setTimeout(() => {
+          const tabsElement = document.querySelector('.dashboard-tabs');
+          const tabsetElement = document.querySelector('nz-tabset');
+          const tabElements = document.querySelectorAll('nz-tab');
+          const antTabs = document.querySelectorAll('.ant-tabs-tab');
+          const antTabPanes = document.querySelectorAll('.ant-tabs-tabpane');
+
+          console.log('🔧 [Technical Dashboard] .dashboard-tabs element:', tabsElement);
+          console.log('🔧 [Technical Dashboard] nz-tabset element:', tabsetElement);
+          console.log('🔧 [Technical Dashboard] nz-tab elements count:', tabElements.length);
+          console.log('🔧 [Technical Dashboard] .ant-tabs-tab elements count:', antTabs.length);
+          console.log('🔧 [Technical Dashboard] .ant-tabs-tabpane elements count:', antTabPanes.length);
+
+          if (!tabsetElement) {
+            console.error('❌ [Technical Dashboard] NZ-TABSET NOT FOUND! Tabs module may not be loaded correctly.');
+          }
+          if (tabElements.length === 0 && antTabs.length === 0) {
+            console.error('❌ [Technical Dashboard] NO TAB ELEMENTS FOUND!');
+          }
+          if (antTabs.length > 0) {
+            console.log('✅ [Technical Dashboard] Found', antTabs.length, 'Ant Design tabs');
+            antTabs.forEach((tab, index) => {
+              console.log(`   Ant Tab ${index}:`, tab);
+            });
+          }
+          if (tabElements.length > 0) {
+            console.log('✅ [Technical Dashboard] Found', tabElements.length, 'nz-tab elements');
+            tabElements.forEach((tab, index) => {
+              console.log(`   NZ-Tab ${index}:`, tab);
+            });
+          }
+          
+          // Debug data arrays
+          console.log('🔧 [Technical Dashboard] isLoading:', this.isLoading);
+          console.log('🔧 [Technical Dashboard] dataStatCards:', this.dataStatCards);
+          console.log('🔧 [Technical Dashboard] taskListCards:', this.taskListCards);
+          console.log('🔧 [Technical Dashboard] systemSources:', this.systemSources);
+        }, 100);
+  }
+
   async loadDashboardData(): Promise<void> {
+    console.log('🔧 [Technical Dashboard] loadDashboardData() called');
     this.isLoading = true;
+    console.log('🔧 [Technical Dashboard] isLoading set to:', this.isLoading);
     
     try {
       // Load technical stats (includes both stats and system sources)
       const response = await this.http.get<any>(`${this.apiBase}/dashboard/technical-stats`).toPromise();
       
-      console.log('Technical Dashboard - Full response:', response);
-      console.log('Technical Dashboard - Stats:', response.stats);
-      console.log('Technical Dashboard - System Sources:', response.systemSources);
+      console.log('🔧 [Technical Dashboard] Full response:', response);
+      console.log('🔧 [Technical Dashboard] Stats:', response.stats);
+      console.log('🔧 [Technical Dashboard] System Sources:', response.systemSources);
       
       this.processStatCards(response.stats);
       this.loadSystemSourceStats(response.systemSources);
       this.lastUpdated = new Date();
       
+      console.log('🔧 [Technical Dashboard] Data loaded successfully');
+      console.log('🔧 [Technical Dashboard] dataStatCards count:', this.dataStatCards.length);
+      console.log('🔧 [Technical Dashboard] taskListCards count:', this.taskListCards.length);
+      console.log('🔧 [Technical Dashboard] systemSources count:', this.systemSources.length);
+      
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
+      console.error('❌ [Technical Dashboard] Error loading data:', error);
       this.message.error('Failed to load dashboard statistics');
     } finally {
       this.isLoading = false;
+      console.log('🔧 [Technical Dashboard] isLoading set to:', this.isLoading);
     }
   }
 
@@ -139,7 +198,7 @@ export class TechnicalDashboardComponent implements OnInit, OnDestroy {
         color: '#1890ff'
       },
       {
-        system: 'SAP ByD', // Keep English name for API calls
+        system: 'SAP ByDesign', // Keep English name for API calls
         displayName: this.translate.instant('SAP ByD'),
         count: systemData.sapByDesign?.total || 0,
         quarantine: systemData.sapByDesign?.quarantine || 0,
@@ -175,20 +234,20 @@ export class TechnicalDashboardComponent implements OnInit, OnDestroy {
       },
       {
         id: 'duplicates',
-        title: this.translate.instant('Unprocessed Duplicates'),
-        titleAr: this.translate.instant('Unprocessed Duplicates'),
+        title: this.translate.instant('Unprocessed Identified Duplicate Groups'),
+        titleAr: this.translate.instant('Unprocessed Identified Duplicate Groups'),
         value: stats.unprocessedDuplicates || 0,
         icon: 'copy',
         color: '#722ed1',
         canDrillDown: true,
-        description: this.translate.instant('Duplicate records not yet processed')
+        description: this.translate.instant('Duplicate groups not yet processed')
       },
       {
         id: 'new_requests',
         title: this.translate.instant('New Requests Created'),
         titleAr: this.translate.instant('New Requests Created'),
         value: stats.newRequests || 0,
-        icon: 'file-add',
+        icon: 'plus',
         color: '#1890ff',
         canDrillDown: true,
         description: this.translate.instant('New requests created by data entry')
@@ -205,13 +264,13 @@ export class TechnicalDashboardComponent implements OnInit, OnDestroy {
       },
       {
         id: 'processed_duplicates',
-        title: this.translate.instant('Processed Duplicate Records'),
-        titleAr: this.translate.instant('Processed Duplicate Records'),
+        title: this.translate.instant('Processed Duplicate Groups'),
+        titleAr: this.translate.instant('Processed Duplicate Groups'),
         value: stats.processedDuplicates || 0,
         icon: 'bulb',
         color: '#13c2c2',
         canDrillDown: true,
-        description: this.translate.instant('Duplicate records that have been merged or linked')
+        description: this.translate.instant('Duplicate groups that have been merged or linked')
       }
     ];
 
@@ -225,7 +284,6 @@ export class TechnicalDashboardComponent implements OnInit, OnDestroy {
         icon: 'edit',
         color: '#fa8c16',
         canDrillDown: true,
-        route: '/dashboard/my-task',
         description: this.translate.instant('All rejected requests assigned to data entry')
       },
       {
@@ -233,10 +291,9 @@ export class TechnicalDashboardComponent implements OnInit, OnDestroy {
         title: this.translate.instant('Reviewer Tasks'),
         titleAr: this.translate.instant('Reviewer Tasks'),
         value: stats.reviewerTasks || 0,
-        icon: 'file-search',
+        icon: 'search',
         color: '#52c41a',
         canDrillDown: true,
-        route: '/dashboard/admin-task-list',
         description: this.translate.instant('Records awaiting review')
       },
       {
@@ -247,7 +304,6 @@ export class TechnicalDashboardComponent implements OnInit, OnDestroy {
         icon: 'safety',
         color: '#eb2f96',
         canDrillDown: true,
-        route: '/dashboard/compliance-task-list',
         description: this.translate.instant('Records pending compliance approval')
       }
     ];
@@ -301,13 +357,13 @@ export class TechnicalDashboardComponent implements OnInit, OnDestroy {
           endpoint = '/requests?processedDuplicates=true';
           break;
         case 'data_entry_tasks':
-          endpoint = '/requests?assignedTo=data_entry';
+          endpoint = '/requests?assignedTo=data_entry&status=Rejected';
           break;
         case 'reviewer_tasks':
-          endpoint = '/requests?assignedTo=reviewer';
+          endpoint = '/requests?assignedTo=reviewer&status=Pending';
           break;
         case 'compliance_tasks':
-          endpoint = '/requests?assignedTo=compliance';
+          endpoint = '/requests?assignedTo=compliance&status=Approved&isGolden=false';
           break;
       }
       

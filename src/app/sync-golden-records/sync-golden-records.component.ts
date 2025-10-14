@@ -111,9 +111,9 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
 
   // Mapping between frontend system IDs and backend system IDs
   private systemIdMapping: { [key: string]: string } = {
-    'Oracle Forms': 'Oracle Forms',
-    'SAP S/4HANA': 'SAP S/4HANA', 
-    'SAP ByD': 'SAP ByD'
+    'Oracle Forms': 'oracle_forms',
+    'SAP S/4HANA': 'sap_4hana', 
+    'SAP ByD': 'sap_bydesign'
   };
 
   selectedSystem: TargetSystem | null = null;
@@ -189,12 +189,34 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
   }
 
   async ngOnInit(): Promise<void> {
+    console.log('[TRACE] 🎬 Sync Component ngOnInit() started');
+    console.log('[TRACE] Loading data...');
+    
     await this.loadGoldenRecords();
+    console.log('[TRACE] ✓ Golden records loaded:', this.goldenRecords.length);
+    
     await this.loadSyncRules();
+    console.log('[TRACE] ✓ Sync rules loaded:', this.syncRules.length);
+    
     await this.loadSyncHistory();
+    console.log('[TRACE] ✓ Sync history loaded:', this.syncHistory.length);
+    
     await this.loadDashboardData();
+    console.log('[TRACE] ✓ Dashboard data loaded');
+    
     await this.updateSystemStats();
+    console.log('[TRACE] ✓ System stats updated');
+    
     this.initializeSystemTargets();
+    console.log('[TRACE] ✓ System targets initialized:', this.systemTargets.length);
+    
+    console.log('[TRACE] 🎬 Sync Component initialization complete');
+    console.log('[TRACE] Final state:', {
+      goldenRecords: this.goldenRecords.length,
+      syncRules: this.syncRules.length,
+      targetSystems: this.targetSystems.length,
+      selectedSystems: this.selectedSystems.length
+    });
   }
 
   ngOnDestroy(): void {
@@ -816,6 +838,22 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
     return sessionStorage.getItem('username') || 'user';
   }
 
+  // Get current user role
+  getCurrentUserRole(): string {
+    return sessionStorage.getItem('userRole') || '';
+  }
+
+  // Check if current user is admin
+  isAdmin(): boolean {
+    return this.getCurrentUserRole() === 'admin';
+  }
+
+  // Check if current user is reviewer or admin
+  isReviewerOrAdmin(): boolean {
+    const role = this.getCurrentUserRole();
+    return role === 'reviewer' || role === 'admin';
+  }
+
   // Clear sync data (operations and records) but keep rules
   async clearSyncData(): Promise<void> {
     this.modal.confirm({
@@ -1107,42 +1145,101 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
 
   // Select all target systems
   selectAllSystems(): void {
+    console.log('[TRACE] selectAllSystems() called');
     this.selectedSystems = this.targetSystems.map(system => system.id);
+    console.log('[TRACE] Selected systems:', this.selectedSystems);
     this.message.success('All systems selected');
+  }
+
+  // Button click handler with tracing
+  onSyncButtonClick(): void {
+    console.log('='.repeat(80));
+    console.log('[TRACE] 🔵 SYNC BUTTON CLICKED');
+    console.log('[TRACE] Current state:', {
+      isSyncing: this.isSyncing,
+      totalGoldenRecords: this.stats.totalGoldenRecords,
+      selectedSystems: this.selectedSystems,
+      selectedSystemsCount: this.selectedSystems.length,
+      syncRules: this.syncRules.length,
+      activeRules: this.syncRules.filter(r => r.isActive).length
+    });
+    console.log('='.repeat(80));
+    
+    this.syncAllRecords();
   }
 
   // Sync all records to all systems
   async syncAllRecords(): Promise<void> {
+    console.log('[TRACE] 🟢 syncAllRecords() STARTED');
+    
     if (this.isSyncing) {
+      console.log('[TRACE] ❌ Already syncing, aborting');
+      this.message.warning('Sync already in progress');
       return;
     }
 
     // Get all active golden records
     const activeRecords = this.goldenRecords.filter(r => r.companyStatus === 'Active');
+    console.log('[TRACE] Active golden records:', activeRecords.length);
     
     if (activeRecords.length === 0) {
+      console.log('[TRACE] ❌ No active records found');
       this.message.warning('No active golden records to sync');
       return;
     }
 
     // Auto-select all systems if none selected
     if (this.selectedSystems.length === 0) {
+      console.log('[TRACE] No systems selected, auto-selecting all');
       this.selectAllSystems();
     }
 
+    // Check if there are any active sync rules
+    const activeRules = this.syncRules.filter(r => r.isActive);
+    console.log('[TRACE] Active sync rules:', activeRules.length);
+    activeRules.forEach(rule => {
+      console.log(`[TRACE]   - Rule: "${rule.name}" for ${rule.targetSystem}`);
+    });
+    
+    if (activeRules.length === 0) {
+      console.log('[TRACE] ❌ No active sync rules found');
+      this.message.warning('No active sync rules configured. Please create and activate sync rules first.');
+      return;
+    }
+
+    console.log('[TRACE] Pre-sync validation:', {
+      activeRecords: activeRecords.length,
+      selectedSystems: this.selectedSystems.length,
+      activeRules: activeRules.length,
+      goldenRecords: this.goldenRecords.length,
+      targetSystems: this.targetSystems.length
+    });
+
+    console.log('[TRACE] 🟡 Opening confirmation modal...');
+    
     this.modal.confirm({
       nzTitle: 'Sync All Records',
       nzContent: `This will sync all ${activeRecords.length} active golden records to ${this.selectedSystems.length} selected systems. Continue?`,
       nzOkText: 'Start Sync',
       nzOkType: 'primary',
       nzOnOk: async () => {
+        console.log('[TRACE] ✅ User confirmed sync, calling performSyncAll()');
         await this.performSyncAll();
+      },
+      nzOnCancel: () => {
+        console.log('[TRACE] ❌ User cancelled sync');
       }
     });
   }
 
   // Perform actual sync all operation
   async performSyncAll(): Promise<void> {
+    console.log('='.repeat(80));
+    console.log('[TRACE] 🟣 performSyncAll() STARTED');
+    console.log('[TRACE] Timestamp:', new Date().toISOString());
+    console.log('='.repeat(80));
+    
+    console.log('[TRACE] Setting isSyncing to TRUE');
     this.isSyncing = true;
     this.syncStatus = 'active';
     this.showSyncProgress = true;
@@ -1151,9 +1248,23 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
     this.syncLogs = [];
     this.processedRecords = 0;
     this.currentSyncSystem = 'All Systems';
+    this.currentSyncMessage = 'Initializing sync...';
+    this.realTimeProgress = 0;
     this.syncSteps = [];
 
+    console.log('[TRACE] Modal visibility flags:', {
+      isSyncing: this.isSyncing,
+      showSyncProgress: this.showSyncProgress,
+      syncCompleted: this.syncCompleted
+    });
+    
     this.addSyncLog('info', 'Starting sync all operation...', '#3b82f6');
+    console.log('[TRACE] Added first sync log');
+
+    // Add a small delay to ensure modal is rendered
+    console.log('[TRACE] Waiting 500ms for modal to render...');
+    await this.delay(500);
+    console.log('[TRACE] Modal render delay complete');
 
     try {
       let totalSynced = 0;
@@ -1164,6 +1275,14 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
         this.selectedSystems.includes(system.id)
       );
 
+      console.log('[SYNC] Systems to sync:', systemsToSync.map(s => s.name));
+
+      if (systemsToSync.length === 0) {
+        this.message.warning('No systems selected for sync');
+        this.isSyncing = false;
+        return;
+      }
+
       // Initialize sync steps
       this.syncSteps = systemsToSync.map(system => ({
         name: system.name,
@@ -1171,9 +1290,19 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
         status: 'wait'
       }));
 
-      for (const system of systemsToSync) {
+      this.totalRecordsToSync = systemsToSync.length;
+
+      for (let i = 0; i < systemsToSync.length; i++) {
+        const system = systemsToSync[i];
+        
+        console.log(`[SYNC] Processing system ${i + 1}/${systemsToSync.length}: ${system.name}`);
+        
+        // Update current step
+        this.syncSteps[i].status = 'process';
+        
         if (!system.isConnected) {
           this.addSyncLog('warning', `Skipping ${system.name} - not connected`, '#f59e0b');
+          this.syncSteps[i].status = 'finish';
           continue;
         }
 
@@ -1185,6 +1314,8 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
         
         const expectedCount = rule ? this.getMatchingRecords(rule) : 0;
         
+        console.log(`[SYNC] ${system.name}: Expected ${expectedCount} records, Rule: ${rule?.name}`);
+        
         this.currentSyncSystem = system.name;
         this.currentSyncMessage = `Syncing to ${system.name} (${expectedCount} records expected)...`;
         this.addSyncLog('api', `Starting sync to ${system.name} - Expecting ${expectedCount} records`, '#1890ff');
@@ -1193,56 +1324,78 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
           // Send ALL golden record IDs, let backend filter based on rules
           const allGoldenRecords = this.goldenRecords.filter(r => r.companyStatus === 'Active');
           
-          const result = await this.http.post<any>(`${this.apiBase}/sync/execute-selected`, {
+          console.log(`[TRACE] 📤 Preparing HTTP request for ${system.name}`);
+          console.log(`[TRACE] All golden records count:`, allGoldenRecords.length);
+          console.log(`[TRACE] Backend system ID:`, backendSystemId);
+          
+          const requestPayload = {
             recordIds: allGoldenRecords.map(r => r.id),
-            targetSystem: this.getBackendSystemId(system.id),
+            targetSystem: backendSystemId,
             executedBy: this.getCurrentUser()
-          }).toPromise();
+          };
+          
+          console.log(`[TRACE] Request payload:`, {
+            recordCount: requestPayload.recordIds.length,
+            targetSystem: requestPayload.targetSystem,
+            executedBy: requestPayload.executedBy,
+            apiUrl: `${this.apiBase}/sync/execute-selected`
+          });
+          
+          console.log(`[TRACE] 🚀 Sending HTTP POST to ${this.apiBase}/sync/execute-selected`);
+          const startTime = Date.now();
+          
+          const result = await this.http.post<any>(`${this.apiBase}/sync/execute-selected`, requestPayload).toPromise();
+          
+          const duration = Date.now() - startTime;
+          console.log(`[TRACE] 📥 HTTP Response received in ${duration}ms`);
+          console.log(`[TRACE] ${system.name} full result:`, JSON.stringify(result, null, 2));
 
-          if (result.success) {
-            totalSynced += result.syncedRecords;
-            totalFailed += result.failedRecords;
+          if (result && result.success) {
+            totalSynced += result.syncedRecords || 0;
+            totalFailed += result.failedRecords || 0;
             
             this.addSyncLog('check-circle', 
-              `${system.name}: ${result.syncedRecords}/${expectedCount} synced successfully`, 
+              `${system.name}: ${result.syncedRecords || 0} synced successfully`, 
               '#10b981'
             );
             
             // Log if count doesn't match expected
             if (result.syncedRecords !== expectedCount) {
-              this.addSyncLog('warning', 
-                `Note: Synced ${result.syncedRecords} but expected ${expectedCount}`, 
-                '#f59e0b'
+              this.addSyncLog('info', 
+                `Note: ${system.name} synced ${result.syncedRecords || 0} records (expected ${expectedCount})`, 
+                '#1890ff'
               );
             }
           } else {
+            const errorMsg = result?.error || result?.message || 'Unknown error';
             this.addSyncLog('close-circle', 
-              `${system.name}: Sync failed - ${result.error}`, 
+              `${system.name}: ${errorMsg}`, 
               '#ef4444'
             );
           }
 
+          // Update step status
+          this.syncSteps[i].status = 'finish';
+
           // Update progress
-          const currentIndex = systemsToSync.indexOf(system);
-          this.syncProgress = Math.round(((currentIndex + 1) / systemsToSync.length) * 100);
-          this.processedRecords = currentIndex + 1;
-          
-          // Update real-time progress for UI
+          this.syncProgress = Math.round(((i + 1) / systemsToSync.length) * 100);
+          this.processedRecords = i + 1;
           this.realTimeProgress = this.syncProgress;
           
-          // Update sync steps
-          this.syncSteps = systemsToSync.map((s, idx) => ({
-            name: s.name,
-            icon: 'sync',
-            status: idx < currentIndex ? 'finish' : idx === currentIndex ? 'process' : 'wait'
-          }));
+          console.log(`[SYNC] Progress: ${this.syncProgress}%, Processed: ${this.processedRecords}/${systemsToSync.length}`);
 
         } catch (error: any) {
+          console.error(`[SYNC] Error syncing to ${system.name}:`, error);
           this.addSyncLog('close-circle', 
             `${system.name}: Error - ${error.message || 'Unknown error'}`, 
             '#ef4444'
           );
+          this.syncSteps[i].status = 'finish';
+          totalFailed++;
         }
+        
+        // Small delay between systems for visual feedback
+        await this.delay(300);
       }
 
       // Final status
@@ -1256,7 +1409,15 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
         '#10b981'
       );
 
-      this.message.success(`Sync completed: ${totalSynced} synced`);
+      if (totalSynced > 0) {
+        this.message.success(`Sync completed: ${totalSynced} records synced successfully`);
+      } else if (totalFailed > 0) {
+        this.message.error(`Sync failed: ${totalFailed} errors`);
+      } else {
+        this.message.info('No records were synced. Check sync rules and criteria.');
+      }
+
+      console.log('[SYNC] Refreshing data...');
 
       // Refresh data
       await this.loadDashboardData();
@@ -1264,14 +1425,42 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
       await this.loadSyncHistory();
       await this.updateSystemStats();
 
+      console.log('[SYNC] Data refresh complete');
+
     } catch (error: any) {
+      console.error('[TRACE] ❌ FATAL ERROR in performSyncAll:', error);
+      console.error('[TRACE] Error details:', {
+        message: error.message,
+        stack: error.stack,
+        name: error.name
+      });
       this.syncStatus = 'exception';
       this.currentSyncMessage = 'Sync failed';
       this.addSyncLog('close-circle', error.message || 'Sync failed', '#ef4444');
       this.message.error('Sync failed: ' + (error.message || 'Unknown error'));
     } finally {
-      this.isSyncing = false;
+      console.log('[TRACE] 🏁 FINALLY block reached');
+      console.log('[TRACE] Setting syncCompleted to TRUE');
       this.syncCompleted = true;
+      
+      console.log('[TRACE] Current modal state:', {
+        isSyncing: this.isSyncing,
+        syncCompleted: this.syncCompleted,
+        syncProgress: this.syncProgress,
+        syncStatus: this.syncStatus
+      });
+      
+      // Keep modal visible for 2 seconds to show completion
+      console.log('[TRACE] Waiting 2000ms before closing modal...');
+      await this.delay(2000);
+      
+      console.log('[TRACE] Setting isSyncing to FALSE (closing modal)');
+      this.isSyncing = false;
+      
+      console.log('='.repeat(80));
+      console.log('[TRACE] 🏁 performSyncAll() FINISHED');
+      console.log('[TRACE] Final timestamp:', new Date().toISOString());
+      console.log('='.repeat(80));
     }
   }
 }

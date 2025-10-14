@@ -769,8 +769,17 @@
             <label>Company Owner</label>
             <div class="info-value">{{ requestForm.get('CompanyOwnerFullName')?.value || '-' }}</div>
           </div>
+        </div>
+      </div>
+    </div>
 
-          <!-- Sales Details (added inline per request) -->
+    <!-- Sales Area Card -->
+    <div class="info-card" *ngIf="requestForm.get('SalesOrgOption')?.value || requestForm.get('DistributionChannelOption')?.value || requestForm.get('DivisionOption')?.value">
+      <div class="card-header">
+        <h3>💼 Sales Area</h3>
+      </div>
+      <div class="card-content">
+        <div class="info-grid">
           <div class="info-item" *ngIf="requestForm.get('SalesOrgOption')?.value">
             <label>Sales Organization</label>
             <div class="info-value">{{ getSalesOrgLabel(requestForm.get('SalesOrgOption')?.value) }}</div>
@@ -841,6 +850,14 @@
               <div class="contact-info">
                 <label>Mobile:</label>
                 <span>{{ contact.get('mobile')?.value || '-' }}</span>
+              </div>
+              <div class="contact-info">
+                <label>Landline:</label>
+                <span>{{ contact.get('landline')?.value || '-' }}</span>
+              </div>
+              <div class="contact-info">
+                <label>Language:</label>
+                <span>{{ contact.get('preferredLanguage')?.value || '-' }}</span>
               </div>
             </div>
           </div>
