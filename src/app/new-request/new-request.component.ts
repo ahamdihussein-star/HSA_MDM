@@ -2502,8 +2502,8 @@ export class NewRequestComponent implements OnInit, OnDestroy {
       // Fill general data
       this.requestForm.patchValue({
         firstName: demoCompany.name,
-        firstNameAr: demoCompany.nameAr,
-        customerType: demoCompany.customerType,
+        firstNameAR: demoCompany.nameAr,
+        CustomerType: demoCompany.customerType,
         CompanyOwnerFullName: demoCompany.ownerName,
         tax: demoCompany.taxNumber,
         buildingNumber: demoCompany.buildingNumber,
@@ -2564,6 +2564,39 @@ export class NewRequestComponent implements OnInit, OnDestroy {
   }
 
   /**
+   * Load a new normal demo company and fill initial fields
+   * (Name EN, Name AR, Company Type, Country, City)
+   */
+  private loadNewDemoCompany(): void {
+    try {
+      // Get next demo company from service
+      const company = this.demoDataGenerator.generateDemoData();
+      
+      if (!company) {
+        return;
+      }
+
+      // Store as current demo company
+      this.currentDemoCompany = company;
+
+      // Fill initial fields (Name EN, Name AR, Company Type, Country, City)
+      this.requestForm.patchValue({
+        firstName: company.name,
+        firstNameAR: company.nameAr,
+        CustomerType: company.customerType,
+        country: company.country,
+        city: company.city
+      });
+
+      // Update city options based on selected country
+      this.filteredCityOptions = getCitiesByCountry(company.country);
+
+    } catch (error) {
+      // Silent error handling
+    }
+  }
+
+  /**
    * Handle sanctioned company auto-fill (field by field)
    * Triggered by pressing Shift + Enter key
    */
@@ -2594,7 +2627,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
 
   /**
    * Load a new sanctioned company and fill initial fields
-   * (Name EN, Name AR, Country, City)
+   * (Name EN, Name AR, Company Type, Country, City)
    */
   private loadNewSanctionedCompany(): void {
     try {
@@ -2608,10 +2641,11 @@ export class NewRequestComponent implements OnInit, OnDestroy {
       // Store as current sanctioned company
       this.currentSanctionedCompany = company;
 
-      // Fill only initial fields (Name EN, Name AR, Country, City)
+      // Fill initial fields (Name EN, Name AR, Company Type, Country, City)
       this.requestForm.patchValue({
         firstName: company.name,
         firstNameAR: company.nameAr,
+        CustomerType: company.customerType,
         country: company.country,
         city: company.city
       });
@@ -3445,12 +3479,21 @@ export class NewRequestComponent implements OnInit, OnDestroy {
   }
 
   /**
-   * Handle auto-fill keypress
+   * Handle auto-fill keypress (Double Space)
    */
   handleAutoFillKeypress(): void {
     const activeElement = document.activeElement as HTMLElement;
     
     if (!activeElement) {
+      return;
+    }
+
+    // Get the field name from various possible attributes
+    const fieldName = this.getFieldNameFromElement(activeElement);
+    
+    // If no current demo company OR we're on firstName field, load a new company with all initial fields
+    if (!this.currentDemoCompany || fieldName === 'firstName') {
+      this.loadNewDemoCompany();
       return;
     }
 
@@ -3460,9 +3503,6 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     if (!this.currentDemoCompany) {
       return;
     }
-
-    // Get the field name from various possible attributes
-    const fieldName = this.getFieldNameFromElement(activeElement);
     
     if (!fieldName) {
       return;

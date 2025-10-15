@@ -501,7 +501,6 @@ export class DuplicateCustomerComponent implements OnInit, OnDestroy {
       this.initializeContactsAndDocuments();
       // Start with builder view
       this.currentStep = 1;
-      this.autoFillBest();
     } else {
       this.route.queryParams.subscribe(async params => {
         if (params['taxNumber']) {
@@ -928,9 +927,8 @@ export class DuplicateCustomerComponent implements OnInit, OnDestroy {
           this.documents = this.masterDocuments;
         }
         
-        // Start with builder and auto-fill
+        // Start with builder
         this.currentStep = 1;
-        this.autoFillBest();
       }
     } catch (error) {
       console.error('Error loading records:', error);
@@ -2064,16 +2062,52 @@ getRecordSourceSystem(recordId: string): string {
     console.log('🔍 Field detection - placeholder:', placeholder, 'name:', name);
     
     // Check if in contact modal first
-    const parentModal = element.closest('.ant-modal');
-    if (parentModal && parentModal.textContent?.includes('Add New Contact')) {
-      if (placeholder.includes('contact name') || placeholder.includes('enter contact name')) return 'contact.name';
-      if (placeholder.includes('example@company.com') || placeholder.includes('email')) return 'contact.email';
-      if (placeholder.includes('+1234567890') || placeholder.includes('mobile') || placeholder.includes('phone')) return 'contact.mobile';
-      if (placeholder.includes('sales manager') || placeholder.includes('job')) return 'contact.jobTitle';
-      if (element === parentModal.querySelector('input[type="text"]:first-of-type')) return 'contact.name';
-      if (element.type === 'email') return 'contact.email';
-      if (element.type === 'tel') return 'contact.mobile';
-      if (element === parentModal.querySelector('input[type="text"]:nth-of-type(2)')) return 'contact.jobTitle';
+    const parentModal = element.closest('.modal-content');
+    const modalOverlay = element.closest('.modal-overlay');
+    
+    if ((parentModal || modalOverlay) && document.querySelector('.modal-content')) {
+      const modalText = document.querySelector('.modal-content')?.textContent || '';
+      
+      // If we're in Add/Edit Contact modal
+      if (modalText.includes('Add New Contact') || modalText.includes('Edit Contact')) {
+        console.log('🎯 Detected Contact Modal');
+        
+        // Check by placeholder first
+        if (placeholder.includes('contact name') || placeholder.includes('enter contact name')) {
+          console.log('✅ Field: contact.name');
+          return 'contact.name';
+        }
+        if (placeholder.includes('sales manager') || placeholder.includes('e.g.')) {
+          console.log('✅ Field: contact.jobTitle');
+          return 'contact.jobTitle';
+        }
+        if (placeholder.includes('example') || placeholder.includes('@')) {
+          console.log('✅ Field: contact.email');
+          return 'contact.email';
+        }
+        
+        // For tel inputs, check the label
+        if (element.type === 'tel' || placeholder.includes('+')) {
+          const formGroup = element.closest('.form-group');
+          const label = formGroup?.querySelector('label')?.textContent?.toLowerCase() || '';
+          console.log('🔍 Tel input detected, label:', label);
+          
+          if (label.includes('landline')) {
+            console.log('✅ Field: contact.landline');
+            return 'contact.landline';
+          }
+          if (label.includes('mobile')) {
+            console.log('✅ Field: contact.mobile');
+            return 'contact.mobile';
+          }
+        }
+        
+        // Fallback: check by email type
+        if (element.type === 'email') {
+          console.log('✅ Field: contact.email (by type)');
+          return 'contact.email';
+        }
+      }
     }
     
     // Company fields - check by data-field-key attribute or placeholder
@@ -2093,38 +2127,126 @@ getRecordSourceSystem(recordId: string): string {
   }
 
   private fillContactField(element: HTMLInputElement, fieldName: string): void {
-    // Get demo company if not already generated
-    if (!this.currentDemoCompany) {
-      this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
-    }
-
-    // Get first contact from demo company
-    const demoContact = this.currentDemoCompany.contacts?.[0];
+    let sourceContact: any = null;
+    let sourceName = '';
     
-    if (!demoContact) {
-      return;
+    console.log('🔍 fillContactField called - masterContacts:', this.masterContacts?.length, 'records:', this.records?.length);
+    
+    // FIRST: Try to get contact from masterContacts (contacts already collected from duplicate records)
+    if (this.masterContacts && this.masterContacts.length > 0) {
+      // Get first available contact from the master contacts collection
+      sourceContact = this.masterContacts[0];
+      sourceName = this.currentGroupName || 'Duplicate Records';
+      console.log('✅ Using contact from DUPLICATE RECORDS "' + sourceName + '":', sourceContact.name || sourceContact.ContactName);
+    }
+    
+    // SECOND: If no master contacts, try to get from individual records
+    if (!sourceContact && this.records && this.records.length > 0) {
+      console.log('⚠️ masterContacts is empty, checking records...');
+      console.log('📝 Found', this.records.length, 'records. Checking for contacts...');
+      this.records.forEach((record, index) => {
+        console.log(`  Record ${index}:`, {
+          id: record.id,
+          name: record.firstName,
+          ContactName: record.ContactName,
+          hasContactsArray: !!record.contacts,
+          contactsLength: record.contacts?.length || 0
+        });
+      });
+      
+
+      // Look through all duplicate records to find one with contact info
+      for (const record of this.records) {
+        if (record.ContactName || record.contacts?.length > 0) {
+          // If record has a contacts array, use first contact
+          if (record.contacts && record.contacts.length > 0) {
+            sourceContact = record.contacts[0];
+            sourceName = this.currentGroupName || record.firstName || 'Duplicate Record';
+            console.log('✅ Using contact from RECORD "' + sourceName + '":', sourceContact.name || sourceContact.ContactName);
+            break;
+          }
+          // If record has flat contact fields, create contact object
+          else if (record.ContactName) {
+            sourceContact = {
+              name: record.ContactName,
+              email: record.EmailAddress || '',
+              mobile: record.MobileNumber || '',
+              jobTitle: record.JobTitle || '',
+              landline: record.Landline || ''
+            };
+            sourceName = this.currentGroupName || record.firstName || 'Duplicate Record';
+            console.log('✅ Using contact from RECORD "' + sourceName + '":', sourceContact.name);
+            break;
+          }
+        }
+      }
+    }
+    
+    // FALLBACK: If no contacts in duplicate records, try to find the company in demo pool by name
+    if (!sourceContact) {
+      console.log('⚠️ No contacts found in duplicate records');
+      console.log('🔍 Trying to find company in demo pool:', this.currentGroupName);
+      
+      // Try to find the current company in the demo data pool
+      if (this.currentGroupName) {
+        const foundCompany = this.demoDataGenerator.findCompanyByName(this.currentGroupName);
+        if (foundCompany) {
+          this.currentDemoCompany = foundCompany;
+          console.log('✅ Found company in demo pool:', foundCompany.name, 'with', foundCompany.contacts?.length, 'contacts');
+        } else {
+          console.log('⚠️ Company not found in demo pool, generating new demo data');
+          this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+        }
+      } else if (!this.currentDemoCompany) {
+        console.log('⚠️ No company name, generating new demo data');
+        this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+      }
+      
+      sourceContact = this.currentDemoCompany.contacts?.[0];
+      sourceName = this.currentGroupName || this.currentDemoCompany.name;
+      
+      if (!sourceContact) {
+        console.log('❌ No contact data available');
+        return;
+      }
+      console.log('📇 Using contact for "' + sourceName + '":', sourceContact.name);
     }
 
-    // Map field names to contact data
-    const fieldMapping: { [key: string]: string } = {
-      'contact.name': demoContact.name,
-      'contact.email': demoContact.email,
-      'contact.mobile': demoContact.mobile,
-      'contact.jobTitle': demoContact.jobTitle,
-      'contact.landline': demoContact.landline || ''
-    };
-
-    const value = fieldMapping[fieldName];
-    if (value) {
-      element.value = value;
-      element.dispatchEvent(new Event('input', { bubbles: true }));
+    // Map field names to contact data and update the model directly
+    switch (fieldName) {
+      case 'contact.name':
+        this.newContact.name = sourceContact.name || sourceContact.ContactName || '';
+        console.log('✅ Filled contact.name:', this.newContact.name, '(from ' + sourceName + ')');
+        break;
+      case 'contact.email':
+        this.newContact.email = sourceContact.email || sourceContact.EmailAddress || sourceContact.emailAddress || '';
+        console.log('✅ Filled contact.email:', this.newContact.email, '(from ' + sourceName + ')');
+        break;
+      case 'contact.mobile':
+        this.newContact.mobile = sourceContact.mobile || sourceContact.MobileNumber || sourceContact.mobileNumber || '';
+        console.log('✅ Filled contact.mobile:', this.newContact.mobile, '(from ' + sourceName + ')');
+        break;
+      case 'contact.jobTitle':
+        this.newContact.jobTitle = sourceContact.jobTitle || sourceContact.JobTitle || '';
+        console.log('✅ Filled contact.jobTitle:', this.newContact.jobTitle, '(from ' + sourceName + ')');
+        break;
+      case 'contact.landline':
+        this.newContact.landline = sourceContact.landline || sourceContact.Landline || '';
+        console.log('✅ Filled contact.landline:', this.newContact.landline, '(from ' + sourceName + ')');
+        break;
     }
+    
+    // Trigger change detection
+    this.cdr.detectChanges();
   }
 
   private fillCompanyField(element: HTMLInputElement, fieldName: string): void {
     // Get demo company if not already generated
     if (!this.currentDemoCompany) {
       this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
+      console.log('🆕 Generated NEW demo company:', this.currentDemoCompany.name, '(Tax:', this.currentDemoCompany.taxNumber + ')');
+    } else {
+      console.log('♻️ Using EXISTING demo company:', this.currentDemoCompany.name, '(Tax:', this.currentDemoCompany.taxNumber + ')');
     }
 
     // Map field names to company data
@@ -2160,7 +2282,7 @@ getRecordSourceSystem(recordId: string): string {
 
   /**
    * Fill master record with complete demo data from unified service
-   * Used for manual entry when no duplicate records exist
+   * Used for manual entry when no duplicate records exists
    */
   fillMasterWithDemoData(): void {
     try {
