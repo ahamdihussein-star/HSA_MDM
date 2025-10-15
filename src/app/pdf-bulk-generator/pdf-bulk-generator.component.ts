@@ -6,6 +6,7 @@
 import { Component, OnInit } from '@angular/core';
 import { HttpClient } from '@angular/common/http';
 import { DemoDataGeneratorService } from '../services/demo-data-generator.service';
+import { SanctionedDemoDataService } from '../services/sanctioned-demo-data.service';
 import { RealisticDocumentGeneratorService, RealisticDocument, DocumentType } from '../services/realistic-document-generator.service';
 import { DocumentImageGeneratorService, ImageFormat, DocumentImage } from '../services/document-image-generator.service';
 import JSZip from 'jszip';
@@ -46,6 +47,7 @@ export class PdfBulkGeneratorComponent implements OnInit {
   // Selection States
   selectedCountries: string[] = [];
   selectedDocumentTypes: string[] = [];
+  selectedCompanyType: string = 'normal'; // 'normal' or 'sanctioned'
   
   // Output Format Options
   outputFormat: any = 'both';
@@ -60,6 +62,12 @@ export class PdfBulkGeneratorComponent implements OnInit {
   availableImageFormats = [
     { value: 'png', label: 'PNG (High Quality)', labelAr: 'PNG (جودة عالية)' },
     { value: 'jpeg', label: 'JPEG (Smaller Size)', labelAr: 'JPEG (حجم أصغر)' }
+  ];
+  
+  // Company Type Options
+  availableCompanyTypes = [
+    { value: 'normal', label: 'Normal Companies', labelAr: 'شركات عادية' },
+    { value: 'sanctioned', label: 'Sanctioned Companies', labelAr: 'شركات معاقبة' }
   ];
   
   // Generation States
@@ -77,6 +85,7 @@ export class PdfBulkGeneratorComponent implements OnInit {
   constructor(
     private http: HttpClient,
     private demoDataService: DemoDataGeneratorService,
+    private sanctionedDemoData: SanctionedDemoDataService,
     private docGeneratorService: RealisticDocumentGeneratorService,
     private imageGeneratorService: DocumentImageGeneratorService
   ) {}
@@ -153,8 +162,17 @@ export class PdfBulkGeneratorComponent implements OnInit {
     this.currentStep = 'Initializing...';
     
     try {
-      // Get all demo companies
-      const allCompanies = this.getAllDemoCompanies();
+      // Get all demo companies (either normal or sanctioned)
+      let allCompanies: any[] = [];
+      
+      if (this.selectedCompanyType === 'sanctioned') {
+        // Get sanctioned companies from service (in-memory)
+        this.currentStep = 'Loading sanctioned companies...';
+        allCompanies = this.sanctionedDemoData.getAllSanctionedCompanies();
+      } else {
+        // Get normal companies
+        allCompanies = this.getAllDemoCompanies();
+      }
       
       // Filter by selected countries
       const filteredCompanies = allCompanies.filter(company => 
@@ -172,13 +190,18 @@ export class PdfBulkGeneratorComponent implements OnInit {
       // Create ZIP
       const zip = new JSZip();
       
+      // Create root folder based on company type
+      const rootFolder = this.selectedCompanyType === 'sanctioned' 
+        ? zip.folder('sanctioned')! 
+        : zip;
+      
       // Generate documents for each company
       for (let i = 0; i < filteredCompanies.length; i++) {
         const company = filteredCompanies[i];
         this.currentStep = `Processing ${company.name}...`;
         
         // Create country folder
-        const countryFolder = zip.folder(this.sanitizeFolderName(company.country));
+        const countryFolder = rootFolder.folder(this.sanitizeFolderName(company.country));
         
         // Create company folder
         const companyFolder = countryFolder!.folder(this.sanitizeFolderName(company.name));
@@ -269,21 +292,31 @@ export class PdfBulkGeneratorComponent implements OnInit {
   // =========================================================================
   
   private getAllDemoCompanies(): any[] {
-    // Get all companies from demo service
     const companies: any[] = [];
     
-    // Get all 70 companies from unified pool
-    const allCompanies = this.demoDataService.getAllCompanies();
-    
-    // Filter by selected countries
-    const filteredCompanies = this.selectedCountries.length > 0
-      ? allCompanies.filter(c => this.selectedCountries.includes(c.country))
-      : allCompanies;
-    
-    companies.push(...filteredCompanies);
-    console.log(`📊 Using ${companies.length} companies from unified pool`);
-    
-    return companies;
+    if (this.selectedCompanyType === 'sanctioned') {
+      // Get sanctioned companies from API
+      return this.getSanctionedCompaniesSync();
+    } else {
+      // Get all 70 companies from unified pool
+      const allCompanies = this.demoDataService.getAllCompanies();
+      
+      // Filter by selected countries
+      const filteredCompanies = this.selectedCountries.length > 0
+        ? allCompanies.filter(c => this.selectedCountries.includes(c.country))
+        : allCompanies;
+      
+      companies.push(...filteredCompanies);
+      console.log(`📊 Using ${companies.length} companies from unified pool`);
+      
+      return companies;
+    }
+  }
+  
+  private getSanctionedCompaniesSync(): any[] {
+    // This will be called in async context, but we need to return synchronously
+    // So we'll use a different approach in the generation method
+    return [];
   }
   
   private sanitizeFolderName(name: string): string {

@@ -11,10 +11,14 @@ import { NzInputModule } from 'ng-zorro-antd/input';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzIconModule } from 'ng-zorro-antd/icon';
 import { NzStatisticModule } from 'ng-zorro-antd/statistic';
+import { NzCardModule } from 'ng-zorro-antd/card';
+import { NzProgressModule } from 'ng-zorro-antd/progress';
 
 import { ComplianceRoutingModule } from './compliance-routing.module';
 import { ComplianceTaskListComponent } from './compliance-task-list/compliance-task-list.component';
 import { ApiRepo } from '../Core/api.repo';
+import { ComplianceAgentModule } from '../compliance-agent/compliance-agent.module';
+import { ComplianceChatService } from '../compliance-agent/services/compliance-chat.service';
 
 @NgModule({
   declarations: [
@@ -33,10 +37,14 @@ import { ApiRepo } from '../Core/api.repo';
     NzTagModule,      // للـ tags
     NzIconModule,     // للـ icons
     NzStatisticModule, // للـ statistics
-    ComplianceRoutingModule
+    NzCardModule,     // للـ cards
+    NzProgressModule, // للـ progress bars
+    ComplianceRoutingModule,
+    ComplianceAgentModule  // للـ Compliance AI Agent Chat Widget
   ],
   providers: [
-    ApiRepo  // توفير ApiRepo service
+    ApiRepo,  // توفير ApiRepo service
+    ComplianceChatService  // توفير ComplianceChatService
   ],
   exports: [ComplianceTaskListComponent]
 })

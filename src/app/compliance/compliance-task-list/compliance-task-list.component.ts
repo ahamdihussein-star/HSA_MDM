@@ -7,6 +7,7 @@ import { NzNotificationService } from 'ng-zorro-antd/notification';
 import { DATA_REPO, IDataRepo } from '../../Core/data-repo';
 import { environment } from '../../../environments/environment';
 import { NotificationService } from '../../services/notification.service';
+import { ComplianceChatService } from '../../compliance-agent/services/compliance-chat.service';
 
 type TaskRow = {
   id?: string;
@@ -74,6 +75,10 @@ export class ComplianceTaskListComponent implements OnInit {
   
   // Current row being processed
   currentRow: TaskRow | null = null;
+  
+  // Sanction details modal
+  isSanctionModalVisible = false;
+  selectedSanction: any = null;
 
   // Filter tabs
   activeFilter: string = 'all';
@@ -91,7 +96,8 @@ export class ComplianceTaskListComponent implements OnInit {
     private message: NzMessageService,
     private notification: NzNotificationService,
     private http: HttpClient,
-    private notificationService: NotificationService
+    private notificationService: NotificationService,
+    private chatService: ComplianceChatService
   ) {}
 
   async ngOnInit(): Promise<void> {
@@ -567,6 +573,19 @@ export class ComplianceTaskListComponent implements OnInit {
     this.blockReason = '';
     this.isBlockModalVisible = true;
   }
+  
+  // ====== Sanction Modal Methods ======
+  openSanctionModal(sanction: any): void {
+    console.log('📄 [TASK LIST] Opening sanction modal:', sanction);
+    this.selectedSanction = sanction;
+    this.isSanctionModalVisible = true;
+  }
+  
+  closeSanctionModal(): void {
+    this.isSanctionModalVisible = false;
+    this.selectedSanction = null;
+  }
+  
   // ====== search and filter methods ======
   onSearchChange(value: string): void {
     this.searchTerm = value;
@@ -636,5 +655,57 @@ export class ComplianceTaskListComponent implements OnInit {
       }
     } catch {}
     return 'm' + Math.random().toString(36).slice(2) + Date.now().toString(36);
+  }
+
+  // ====== Block Company from Modal ======
+  async blockCompanyFromModal(): Promise<void> {
+    if (!this.selectedSanction || !this.selectedSanction.requestId) {
+      this.message.error('No request ID found');
+      return;
+    }
+
+    const requestId = this.selectedSanction.requestId;
+    
+    // Build block reason from sanction data
+    const blockReason = `Sanctioned Entity: ${this.selectedSanction.name} - ${this.selectedSanction.sanctionReason}`;
+    
+    const sanctionsInfo = {
+      entityId: this.selectedSanction.id,
+      companyName: this.selectedSanction.name,
+      country: this.selectedSanction.country,
+      riskLevel: this.selectedSanction.riskLevel,
+      sanctionReason: this.selectedSanction.sanctionReason,
+      sanctionProgram: this.selectedSanction.sanctionProgram,
+      matchConfidence: this.selectedSanction.confidence || 95
+    };
+
+    try {
+      this.loading = true;
+      
+      console.log('🚫 [MODAL] Blocking request:', requestId, blockReason);
+      
+      const response = await firstValueFrom(
+        this.http.post<any>(`${this.apiBase}/requests/${requestId}/compliance/block`, {
+          reason: blockReason,
+          sanctionsInfo
+        })
+      );
+
+      console.log('✅ [MODAL] Block response:', response);
+      
+      this.message.success('Company blocked successfully');
+      
+      // Remove from chat service messages
+      this.chatService.removeRequestFromMessages(requestId);
+      
+      this.closeSanctionModal();
+      await this.refreshData();
+      
+    } catch (error: any) {
+      console.error('❌ [MODAL] Block failed:', error);
+      this.message.error('Failed to block company: ' + (error?.error?.error || error.message));
+    } finally {
+      this.loading = false;
+    }
   }
 }

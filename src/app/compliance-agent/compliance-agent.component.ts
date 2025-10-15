@@ -760,6 +760,96 @@ The monthly API quota for OpenSanctions has been exceeded.
   closeDetailsModal(): void {
     this.isDetailsModalVisible = false;
     this.selectedSanction = null;
+    this.showArabicTranslation = false;
+    this.arabicTranslation = '';
+  }
+
+  // ═══════════════════════════════════════════════════════════════
+  // Translation Properties
+  // ═══════════════════════════════════════════════════════════════
+  
+  showArabicTranslation = false;
+  arabicTranslation = '';
+  isTranslating = false;
+
+  // ═══════════════════════════════════════════════════════════════
+  // Translation Functions
+  // ═══════════════════════════════════════════════════════════════
+
+  async translateAnalysis(): Promise<void> {
+    if (!this.selectedSanction) return;
+    
+    this.isTranslating = true;
+    
+    try {
+      const textToTranslate = this.selectedSanction.matchReason || this.selectedSanction.analysis || '';
+      
+      if (!textToTranslate) {
+        this.arabicTranslation = 'لا يوجد تحليل متاح للترجمة';
+        this.showArabicTranslation = true;
+        return;
+      }
+
+      // Simple translation logic - in real app, you'd use a translation service
+      const translation = await this.simpleTranslate(textToTranslate);
+      this.arabicTranslation = translation;
+      this.showArabicTranslation = true;
+      
+    } catch (error) {
+      console.error('❌ [TRANSLATION] Error:', error);
+      this.arabicTranslation = 'حدث خطأ أثناء الترجمة. يُرجى المحاولة مرة أخرى.';
+      this.showArabicTranslation = true;
+    } finally {
+      this.isTranslating = false;
+    }
+  }
+
+  private async simpleTranslate(text: string): Promise<string> {
+    // This is a simple mock translation - in production, use a real translation API
+    const translations: { [key: string]: string } = {
+      'Strong phonetic match': 'تطابق صوتي قوي',
+      'sounds similar to': 'يبدو مشابهاً لـ',
+      'same shipping sector': 'نفس قطاع الشحن',
+      'United Arab Emirates': 'الإمارات العربية المتحدة',
+      'High confidence': 'ثقة عالية',
+      'AI Match': 'تطابق ذكي',
+      'Local Database': 'قاعدة البيانات المحلية',
+      'Shipping': 'الشحن',
+      'Corporate': 'شركة',
+      'Dubai': 'دبي'
+    };
+
+    let translatedText = text;
+    
+    // Replace common terms
+    Object.keys(translations).forEach(key => {
+      translatedText = translatedText.replace(new RegExp(key, 'gi'), translations[key]);
+    });
+
+    // If no translations were made, provide a generic response
+    if (translatedText === text) {
+      return `تم العثور على تطابق في قاعدة البيانات المحلية للعقوبات. الشركة "${this.selectedSanction?.name}" مدرجة في قائمة العقوبات بسبب ${this.selectedSanction?.sanctionReason || 'انتهاك العقوبات الدولية'}. مستوى الخطر: ${this.selectedSanction?.riskLevel || 'عالي'}.`;
+    }
+
+    return translatedText;
+  }
+
+  getMatchQualityColor(confidence: number): string {
+    if (confidence >= 90) return 'red';
+    if (confidence >= 70) return 'orange';
+    if (confidence >= 50) return 'yellow';
+    return 'green';
+  }
+
+  getMatchQualityText(confidence: number): string {
+    if (confidence >= 90) return 'Excellent';
+    if (confidence >= 70) return 'Good';
+    if (confidence >= 50) return 'Fair';
+    return 'Weak';
+  }
+
+  formatProgress = (percent: number): string => {
+    return percent + '%';
   }
 
   /**

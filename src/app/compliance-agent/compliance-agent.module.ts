@@ -88,6 +88,9 @@ const routes = [
   providers: [
     ComplianceService,
     ComplianceChatService
+  ],
+  exports: [
+    ComplianceChatWidgetComponent  // Export عشان نقدر نستخدمه في modules تانية
   ]
 })
 export class ComplianceAgentModule { }

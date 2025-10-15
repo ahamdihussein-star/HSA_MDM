@@ -52,6 +52,47 @@
 
     <nz-divider></nz-divider>
 
+    <!-- Company Type Section -->
+    <div class="config-section">
+      <div class="section-header">
+        <h3>
+          <i nz-icon nzType="apartment" nzTheme="outline"></i>
+          Select Company Type
+          <nz-tag [nzColor]="selectedCompanyType === 'sanctioned' ? 'red' : 'blue'" class="count-badge">
+            {{ selectedCompanyType === 'sanctioned' ? 'Sanctioned' : 'Normal' }}
+          </nz-tag>
+        </h3>
+      </div>
+
+      <nz-radio-group [(ngModel)]="selectedCompanyType" class="company-type-radio-group">
+        <label *ngFor="let companyType of availableCompanyTypes" 
+               nz-radio 
+               [nzValue]="companyType.value"
+               class="company-type-radio">
+          <div class="radio-content">
+            <span class="radio-label">
+              <i nz-icon 
+                 [nzType]="companyType.value === 'sanctioned' ? 'warning' : 'check-circle'" 
+                 [nzTheme]="companyType.value === 'sanctioned' ? 'fill' : 'outline'"></i>
+              {{ companyType.label }}
+            </span>
+            <span class="ar-label">{{ companyType.labelAr }}</span>
+          </div>
+        </label>
+      </nz-radio-group>
+
+      <nz-alert 
+        *ngIf="selectedCompanyType === 'sanctioned'"
+        nzType="warning" 
+        nzMessage="⚠️ Sanctioned Companies"
+        nzDescription="These are companies under international sanctions. Use for compliance testing only."
+        nzShowIcon
+        class="sanction-warning">
+      </nz-alert>
+    </div>
+
+    <nz-divider></nz-divider>
+
     <!-- Document Types Section -->
     <div class="config-section">
       <div class="section-header">

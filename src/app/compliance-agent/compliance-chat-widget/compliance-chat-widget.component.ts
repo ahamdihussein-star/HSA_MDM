@@ -11,6 +11,7 @@ import { Subscription } from 'rxjs';
 export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
   @ViewChild('messagesContainer') private messagesContainer!: ElementRef;
   @Output() viewDetailsRequested = new EventEmitter<any>();
+  @Output() taskListRefreshRequested = new EventEmitter<void>();
   
   // UI State (Like Data Entry Agent)
   isOpen = false;
@@ -155,14 +156,7 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
       return;
     }
     
-    // Add user selection message for old actions
-    this.chatService.addMessage({
-      id: `user_${Date.now()}`,
-      role: 'user',
-      content: button.text,
-      timestamp: new Date(),
-      type: 'text'
-    });
+    // Don't add user selection message - reduces chat clutter
     
     switch (button.action) {
       case 'manual_review':
@@ -255,17 +249,37 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
     try {
       console.log('🤖 [COMPONENT] Calling searchWithAI...');
       const aiAnalysis = await this.chatService.searchWithAI(companyName);
+      
+      // 📊 DETAILED LOGGING FOR DEBUGGING
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔍 [WIDGET DEBUG] FINAL AI SEARCH RESULT');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🎯 Search Query:', companyName);
+      console.log('✅ Has Match:', aiAnalysis.hasMatch);
+      console.log('📊 Total Results:', aiAnalysis.totalResults);
+      console.log('⚠️ Risk Level:', aiAnalysis.riskLevel);
+      console.log('🎯 Confidence:', aiAnalysis.confidence);
+      console.log('💡 Recommendation:', aiAnalysis.recommendation);
+      console.log('📝 Explanation Length:', aiAnalysis.explanation?.length || 0);
+      console.log('🔧 Source:', aiAnalysis.source);
+      console.log('');
+      
+      if (aiAnalysis.results && aiAnalysis.results.length > 0) {
+        console.log('📋 RESULTS BREAKDOWN:');
+        aiAnalysis.results.forEach((res: any, i: number) => {
+          console.log(`${i + 1}. ${res.name}`);
+          console.log(`   Confidence: ${res.confidence}%`);
+          console.log(`   Risk: ${res.riskLevel}`);
+          console.log(`   Country: ${res.country}`);
+          console.log('');
+        });
+      }
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
       console.log('🤖 [COMPONENT] AI Analysis:', aiAnalysis);
       
-      // Use the new smart AI analysis message
-      this.chatService.addAIAnalysisMessage(aiAnalysis);
-      
-      // Show context-appropriate suggestions
-      const context = aiAnalysis.hasMatch ? 'after_search' : 'no_results';
-      setTimeout(() => {
-        const suggestions = this.chatService.getSmartSuggestions(context);
-        this.showSuggestions(suggestions);
-      }, 1500);
+      // Use the new smart AI analysis message with isManualSearch = true
+      this.chatService.addAIAnalysisMessage(aiAnalysis, true);
       
     } catch (error) {
       console.error('❌ [SMART] Search error:', error);
@@ -375,6 +389,52 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
         await this.chatService.handleReviewGolden();
         setTimeout(() => this.scrollToBottom(), 100);
         break;
+        
+      case 'select_request':
+        console.log('📄 [SMART] Request selected:', value);
+        await this.handleRequestSelected(value);
+        setTimeout(() => this.scrollToBottom(), 100);
+        break;
+        
+      case 'select_golden':
+        console.log('⭐ [SMART] Golden record selected:', value);
+        await this.handleGoldenSelected(value);
+        setTimeout(() => this.scrollToBottom(), 100);
+        break;
+        
+      case 'approve_request':
+        console.log('✅ [SMART] Approving request:', value);
+        await this.handleApprove(value);
+        setTimeout(() => this.scrollToBottom(), 100);
+        break;
+        
+      case 'block_request':
+        console.log('🚫 [SMART] Blocking request:', value);
+        await this.handleBlock(value);
+        setTimeout(() => this.scrollToBottom(), 100);
+        break;
+        
+      case 'bulk_approve':
+        console.log('✅ [SMART] Bulk approving requests:', value);
+        await this.handleBulkApprove(value);
+        setTimeout(() => this.scrollToBottom(), 100);
+        break;
+        
+      case 'toggle_expand':
+        console.log('🔽 [SMART] Toggling expand for message:', value);
+        this.toggleMessageExpand(value);
+        break;
+        
+      case 'confirm_block':
+        console.log('🚫 [SMART] Confirming block:', value);
+        await this.handleConfirmBlock(value);
+        setTimeout(() => this.scrollToBottom(), 100);
+        break;
+        
+      case 'view_sanction_details':
+        console.log('📋 [SMART] Viewing sanction details:', value);
+        await this.viewSanctionDetailsById(value);
+        break;
     }
   }
   
@@ -382,6 +442,10 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
     // Reset to welcome state
     this.chatService.clearMessages();
     this.chatService.sendWelcomeMessage();
+  }
+  
+  private toggleMessageExpand(messageId: string): void {
+    this.chatService.toggleExpand(messageId);
   }
   
   
@@ -393,33 +457,82 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
       const request = await this.chatService.fetchRequestDetails(requestId);
       this.currentRequest = request;
       
-      this.chatService.addMessage({
-        id: `request_details_${Date.now()}`,
-        role: 'assistant',
-        content: this.t(
-          `📋 معلومات الطلب:\n\n• الاسم: ${request.firstName}\n• الدولة: ${request.country}\n• النوع: ${request.CustomerType || 'غير محدد'}\n• الرقم الضريبي: ${request.tax || 'غير محدد'}\n\n🔍 جاري البحث في قوائم العقوبات...`,
-          `📋 Request Info:\n\n• Name: ${request.firstName}\n• Country: ${request.country}\n• Type: ${request.CustomerType || 'N/A'}\n• Tax ID: ${request.tax || 'N/A'}\n\n🔍 Searching sanctions lists...`
-        ),
-        timestamp: new Date(),
-        type: 'text'
-      });
+      console.log('📄 [REQUEST] Selected:', request.firstName, request.country);
       
-      // Search OFAC
-      const ofacResults = await this.chatService.searchOFAC(request.firstName, request.country);
-      this.currentOFACResults = ofacResults;
+      // Use the same quick risk check that was already done
+      const riskCheck = await this.chatService.quickRiskCheck(request.firstName, request.country);
       
-      if (ofacResults.length === 0) {
-        this.showApproveOption(requestId);
+      console.log('🔍 [RISK CHECK] Result:', riskCheck);
+      
+      // If match found, use the sanction data from risk check
+      if (riskCheck.hasMatch && riskCheck.sanctionData) {
+        console.log('📋 [REQUEST] Match found, opening modal...');
+        
+        // Fetch full details using the sanction ID
+        const fullDetails = await this.chatService.getEntityDetails(riskCheck.sanctionData.id);
+        
+        // Add match info and requestId for blocking
+        fullDetails.confidence = 95;
+        fullDetails.matchReason = `Exact match found in sanctions database`;
+        fullDetails.requestId = requestId;
+        
+        // Open modal with sanction details
+        this.viewDetailsRequested.emit(fullDetails);
+        
+        // Show actions in chat
+        this.chatService.addMessage({
+          id: `match_action_${Date.now()}`,
+          role: 'assistant',
+          content: this.t(
+            `🚨 **تطابق مكتشف!**\n\n**${riskCheck.sanctionData.name}**\n${riskCheck.sanctionData.country} • ${riskCheck.sanctionData.riskLevel}`,
+            `🚨 **Match Found!**\n\n**${riskCheck.sanctionData.name}**\n${riskCheck.sanctionData.country} • ${riskCheck.sanctionData.riskLevel}`
+          ),
+          timestamp: new Date(),
+          type: 'text',
+          buttons: [
+            {
+              text: this.t('🚫 حظر الشركة', '🚫 Block Company'),
+              action: 'confirm_block',
+              value: { requestId, sanction: riskCheck.sanctionData },
+              style: 'danger'
+            },
+            {
+              text: this.t('✅ الموافقة رغم التطابق', '✅ Approve Anyway'),
+              action: 'approve_request',
+              value: requestId,
+              style: 'warning'
+            }
+          ]
+        });
+        
       } else {
-        await this.performSmartMatch(request, ofacResults, requestId);
+        // No match - safe to approve
+        this.chatService.addMessage({
+          id: `safe_${Date.now()}`,
+          role: 'assistant',
+          content: this.t(
+            `✅ **آمن للموافقة**\n\nلا توجد عقوبات على "${request.firstName}"`,
+            `✅ **Safe to Approve**\n\nNo sanctions found for "${request.firstName}"`
+          ),
+          timestamp: new Date(),
+          type: 'text',
+          buttons: [
+            {
+              text: this.t('✅ الموافقة', '✅ Approve'),
+              action: 'approve_request',
+              value: requestId,
+              style: 'success'
+            }
+          ]
+        });
       }
       
     } catch (error) {
-      console.error('Error:', error);
+      console.error('❌ [REQUEST] Error:', error);
       this.chatService.addMessage({
         id: `error_${Date.now()}`,
         role: 'assistant',
-        content: this.t('❌ حدث خطأ', '❌ Error occurred'),
+        content: this.t('❌ **حدث خطأ**', '❌ **Error occurred**'),
         timestamp: new Date(),
         type: 'text'
       });
@@ -436,16 +549,8 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
   private async performSmartMatch(request: any, ofacResults: any[], requestId: string): Promise<void> {
     this.chatService.setLoading(true);
     
-    this.chatService.addMessage({
-      id: `ai_analyzing_${Date.now()}`,
-      role: 'assistant',
-      content: this.t(
-        `🤖 جاري التحليل الذكي للتطابقات...`,
-        `🤖 AI analyzing matches...`
-      ),
-      timestamp: new Date(),
-      type: 'text'
-    });
+    // Skip "AI analyzing" message - go directly to results
+    // This makes the flow faster and cleaner
     
     try {
       const smartMatch = await this.chatService.smartMatch({
@@ -562,33 +667,24 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
   private async handleApprove(requestId: string): Promise<void> {
     this.chatService.setLoading(true);
     
-    this.chatService.addMessage({
-      id: `approving_${Date.now()}`,
-      role: 'assistant',
-      content: this.t(
-        '⏳ جاري اعتماد الطلب...',
-        '⏳ Approving request...'
-      ),
-      timestamp: new Date(),
-      type: 'text'
-    });
-    
     try {
       await this.chatService.approveRequest(requestId);
+      
+      // Remove from messages list
+      this.chatService.removeRequestFromMessages(requestId);
+      
+      // Trigger task list refresh
+      this.taskListRefreshRequested.emit();
       
       this.chatService.addMessage({
         id: `approved_${Date.now()}`,
         role: 'assistant',
         content: this.t(
-          '✅ تم اعتماد الطلب بنجاح!',
-          '✅ Request approved successfully!'
+          '✅ **تمت الموافقة!**',
+          '✅ **Approved!**'
         ),
         timestamp: new Date(),
-        type: 'text',
-        buttons: [{
-          text: this.t('↩️ عودة للقائمة', '↩️ Back to Menu'),
-          action: 'back_to_menu'
-        }]
+        type: 'text'
       });
       
     } catch (error) {
@@ -607,6 +703,130 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
     this.chatService.setLoading(false);
   }
   
+  private async handleConfirmBlock(data: { requestId: string, sanction: any }): Promise<void> {
+    this.chatService.setLoading(true);
+    
+    try {
+      const { requestId, sanction } = data;
+      
+      const blockReason = this.t(
+        `تطابق في قاعدة البيانات (${sanction.confidence || 95}%)\nالشركة: ${sanction.name}`,
+        `Database match (${sanction.confidence || 95}%)\nCompany: ${sanction.name}`
+      );
+      
+      await this.chatService.blockRequest(requestId, blockReason, {
+        entityId: sanction.id,
+        companyName: sanction.name,
+        matchConfidence: sanction.confidence || 95,
+        source: 'Local Database',
+        country: sanction.country,
+        sector: sanction.sector,
+        riskLevel: sanction.riskLevel
+      });
+      
+      // Remove from messages list
+      this.chatService.removeRequestFromMessages(requestId);
+      
+      // Trigger task list refresh
+      this.taskListRefreshRequested.emit();
+      
+      this.chatService.addMessage({
+        id: `blocked_${Date.now()}`,
+        role: 'assistant',
+        content: this.t(
+          `🚫 **تم الحظر!**`,
+          `🚫 **Blocked!**`
+        ),
+        timestamp: new Date(),
+        type: 'text'
+      });
+      
+    } catch (error) {
+      console.error('❌ Block error:', error);
+      this.chatService.addMessage({
+        id: `error_${Date.now()}`,
+        role: 'assistant',
+        content: this.t(
+          '❌ **فشل الحظر**',
+          '❌ **Block failed**'
+        ),
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
+    
+    this.chatService.setLoading(false);
+  }
+
+  private async handleBulkApprove(requestIds: string[]): Promise<void> {
+    this.chatService.setLoading(true);
+    
+    this.chatService.addMessage({
+      id: `bulk_approving_${Date.now()}`,
+      role: 'assistant',
+      content: this.t(
+        `⏳ جاري الموافقة على ${requestIds.length} طلب...`,
+        `⏳ Approving ${requestIds.length} requests...`
+      ),
+      timestamp: new Date(),
+      type: 'text'
+    });
+    
+    try {
+      let successCount = 0;
+      let failCount = 0;
+      
+      // Approve all requests
+      for (const requestId of requestIds) {
+        try {
+          await this.chatService.approveRequest(requestId);
+          // Remove from messages list
+          this.chatService.removeRequestFromMessages(requestId);
+          successCount++;
+        } catch (error) {
+          console.error(`❌ Failed to approve ${requestId}:`, error);
+          failCount++;
+        }
+      }
+      
+      // Trigger task list refresh after bulk approve
+      this.taskListRefreshRequested.emit();
+      
+      this.chatService.addMessage({
+        id: `bulk_approved_${Date.now()}`,
+        role: 'assistant',
+        content: this.t(
+          `✅ **تمت الموافقة بنجاح!**\n\n• تمت الموافقة: ${successCount}\n${failCount > 0 ? `• فشل: ${failCount}` : ''}`,
+          `✅ **Bulk Approval Complete!**\n\n• Approved: ${successCount}\n${failCount > 0 ? `• Failed: ${failCount}` : ''}`
+        ),
+        timestamp: new Date(),
+        type: 'text',
+        buttons: [
+          {
+            text: this.t('↩️ العودة للقائمة', '↩️ Back to Menu'),
+            action: 'back_to_menu',
+            style: 'secondary'
+          }
+        ]
+      });
+      
+    } catch (error) {
+      console.error('❌ Bulk approve error:', error);
+      this.chatService.addMessage({
+        id: `error_${Date.now()}`,
+        role: 'assistant',
+        content: this.t(
+          '❌ **حدث خطأ في الموافقة الجماعية**',
+          '❌ **Bulk approval failed**'
+        ),
+        timestamp: new Date(),
+        type: 'text'
+      });
+    }
+    
+    this.chatService.setLoading(false);
+  }
+
   private async handleBlock(data: any): Promise<void> {
     this.chatService.setLoading(true);
     
@@ -641,19 +861,18 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
         sector: entity.sector
       });
       
+      // Remove from messages list
+      this.chatService.removeRequestFromMessages(requestId);
+      
       this.chatService.addMessage({
         id: `blocked_${Date.now()}`,
         role: 'assistant',
         content: this.t(
-          `✅ تم حظر الشركة بنجاح!\n\nالسبب: ${blockReason}\n\nتم حفظ معلومات العقوبات في قاعدة البيانات.`,
-          `✅ Company blocked successfully!\n\nReason: ${blockReason}\n\nSanctions info saved to database.`
+          `🚫 **تم الحظر!**`,
+          `🚫 **Blocked!**`
         ),
         timestamp: new Date(),
-        type: 'text',
-        buttons: [{
-          text: this.t('↩️ عودة للقائمة', '↩️ Back to Menu'),
-          action: 'back_to_menu'
-        }]
+        type: 'text'
       });
       
     } catch (error) {
@@ -685,6 +904,37 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
     return this.currentLang === 'ar' ? ar : en;
   }
   
+  // Helper functions for choice cards
+  getButtonIcon(action: string): string {
+    const icons: { [key: string]: string } = {
+      'review_requests': 'file-search',
+      'review_golden': 'database',
+      'manual_review': 'search',
+      'select_request': 'file',
+      'select_golden': 'star',
+      'approve_request': 'check-circle',
+      'block_request': 'stop',
+      'confirm_block': 'stop',
+      'bulk_approve': 'check-square',
+      'toggle_expand': 'down',
+      'view_sanction_details': 'eye',
+      'back_to_menu': 'rollback'
+    };
+    return icons[action] || 'right';
+  }
+
+  getButtonTitle(text: string): string {
+    // Extract title from button text (first line)
+    const lines = text.split('\n');
+    return lines[0].replace(/[📋✉️⭐🔍🔎]/g, '').trim();
+  }
+
+  getButtonSubtitle(text: string): string {
+    // Extract subtitle from button text (second line if exists)
+    const lines = text.split('\n');
+    return lines.length > 1 ? lines[1].trim() : '';
+  }
+
   getSectorArabic(sector: string): string {
     const map: any = {
       'Food & Agriculture': 'الأغذية والزراعة',
@@ -697,6 +947,23 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
   // View Details (Open Parent Modal)
   // ═══════════════════════════════════════════════════════════════
   
+  async viewSanctionDetailsById(sanctionId: string | number): Promise<void> {
+    console.log('📋 [DETAILS] Fetching sanction details for ID:', sanctionId);
+    
+    try {
+      this.loading = true;
+      const fullDetails = await this.chatService.getEntityDetails(sanctionId);
+      console.log('✅ [DETAILS] Full details fetched:', fullDetails);
+      
+      // Emit to parent to open modal
+      this.viewDetailsRequested.emit(fullDetails);
+      this.loading = false;
+    } catch (error) {
+      console.error('❌ [DETAILS] Error:', error);
+      this.loading = false;
+    }
+  }
+
   async viewSanctionDetails(sanction: any): Promise<void> {
     console.log('👁️ [CHAT] View details requested for:', sanction);
     
@@ -708,7 +975,7 @@ export class ComplianceChatWidgetComponent implements OnInit, OnDestroy {
       const entityId = sanction.source === 'UN' 
         ? sanction.dataid 
         : (sanction.id || sanction.uid);
-      const source = sanction.source || 'OFAC';
+      const source = sanction.source || 'Local Database';
       
       console.log('👁️ [CHAT] Fetching entity:', entityId, 'from', source);
       const fullDetails = await this.chatService.getEntityDetails(entityId, source);

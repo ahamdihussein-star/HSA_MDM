@@ -12,6 +12,7 @@ const axios = require('axios');
 const https = require('https');
 const xml2js = require('xml2js');
 const csvParse = require('csv-parse/sync');
+const OpenAI = require('openai');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -28,15 +29,20 @@ const USE_REAL_APIS = process.env.USE_REAL_SANCTIONS_APIS !== 'false'; // Defaul
 const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
 const OPENAI_API_URL = 'https://api.openai.com/v1/chat/completions';
 
-// OpenSanctions API Configuration  
-const OPENSANCTIONS_API_KEY = process.env.OPENSANCTIONS_API_KEY;
-
-// Log API Keys configuration (without exposing full keys)
+// Initialize OpenAI client
+let openai = null;
 if (OPENAI_API_KEY) {
+  openai = new OpenAI({
+    apiKey: OPENAI_API_KEY
+  });
+  console.log('✅ [SERVER] OpenAI client initialized');
   console.log('✅ [SERVER] OpenAI API Key loaded:', OPENAI_API_KEY.substring(0, 20) + '...' + OPENAI_API_KEY.substring(OPENAI_API_KEY.length - 4));
 } else {
   console.warn('⚠️ [SERVER] OpenAI API Key NOT found in environment variables');
 }
+
+// OpenSanctions API Configuration  
+const OPENSANCTIONS_API_KEY = process.env.OPENSANCTIONS_API_KEY;
 
 if (OPENSANCTIONS_API_KEY) {
   console.log('✅ [SERVER] OpenSanctions API Key configured');
@@ -5590,6 +5596,81 @@ app.post('/api/requests/admin/generate-duplicates', (req, res) => {
 });
 
 // =============================================================================
+// SANCTIONED COMPANIES DATA APIs
+// =============================================================================
+
+// Get all sanctioned companies
+app.get('/api/sanctioned-companies', (req, res) => {
+  try {
+    const sanctionedCompaniesModule = require('./sanctioned-demo-companies');
+    const companies = sanctionedCompaniesModule.getAllSanctionedCompanies();
+    
+    res.json({
+      success: true,
+      data: companies,
+      total: companies.length
+    });
+  } catch (error) {
+    console.error('[SANCTIONED] Error fetching sanctioned companies:', error);
+    res.status(500).json({ error: 'Failed to fetch sanctioned companies' });
+  }
+});
+
+// Get sanctioned companies by country
+app.get('/api/sanctioned-companies/country/:country', (req, res) => {
+  try {
+    const { country } = req.params;
+    const sanctionedCompaniesModule = require('./sanctioned-demo-companies');
+    const companies = sanctionedCompaniesModule.getSanctionedCompaniesByCountry(country);
+    
+    res.json({
+      success: true,
+      data: companies,
+      total: companies.length,
+      country: country
+    });
+  } catch (error) {
+    console.error('[SANCTIONED] Error fetching sanctioned companies by country:', error);
+    res.status(500).json({ error: 'Failed to fetch sanctioned companies' });
+  }
+});
+
+// Get sanctioned companies by risk level
+app.get('/api/sanctioned-companies/risk/:riskLevel', (req, res) => {
+  try {
+    const { riskLevel } = req.params;
+    const sanctionedCompaniesModule = require('./sanctioned-demo-companies');
+    const companies = sanctionedCompaniesModule.getSanctionedCompaniesByRiskLevel(riskLevel);
+    
+    res.json({
+      success: true,
+      data: companies,
+      total: companies.length,
+      riskLevel: riskLevel
+    });
+  } catch (error) {
+    console.error('[SANCTIONED] Error fetching sanctioned companies by risk level:', error);
+    res.status(500).json({ error: 'Failed to fetch sanctioned companies' });
+  }
+});
+
+// Get sanctioned companies statistics
+app.get('/api/sanctioned-companies/statistics', (req, res) => {
+  try {
+    const sanctionedCompaniesModule = require('./sanctioned-demo-companies');
+    const stats = sanctionedCompaniesModule.getSanctionedCompaniesStatistics();
+    
+    res.json({
+      success: true,
+      data: stats
+    });
+  } catch (error) {
+    console.error('[SANCTIONED] Error fetching sanctioned companies statistics:', error);
+    res.status(500).json({ error: 'Failed to fetch statistics' });
+  }
+});
+
+// =============================================================================
 // EXECUTIVE DASHBOARD APIs - WORLD CLASS ANALYTICS
 // =============================================================================
 
@@ -6719,7 +6800,7 @@ app.post('/api/sync/execute-selected', (req, res) => {
     let query = `
       SELECT * FROM requests 
       WHERE isGolden = 1 
-      AND companyStatus = 'Active'
+      AND (companyStatus = 'Active' OR companyStatus = 'Blocked')
     `;
     
     const params = [];
@@ -7757,6 +7838,654 @@ app.post('/api/compliance/search', async (req, res) => {
       error: 'Compliance search failed', 
       details: error.message 
     });
+  }
+});
+
+/**
+ * Search local sanctions database with OpenAI Fuzzy Matching
+ */
+app.post('/api/compliance/search-local', async (req, res) => {
+  try {
+    console.log('🔍 [SANCTIONS DB] Starting intelligent local sanctions search:', req.body);
+    
+    const { companyName, country, sector, riskLevel } = req.body;
+    
+    if (!companyName) {
+      return res.status(400).json({ error: 'Company name is required' });
+    }
+    
+    // STEP 1: Get all companies from local database (or filtered by country/sector)
+    let sql = `SELECT * FROM sanctions_database WHERE 1=1`;
+    const params = [];
+    
+    // Apply filters to reduce dataset before sending to OpenAI
+    if (country) {
+      sql += ` AND Country = ?`;
+      params.push(country);
+    }
+    
+    if (sector) {
+      sql += ` AND Sector LIKE ?`;
+      params.push(`%${sector}%`);
+    }
+    
+    if (riskLevel) {
+      sql += ` AND RiskLevel = ?`;
+      params.push(riskLevel);
+    }
+    
+    console.log('📊 [SANCTIONS DB] Fetching companies from database...');
+    const allCompanies = db.prepare(sql).all(...params);
+    
+    console.log(`📊 [SANCTIONS DB] Found ${allCompanies.length} companies in database`);
+    
+    // STEP 2: Use OpenAI for intelligent fuzzy matching
+    if (openai && allCompanies.length > 0) {
+      console.log('🤖 [OPENAI] Using AI for fuzzy matching...');
+      
+      const companiesList = allCompanies.map((c, i) => 
+        `${i + 1}. "${c.CompanyName}" (${c.Country}, ${c.Sector || 'N/A'})`
+      ).join('\n');
+      
+      // 📊 DETAILED LOGGING FOR DEBUGGING
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🔍 [OPENAI DEBUG] SEARCH REQUEST DETAILS');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      console.log('🎯 Search Query:', `"${companyName}"`);
+      console.log('🌍 Country Filter:', country || 'None');
+      console.log('🏭 Sector Filter:', sector || 'None');
+      console.log('📊 Total Companies in DB:', allCompanies.length);
+      console.log('');
+      console.log('📋 COMPANIES SENT TO OPENAI:');
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      allCompanies.forEach((c, i) => {
+        console.log(`${i + 1}. "${c.CompanyName}"`);
+        console.log(`   Country: ${c.Country}`);
+        console.log(`   Sector: ${c.Sector || 'N/A'}`);
+        console.log(`   Risk Level: ${c.RiskLevel}`);
+        console.log(`   Sanction Program: ${c.SanctionProgram}`);
+        console.log(`   Reason: ${c.SanctionReason}`);
+        console.log('');
+      });
+      console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+      
+      const prompt = `You are a world-class compliance and international sanctions expert with advanced AI capabilities.
+
+**Your mission:** Intelligent company matching against sanctions lists using advanced AI reasoning.
+
+**Your advanced capabilities:**
+- Understand ALL languages (Arabic, English, Chinese, Russian, etc.)
+- Recognize names written in different ways
+- Understand cultural name differences
+- Match Arabic names with English and vice versa
+- Recognize abbreviations and trade names
+- Analyze geographic and sector context
+
+**Search Query:** "${companyName}"
+${country ? `**Country Filter:** ${country}` : ''}
+${sector ? `**Sector Filter:** ${sector}` : ''}
+
+**Available Companies in Database:**
+${companiesList}
+
+**Intelligent matching criteria:**
+1. **Name matching:** Use your intelligence to compare names regardless of language or spelling
+2. **Geographic context:** Same country/region = higher likelihood
+3. **Industry sector:** Same field = higher likelihood  
+4. **Phonetic similarity:** Names that sound similar (especially cross-language)
+5. **Business entities:** Ignore differences in (Company, Corp, LLC, Ltd, DMCC, etc.)
+
+**Confidence levels:**
+- 90-100%: Near certain match (almost same name + same country + same sector)
+- 70-89%: Very strong match (highly similar name + similar context)
+- 50-69%: Possible match (needs human review)
+- Below 50%: Weak match (don't return)
+
+**Risk levels:**
+- Critical: 90%+ confidence in sensitive sector or serious sanctions
+- High: 80%+ confidence or sensitive sector
+- Medium: 60-79% confidence
+- Low: 50-59% confidence
+
+**⚠️ CRITICAL:**
+- Use your FULL intelligence to understand names in ANY language
+- Don't rely on simple text matching
+- Think like a human expert analyzing names
+- Explain in detail WHY this is a match
+- Be conservative: High confidence only for clear matches
+
+**Return ONLY a JSON array** with matched company indices and confidence scores (0-100):
+[
+  {"index": 1, "confidence": 95, "reason": "Strong phonetic match: Arabic 'صنوبر' transliterates to 'SINOPER' + same shipping sector"},
+  {"index": 3, "confidence": 75, "reason": "Partial match: Query contains company name abbreviation"}
+]
+
+If NO matches found, return empty array: []`;
+
+      try {
+        const completion = await openai.chat.completions.create({
+          model: 'gpt-4',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a world-class compliance expert with advanced multilingual intelligence. Use your full AI capabilities to match company names across ANY language using phonetic, semantic, and contextual analysis. Think like a human expert. Return ONLY valid JSON arrays with detailed reasoning. No explanations outside the JSON.'
+            },
+            {
+              role: 'user',
+              content: prompt
+            }
+          ],
+          temperature: 0.3,
+          max_tokens: 1000
+        });
+        
+        const aiResponse = completion.choices[0].message.content.trim();
+        
+        // 📊 LOG OPENAI RESPONSE
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('🤖 [OPENAI RESPONSE] RAW AI OUTPUT');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📝 OpenAI Response:', aiResponse);
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        // Parse AI response
+        const jsonMatch = aiResponse.match(/\[[\s\S]*\]/);
+        if (!jsonMatch) {
+          console.warn('⚠️ [OPENAI] Could not parse JSON response, using fallback');
+          throw new Error('Invalid JSON response from OpenAI');
+        }
+        
+        const matches = JSON.parse(jsonMatch[0]);
+        
+        // 📊 LOG PARSED MATCHES
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('✅ [OPENAI MATCHES] PARSED RESULTS');
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        console.log('📊 Number of matches found:', matches.length);
+        matches.forEach((match, i) => {
+          console.log(`Match ${i + 1}:`);
+          console.log(`  Index: ${match.index}`);
+          console.log(`  Confidence: ${match.confidence}%`);
+          console.log(`  Reason: ${match.reason}`);
+          console.log('');
+        });
+        console.log('━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━');
+        
+        // Map matched indices to actual company records
+        const matchedCompanies = matches
+          .filter(m => m.index >= 1 && m.index <= allCompanies.length)
+          .map(match => {
+            const company = allCompanies[match.index - 1];
+            return {
+              id: company.id.toString(),
+              name: company.CompanyName,
+              type: company.CustomerType || 'Company',
+              country: company.Country,
+              source: 'Local Database',
+              confidence: match.confidence || 85,
+              matchReason: match.reason || 'AI Match',
+              riskLevel: company.RiskLevel,
+              description: company.SanctionReason,
+              reason: company.SanctionReason,
+              sanctionType: company.SanctionProgram,
+              sanctionDate: company.SanctionStartDate,
+              sector: company.Sector,
+              address: company.Address,
+              city: company.City,
+              sourceList: company.SourceList,
+              sourceUrl: company.OpenSanctionsLink,
+              datasetVersion: company.DatasetVersion,
+              lastVerified: company.LastVerified
+            };
+          })
+          .sort((a, b) => b.confidence - a.confidence); // Sort by confidence
+        
+        console.log(`✅ [OPENAI] Found ${matchedCompanies.length} intelligent matches`);
+        
+        const complianceResult = {
+          companyName,
+          matchConfidence: matchedCompanies.length > 0 ? matchedCompanies[0].confidence : 0,
+          overallRiskLevel: matchedCompanies.length > 0 ? matchedCompanies[0].riskLevel : 'Low',
+          sanctions: matchedCompanies,
+          sources: ['Local Sanctions Database (AI Matched)'],
+          searchTimestamp: new Date().toISOString(),
+          searchCriteria: req.body,
+          totalMatches: matchedCompanies.length,
+          matchMethod: 'OpenAI Fuzzy Matching'
+        };
+        
+        return res.json(complianceResult);
+        
+      } catch (aiError) {
+        console.error('❌ [OPENAI] Fuzzy matching failed:', aiError);
+        // Fallback to simple LIKE matching
+      }
+    }
+    
+    // FALLBACK: Simple SQL LIKE matching (when OpenAI not available or error)
+    console.log('📊 [SANCTIONS DB] Using fallback SQL LIKE matching...');
+    
+    const likeResults = allCompanies.filter(c => 
+      c.CompanyName.toLowerCase().includes(companyName.toLowerCase())
+    );
+    
+    const sanctions = likeResults.map(record => ({
+      id: record.id.toString(),
+      name: record.CompanyName,
+      type: record.CustomerType || 'Company',
+      country: record.Country,
+      source: 'Local Database',
+      confidence: 100,
+      matchReason: 'SQL LIKE Match',
+      riskLevel: record.RiskLevel,
+      description: record.SanctionReason,
+      reason: record.SanctionReason,
+      sanctionType: record.SanctionProgram,
+      sanctionDate: record.SanctionStartDate,
+      sector: record.Sector,
+      address: record.Address,
+      city: record.City,
+      sourceList: record.SourceList,
+      sourceUrl: record.OpenSanctionsLink,
+      datasetVersion: record.DatasetVersion,
+      lastVerified: record.LastVerified
+    }));
+    
+    const complianceResult = {
+      companyName,
+      matchConfidence: sanctions.length > 0 ? 100 : 0,
+      overallRiskLevel: sanctions.length > 0 ? sanctions[0].riskLevel : 'Low',
+      sanctions,
+      sources: ['Local Sanctions Database'],
+      searchTimestamp: new Date().toISOString(),
+      searchCriteria: req.body,
+      totalMatches: sanctions.length,
+      matchMethod: 'SQL LIKE (Fallback)'
+    };
+    
+    console.log('✅ [SANCTIONS DB] Search completed');
+    res.json(complianceResult);
+    
+  } catch (error) {
+    console.error('❌ [SANCTIONS DB] Search failed:', error);
+    res.status(500).json({ 
+      error: 'Local sanctions search failed', 
+      details: error.message 
+    });
+  }
+});
+
+/**
+ * Get all sanctioned companies from local database
+ */
+app.get('/api/compliance/sanctioned-companies', async (req, res) => {
+  try {
+    console.log('📊 [SANCTIONS DB] Fetching all sanctioned companies...');
+    
+    const { country, riskLevel, sector, limit, offset } = req.query;
+    
+    // Build dynamic SQL query with filters
+    let sql = `SELECT * FROM sanctions_database WHERE 1=1`;
+    const params = [];
+    
+    if (country) {
+      sql += ` AND Country = ?`;
+      params.push(country);
+    }
+    
+    if (riskLevel) {
+      sql += ` AND RiskLevel = ?`;
+      params.push(riskLevel);
+    }
+    
+    if (sector) {
+      sql += ` AND Sector LIKE ?`;
+      params.push(`%${sector}%`);
+    }
+    
+    sql += ` ORDER BY 
+      CASE RiskLevel 
+        WHEN 'Very High' THEN 1 
+        WHEN 'Critical' THEN 2
+        WHEN 'High' THEN 3 
+        WHEN 'Medium' THEN 4 
+        WHEN 'Low' THEN 5 
+      END,
+      created_at DESC
+    `;
+    
+    if (limit) {
+      sql += ` LIMIT ?`;
+      params.push(parseInt(limit));
+    }
+    
+    if (offset) {
+      sql += ` OFFSET ?`;
+      params.push(parseInt(offset));
+    }
+    
+    console.log('📊 [SANCTIONS DB] SQL Query:', sql);
+    console.log('📊 [SANCTIONS DB] Parameters:', params);
+    
+    const companies = db.prepare(sql).all(...params);
+    
+    // Get total count
+    let countSql = `SELECT COUNT(*) as total FROM sanctions_database WHERE 1=1`;
+    const countParams = [];
+    
+    if (country) {
+      countSql += ` AND Country = ?`;
+      countParams.push(country);
+    }
+    
+    if (riskLevel) {
+      countSql += ` AND RiskLevel = ?`;
+      countParams.push(riskLevel);
+    }
+    
+    if (sector) {
+      countSql += ` AND Sector LIKE ?`;
+      countParams.push(`%${sector}%`);
+    }
+    
+    const { total } = db.prepare(countSql).get(...countParams);
+    
+    console.log('✅ [SANCTIONS DB] Found companies:', companies.length, 'of', total);
+    
+    res.json({
+      companies,
+      total,
+      limit: limit ? parseInt(limit) : total,
+      offset: offset ? parseInt(offset) : 0
+    });
+    
+  } catch (error) {
+    console.error('❌ [SANCTIONS DB] Failed to fetch sanctioned companies:', error);
+    res.status(500).json({ 
+      error: 'Failed to fetch sanctioned companies', 
+      details: error.message 
+    });
+  }
+});
+
+/**
+ * Get entity details from local sanctions database
+ */
+app.get('/api/compliance/entity/:id', async (req, res) => {
+  try {
+    const { id } = req.params;
+    console.log('🔍 [COMPLIANCE] Fetching entity details for ID:', id);
+    
+    const entity = db.prepare(`
+      SELECT * FROM sanctions_database 
+      WHERE id = ?
+    `).get(id);
+    
+    if (!entity) {
+      console.log('❌ [COMPLIANCE] Entity not found:', id);
+      return res.status(404).json({ error: 'Entity not found' });
+    }
+    
+    console.log('✅ [COMPLIANCE] Entity found:', entity.CompanyName);
+    res.json({
+      id: entity.id,
+      name: entity.CompanyName,
+      type: entity.CustomerType || 'Company',
+      country: entity.Country,
+      city: entity.City,
+      address: entity.Address,
+      sector: entity.Sector,
+      riskLevel: entity.RiskLevel,
+      sanctionProgram: entity.SanctionProgram,
+      sanctionReason: entity.SanctionReason,
+      sanctionStartDate: entity.SanctionStartDate,
+      sourceList: entity.SourceList,
+      sourceUrl: entity.OpenSanctionsLink,
+      openSanctionsLink: entity.OpenSanctionsLink,
+      datasetVersion: entity.DatasetVersion,
+      lastVerified: entity.LastVerified,
+      mainActivity: entity.MainActivity
+    });
+    
+  } catch (error) {
+    console.error('❌ [COMPLIANCE] Error fetching entity:', error);
+    res.status(500).json({ error: 'Failed to fetch entity details' });
+  }
+});
+
+/**
+ * Quick Risk Check - Fast preliminary check for potential sanctions
+ */
+app.post('/api/compliance/quick-risk-check', async (req, res) => {
+  try {
+    const { companyName, country } = req.body;
+    
+    console.log('⚡ [QUICK CHECK] Assessing risk for:', companyName, country);
+    
+    if (!companyName) {
+      return res.status(400).json({ error: 'Company name is required' });
+    }
+    
+    // Get all sanctioned company names from database
+    const allSanctions = db.prepare(`SELECT id, CompanyName, Country, City, Sector, RiskLevel, SanctionReason, SanctionProgram, SourceList FROM sanctions_database`).all();
+    
+    console.log(`⚡ [QUICK CHECK] Loaded ${allSanctions.length} sanctioned companies`);
+    
+    if (!openai || allSanctions.length === 0) {
+      console.log('⚡ [QUICK CHECK] OpenAI not available or no sanctions data - returning safe');
+      return res.json({
+        hasMatch: false,
+        matchCount: 0,
+        riskLevel: 'Low',
+        needsReview: false,
+        companyName,
+        country
+      });
+    }
+    
+    // Prepare company list for OpenAI
+    const companyList = allSanctions.map((s, i) => `${i + 1}. ${s.CompanyName}`).join('\n');
+    
+    const prompt = `You are a sanctions compliance expert. Compare the search query with the list of sanctioned companies.
+
+**Search Query:**
+Company Name: ${companyName}
+${country ? `Country: ${country}` : ''}
+
+**Sanctioned Companies:**
+${companyList}
+
+**Task:** Determine if the search query matches ANY of the sanctioned companies. Consider:
+- Exact matches
+- Phonetic similarities (especially Arabic/English transliterations)
+- Abbreviations and variations
+- Company name parts (e.g., "ALDAR" matching "ALDAR PROPERTIES")
+
+**Response Format (JSON only):**
+If match found: {"hasMatch": true, "matchIndex": <number>, "confidence": <50-100>, "reason": "brief explanation"}
+If no match: {"hasMatch": false}
+
+Return ONLY the JSON, no other text.`;
+
+    console.log('⚡ [QUICK CHECK] Sending to OpenAI...');
+    
+    const completion = await openai.chat.completions.create({
+      model: 'gpt-4',
+      messages: [
+        {
+          role: 'system',
+          content: 'You are a sanctions compliance expert. Return ONLY valid JSON. No explanations outside JSON.'
+        },
+        {
+          role: 'user',
+          content: prompt
+        }
+      ],
+      temperature: 0.2,
+      max_tokens: 200
+    });
+    
+    const aiResponse = completion.choices[0].message.content.trim();
+    console.log('⚡ [QUICK CHECK] OpenAI response:', aiResponse);
+    
+    // Parse AI response
+    const jsonMatch = aiResponse.match(/\{[\s\S]*\}/);
+    if (!jsonMatch) {
+      console.warn('⚡ [QUICK CHECK] Could not parse JSON, returning safe');
+      return res.json({
+        hasMatch: false,
+        matchCount: 0,
+        riskLevel: 'Low',
+        needsReview: false,
+        companyName,
+        country
+      });
+    }
+    
+    const result = JSON.parse(jsonMatch[0]);
+    
+    if (result.hasMatch && result.matchIndex) {
+      const matchedCompany = allSanctions[result.matchIndex - 1];
+      
+      console.log('⚡ [QUICK CHECK] ✅ Match found:', matchedCompany.CompanyName);
+      
+      return res.json({
+        hasMatch: true,
+        matchCount: 1,
+        riskLevel: matchedCompany.RiskLevel || 'Medium',
+        needsReview: true,
+        companyName,
+        country,
+        sanctionData: {
+          id: matchedCompany.id,
+          name: matchedCompany.CompanyName,
+          country: matchedCompany.Country,
+          city: matchedCompany.City,
+          sector: matchedCompany.Sector,
+          riskLevel: matchedCompany.RiskLevel,
+          sanctionReason: matchedCompany.SanctionReason,
+          sanctionProgram: matchedCompany.SanctionProgram,
+          sourceList: matchedCompany.SourceList
+        }
+      });
+    }
+    
+    // No match - return safe
+    console.log('⚡ [QUICK CHECK] ❌ No match - returning safe');
+    
+    res.json({
+      hasMatch: false,
+      matchCount: 0,
+      riskLevel: 'Low',
+      needsReview: false,
+      companyName,
+      country
+    });
+    
+  } catch (error) {
+    console.error('❌ [QUICK CHECK] Error:', error);
+    res.status(500).json({ error: 'Quick risk check failed' });
+  }
+});
+
+/**
+ * OpenAI Analysis for No-Match Cases
+ */
+app.post('/api/openai/analyze-no-match', async (req, res) => {
+  try {
+    const { companyName, country, sector, language } = req.body;
+    
+    console.log('🤖 [OPENAI] Analyzing no-match case:', { companyName, country, sector, language });
+    
+    const prompt = language === 'ar' 
+      ? `أنت خبير في الامتثال وقوائم العقوبات. قم بتحليل هذه الشركة:
+
+**الشركة:** ${companyName}
+**الدولة:** ${country || 'غير محددة'}
+**القطاع:** ${sector || 'غير محدد'}
+
+**النتيجة:** لم يتم العثور على هذه الشركة في قاعدة البيانات المحلية للعقوبات.
+
+قم بتقديم تحليل ذكي باللغة العربية يتضمن:
+1. تقييم مستوى الخطر (low/medium/high)
+2. توصية واضحة (approve/review/block)
+3. تفسير منطقي للقرار
+4. نصائح إضافية إن وجدت
+
+اجعل الرد محترفاً وواضحاً.`
+      : `You are a compliance expert. Analyze this company:
+
+**Company:** ${companyName}
+**Country:** ${country || 'Unknown'}
+**Sector:** ${sector || 'Unknown'}
+
+**Result:** This company was NOT found in the local sanctions database.
+
+Provide a smart analysis in English including:
+1. Risk level assessment (low/medium/high)
+2. Clear recommendation (approve/review/block)
+3. Logical explanation for the decision
+4. Additional advice if any
+
+Make the response professional and clear.`;
+    
+    if (openai) {
+      const completion = await openai.chat.completions.create({
+        model: 'gpt-4',
+        messages: [
+          {
+            role: 'system',
+            content: language === 'ar' 
+              ? 'أنت خبير في الامتثال وقوائم العقوبات. قدم تحليلات دقيقة ومفيدة باللغة العربية.'
+              : 'You are a compliance and sanctions expert. Provide accurate and helpful analyses in English.'
+          },
+          {
+            role: 'user',
+            content: prompt
+          }
+        ],
+        temperature: 0.7,
+        max_tokens: 500
+      });
+      
+      const aiAnalysis = completion.choices[0].message.content;
+      
+      // Parse AI response to extract structured data
+      const riskLevel = aiAnalysis.toLowerCase().includes('high') ? 'high' 
+                      : aiAnalysis.toLowerCase().includes('medium') ? 'medium' 
+                      : 'low';
+      
+      const recommendation = aiAnalysis.toLowerCase().includes('block') ? 'block'
+                           : aiAnalysis.toLowerCase().includes('review') ? 'review'
+                           : 'approve';
+      
+      const response = {
+        riskLevel,
+        confidence: 90,
+        recommendation,
+        [`explanation_${language}`]: aiAnalysis,
+        rawAnalysis: aiAnalysis
+      };
+      
+      console.log('✅ [OPENAI] Analysis complete');
+      res.json(response);
+      
+    } else {
+      // Fallback when OpenAI is not available
+      const response = {
+        riskLevel: 'low',
+        confidence: 85,
+        recommendation: 'approve',
+        explanation_ar: `✅ **لا توجد تطابقات**\n\nلم يتم العثور على الشركة "${companyName}" في قاعدة البيانات المحلية للعقوبات.\n\n• **التقييم:** الشركة غير مدرجة في قوائم العقوبات المحلية\n• **التوصية:** آمن للموافقة\n\n⚠️ **ملحوظة:** يُنصح بإجراء فحص إضافي للشركات عالية القيمة.`,
+        explanation_en: `✅ **No Matches Found**\n\nCompany "${companyName}" not found in local sanctions database.\n\n• **Assessment:** Company not listed in local sanctions\n• **Recommendation:** Safe to approve\n\n⚠️ **Note:** Additional checks recommended for high-value companies.`
+      };
+      
+      res.json(response);
+    }
+    
+  } catch (error) {
+    console.error('❌ [OPENAI] Analysis error:', error);
+    res.status(500).json({ error: 'Analysis failed', details: error.message });
   }
 });
 

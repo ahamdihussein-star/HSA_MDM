@@ -18,6 +18,7 @@ import { NzAlertModule } from 'ng-zorro-antd/alert';
 import { NzTagModule } from 'ng-zorro-antd/tag';
 import { NzDividerModule } from 'ng-zorro-antd/divider';
 import { NzIconModule } from 'ng-zorro-antd/icon';
+import { NzRadioModule } from 'ng-zorro-antd/radio';
 
 @NgModule({
   declarations: [PdfBulkGeneratorComponent],
@@ -33,7 +34,8 @@ import { NzIconModule } from 'ng-zorro-antd/icon';
     NzAlertModule,
     NzTagModule,
     NzDividerModule,
-    NzIconModule
+    NzIconModule,
+    NzRadioModule
   ],
   providers: [
     DocumentImageGeneratorService,

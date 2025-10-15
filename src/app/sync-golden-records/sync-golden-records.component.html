@@ -338,7 +338,7 @@
               <nz-collapse nzAccordion>
                 <nz-collapse-panel *ngFor="let operation of operations; let i = index"
                                   [nzHeader]="operationHeaderTpl"
-                                  [nzActive]="i === 0"
+                                  [nzActive]="false"
                                   [nzExtra]="operationExtraTpl">
                   
                   <ng-template #operationHeaderTpl>
@@ -371,26 +371,6 @@
 
                   <!-- Operation Details Content -->
                   <div class="operation-details">
-                    <!-- Operation Info -->
-                    <div class="operation-info">
-                      <div class="info-row">
-                        <span class="info-label">Operation ID:</span>
-                        <span class="info-value">{{ operation.id || 'N/A' }}</span>
-                      </div>
-                      <div class="info-row">
-                        <span class="info-label">Executed By:</span>
-                        <span class="info-value">{{ operation.executedBy || 'System' }}</span>
-                      </div>
-                      <div class="info-row">
-                        <span class="info-label">Duration:</span>
-                        <span class="info-value">{{ calculateDuration(operation.startedAt, operation.completedAt) }}</span>
-                      </div>
-                      <div class="info-row" *ngIf="operation.ruleName">
-                        <span class="info-label">Rule Used:</span>
-                        <span class="info-value">{{ operation.ruleName }}</span>
-                      </div>
-                    </div>
-
                     <!-- Records Table -->
                     <div class="records-table-container">
                       <h4>Synchronized Records ({{ getOperationRecords(operation).length }})</h4>
@@ -416,7 +396,6 @@
                             <th>Country</th>
                             <th>City</th>
                             <th>Sync Status</th>
-                            <th>Target Record ID</th>
                           </tr>
                         </thead>
                         <tbody>
@@ -434,12 +413,6 @@
                               <nz-tag [nzColor]="record.syncStatus === 'success' ? 'success' : 'error'">
                                 {{ record.syncStatus | uppercase }}
                               </nz-tag>
-                            </td>
-                            <td>
-                              <span class="target-id" *ngIf="record.targetRecordId">
-                                {{ record.targetRecordId }}
-                              </span>
-                              <span *ngIf="!record.targetRecordId" class="no-id">-</span>
                             </td>
                           </tr>
                         </tbody>

@@ -20,6 +20,7 @@ import { NotificationService } from '../services/notification.service';
 import { NzUploadFile } from 'ng-zorro-antd/upload';
 import { Observable, firstValueFrom } from 'rxjs';
 import { DemoDataGeneratorService, DemoCompany } from '../services/demo-data-generator.service';
+import { SanctionedDemoDataService } from '../services/sanctioned-demo-data.service';
 import { AutoTranslateService } from '../services/auto-translate.service';
 
 // Import unified lookup data
@@ -170,6 +171,11 @@ export class NewRequestComponent implements OnInit, OnDestroy {
   // Compliance popup
   isBlockModalVisible = false;
   blockReason = '';
+  
+  // Risk Assessment Modal
+  isRiskModalVisible = false;
+  riskAssessmentData: any = null;
+  selectedRiskSanction: any = null;
 
   stateIssues: any[] = [];
   showSummary = false;
@@ -261,6 +267,7 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     @Inject(PLATFORM_ID) private platformId: Object,
     private http: HttpClient,
     private demoDataGenerator: DemoDataGeneratorService,
+    private sanctionedDemoData: SanctionedDemoDataService,
     private autoTranslate: AutoTranslateService,
     private sanitizer: DomSanitizer,
     private cdr: ChangeDetectorRef,
@@ -2365,6 +2372,108 @@ export class NewRequestComponent implements OnInit, OnDestroy {
     }
   }
   
+  async checkRiskAssessment(): Promise<void> {
+    const companyName = this.requestForm?.get('firstName')?.value;
+    const country = this.requestForm?.get('country')?.value;
+    
+    if (!companyName) {
+      this.msg.warning('Company name is required');
+      return;
+    }
+    
+    try {
+      this.isLoading = true;
+      
+      // Call quick risk check API
+      const response = await firstValueFrom(
+        this.http.post<any>(`${environment.apiBaseUrl}/compliance/quick-risk-check`, {
+          companyName,
+          country
+        })
+      );
+      
+      console.log('📊 [RISK] Assessment result:', response);
+      
+      this.riskAssessmentData = response;
+      
+      // If match found, get full details
+      if (response.hasMatch && response.sanctionData) {
+        console.log('🔍 [RISK] Fetching full details for entity:', response.sanctionData.id);
+        const detailsResponse = await firstValueFrom(
+          this.http.get<any>(`${environment.apiBaseUrl}/compliance/entity/${response.sanctionData.id}`)
+        );
+        console.log('✅ [RISK] Full details:', detailsResponse);
+        this.selectedRiskSanction = detailsResponse;
+      }
+      
+      console.log('🚀 [RISK] Opening modal with data:', this.riskAssessmentData);
+      this.isRiskModalVisible = true;
+      console.log('📋 [RISK] Modal visible:', this.isRiskModalVisible);
+      
+      // Force change detection
+      this.cdr.detectChanges();
+      
+    } catch (error: any) {
+      console.error('❌ [RISK] Error:', error);
+      this.msg.error('Failed to perform risk assessment');
+    } finally {
+      this.isLoading = false;
+    }
+  }
+  
+  closeRiskModal(): void {
+    this.isRiskModalVisible = false;
+    this.riskAssessmentData = null;
+    this.selectedRiskSanction = null;
+  }
+  
+  async blockFromRiskModal(): Promise<void> {
+    if (!this.selectedRiskSanction || !this.currentRecordId) {
+      this.msg.error('Missing required data');
+      return;
+    }
+    
+    // Build block reason from sanction data
+    const blockReason = `Sanctioned Entity: ${this.selectedRiskSanction.name} - ${this.selectedRiskSanction.sanctionReason}`;
+    
+    const sanctionsInfo = {
+      entityId: this.selectedRiskSanction.id,
+      companyName: this.selectedRiskSanction.name,
+      country: this.selectedRiskSanction.country,
+      riskLevel: this.selectedRiskSanction.riskLevel,
+      sanctionReason: this.selectedRiskSanction.sanctionReason,
+      sanctionProgram: this.selectedRiskSanction.sanctionProgram,
+      matchConfidence: this.riskAssessmentData?.confidence || 95
+    };
+    
+    try {
+      this.isLoading = true;
+      
+      console.log('🚫 [RISK MODAL] Blocking request:', this.currentRecordId, blockReason);
+      
+      const response = await firstValueFrom(
+        this.http.post<any>(`${environment.apiBaseUrl}/requests/${this.currentRecordId}/compliance/block`, {
+          reason: blockReason,
+          sanctionsInfo
+        })
+      );
+      
+      console.log('✅ [RISK MODAL] Block response:', response);
+      
+      this.msg.success('Company blocked successfully');
+      this.closeRiskModal();
+      
+      // Navigate back to compliance task list
+      this.router.navigate(['/dashboard/compliance-task-list']);
+      
+    } catch (error: any) {
+      console.error('❌ [RISK MODAL] Block failed:', error);
+      this.msg.error('Failed to block company: ' + (error?.error?.error || error.message));
+    } finally {
+      this.isLoading = false;
+    }
+  }
+  
   showAssignModal(): void { 
     this.isAssignVisible = true; 
   }
@@ -2451,6 +2560,159 @@ export class NewRequestComponent implements OnInit, OnDestroy {
   private clearAllContacts(): void {
     while (this.contactsFA.length !== 0) {
       this.contactsFA.removeAt(0);
+    }
+  }
+
+  /**
+   * Handle sanctioned company auto-fill (field by field)
+   * Triggered by pressing Shift + Enter key
+   */
+  handleSanctionedAutoFillKeypress(): void {
+    const activeElement = document.activeElement as HTMLElement;
+    
+    if (!activeElement) {
+      return;
+    }
+
+    // Get the field name from the active element
+    const fieldName = this.getFieldNameFromElement(activeElement);
+    
+    // If no current sanctioned company OR we're on firstName field, load a new company
+    if (!this.currentSanctionedCompany || fieldName === 'firstName') {
+      this.loadNewSanctionedCompany();
+      return;
+    }
+    
+    // Otherwise, fill only the current field
+    if (fieldName) {
+      const demoValue = this.getSanctionedValueForField(fieldName);
+      if (demoValue !== null && demoValue !== undefined) {
+        this.fillFieldWithValue(fieldName, demoValue);
+      }
+    }
+  }
+
+  /**
+   * Load a new sanctioned company and fill initial fields
+   * (Name EN, Name AR, Country, City)
+   */
+  private loadNewSanctionedCompany(): void {
+    try {
+      // Get next sanctioned company from service
+      const company = this.sanctionedDemoData.getNextSanctionedCompany();
+      
+      if (!company) {
+        return;
+      }
+
+      // Store as current sanctioned company
+      this.currentSanctionedCompany = company;
+
+      // Fill only initial fields (Name EN, Name AR, Country, City)
+      this.requestForm.patchValue({
+        firstName: company.name,
+        firstNameAR: company.nameAr,
+        country: company.country,
+        city: company.city
+      });
+
+      // Update city options based on selected country
+      this.filteredCityOptions = getCitiesByCountry(company.country);
+
+    } catch (error) {
+      // Silent error handling
+    }
+  }
+
+  /**
+   * Get sanctioned demo value for a specific field
+   */
+  private getSanctionedValueForField(fieldName: string): any {
+    if (!this.currentSanctionedCompany) {
+      return null;
+    }
+
+    const company = this.currentSanctionedCompany;
+    
+    // Map field names to company properties
+    switch (fieldName) {
+      case 'firstName':
+        return company.name;
+      case 'firstNameAr':
+      case 'firstNameAR':
+        return company.nameAr;
+      case 'customerType':
+        return company.customerType;
+      case 'CompanyOwnerFullName':
+        return company.ownerName;
+      case 'tax':
+        return company.taxNumber;
+      case 'buildingNumber':
+        return company.buildingNumber;
+      case 'street':
+        return company.street;
+      case 'country':
+        return company.country;
+      case 'city':
+        return company.city;
+      case 'salesOrg':
+        return company.salesOrg;
+      case 'distributionChannel':
+        return company.distributionChannel;
+      case 'division':
+        return company.division;
+      
+      // Contact fields support
+      case 'name':
+      case 'ContactName':
+        return this.getSanctionedContactField('name');
+      case 'jobTitle':
+      case 'JobTitle':
+        return this.getSanctionedContactField('jobTitle');
+      case 'email':
+      case 'EmailAddress':
+        return this.getSanctionedContactField('email');
+      case 'mobile':
+      case 'MobileNumber':
+        return this.getSanctionedContactField('mobile');
+      case 'landline':
+      case 'Landline':
+        return this.getSanctionedContactField('landline');
+      case 'preferredLanguage':
+      case 'PrefferedLanguage':
+        return this.getSanctionedContactField('preferredLanguage');
+        
+      default:
+        return null;
+    }
+  }
+
+  /**
+   * Get contact field value from current sanctioned company
+   * Uses EXACT same logic as Double Space (getContactDataByField)
+   */
+  private getSanctionedContactField(fieldName: string): any {
+    if (!this.currentSanctionedCompany) return null;
+    
+    // Use the last contact index for variety (EXACT same as Double Space)
+    const contactIndex = Math.max(0, this.contactsFA.length - 1);
+    
+    // Get contacts from current sanctioned company
+    const allContacts = [...this.currentSanctionedCompany.contacts];
+    
+    // Get the contact at this index
+    const contact = allContacts[contactIndex];
+    if (!contact) return null;
+    
+    // Return the specific field data (EXACT same as Double Space)
+    switch (fieldName) {
+      case 'name': return contact.name;
+      case 'email': return contact.email;
+      case 'mobile': return contact.mobile;
+      case 'jobTitle': return contact.jobTitle;
+      case 'landline': return contact.landline;
+      case 'preferredLanguage': return contact.preferredLanguage;
+      default: return null;
     }
   }
 
@@ -3129,21 +3391,34 @@ export class NewRequestComponent implements OnInit, OnDestroy {
   // ============== Keyboard Auto-Fill Functionality ==============
   
   currentDemoCompany: any = null;
+  currentSanctionedCompany: any = null;
   private keyboardListener: ((event: KeyboardEvent) => void) | null = null;
   private lastSpaceTime: number = 0;
   private spaceClickCount: number = 0;
 
   /**
    * Setup keyboard auto-fill functionality
-   * Press Ctrl+D (or Cmd+D on Mac) to auto-fill the focused field
+   * Press Double Space for normal company
+   * Press Shift + Enter for sanctioned company
    */
   setupKeyboardAutoFill(): void {
     // Generate demo company data once
     this.currentDemoCompany = this.demoDataGenerator.generateDemoData();
     
-    // Create keyboard listener - Double Space for auto-fill
+    // Create keyboard listener - Double Space for normal, Shift + Enter for sanctioned
     this.keyboardListener = (event: KeyboardEvent) => {
-      // Check for Space key
+      // Check for Shift + Enter key - Sanctioned Company (field-by-field)
+      if (event.shiftKey && event.key === 'Enter') {
+        // Only trigger if in an input field
+        const target = event.target as HTMLElement;
+        if (target.tagName === 'INPUT' || target.classList.contains('ant-input')) {
+          event.preventDefault();
+          this.handleSanctionedAutoFillKeypress();
+          return;
+        }
+      }
+      
+      // Check for Space key - Normal Company
       if (event.key === ' ' || event.code === 'Space') {
         const now = Date.now();
         
@@ -3511,13 +3786,23 @@ export class NewRequestComponent implements OnInit, OnDestroy {
    * Get demo value for specific contact field and index
    */
   private getContactDemoValue(fieldName: string, contactIndex: number): any {
-    if (!this.currentDemoCompany) return null;
+    // Check if we're using sanctioned company or normal company
+    let allContacts: any[] = [];
     
-    // Generate enough contacts
-    const allContacts = [...this.currentDemoCompany.contacts];
-    while (allContacts.length <= contactIndex) {
-      const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(1, this.currentDemoCompany.country, this.currentDemoCompany.name);
-      allContacts.push(...additionalContacts);
+    if (this.currentSanctionedCompany && this.currentSanctionedCompany.contacts) {
+      // Use sanctioned company contacts
+      allContacts = [...this.currentSanctionedCompany.contacts];
+    } else if (this.currentDemoCompany && this.currentDemoCompany.contacts) {
+      // Use normal demo company contacts
+      allContacts = [...this.currentDemoCompany.contacts];
+      
+      // Generate additional contacts if needed (only for normal companies)
+      while (allContacts.length <= contactIndex) {
+        const additionalContacts = this.demoDataGenerator.generateAdditionalContacts(1, this.currentDemoCompany.country, this.currentDemoCompany.name);
+        allContacts.push(...additionalContacts);
+      }
+    } else {
+      return null;
     }
     
     const contact = allContacts[contactIndex];

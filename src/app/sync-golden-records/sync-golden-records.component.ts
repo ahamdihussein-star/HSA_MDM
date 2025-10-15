@@ -260,7 +260,7 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
       await this.loadGoldenRecords();
       await this.loadSyncHistory();
       
-      this.totalGoldenRecords = this.goldenRecords.filter(r => r.companyStatus === 'Active').length;
+      this.totalGoldenRecords = this.goldenRecords.filter(r => r.companyStatus === 'Active' || r.companyStatus === 'Blocked').length;
       
       // Count records that are actually synced (check syncStatus field)
       this.totalSynced = this.goldenRecords.filter(r => 
@@ -292,7 +292,7 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
     try {
       const records = await this.http.get<any[]>(`${this.apiBase}/requests?isGolden=true`).toPromise();
       this.goldenRecords = (records || [])
-        .filter(r => r.companyStatus === 'Active')
+        .filter(r => r.companyStatus === 'Active' || r.companyStatus === 'Blocked')
         .map(r => ({
           ...r,
           selected: false
@@ -427,7 +427,7 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
       await this.loadGoldenRecords();
     }
     
-    const activeGoldenRecords = this.goldenRecords.filter(r => r.companyStatus === 'Active');
+    const activeGoldenRecords = this.goldenRecords.filter(r => r.companyStatus === 'Active' || r.companyStatus === 'Blocked');
     
     for (const system of this.targetSystems) {
       try {
@@ -1179,7 +1179,7 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
     }
 
     // Get all active golden records
-    const activeRecords = this.goldenRecords.filter(r => r.companyStatus === 'Active');
+    const activeRecords = this.goldenRecords.filter(r => r.companyStatus === 'Active' || r.companyStatus === 'Blocked');
     console.log('[TRACE] Active golden records:', activeRecords.length);
     
     if (activeRecords.length === 0) {
@@ -1322,7 +1322,7 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
 
         try {
           // Send ALL golden record IDs, let backend filter based on rules
-          const allGoldenRecords = this.goldenRecords.filter(r => r.companyStatus === 'Active');
+          const allGoldenRecords = this.goldenRecords.filter(r => r.companyStatus === 'Active' || r.companyStatus === 'Blocked');
           
           console.log(`[TRACE] 📤 Preparing HTTP request for ${system.name}`);
           console.log(`[TRACE] All golden records count:`, allGoldenRecords.length);

@@ -60,7 +60,10 @@
           </div>
           
           <!-- Text Content -->
-          <div *ngIf="!message.isThinking && message.type !== 'search_results'" [innerHTML]="message.content"></div>
+          <div *ngIf="!message.isThinking && message.type !== 'search_results'" 
+               class="message-content"
+               [innerHTML]="message.content">
+          </div>
           
           <!-- Search Results Message -->
           <div *ngIf="message.type === 'search_results'">
@@ -69,51 +72,39 @@
             <div class="search-results" *ngIf="message.data?.results && message.data.results.length > 0">
               <div 
                 class="result-card" 
-                *ngFor="let result of message.data.results.slice(0, 5)"
+                *ngFor="let result of message.data.results.slice(0, 3)"
                 (click)="viewSanctionDetails(result)"
                 style="cursor: pointer;">
                 <div class="result-header">
-                  <strong>{{ result.name || result.first_name }}</strong>
-                  <span class="badge" [style.background]="result.source === 'UN' ? '#1890ff' : '#ff4d4f'">
-                    {{ result.source === 'UN' ? '🇺🇳 UN' : '🇺🇸 OFAC' }}
-                  </span>
-                </div>
-                <div class="result-details">
-                  <!-- OFAC-specific fields -->
-                  <div class="detail-row" *ngIf="result.source !== 'UN' && result.countries && result.countries.length > 0">
-                    <span class="label">{{ t('الدولة:', 'Country:') }}</span>
-                    <span>{{ result.countries[0] }}</span>
+                  <div class="company-info">
+                    <strong>{{ result.name || result.first_name }}</strong>
+                    <span class="country">{{ result.country || result.countries?.[0] || 'Unknown' }}</span>
                   </div>
-                  <div class="detail-row" *ngIf="result.source !== 'UN' && result.sector">
-                    <span class="label">{{ t('القطاع:', 'Sector:') }}</span>
-                    <span>{{ t(getSectorArabic(result.sector), result.sector) }}</span>
-                  </div>
-                  
-                  <!-- UN-specific fields -->
-                  <div class="detail-row" *ngIf="result.source === 'UN' && result.un_list_type">
-                    <span class="label">{{ t('نوع القائمة:', 'List Type:') }}</span>
-                    <span>{{ result.un_list_type }}</span>
-                  </div>
-                  <div class="detail-row" *ngIf="result.source === 'UN' && result.countries">
-                    <span class="label">{{ t('الدول:', 'Countries:') }}</span>
-                    <span>{{ result.countries }}</span>
-                  </div>
-                  
-                  <!-- Common fields -->
-                  <div class="detail-row" *ngIf="result.aliases && result.aliases.length > 0">
-                    <span class="label">{{ t('أسماء بديلة:', 'Aliases:') }}</span>
-                    <span class="aliases">{{ result.aliases.slice(0, 2).join(', ') }}</span>
-                  </div>
-                  <div class="detail-row" *ngIf="result.matchScore">
-                    <span class="label">{{ t('نسبة التطابق:', 'Match:') }}</span>
-                    <span [style.color]="result.matchScore >= 80 ? '#52c41a' : result.matchScore >= 60 ? '#faad14' : '#ff4d4f'">
-                      {{ result.matchScore }}%
+                  <div class="result-badges">
+                    <span class="risk-badge" [ngClass]="'risk-' + (result.riskLevel || 'medium')?.toLowerCase()">
+                      {{ result.riskLevel || 'Medium' }}
                     </span>
+                    <span class="confidence-badge">{{ result.confidence || 85 }}%</span>
                   </div>
+                </div>
+                <div class="result-summary">
+                  <span class="sector">{{ result.sector || result.un_list_type || 'General' }}</span>
+                  <span class="view-details">{{ t('عرض التفاصيل', 'View Details') }} →</span>
                 </div>
                 <div class="view-details-hint">
                   <i>{{ t('اضغط لعرض التفاصيل الكاملة', 'Click to view full details') }}</i>
                 </div>
+              </div>
+            </div>
+          </div>
+          
+          <!-- Expandable Details Section -->
+          <div *ngIf="message.isExpandable && message.isExpanded && message.data?.requests" class="expandable-section">
+            <div class="expand-content">
+              <div *ngFor="let req of message.data.requests" class="company-item">
+                <span class="check-icon">✓</span>
+                <span class="company-name">{{ req.firstName }}</span>
+                <span class="company-country">{{ req.country }}</span>
               </div>
             </div>
           </div>
@@ -130,15 +121,24 @@
               <span class="thinking-text">{{ message.content }}</span>
             </div>
             
-            <!-- Regular Buttons -->
+            <!-- Smart Choice Cards -->
             <ng-container *ngIf="!message.isThinking">
-              <button 
-                *ngFor="let button of message.buttons"
-                class="smart-btn"
-                [ngClass]="'btn-' + (button.style || 'primary')"
-                (click)="handleButtonAction(button.action, button.value)">
-                {{ button.text }}
-              </button>
+              <div class="choice-cards">
+                <div 
+                  *ngFor="let button of message.buttons"
+                  class="choice-card"
+                  [ngClass]="'card-' + (button.style || 'primary')"
+                  (click)="handleButtonAction(button.action, button.value)">
+                  <div class="card-icon">
+                    <i nz-icon [nzType]="getButtonIcon(button.action)"></i>
+                  </div>
+                  <div class="card-content">
+                    <div class="card-title">{{ getButtonTitle(button.text) }}</div>
+                    <div class="card-subtitle">{{ getButtonSubtitle(button.text) }}</div>
+                  </div>
+                  <div class="card-arrow">→</div>
+                </div>
+              </div>
             </ng-container>
           </div>
           

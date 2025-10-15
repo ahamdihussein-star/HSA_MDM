@@ -28,6 +28,17 @@
       {{ canEdit ? ("EditRequest" | translate) : canView ? ("ViewRequest" | translate) : ("NewRequest" | translate) }}
     </h2>
     
+    <!-- Risk Assessment Button for Compliance -->
+    <button 
+      *ngIf="(userType === '3' || canComplianceAction) && hasRecord"
+      nz-button 
+      nzType="default"
+      nzSize="large"
+      class="risk-assessment-btn"
+      (click)="checkRiskAssessment()">
+      <span nz-icon nzType="safety"></span>
+      Risk Assessment
+    </button>
   </div>
  
  
@@ -86,6 +97,153 @@
         </button>
       </div>
     </ng-container>
+  </nz-modal>
+
+  <!-- Risk Assessment Modal -->
+  <nz-modal
+    [(nzVisible)]="isRiskModalVisible"
+    [nzTitle]="''"
+    [nzWidth]="900"
+    [nzFooter]="riskModalFooter"
+    [nzBodyStyle]="{ padding: '0' }"
+    (nzOnCancel)="closeRiskModal()">
+    <ng-container *nzModalContent>
+      <div *ngIf="riskAssessmentData" class="sanction-modal-content">
+        
+        <!-- Header with Alert -->
+        <div class="modal-header-alert" [ngClass]="riskAssessmentData.hasMatch ? 'alert-danger' : 'alert-success'">
+          <div class="alert-icon">{{ riskAssessmentData.hasMatch ? '⚠️' : '✅' }}</div>
+          <div class="alert-content">
+            <h2 class="alert-title">{{ riskAssessmentData.hasMatch ? 'Sanctioned Entity Detected' : 'No Sanctions Found' }}</h2>
+            <p class="alert-subtitle">{{ riskAssessmentData.hasMatch ? 'This company is on international sanctions lists' : 'Company appears to be clear' }}</p>
+          </div>
+        </div>
+
+        <div class="modal-body-content" *ngIf="riskAssessmentData.hasMatch && selectedRiskSanction">
+          <!-- Company Header -->
+          <div class="company-header">
+            <div class="company-name-section">
+              <h3 class="company-name">{{ selectedRiskSanction.name }}</h3>
+              <div class="company-meta">
+                <span class="meta-item">
+                  <i nz-icon nzType="environment" nzTheme="outline"></i>
+                  {{ selectedRiskSanction.country }}
+                </span>
+                <span class="meta-item" *ngIf="selectedRiskSanction.city">
+                  <i nz-icon nzType="home" nzTheme="outline"></i>
+                  {{ selectedRiskSanction.city }}
+                </span>
+              </div>
+            </div>
+            <div class="risk-badge-container">
+              <nz-tag class="risk-badge-large" [nzColor]="selectedRiskSanction.riskLevel === 'High' || selectedRiskSanction.riskLevel === 'Critical' ? 'red' : 'orange'">
+                <i nz-icon nzType="warning" nzTheme="fill"></i>
+                {{ selectedRiskSanction.riskLevel }} Risk
+              </nz-tag>
+            </div>
+          </div>
+
+          <!-- Info Cards Grid -->
+          <div class="info-cards-grid">
+            
+            <!-- Basic Info Card -->
+            <div class="info-card info-card-blue">
+              <div class="info-card-header">
+                <i nz-icon nzType="info-circle" nzTheme="fill"></i>
+                <span>Basic Information</span>
+              </div>
+              <div class="info-card-body">
+                <div class="info-row">
+                  <span class="info-label">Type:</span>
+                  <span class="info-value">{{ selectedRiskSanction.type || 'N/A' }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Sector:</span>
+                  <span class="info-value">{{ selectedRiskSanction.sector }}</span>
+                </div>
+              </div>
+            </div>
+
+            <!-- Sanctions Info Card -->
+            <div class="info-card info-card-red">
+              <div class="info-card-header">
+                <i nz-icon nzType="stop" nzTheme="fill"></i>
+                <span>Sanctions Details</span>
+              </div>
+              <div class="info-card-body">
+                <div class="info-row">
+                  <span class="info-label">Program:</span>
+                  <span class="info-value">{{ selectedRiskSanction.sanctionProgram }}</span>
+                </div>
+                <div class="info-row">
+                  <span class="info-label">Start Date:</span>
+                  <span class="info-value">{{ selectedRiskSanction.sanctionStartDate }}</span>
+                </div>
+              </div>
+            </div>
+
+          </div>
+
+          <!-- Sanction Reason Box -->
+          <div class="reason-box">
+            <div class="reason-header">
+              <i nz-icon nzType="file-text" nzTheme="outline"></i>
+              <span>Sanction Reason</span>
+            </div>
+            <p class="reason-text">{{ selectedRiskSanction.sanctionReason }}</p>
+          </div>
+
+          <!-- Source Reference Link -->
+          <div class="reference-box" *ngIf="selectedRiskSanction.openSanctionsLink || selectedRiskSanction.sourceUrl">
+            <div class="reference-header">
+              <i nz-icon nzType="link" nzTheme="outline"></i>
+              <span>Official Source Reference</span>
+            </div>
+            <a 
+              [href]="selectedRiskSanction.openSanctionsLink || selectedRiskSanction.sourceUrl" 
+              target="_blank" 
+              class="reference-link">
+              <i nz-icon nzType="global" nzTheme="outline"></i>
+              View on OpenSanctions
+              <i nz-icon nzType="export" nzTheme="outline"></i>
+            </a>
+          </div>
+
+        </div>
+
+        <!-- No Sanctions Found -->
+        <div class="modal-body-content" *ngIf="!riskAssessmentData.hasMatch">
+          <div class="no-sanctions-box">
+            <div class="no-sanctions-icon">✅</div>
+            <h3 class="no-sanctions-title">No Sanctions Found</h3>
+            <p class="no-sanctions-text">
+              This company does not appear in any sanctions databases we checked.
+            </p>
+            <div class="no-sanctions-info">
+              <p><strong>Company:</strong> {{ requestForm.get('firstName')?.value }}</p>
+              <p><strong>Country:</strong> {{ requestForm.get('country')?.value }}</p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+    </ng-container>
+    
+    <ng-template #riskModalFooter>
+      <button nz-button nzType="default" (click)="closeRiskModal()">
+        <i nz-icon nzType="close"></i>
+        Close
+      </button>
+      <button 
+        *ngIf="riskAssessmentData?.hasMatch && selectedRiskSanction"
+        nz-button 
+        nzType="primary" 
+        nzDanger 
+        (click)="blockFromRiskModal()">
+        <i nz-icon nzType="stop"></i>
+        Block Company
+      </button>
+    </ng-template>
   </nz-modal>
  
   <!-- Action bar للـ MASTER/Reviewer - REMOVED to avoid confusion (actions available at bottom) -->

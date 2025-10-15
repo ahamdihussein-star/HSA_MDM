@@ -313,4 +313,76 @@ export class ComplianceService {
       throw error;
     }
   }
+
+  /**
+   * Search local sanctions database
+   */
+  async searchLocalSanctions(request: {
+    companyName: string;
+    country?: string;
+    sector?: string;
+    riskLevel?: string;
+  }): Promise<ComplianceResult> {
+    this.isLoadingSubject.next(true);
+
+    try {
+      console.log('🔍 [COMPLIANCE] Searching local sanctions database:', request.companyName);
+
+      const response = await firstValueFrom(
+        this.http.post<ComplianceResult>(`${this.apiUrl}/search-local`, request)
+      );
+
+      console.log('✅ [COMPLIANCE] Local search completed');
+      console.log('📊 [COMPLIANCE] Result:', response);
+
+      // Update searchResults automatically
+      this.searchResultsSubject.next([response]);
+      console.log('📡 [COMPLIANCE] Results broadcasted');
+
+      return response;
+
+    } catch (error) {
+      console.error('❌ [COMPLIANCE] Local search failed:', error);
+      this.searchResultsSubject.next([]);
+      throw error;
+    } finally {
+      this.isLoadingSubject.next(false);
+      console.log('🏁 [COMPLIANCE] Loading state cleared');
+    }
+  }
+
+  /**
+   * Get all sanctioned companies from local database
+   */
+  async getSanctionedCompanies(filters?: {
+    country?: string;
+    riskLevel?: string;
+    sector?: string;
+    limit?: number;
+    offset?: number;
+  }): Promise<any> {
+    try {
+      console.log('📊 [COMPLIANCE] Fetching sanctioned companies...');
+      
+      const params = new URLSearchParams();
+      if (filters?.country) params.append('country', filters.country);
+      if (filters?.riskLevel) params.append('riskLevel', filters.riskLevel);
+      if (filters?.sector) params.append('sector', filters.sector);
+      if (filters?.limit) params.append('limit', filters.limit.toString());
+      if (filters?.offset) params.append('offset', filters.offset.toString());
+      
+      const url = `${this.apiUrl}/sanctioned-companies${params.toString() ? '?' + params.toString() : ''}`;
+      
+      const response = await firstValueFrom(
+        this.http.get<any>(url)
+      );
+      
+      console.log('✅ [COMPLIANCE] Sanctioned companies retrieved:', response.total);
+      return response;
+      
+    } catch (error) {
+      console.error('❌ [COMPLIANCE] Failed to get sanctioned companies:', error);
+      throw error;
+    }
+  }
 }

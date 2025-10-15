@@ -225,3 +225,154 @@
     </div>
   </ng-container>
 </nz-modal>
+
+<!-- Sanction Details Modal -->
+<nz-modal
+  [(nzVisible)]="isSanctionModalVisible"
+  [nzTitle]="''"
+  [nzWidth]="900"
+  [nzFooter]="sanctionModalFooter"
+  [nzBodyStyle]="{ padding: '0' }"
+  (nzOnCancel)="closeSanctionModal()">
+  <ng-container *nzModalContent>
+    <div *ngIf="selectedSanction" class="sanction-modal-content">
+      
+      <!-- Header with Alert -->
+      <div class="modal-header-alert">
+        <div class="alert-icon">⚠️</div>
+        <div class="alert-content">
+          <h2 class="alert-title">Sanctioned Entity Detected</h2>
+          <p class="alert-subtitle">This company is on international sanctions lists</p>
+        </div>
+      </div>
+
+      <div class="modal-body-content">
+        <!-- Company Header -->
+        <div class="company-header">
+          <div class="company-name-section">
+            <h3 class="company-name">{{ selectedSanction.name }}</h3>
+            <div class="company-meta">
+              <span class="meta-item">
+                <i nz-icon nzType="environment" nzTheme="outline"></i>
+                {{ selectedSanction.country }}
+              </span>
+              <span class="meta-item" *ngIf="selectedSanction.city">
+                <i nz-icon nzType="home" nzTheme="outline"></i>
+                {{ selectedSanction.city }}
+              </span>
+            </div>
+          </div>
+          <div class="risk-badge-container">
+            <nz-tag class="risk-badge-large" [nzColor]="selectedSanction.riskLevel === 'High' || selectedSanction.riskLevel === 'Critical' ? 'red' : 'orange'">
+              <i nz-icon nzType="warning" nzTheme="fill"></i>
+              {{ selectedSanction.riskLevel }} Risk
+            </nz-tag>
+          </div>
+        </div>
+
+        <!-- Info Cards Grid -->
+        <div class="info-cards-grid">
+          
+          <!-- Basic Info Card -->
+          <div class="info-card info-card-blue">
+            <div class="info-card-header">
+              <i nz-icon nzType="info-circle" nzTheme="fill"></i>
+              <span>Basic Information</span>
+            </div>
+            <div class="info-card-body">
+              <div class="info-row">
+                <span class="info-label">Type:</span>
+                <span class="info-value">{{ selectedSanction.type || 'N/A' }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Sector:</span>
+                <span class="info-value">{{ selectedSanction.sector }}</span>
+              </div>
+            </div>
+          </div>
+
+          <!-- Sanctions Info Card -->
+          <div class="info-card info-card-red">
+            <div class="info-card-header">
+              <i nz-icon nzType="stop" nzTheme="fill"></i>
+              <span>Sanctions Details</span>
+            </div>
+            <div class="info-card-body">
+              <div class="info-row">
+                <span class="info-label">Program:</span>
+                <span class="info-value">{{ selectedSanction.sanctionProgram }}</span>
+              </div>
+              <div class="info-row">
+                <span class="info-label">Start Date:</span>
+                <span class="info-value">{{ selectedSanction.sanctionStartDate }}</span>
+              </div>
+            </div>
+          </div>
+
+        </div>
+
+        <!-- Sanction Reason Box -->
+        <div class="reason-box">
+          <div class="reason-header">
+            <i nz-icon nzType="file-text" nzTheme="outline"></i>
+            <span>Sanction Reason</span>
+          </div>
+          <p class="reason-text">{{ selectedSanction.sanctionReason }}</p>
+        </div>
+
+        <!-- AI Analysis (if available) -->
+        <div class="ai-analysis-box" *ngIf="selectedSanction.matchReason && selectedSanction.matchReason !== 'Exact match found in sanctions database'">
+          <div class="ai-analysis-header">
+            <i nz-icon nzType="bulb" nzTheme="fill"></i>
+            <span>AI Analysis</span>
+          </div>
+          <p class="ai-analysis-text">{{ selectedSanction.matchReason }}</p>
+          <div class="confidence-section">
+            <span class="confidence-label">Match Confidence:</span>
+            <nz-progress 
+              [nzPercent]="selectedSanction.confidence || 95" 
+              [nzStrokeColor]="'#52c41a'"
+              [nzSize]="'default'"
+              [nzShowInfo]="true">
+            </nz-progress>
+          </div>
+        </div>
+
+        <!-- Source Reference Link -->
+        <div class="reference-box" *ngIf="selectedSanction.openSanctionsLink || selectedSanction.sourceUrl">
+          <div class="reference-header">
+            <i nz-icon nzType="link" nzTheme="outline"></i>
+            <span>Official Source Reference</span>
+          </div>
+          <a 
+            [href]="selectedSanction.openSanctionsLink || selectedSanction.sourceUrl" 
+            target="_blank" 
+            class="reference-link">
+            <i nz-icon nzType="global" nzTheme="outline"></i>
+            View on OpenSanctions
+            <i nz-icon nzType="export" nzTheme="outline"></i>
+          </a>
+        </div>
+
+      </div>
+
+    </div>
+  </ng-container>
+  
+  <ng-template #sanctionModalFooter>
+    <button nz-button nzType="default" (click)="closeSanctionModal()">
+      <i nz-icon nzType="close"></i>
+      Close
+    </button>
+    <button nz-button nzType="primary" nzDanger (click)="blockCompanyFromModal()" *ngIf="selectedSanction && selectedSanction.requestId">
+      <i nz-icon nzType="stop"></i>
+      Block Company
+    </button>
+  </ng-template>
+</nz-modal>
+
+<!-- Compliance AI Agent Chat Widget -->
+<app-compliance-chat-widget 
+  (viewDetailsRequested)="openSanctionModal($event)"
+  (taskListRefreshRequested)="refreshData()">
+</app-compliance-chat-widget>
