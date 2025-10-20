@@ -6169,7 +6169,8 @@ app.post('/api/sync/execute', (req, res) => {
     // Build query to get golden records matching criteria
     let query = `
       SELECT * FROM requests 
-      WHERE isGolden = 1
+      WHERE isGolden = 1 
+      AND (companyStatus = 'Active' OR companyStatus = 'Blocked')
     `;
     const params = [];
     
@@ -6352,7 +6353,8 @@ app.get('/api/sync/eligible-records', (req, res) => {
       SELECT id, firstName, firstNameAr, tax, country, city, CustomerType, 
              SalesOrgOption, DistributionChannelOption, DivisionOption, syncStatus, lastSyncedAt
       FROM requests 
-      WHERE isGolden = 1
+      WHERE isGolden = 1 
+      AND (companyStatus = 'Active' OR companyStatus = 'Blocked')
     `;
     const params = [];
     

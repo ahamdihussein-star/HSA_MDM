@@ -240,6 +240,7 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
       name: ['', Validators.required],
       description: [''],
       targetSystem: ['', Validators.required],
+      logic: ['AND'],
       conditions: this.fb.array([this.createCondition()])
     });
   }
@@ -508,13 +509,18 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
   }
 
 
-  refreshSystems(): void {
+  async refreshSystems(): Promise<void> {
     this.isRefreshing = true;
-    setTimeout(() => {
-      this.updateSystemStats();
-      this.isRefreshing = false;
+    try {
+      await this.loadGoldenRecords();
+      await this.loadSyncRules();
+      await this.updateSystemStats();
       this.message.success('Systems refreshed');
-    }, 1000);
+    } catch (error) {
+      this.message.error('Failed to refresh systems');
+    } finally {
+      this.isRefreshing = false;
+    }
   }
 
   openRuleModal(rule?: SyncRule): void {
@@ -532,10 +538,28 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
   }
 
   loadRuleToForm(rule: SyncRule): void {
+    // Convert backend system ID to frontend system ID for the form
+    const frontendSystemId = this.getFrontendSystemId(rule.targetSystem);
+    
+    console.log('[RULE FORM] Loading rule:', {
+      ruleName: rule.name,
+      backendSystemId: rule.targetSystem,
+      frontendSystemId: frontendSystemId,
+      ruleLogic: rule.filterCriteria?.logic,
+      finalLogic: rule.filterCriteria?.logic || 'AND',
+      fullFilterCriteria: rule.filterCriteria
+    });
+    
     this.ruleForm.patchValue({
       name: rule.name,
       description: rule.description,
-      targetSystem: rule.targetSystem
+      targetSystem: frontendSystemId,
+      logic: rule.filterCriteria?.logic || 'AND'
+    });
+
+    console.log('[RULE FORM] After patchValue:', {
+      formLogic: this.ruleForm.value.logic,
+      formLogicControl: this.ruleForm.get('logic')?.value
     });
 
     // Clear and reload conditions
@@ -562,13 +586,20 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
     const frontendTargetSystem = this.ruleForm.value.targetSystem;
     const backendTargetSystem = this.getBackendSystemId(frontendTargetSystem);
 
+    const logicValue = this.ruleForm.value.logic || 'AND';
+    
+    console.log('[SAVE RULE] Logic values:', {
+      formLogic: this.ruleForm.value.logic,
+      finalLogic: logicValue
+    });
+
     const ruleData = {
       ...this.ruleForm.value,
       targetSystem: backendTargetSystem, // Use backend system ID
       isActive: true,
       filterCriteria: {
         conditions: this.conditions.value,
-        logic: 'AND'
+        logic: logicValue
       },
       fieldMapping: { mappings: [] },
       createdBy: sessionStorage.getItem('username') || 'admin'
@@ -588,6 +619,7 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
 
       this.showRuleModal = false;
       this.isRuleModalVisible = false;
+      await this.loadGoldenRecords();
       await this.loadSyncRules();
       await this.updateSystemStats();
     } catch (error) {
@@ -608,6 +640,7 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
       }).toPromise();
       
       this.message.success(`Rule ${rule.isActive ? 'activated' : 'deactivated'}`);
+      await this.loadGoldenRecords();
       await this.updateSystemStats();
     } catch (error) {
       rule.isActive = !rule.isActive;
@@ -633,6 +666,7 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
         try {
           await this.http.delete(`${this.apiBase}/sync/rules/${rule.id}`).toPromise();
           this.message.success('Rule deleted');
+          await this.loadGoldenRecords();
           await this.loadSyncRules();
           await this.updateSystemStats();
         } catch (error) {
@@ -885,6 +919,7 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
             this.message.success(`✅ Fixed ${result.fixedCount} out of ${result.totalRules} rules!`);
             
             // Reload rules and refresh stats
+            await this.loadGoldenRecords();
             await this.loadSyncRules();
             await this.updateSystemStats();
             
@@ -1156,10 +1191,23 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
     return systemId;
   }
 
+  // Convert backend system ID back to frontend system ID
+  private getFrontendSystemId(backendSystemId: string): string {
+    // Reverse mapping from backend IDs to frontend IDs
+    const reverseMapping: { [key: string]: string } = {
+      'oracle_forms': 'Oracle Forms',
+      'sap_4hana': 'SAP S/4HANA',
+      'sap_bydesign': 'SAP ByD'
+    };
+    
+    return reverseMapping[backendSystemId] || backendSystemId;
+  }
+
   // Convert frontend system ID to backend system ID
   private getBackendSystemId(frontendSystemId: string): string {
     return this.systemIdMapping[frontendSystemId] || frontendSystemId;
   }
+
 
   // Select all target systems
   selectAllSystems(): void {

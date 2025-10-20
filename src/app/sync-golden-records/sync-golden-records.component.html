@@ -32,13 +32,6 @@
           Select All Systems
         </button>
         
-        <button nz-button nzType="default" nzSize="large" class="fix-rules-btn"
-                [disabled]="isSyncing"
-                (click)="fixSyncRules()"
-                nz-tooltip="Fix old sync rule names to work with backend">
-          <i nz-icon nzType="tool"></i>
-          Fix Sync Rules
-        </button>
         
         <button nz-button nzType="default" nzSize="large" class="clear-sync-data-btn"
                 *ngIf="isAdmin()"
@@ -257,10 +250,20 @@
           <div class="rules-section">
             <div class="rules-header">
               <h3>Active Sync Rules</h3>
-              <button nz-button nzType="primary" (click)="openRuleModal()">
-                <i nz-icon nzType="plus"></i>
-                Create Rule
-              </button>
+              <div class="rules-actions" style="display: flex; gap: 8px; align-items: center;">
+                <button nz-button nzType="primary" (click)="openRuleModal()">
+                  <i nz-icon nzType="plus"></i>
+                  Create Rule
+                </button>
+                <button nz-button nzType="default" nzSize="small" 
+                        *ngIf="isAdmin()"
+                        [disabled]="isSyncing"
+                        (click)="fixSyncRules()"
+                        nz-tooltip="Fix old sync rule names to work with backend">
+                  <i nz-icon nzType="tool"></i>
+                  Fix Rules
+                </button>
+              </div>
             </div>
 
             <div class="rules-list">
@@ -561,6 +564,17 @@
       </nz-form-item>
       
       <nz-divider nzText="Filter Criteria"></nz-divider>
+      
+      <!-- Logic Selector -->
+      <nz-form-item>
+        <nz-form-label>Logic</nz-form-label>
+        <nz-form-control>
+          <nz-radio-group formControlName="logic">
+            <label nz-radio nzValue="AND">AND (All conditions must match)</label>
+            <label nz-radio nzValue="OR">OR (Any condition can match)</label>
+          </nz-radio-group>
+        </nz-form-control>
+      </nz-form-item>
       
       <div class="criteria-builder" formArrayName="conditions">
         <div class="conditions-list">
