@@ -10534,6 +10534,57 @@ try {
   console.error('❌ [COMPLIANCE] Failed to initialize database schema:', error);
 }
 
+// ============================================================================
+// FIX SYNC RULES - Convert old frontend system names to backend IDs
+// ============================================================================
+app.post('/api/sync/fix-rules', (req, res) => {
+  try {
+    console.log('[SYNC FIX] Starting to fix sync rules...');
+    
+    // Get all sync rules
+    const rules = db.prepare('SELECT * FROM sync_rules').all();
+    console.log(`[SYNC FIX] Found ${rules.length} rules to check`);
+    
+    const mapping = {
+      'Oracle Forms': 'oracle_forms',
+      'SAP S/4HANA': 'sap_4hana',
+      'SAP Hana': 'sap_4hana',
+      'SAP HANA': 'sap_4hana',
+      'SAP ByD': 'sap_bydesign',
+      'SAP ByDesign': 'sap_bydesign'
+    };
+    
+    let fixedCount = 0;
+    const updateStmt = db.prepare('UPDATE sync_rules SET targetSystem = ? WHERE id = ?');
+    
+    rules.forEach(rule => {
+      const oldSystem = rule.targetSystem;
+      const newSystem = mapping[oldSystem] || oldSystem;
+      
+      if (oldSystem !== newSystem) {
+        console.log(`[SYNC FIX] Fixing rule "${rule.name}": "${oldSystem}" → "${newSystem}"`);
+        updateStmt.run(newSystem, rule.id);
+        fixedCount++;
+      }
+    });
+    
+    console.log(`[SYNC FIX] ✅ Fixed ${fixedCount} rules`);
+    
+    res.json({
+      success: true,
+      message: `Fixed ${fixedCount} sync rules`,
+      totalRules: rules.length,
+      fixedCount: fixedCount
+    });
+  } catch (error) {
+    console.error('[SYNC FIX] Error fixing rules:', error);
+    res.status(500).json({
+      success: false,
+      error: error.message
+    });
+  }
+});
+
 // Start server
 app.listen(PORT, () => {
   console.log(`\nSQLite MDM Server (better-sqlite3) running at http://localhost:${PORT}`);

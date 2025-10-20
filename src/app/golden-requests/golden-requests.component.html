@@ -36,8 +36,8 @@
     <thead>
       <tr>
         <th>{{ 'Golden Record Code' | translate }}</th>
-        <th>{{ 'Record Type' | translate }}</th>
         <th>{{ 'Company Name' | translate }}</th>
+        <th>{{ 'Company Type' | translate }}</th>
         <th>{{ 'Country' | translate }}</th>
         <th>{{ 'Status' | translate }}</th>
         <th>{{ 'Actions' | translate }}</th>
@@ -47,8 +47,8 @@
     <tbody>
       <tr *ngFor="let r of goldenTable.data">
         <td>{{ r.goldenCode }}</td>
-        <td>{{ r.recordType }}</td>
         <td>{{ r.name }}</td>
+        <td>{{ r.recordType }}</td>
         <td>{{ r.country }}</td>
         <td>
           <span [ngClass]="statusClass(r.status)">

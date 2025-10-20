@@ -32,6 +32,14 @@
           Select All Systems
         </button>
         
+        <button nz-button nzType="default" nzSize="large" class="fix-rules-btn"
+                [disabled]="isSyncing"
+                (click)="fixSyncRules()"
+                nz-tooltip="Fix old sync rule names to work with backend">
+          <i nz-icon nzType="tool"></i>
+          Fix Sync Rules
+        </button>
+        
         <button nz-button nzType="default" nzSize="large" class="clear-sync-data-btn"
                 *ngIf="isAdmin()"
                 [disabled]="isSyncing"
@@ -173,11 +181,11 @@
               </ng-template>
               
               <nz-select [(ngModel)]="filterCountry" nzPlaceHolder="All Countries" class="filter-select"
-                         (ngModelChange)="applyFilters()">
+                         (ngModelChange)="applyFilters()" nzShowSearch>
                 <nz-option nzValue="" nzLabel="All Countries"></nz-option>
-                <nz-option nzValue="Egypt" nzLabel="Egypt"></nz-option>
-                <nz-option nzValue="Saudi Arabia" nzLabel="Saudi Arabia"></nz-option>
-                <nz-option nzValue="United Arab Emirates" nzLabel="UAE"></nz-option>
+                <nz-option *ngFor="let country of countryOptions" 
+                          [nzValue]="country.value" 
+                          [nzLabel]="country.label"></nz-option>
               </nz-select>
               
               <nz-select [(ngModel)]="filterStatus" nzPlaceHolder="Sync Status" class="filter-select"

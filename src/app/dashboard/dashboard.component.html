@@ -35,21 +35,21 @@
            {{ "Historical Extracted Data" | translate }}
          </p>
          <div class="navSubItems" [ngClass]="{'expanded': historicalDataExpanded}">
-           <p class="navSubTab"
-              [routerLink]="['/dashboard', 'duplicate-records']"
-              [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') ? 'activeSubTab' : '']">
-             <img *ngIf="!router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateGrey.svg" class="navIcon" />
-             <img *ngIf="router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateYellow.svg" class="navIcon" />
-             {{ "All Duplicates" | translate }}
-           </p>
+          <p class="navSubTab"
+             [routerLink]="['/dashboard', 'duplicate-records']"
+             [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') ? 'activeSubTab' : '']">
+            <img *ngIf="!router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+            <img *ngIf="router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+            {{ "Duplicate Records" | translate }}
+          </p>
 
-           <p class="navSubTab"
-              [routerLink]="['/dashboard', 'quarantine']"
-              [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeSubTab' : '']">
-             <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" class="navIcon" />
-             <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" class="navIcon" />
-             {{ "All Quarantine" | translate }}
-           </p>
+          <p class="navSubTab"
+             [routerLink]="['/dashboard', 'quarantine']"
+             [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeSubTab' : '']">
+            <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+            <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+            {{ "Quarantine Records" | translate }}
+          </p>
          </div>
        </div>
 
@@ -67,13 +67,6 @@
              <img *ngIf="!router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardGray.svg" alt="Technical Dashboard" class="navIcon" />
              <img *ngIf="router.url.startsWith('/dashboard/technical')" src="assets/img/dashboardYellow.svg" alt="Technical Dashboard" class="navIcon" />
              {{ "Technical Dashboard" | translate }}
-           </p>
-           <p class="navSubTab"
-              [routerLink]="['/dashboard', 'executive']"
-              [ngClass]="[router.url.startsWith('/dashboard/executive') ? 'activeSubTab' : '']">
-             <img *ngIf="!router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardGray.svg" alt="Executive Dashboard" class="navIcon" />
-             <img *ngIf="router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardYellow.svg" alt="Executive Dashboard" class="navIcon" />
-             {{ "Executive Dashboard" | translate }}
            </p>
            <p class="navSubTab"
               [routerLink]="['/dashboard', 'business']"
@@ -120,13 +113,6 @@
              {{ "Technical Dashboard" | translate }}
            </p>
            <p class="navSubTab"
-              [routerLink]="['/dashboard', 'executive']"
-              [ngClass]="[router.url.startsWith('/dashboard/executive') ? 'activeSubTab' : '']">
-             <img *ngIf="!router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardGray.svg" alt="Executive Dashboard" class="navIcon" />
-             <img *ngIf="router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardYellow.svg" alt="Executive Dashboard" class="navIcon" />
-             {{ "Executive Dashboard" | translate }}
-           </p>
-           <p class="navSubTab"
               [routerLink]="['/dashboard', 'business']"
               [ngClass]="[router.url.startsWith('/dashboard/business') ? 'activeSubTab' : '']">
              <img *ngIf="!router.url.startsWith('/dashboard/business')" src="assets/img/dashboardGray.svg" alt="Business Dashboard" class="navIcon" />
@@ -168,14 +154,6 @@
          </div>
          
          <div class="navSubItems" [class.expanded]="dashboardsExpanded">
-           <p class="navSubTab"
-              [routerLink]="['/dashboard', 'executive']"
-              [ngClass]="[router.url.startsWith('/dashboard/executive') ? 'activeTab' : '']">
-             <img *ngIf="!router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardGray.svg" alt="Executive Dashboard" class="navIcon" />
-             <img *ngIf="router.url.startsWith('/dashboard/executive')" src="assets/img/dashboardYellow.svg" alt="Executive Dashboard" class="navIcon" />
-             {{ "Executive Dashboard" | translate }}
-           </p>
-
            <p class="navSubTab"
               [routerLink]="['/dashboard', 'technical']"
               [ngClass]="[router.url.startsWith('/dashboard/technical') ? 'activeTab' : '']">
@@ -310,21 +288,21 @@
          </div>
          
          <div class="navSubItems" [class.expanded]="historicalDataExpanded">
-           <p class="navSubTab"
-              [routerLink]="['/dashboard', 'duplicate-records']"
-              [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') ? 'activeTab' : '']">
-             <img *ngIf="!router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateGrey.svg" class="navIcon" />
-             <img *ngIf="router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateYellow.svg" class="navIcon" />
-             {{ "All Duplicates" | translate }}
-           </p>
+          <p class="navSubTab"
+             [routerLink]="['/dashboard', 'duplicate-records']"
+             [ngClass]="[router.url.startsWith('/dashboard/duplicate-records') ? 'activeTab' : '']">
+            <img *ngIf="!router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+            <img *ngIf="router.url.startsWith('/dashboard/duplicate-records')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+            {{ "Duplicate Records" | translate }}
+          </p>
 
-           <p class="navSubTab"
-              [routerLink]="['/dashboard', 'quarantine']"
-              [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeTab' : '']">
-             <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" class="navIcon" />
-             <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" class="navIcon" />
-             {{ "All Quarantine" | translate }}
-           </p>
+          <p class="navSubTab"
+             [routerLink]="['/dashboard', 'quarantine']"
+             [ngClass]="[router.url.startsWith('/dashboard/quarantine') ? 'activeTab' : '']">
+            <img *ngIf="!router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateGrey.svg" class="navIcon" />
+            <img *ngIf="router.url.startsWith('/dashboard/quarantine')" src="assets/img/duplicateYellow.svg" class="navIcon" />
+            {{ "Quarantine Records" | translate }}
+          </p>
          </div>
        </div>
 

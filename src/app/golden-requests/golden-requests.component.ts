@@ -253,6 +253,13 @@ export class GoldenRequestsComponent implements OnInit {
         // Add history to each record
         this.rows = this.rows.map((r: any) => ({ ...r, history: this.buildHistory(r) }));
         
+        // Sort by updatedAt in descending order (newest first)
+        this.rows.sort((a: any, b: any) => {
+          const dateA = a.summary?.master?.updatedAt || a.summary?.master?.createdAt || '';
+          const dateB = b.summary?.master?.updatedAt || b.summary?.master?.createdAt || '';
+          return dateB.localeCompare(dateA); // Descending order (newest first)
+        });
+        
         // Initialize filtered rows
         this.filteredRows = [...this.rows];
         
@@ -612,6 +619,13 @@ export class GoldenRequestsComponent implements OnInit {
         return searchFields.some(field => 
           field && field.toString().toLowerCase().includes(this.searchTerm)
         );
+      });
+      
+      // Maintain sort order after filtering (newest first)
+      this.filteredRows.sort((a: any, b: any) => {
+        const dateA = a.summary?.master?.updatedAt || a.summary?.master?.createdAt || '';
+        const dateB = b.summary?.master?.updatedAt || b.summary?.master?.createdAt || '';
+        return dateB.localeCompare(dateA); // Descending order (newest first)
       });
     }
   }

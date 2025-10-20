@@ -6,7 +6,15 @@ import { NzModalService } from 'ng-zorro-antd/modal';
 import { Subject } from 'rxjs';
 import { takeUntil } from 'rxjs/operators';
 import { environment } from '../../environments/environment';
-import { SOURCE_SYSTEM_OPTIONS, COUNTRY_OPTIONS, CUSTOMER_TYPE_OPTIONS, CITY_OPTIONS } from '../shared/lookup-data';
+import { 
+  SOURCE_SYSTEM_OPTIONS, 
+  COUNTRY_OPTIONS, 
+  CUSTOMER_TYPE_OPTIONS, 
+  CITY_OPTIONS,
+  SALES_ORG_OPTIONS,
+  DISTRIBUTION_CHANNEL_OPTIONS,
+  DIVISION_OPTIONS 
+} from '../shared/lookup-data';
 
 interface TargetSystem {
   id: string;
@@ -123,16 +131,19 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
   // Source system options from lookup data
   sourceSystemOptions = SOURCE_SYSTEM_OPTIONS;
   
-  // Lookup data for dropdowns
+  // Lookup data for dropdowns - Always use from shared lookup-data.ts
   countryOptions = COUNTRY_OPTIONS;
   customerTypeOptions = CUSTOMER_TYPE_OPTIONS;
-  cityOptions: { [key: string]: any[] } = {};
+  cityOptions: { [key: string]: any[] } = CITY_OPTIONS;
+  salesOrgOptions = SALES_ORG_OPTIONS;
+  distributionChannelOptions = DISTRIBUTION_CHANNEL_OPTIONS;
+  divisionOptions = DIVISION_OPTIONS;
 
-  // Dynamic dropdown values from actual data
-  dynamicCountries: any[] = [];
-  dynamicCities: { [key: string]: any[] } = {};
-  dynamicCustomerTypes: any[] = [];
-  dynamicStatuses: any[] = [];
+  // Status options
+  statusOptions = [
+    { value: 'Active', label: 'Active' },
+    { value: 'Blocked', label: 'Blocked' }
+  ];
 
   // Records
   goldenRecords: GoldenRecord[] = [];
@@ -298,8 +309,8 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
           selected: false
         }));
       
-      // Extract dynamic values from actual records
-      this.extractDynamicValues();
+      // Note: We use static lookup data from shared/lookup-data.ts
+      // No need to extract dynamic values from records
       
       this.applyFilters();
     } catch (error) {
@@ -309,87 +320,29 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
     }
   }
 
-  // Extract unique values from golden records for dropdowns
-  extractDynamicValues(): void {
-    // Extract unique countries
-    const countriesSet = new Set<string>();
-    const citiesByCountry: { [key: string]: Set<string> } = {};
-    const customerTypesSet = new Set<string>();
-    const statusesSet = new Set<string>();
-
-    this.goldenRecords.forEach(record => {
-      // Countries
-      if (record.country) {
-        countriesSet.add(record.country);
-        
-        // Cities per country
-        if (record.city) {
-          if (!citiesByCountry[record.country]) {
-            citiesByCountry[record.country] = new Set<string>();
-          }
-          citiesByCountry[record.country].add(record.city);
-        }
-      }
-      
-      // Customer Types
-      if (record.CustomerType) {
-        customerTypesSet.add(record.CustomerType);
-      }
-      
-      // Statuses
-      if (record.companyStatus) {
-        statusesSet.add(record.companyStatus);
-      }
-    });
-
-    // Convert to arrays for dropdowns
-    this.dynamicCountries = Array.from(countriesSet).map(country => ({
-      value: country,
-      label: country
-    }));
-
-    // Convert cities
-    this.dynamicCities = {};
-    Object.keys(citiesByCountry).forEach(country => {
-      this.dynamicCities[country] = Array.from(citiesByCountry[country]).map(city => ({
-        value: city,
-        label: city
-      }));
-    });
-
-    // Customer types
-    this.dynamicCustomerTypes = Array.from(customerTypesSet).map(type => ({
-      value: type,
-      label: type
-    }));
-
-    // Statuses
-    this.dynamicStatuses = Array.from(statusesSet).map(status => ({
-      value: status,
-      label: status
-    }));
-
-    // Update the options properties to use dynamic values
-    this.countryOptions = this.dynamicCountries.length > 0 ? this.dynamicCountries : COUNTRY_OPTIONS;
-    this.cityOptions = Object.keys(this.dynamicCities).length > 0 ? this.dynamicCities : CITY_OPTIONS;
-    this.customerTypeOptions = this.dynamicCustomerTypes.length > 0 ? this.dynamicCustomerTypes : CUSTOMER_TYPE_OPTIONS;
-  }
+  // Removed extractDynamicValues() - we now use static lookup data from shared/lookup-data.ts
 
   async loadSyncRules(): Promise<void> {
     try {
       const rules = await this.http.get<any[]>(`${this.apiBase}/sync/rules`).toPromise();
-      this.syncRules = (rules || []).map(rule => ({
-        ...rule,
-        conditions: rule.filterCriteria?.conditions || [],
-        filterCriteria: rule.filterCriteria || { conditions: [], logic: 'AND' }
-      }));
+      this.syncRules = (rules || []).map(rule => {
+        // Auto-fix: Convert old frontend system names to backend IDs
+        const normalizedTargetSystem = this.normalizeTargetSystem(rule.targetSystem);
+        
+        return {
+          ...rule,
+          targetSystem: normalizedTargetSystem, // Use normalized backend ID
+          conditions: rule.filterCriteria?.conditions || [],
+          filterCriteria: rule.filterCriteria || { conditions: [], logic: 'AND' }
+        };
+      });
       this.rules = [...this.syncRules];
       
       // Debug: Log each rule's matching records
       console.log('[SYNC] Rules loaded:');
       this.rules.forEach(rule => {
         const count = this.getMatchingRecords(rule);
-        console.log(`  - "${rule.name}" (${rule.targetSystem}): ${count} matching records`);
+        console.log(`  - Rule: "${rule.name}" → targetSystem: "${rule.targetSystem}" → ${count} matching records`);
         if (rule.conditions && rule.conditions.length > 0) {
           rule.conditions.forEach(c => {
             console.log(`    Condition: ${c.field} ${c.operator} ${c.value}`);
@@ -403,6 +356,28 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
     } catch (error) {
       console.error('Error loading sync rules:', error);
     }
+  }
+  
+  // Normalize target system names (handles both old and new formats)
+  private normalizeTargetSystem(targetSystem: string): string {
+    // If already in backend format, return as-is
+    if (targetSystem === 'oracle_forms' || 
+        targetSystem === 'sap_4hana' || 
+        targetSystem === 'sap_bydesign') {
+      return targetSystem;
+    }
+    
+    // Convert frontend names to backend IDs
+    const mapping: { [key: string]: string } = {
+      'Oracle Forms': 'oracle_forms',
+      'SAP S/4HANA': 'sap_4hana',
+      'SAP Hana': 'sap_4hana',
+      'SAP HANA': 'sap_4hana',
+      'SAP ByD': 'sap_bydesign',
+      'SAP ByDesign': 'sap_bydesign'
+    };
+    
+    return mapping[targetSystem] || targetSystem;
   }
 
   async loadSyncHistory(): Promise<void> {
@@ -432,16 +407,19 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
     for (const system of this.targetSystems) {
       try {
         const backendSystemId = this.getBackendSystemId(system.id);
-        const rule = this.syncRules.find(r => 
-          r.targetSystem === backendSystemId && r.isActive
-        );
+        
+        // Find active rule for this system (with normalization)
+        const rule = this.syncRules.find(r => {
+          const normalizedRuleSystem = this.normalizeTargetSystem(r.targetSystem);
+          return normalizedRuleSystem === backendSystemId && r.isActive;
+        });
         
         if (rule) {
           system.recordsToSync = this.getMatchingRecords(rule);
-          console.log(`[SYNC] ${system.name}: ${system.recordsToSync} records match rule "${rule.name}"`);
+          console.log(`[SYNC] ✅ ${system.name}: ${system.recordsToSync} records match rule "${rule.name}"`);
         } else {
           system.recordsToSync = 0;
-          console.log(`[SYNC] ${system.name}: No active rule configured`);
+          console.log(`[SYNC] ⚠️ ${system.name}: No active rule configured (looking for "${backendSystemId}")`);
         }
         
         const systemHistory = this.syncHistory.filter(h => h.targetSystem === backendSystemId);
@@ -580,8 +558,13 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
 
     this.isSavingRule = true;
 
+    // Convert frontend target system to backend system ID
+    const frontendTargetSystem = this.ruleForm.value.targetSystem;
+    const backendTargetSystem = this.getBackendSystemId(frontendTargetSystem);
+
     const ruleData = {
       ...this.ruleForm.value,
+      targetSystem: backendTargetSystem, // Use backend system ID
       isActive: true,
       filterCriteria: {
         conditions: this.conditions.value,
@@ -883,6 +866,40 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
     });
   }
 
+  // Fix sync rules - Convert old system names to backend IDs
+  async fixSyncRules(): Promise<void> {
+    this.modal.confirm({
+      nzTitle: 'Fix Sync Rules',
+      nzContent: 'This will automatically fix sync rule target system names (Oracle Forms → oracle_forms, etc.). Continue?',
+      nzOkText: 'Fix Rules',
+      nzOkType: 'primary',
+      nzCancelText: 'Cancel',
+      nzOnOk: async () => {
+        try {
+          console.log('[FIX] Calling /api/sync/fix-rules endpoint...');
+          const result = await this.http.post<any>(`${this.apiBase}/sync/fix-rules`, {}).toPromise();
+          
+          console.log('[FIX] Result:', result);
+          
+          if (result && result.success) {
+            this.message.success(`✅ Fixed ${result.fixedCount} out of ${result.totalRules} rules!`);
+            
+            // Reload rules and refresh stats
+            await this.loadSyncRules();
+            await this.updateSystemStats();
+            
+            console.log('[FIX] Rules reloaded successfully');
+          } else {
+            this.message.error('Failed to fix sync rules');
+          }
+        } catch (error: any) {
+          console.error('[FIX] Error:', error);
+          this.message.error('Error fixing sync rules: ' + (error.message || 'Unknown error'));
+        }
+      }
+    });
+  }
+
   // Update city options based on selected country
   updateCityOptions(country: string): void {
     this.cityOptions = { [country]: CITY_OPTIONS[country] || [] };
@@ -938,11 +955,16 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
       case 'CustomerType':
         return this.customerTypeOptions;
       case 'companyStatus':
-        return [
-          { value: 'Active', label: 'Active' },
-          { value: 'Inactive', label: 'Inactive' },
-          { value: 'Pending', label: 'Pending' }
-        ];
+        return this.statusOptions;
+      case 'SalesOrgOption':
+      case 'salesOrg':
+        return this.salesOrgOptions;
+      case 'DistributionChannelOption':
+      case 'distributionChannel':
+        return this.distributionChannelOptions;
+      case 'DivisionOption':
+      case 'division':
+        return this.divisionOptions;
       default:
         return [];
     }
@@ -982,12 +1004,8 @@ export class SyncGoldenRecordsComponent implements OnInit, OnDestroy {
       }
     }
     
-    // Use dynamic cities if available
-    if (selectedCountry && this.dynamicCities[selectedCountry]) {
-      return this.dynamicCities[selectedCountry];
-    }
-    
-    return selectedCountry ? (this.cityOptions[selectedCountry] || []) : [];
+    // Use cities from lookup data (CITY_OPTIONS)
+    return selectedCountry ? (CITY_OPTIONS[selectedCountry] || []) : [];
   }
 
   // Operation details cache

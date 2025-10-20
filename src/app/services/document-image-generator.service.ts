@@ -51,6 +51,9 @@ export class DocumentImageGeneratorService {
       case 'tax_certificate':
         this.renderTaxCertificate(ctx, companyName, country, companyData);
         break;
+      case 'trade_license':
+        this.renderTradeLicense(ctx, companyName, country, companyData);
+        break;
       default:
         this.renderGenericDocument(ctx, type, companyName, country, companyData);
     }
@@ -245,6 +248,76 @@ export class DocumentImageGeneratorService {
     ctx.stroke();
     ctx.fillText('VERIFIED', this.A4_WIDTH - 150, y - 10);
     ctx.fillText(this.formatDate(new Date()), this.A4_WIDTH - 150, y + 10);
+  }
+  
+  private renderTradeLicense(ctx: CanvasRenderingContext2D, companyName: string, country: string, data: any): void {
+    // Header background
+    ctx.fillStyle = '#f0f0f0';
+    ctx.fillRect(0, 0, this.A4_WIDTH, 100);
+    
+    // Title
+    ctx.fillStyle = '#000000';
+    ctx.font = 'bold 32px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('TRADE LICENSE', this.A4_WIDTH / 2, 60);
+    
+    // Authority
+    ctx.font = '16px Arial';
+    ctx.fillText('Government Authority', this.A4_WIDTH / 2, 85);
+    
+    // Border - Adjusted to contain all content
+    ctx.strokeStyle = '#0066cc';
+    ctx.lineWidth = 2;
+    ctx.strokeRect(30, 120, this.A4_WIDTH - 60, 650);
+    
+    // Content - ONLY ESSENTIAL INFO (Simple & Clear)
+    let y = 200;
+    ctx.textAlign = 'left';
+    
+    // ✅ COMPANY NAME - Big and Clear for OpenAI
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = '#000000';
+    ctx.fillText('Company Name:', 70, y);
+    
+    y += 50;
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#0066cc';
+    ctx.fillText(companyName, 70, y);
+    
+    // ✅ COMPANY OWNER
+    y += 100;
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = '#000000';
+    ctx.fillText('Company Owner:', 70, y);
+    
+    y += 50;
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#0066cc';
+    ctx.fillText(data?.ownerName || data?.CompanyOwner || 'N/A', 70, y);
+    
+    // ✅ COUNTRY
+    y += 100;
+    ctx.font = 'bold 24px Arial';
+    ctx.fillStyle = '#000000';
+    ctx.fillText('Country:', 70, y);
+    
+    y += 50;
+    ctx.font = 'bold 28px Arial';
+    ctx.fillStyle = '#0066cc';
+    ctx.fillText(country, 70, y);
+    
+    // Stamp - positioned within the border and with better spacing
+    y += 120;
+    ctx.fillStyle = '#000000';
+    ctx.strokeStyle = '#cccccc';
+    ctx.lineWidth = 3;
+    ctx.beginPath();
+    ctx.arc(150, y, 50, 0, 2 * Math.PI);
+    ctx.stroke();
+    ctx.font = 'bold 12px Arial';
+    ctx.textAlign = 'center';
+    ctx.fillText('OFFICIAL', 150, y - 10);
+    ctx.fillText('STAMP', 150, y + 10);
   }
   
   private renderGenericDocument(ctx: CanvasRenderingContext2D, type: string, companyName: string, country: string, data: any): void {
